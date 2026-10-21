@@ -1,0 +1,7 @@
+{
+  "name": "mh-local-api",
+  "private": true,
+  "type": "module",
+  "description": "A small stand-in for Supabase's REST and Auth APIs, for running the web app against a local Postgres with the real access rules.",
+  "dependencies": { "pg": "8.13.1" }
+}

@@ -1,0 +1,89 @@
+{
+  "version": "2026-10-21",
+  "intro": "Miracle Health is where adults share what actually happened when they took a peptide: what they took it for, how long, and whether it was better, the same or worse than before they started. These rules keep it honest, safe and free of sellers.",
+  "rules": [
+    {
+      "n": 1,
+      "title": "No sourcing, no selling",
+      "text": "Don't ask or tell where to buy, name or review sellers, share shop links or discount codes, or offer to sell, trade or give anything away. That includes hints, initials and \"DM me\". Product safety is fine to talk about: describe what you saw, like a cloudy vial or a bad reaction, without naming who sold it.",
+      "ok": "My last vial was cloudy after mixing, so I didn't use it.",
+      "not_ok": "Who's the best vendor for reta right now?"
+    },
+    {
+      "n": 2,
+      "title": "Share what you did, not what others should do",
+      "text": "Describe your own experience: what you took, how much, how long and what changed. Asking what others did is fine; answer with what you did, not what someone else should take. Nobody here is anyone's doctor.",
+      "ok": "I ran 250 mcg a day for six weeks and my knee pain dropped by week three.",
+      "not_ok": "Just take 500 mcg twice a day, you'll be fine."
+    },
+    {
+      "n": 3,
+      "title": "Experiences, not medical advice",
+      "text": "Nothing here replaces a clinician. Talk to one before you start, stop or change anything, and never tell someone to skip seeing a doctor. If you have a bad reaction, get medical help now: call 911, or Poison Control at 1-800-222-1222.",
+      "ok": "My doctor checked my labs before I started.",
+      "not_ok": "You don't need a doctor for this, doctors don't know peptides."
+    },
+    {
+      "n": 4,
+      "title": "Be decent",
+      "text": "No harassment, insults, threats, hate or piling on. Disagree with the claim, not the person. Don't shame anyone for their body, their results or their choices.",
+      "ok": "That's not what the trial found; here's the paper.",
+      "not_ok": "Only an idiot would believe that."
+    },
+    {
+      "n": 5,
+      "title": "Keep people private, including you",
+      "text": "No real names, phone numbers, emails, addresses, social handles or photos of people. Don't share anyone's private information, and keep your own contact details off the site.",
+      "ok": "My handle here is all anyone needs.",
+      "not_ok": "Text me at 555-123-4567 and I'll send my log."
+    },
+    {
+      "n": 6,
+      "title": "No spam or self-promotion",
+      "text": "No ads, affiliate links, referral codes or posting for a brand. In your first week you can link only to studies and health agencies; after that, links to other sites wait for a moderator.",
+      "ok": "Here's the trial on PubMed.",
+      "not_ok": "Check out my channel for my full protocol."
+    },
+    {
+      "n": 7,
+      "title": "Stay on peptides",
+      "text": "Posts are about the compounds in the library. Steroids, SARMs and other drugs belong somewhere else.",
+      "ok": "",
+      "not_ok": ""
+    },
+    {
+      "n": 8,
+      "title": "Adults only",
+      "text": "You must be 18 or older. Accounts that look like they belong to someone younger are closed.",
+      "ok": "",
+      "not_ok": ""
+    },
+    {
+      "n": 9,
+      "title": "Be honest",
+      "text": "Report your real experience, including when something did nothing or caused side effects. One person, one account. No fake accounts, no voting rings, and no posting for a seller or brand. Those end in a ban.",
+      "ok": "Honestly, no change after eight weeks.",
+      "not_ok": "Making a second account to back up my review."
+    },
+    {
+      "n": 10,
+      "title": "If you're thinking about harming yourself",
+      "text": "Call or text 988 (US) now; you'll reach someone right away. Posts about self-harm are hidden while a moderator reaches out to you.",
+      "ok": "",
+      "not_ok": ""
+    },
+    {
+      "n": 11,
+      "title": "Report it, don't fight it",
+      "text": "If something breaks a rule, tap Report. Moderators read every report. Who reported is never shown to the person reported.",
+      "ok": "",
+      "not_ok": ""
+    }
+  ],
+  "enforcement": [
+    "First time: the post comes down, and you're told which rule it broke.",
+    "Second time: a 7-day suspension. You can read, but not post or comment.",
+    "Selling, sourcing deals, threats, fake accounts or anyone under 18: a ban on the first offense."
+  ],
+  "footer": "Experiences, not medical advice. In a crisis, call or text 988 (US)."
+}

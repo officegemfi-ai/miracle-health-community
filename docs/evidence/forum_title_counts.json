@@ -1,0 +1,56 @@
+{
+ "total": 236,
+ "by_category": [
+  {
+   "category": "experience or results",
+   "threads": 59,
+   "pct": 25.0
+  },
+  {
+   "category": "dose or protocol question",
+   "threads": 41,
+   "pct": 17.4
+  },
+  {
+   "category": "side effects or safety",
+   "threads": 36,
+   "pct": 15.3
+  },
+  {
+   "category": "research, news or regulation",
+   "threads": 28,
+   "pct": 11.9
+  },
+  {
+   "category": "product quality and testing",
+   "threads": 21,
+   "pct": 8.9
+  },
+  {
+   "category": "sourcing or sellers",
+   "threads": 18,
+   "pct": 7.6
+  },
+  {
+   "category": "mixing, storing or injecting",
+   "threads": 16,
+   "pct": 6.8
+  },
+  {
+   "category": "off-topic drugs (steroids, SARMs, other)",
+   "threads": 13,
+   "pct": 5.5
+  },
+  {
+   "category": "other",
+   "threads": 4,
+   "pct": 1.7
+  }
+ ],
+ "communities": {
+  "AnabolicMinds: Peptide/Research": 18,
+  "AnabolicSteroidForums: Research Chems & Peptides Chemistry": 60,
+  "ExcelMale: General Peptide Use & Information": 40,
+  "MESO-Rx: Human Growth Hormone and Peptides": 118
+ }
+}

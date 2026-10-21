@@ -1,0 +1,2 @@
+Security lints: 0   Other lints (performance): 18
+  INFO: unused_index: Index \`profiles_invite_code_idx\` on table \`public.profiles\` has not been used

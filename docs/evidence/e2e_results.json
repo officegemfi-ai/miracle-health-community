@@ -1,0 +1,117 @@
+[
+  {
+    "name": "A new member joins with an invite code",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Their post goes up and opens",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Asking where to buy is refused with the rule",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Another member sees the post in the feed",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "They upvote it",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "They comment",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "They report it",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "A first-week member can’t post a shop link",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Through the API, a member can’t make themselves admin",
+    "ok": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "name": "Through the API, a member reads nothing from the moderation log",
+    "ok": true,
+    "detail": "0 rows"
+  },
+  {
+    "name": "Through the API, a member sees only their own report",
+    "ok": true,
+    "detail": "1 rows"
+  },
+  {
+    "name": "Through the API, the watch list stays hidden",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Through the API, a member can’t edit someone else’s post",
+    "ok": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "name": "Through the API, nobody can set a post’s status or author",
+    "ok": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "name": "Signed out, the API shows no posts",
+    "ok": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "name": "The moderator sees the Moderation tab",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "The reported post is in the moderation queue",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "The moderator removes it",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "The beta numbers load for the moderator",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "The removed post is gone from other members’ feeds",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "The author sees it was removed, and why",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Deleting the account removes the profile and posts",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "No script errors in any browser",
+    "ok": true,
+    "detail": ""
+  }
+]

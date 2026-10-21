@@ -1,0 +1,6 @@
+.pgdata/
+node_modules/
+_site/
+_site_ci/
+tests/e2e/out/
+.pgdata.api.pid

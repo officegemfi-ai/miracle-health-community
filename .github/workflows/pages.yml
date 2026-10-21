@@ -1,0 +1,60 @@
+# Builds the website: the live app at the root (from the commit tagged "live")
+# and the test app at /test/ (from main). Called by the two deploy workflows.
+name: Pages
+on:
+  workflow_call: {}
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test app at /test/ (main)
+        env:
+          ENVIRONMENT: test
+          SUPABASE_URL: ${{ vars.TEST_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.TEST_SUPABASE_ANON_KEY }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          PRIVACY_URL: ${{ vars.PRIVACY_URL }}
+        run: scripts/build_web.sh _site/test
+      - name: Live app at the root (tag "live")
+        env:
+          ENVIRONMENT: live
+          SUPABASE_URL: ${{ vars.LIVE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.LIVE_SUPABASE_ANON_KEY }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          PRIVACY_URL: ${{ vars.PRIVACY_URL }}
+        run: |
+          if git rev-parse -q --verify refs/tags/live >/dev/null; then
+            git worktree add /tmp/live live
+            (cd /tmp/live && scripts/build_web.sh "$GITHUB_WORKSPACE/_site/live-build")
+            cp -R _site/live-build/. _site/ && rm -rf _site/live-build
+          else
+            printf '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Miracle Health Community</title><p>Opening soon.</p>' > _site/index.html
+          fi
+          echo "${{ vars.COMMUNITY_DOMAIN }}" > _site/CNAME
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/deploy-pages@v4

@@ -1,0 +1,496 @@
+{
+ "compounds": [
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "full": "Semaglutide",
+   "category": "Metabolic"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "full": "Tirzepatide",
+   "category": "Metabolic"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "full": "Liraglutide",
+   "category": "Metabolic"
+  },
+  {
+   "id": "retatrutide",
+   "name": "Retatrutide",
+   "full": "Retatrutide",
+   "category": "Metabolic"
+  },
+  {
+   "id": "aod9604",
+   "name": "AOD-9604",
+   "full": "AOD-9604",
+   "category": "Metabolic"
+  },
+  {
+   "id": "sermorelin",
+   "name": "Sermorelin",
+   "full": "Sermorelin",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "tesamorelin",
+   "name": "Tesamorelin",
+   "full": "Tesamorelin",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "cjc1295",
+   "name": "CJC-1295",
+   "full": "CJC-1295",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "ipamorelin",
+   "name": "Ipamorelin",
+   "full": "Ipamorelin",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "ghrp2",
+   "name": "GHRP-2",
+   "full": "GHRP-2",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "ghrp6",
+   "name": "GHRP-6",
+   "full": "GHRP-6",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "hexarelin",
+   "name": "Hexarelin",
+   "full": "Hexarelin",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "mk677",
+   "name": "MK-677",
+   "full": "MK-677 (Ibutamoren)",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "bpc157",
+   "name": "BPC-157",
+   "full": "BPC-157",
+   "category": "Healing & recovery"
+  },
+  {
+   "id": "tb500",
+   "name": "TB-500",
+   "full": "TB-500 (Thymosin \u03b24 fragment)",
+   "category": "Healing & recovery"
+  },
+  {
+   "id": "ghkcu",
+   "name": "GHK-Cu",
+   "full": "GHK-Cu",
+   "category": "Healing & recovery"
+  },
+  {
+   "id": "kpv",
+   "name": "KPV",
+   "full": "KPV",
+   "category": "Gut & inflammation"
+  },
+  {
+   "id": "ll37",
+   "name": "LL-37",
+   "full": "LL-37",
+   "category": "Healing & recovery"
+  },
+  {
+   "id": "pda",
+   "name": "Pentadeca Arginate",
+   "full": "Pentadeca Arginate (PDA)",
+   "category": "Healing & recovery"
+  },
+  {
+   "id": "semax",
+   "name": "Semax",
+   "full": "Semax",
+   "category": "Cognition & mood"
+  },
+  {
+   "id": "selank",
+   "name": "Selank",
+   "full": "Selank",
+   "category": "Cognition & mood"
+  },
+  {
+   "id": "dihexa",
+   "name": "Dihexa",
+   "full": "Dihexa",
+   "category": "Cognition & mood"
+  },
+  {
+   "id": "cerebrolysin",
+   "name": "Cerebrolysin",
+   "full": "Cerebrolysin",
+   "category": "Cognition & mood"
+  },
+  {
+   "id": "pt141",
+   "name": "PT-141",
+   "full": "PT-141 (Bremelanotide)",
+   "category": "Sexual health"
+  },
+  {
+   "id": "kisspeptin",
+   "name": "Kisspeptin-10",
+   "full": "Kisspeptin-10",
+   "category": "Sexual health"
+  },
+  {
+   "id": "mt2",
+   "name": "Melanotan II",
+   "full": "Melanotan II",
+   "category": "Skin & appearance"
+  },
+  {
+   "id": "afamelanotide",
+   "name": "Afamelanotide",
+   "full": "Afamelanotide",
+   "category": "Skin & appearance"
+  },
+  {
+   "id": "oxytocin",
+   "name": "Oxytocin",
+   "full": "Oxytocin (intranasal)",
+   "category": "Cognition & mood"
+  },
+  {
+   "id": "dsip",
+   "name": "DSIP",
+   "full": "DSIP (Emideltide)",
+   "category": "Sleep"
+  },
+  {
+   "id": "epithalon",
+   "name": "Epithalon",
+   "full": "Epithalon (Epitalon)",
+   "category": "Longevity"
+  },
+  {
+   "id": "motsc",
+   "name": "MOTS-c",
+   "full": "MOTS-c",
+   "category": "Longevity"
+  },
+  {
+   "id": "humanin",
+   "name": "Humanin",
+   "full": "Humanin",
+   "category": "Longevity"
+  },
+  {
+   "id": "ss31",
+   "name": "SS-31",
+   "full": "SS-31 (Elamipretide)",
+   "category": "Longevity"
+  },
+  {
+   "id": "ta1",
+   "name": "Thymosin alpha-1",
+   "full": "Thymosin alpha-1",
+   "category": "Immune"
+  },
+  {
+   "id": "nad",
+   "name": "NAD+ precursors",
+   "full": "NAD+ precursors (NMN, NR) and NAD+ injections",
+   "category": "Longevity"
+  },
+  {
+   "id": "rapamycin",
+   "name": "Rapamycin",
+   "full": "Rapamycin (Sirolimus)",
+   "category": "Longevity"
+  },
+  {
+   "id": "metformin",
+   "name": "Metformin",
+   "full": "Metformin",
+   "category": "Longevity"
+  },
+  {
+   "id": "glutathione",
+   "name": "Glutathione",
+   "full": "Glutathione",
+   "category": "Longevity"
+  },
+  {
+   "id": "collagen",
+   "name": "Collagen peptides",
+   "full": "Collagen peptides",
+   "category": "Skin & appearance"
+  },
+  {
+   "id": "gonadorelin",
+   "name": "Gonadorelin",
+   "full": "Gonadorelin",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "testosterone",
+   "name": "Testosterone",
+   "full": "Testosterone (TRT)",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "hcg",
+   "name": "hCG",
+   "full": "hCG (human chorionic gonadotropin)",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "clomiphene",
+   "name": "Clomiphene and enclomiphene",
+   "full": "Clomiphene and enclomiphene",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "anastrozole",
+   "name": "Anastrozole",
+   "full": "Anastrozole",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "dhea",
+   "name": "DHEA",
+   "full": "DHEA",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "pregnenolone",
+   "name": "Pregnenolone",
+   "full": "Pregnenolone",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "estradiol",
+   "name": "Estradiol",
+   "full": "Estradiol (menopausal hormone therapy)",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "progesterone",
+   "name": "Micronized progesterone",
+   "full": "Micronized progesterone",
+   "category": "Hormone balance"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin",
+   "full": "Somatropin (growth hormone)",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "melatonin",
+   "name": "Melatonin",
+   "full": "Melatonin",
+   "category": "Sleep"
+  },
+  {
+   "id": "igf1lr3",
+   "name": "IGF-1 LR3",
+   "full": "IGF-1 LR3",
+   "category": "Growth-hormone axis"
+  },
+  {
+   "id": "vitd3",
+   "name": "Vitamin D3",
+   "full": "Vitamin D3",
+   "category": "Vitamins & minerals"
+  },
+  {
+   "id": "mag",
+   "name": "Magnesium glycinate",
+   "full": "Magnesium glycinate",
+   "category": "Vitamins & minerals"
+  },
+  {
+   "id": "omega3",
+   "name": "Omega-3",
+   "full": "Omega-3 (EPA/DHA)",
+   "category": "Supplements"
+  },
+  {
+   "id": "creatine",
+   "name": "Creatine monohydrate",
+   "full": "Creatine monohydrate",
+   "category": "Supplements"
+  },
+  {
+   "id": "berberine",
+   "name": "Berberine",
+   "full": "Berberine",
+   "category": "Supplements"
+  },
+  {
+   "id": "ltheanine",
+   "name": "L-theanine",
+   "full": "L-theanine",
+   "category": "Supplements"
+  },
+  {
+   "id": "ashwagandha",
+   "name": "Ashwagandha",
+   "full": "Ashwagandha (KSM-66)",
+   "category": "Supplements"
+  },
+  {
+   "id": "zinc",
+   "name": "Zinc picolinate",
+   "full": "Zinc picolinate",
+   "category": "Vitamins & minerals"
+  },
+  {
+   "id": "b12",
+   "name": "Vitamin B12",
+   "full": "Vitamin B12",
+   "category": "Vitamins & minerals"
+  },
+  {
+   "id": "nmn",
+   "name": "NMN",
+   "full": "NMN",
+   "category": "Supplements"
+  },
+  {
+   "id": "lions",
+   "name": "Lion\u2019s mane",
+   "full": "Lion\u2019s mane",
+   "category": "Supplements"
+  },
+  {
+   "id": "caffeine",
+   "name": "Caffeine",
+   "full": "Caffeine",
+   "category": "Supplements"
+  },
+  {
+   "id": "glycine",
+   "name": "Glycine",
+   "full": "Glycine",
+   "category": "Supplements"
+  },
+  {
+   "id": "taurine",
+   "name": "Taurine",
+   "full": "Taurine",
+   "category": "Supplements"
+  },
+  {
+   "id": "coq10",
+   "name": "CoQ10",
+   "full": "CoQ10 (ubiquinol)",
+   "category": "Supplements"
+  },
+  {
+   "id": "ala",
+   "name": "Alpha-lipoic acid",
+   "full": "Alpha-lipoic acid",
+   "category": "Supplements"
+  },
+  {
+   "id": "iron",
+   "name": "Iron bisglycinate",
+   "full": "Iron bisglycinate",
+   "category": "Vitamins & minerals"
+  },
+  {
+   "id": "vitk2",
+   "name": "Vitamin K2",
+   "full": "Vitamin K2 (MK-7)",
+   "category": "Vitamins & minerals"
+  },
+  {
+   "id": "probiotic",
+   "name": "Probiotic",
+   "full": "Probiotic (multi-strain)",
+   "category": "Supplements"
+  },
+  {
+   "id": "rhodiola",
+   "name": "Rhodiola rosea",
+   "full": "Rhodiola rosea",
+   "category": "Supplements"
+  }
+ ],
+ "goals": [
+  {
+   "id": "weight",
+   "name": "Weight & metabolic health"
+  },
+  {
+   "id": "muscle",
+   "name": "Muscle & body composition"
+  },
+  {
+   "id": "recovery",
+   "name": "Injury recovery & joints"
+  },
+  {
+   "id": "energy",
+   "name": "Energy & mitochondria"
+  },
+  {
+   "id": "sleep",
+   "name": "Sleep quality"
+  },
+  {
+   "id": "cognition",
+   "name": "Focus, mood & cognition"
+  },
+  {
+   "id": "skin",
+   "name": "Skin, hair & appearance"
+  },
+  {
+   "id": "sexual",
+   "name": "Sexual health & libido"
+  },
+  {
+   "id": "longevity",
+   "name": "Healthy aging"
+  },
+  {
+   "id": "gut",
+   "name": "Gut & inflammation"
+  },
+  {
+   "id": "immune",
+   "name": "Immune resilience"
+  },
+  {
+   "id": "hormonal",
+   "name": "Hormone balance"
+  },
+  {
+   "id": "focus",
+   "name": "Focus & ADHD"
+  },
+  {
+   "id": "anxiety",
+   "name": "Anxiety & calm"
+  },
+  {
+   "id": "cognitive",
+   "name": "Memory & cognitive health"
+  },
+  {
+   "id": "metabolic",
+   "name": "Insulin sensitivity & blood sugar"
+  }
+ ]
+}

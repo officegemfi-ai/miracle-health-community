@@ -1,0 +1,161 @@
+2508c21d-41e6-45b2-b309-16084713cf74
+0b60d1a8-4018-4dd2-aa04-7d98583e193e
+db097ecb-8be9-49bf-bfd1-5a027062b66c
+c79aa6d1-2791-4b1d-8a1c-c9d38509af90
+5f105950-296a-4348-be9b-14dc894ad027
+a8764ac0-7f4a-4eb6-915b-10d50bfea245
+dadb48e2-fff0-497e-b9bf-b5abc36c15ba
+e20b55fa-7a04-479f-95f9-0c13ff779bda
+5e2e6c52-7a8d-4c0b-90cb-77e93f786877
+b0aa091f-9c40-4e9e-9adf-74db9bb86106
+1016ec21-07bd-45cc-a9e2-6ecf7bb4bcb9
+2d3a3266-c648-4857-a23d-777a0156a8f1
+eb77dc09-087e-461a-bbae-98eaf54b7884
+ok 1 - An unconfirmed phone can't sign up
+ok 2 - Sign-up needs the 18+ confirmation
+ok 3 - Sign-up needs consent to collect health information
+ok 4 - Sign-up needs a real invite code
+ok 5 - An expired invite code is refused
+ok 6 - Handles are checked
+ok 7 - Handles are unique regardless of case
+ok 8 - Sign-up needs the current rules version
+ok 9 - A confirmed phone with a valid invite signs up
+ok 10 - The new member sees their own profile
+ok 11 - A founder invite makes a trusted member
+ok 12 - Nobody signs up twice
+ok 13 - A one-use code works once
+ok 14 - A one-use code can't be used twice
+ok 15 - Without a profile there is no member record
+ok 16 - Signed-out visitors can't read posts
+ok 17 - Signed-out visitors can't read profiles
+ok 18 - Signed-out visitors can't read the feed
+ok 19 - Signed-out visitors can't call sign-up
+ok 20 - Signed in without a profile: no posts visible
+ok 21 - Signed in without a profile: can't post
+ok 22 - A banned member sees nothing
+ok 23 - A banned member sees no profiles
+13a50f74-9bd1-45f5-a0c6-808275a1f09a
+ok 24 - A post belongs to whoever wrote it
+ok 25 - A clean post is visible at once
+ok 26 - Nobody can post as someone else
+ok 27 - Members can't set a post's status
+ok 28 - Members can't set a post's score
+ok 29 - Members can't change a post's status
+ok 30 - Members can't change a post's score
+ok 31 - Asking where to buy is refused with the rule
+ok 32 - Promo codes are refused
+f883b814-e89f-460b-a1fd-ec941ee4b741
+ok 33 - A link to an unknown site is held for a moderator
+ok 34 - The author still sees their held post, marked as held
+84598e83-bcfe-4102-8f8f-9dafc3f17db8
+ok 35 - A link to PubMed goes straight up
+cd260865-7bd7-417c-94b7-4a7a50592806
+ok 36 - Moving the conversation to Telegram is held
+b8c161a6-7027-49ef-864d-c37da58b1b02
+ok 37 - An email address is held
+ok 38 - Members can't read the moderation log
+ok 39 - Every automatic hold is logged
+ok 40 - A new member can't post links to unknown sites
+ok 41 - A new member can link to a study registry
+ok 42 - A new member's second post works
+ok 43 - A new member's third post works
+ok 44 - New members are limited to 3 posts a day
+ok 45 - A trusted founding member posts normally
+ok 46 - Members see each other's visible posts
+ok 47 - Members don't see someone else's held post
+ok 48 - The feed never shows other people's held posts
+ok 49 - Members can't read private profile fields
+ok 50 - Members can't read another member's status
+ok 51 - Moderators see held posts
+ok 52 - Held posts are in the moderation queue
+ok 53 - Members see nothing in the moderation queue
+ok 54 - A suspended member can still read
+ok 55 - A suspended member can't post
+ok 56 - Members can't edit someone else's post
+ok 57 - Members can't delete someone else's post
+ok 58 - Authors can edit their own post
+ok 59 - An edit is marked as edited
+ok 60 - An edit goes through the same checks
+ok 61 - A refused edit changes nothing
+0ea40b43-d3e1-4c86-805f-e15ea973a505
+ok 62 - A comment belongs to whoever wrote it
+ok 63 - Nobody can comment on a held post
+ok 64 - Nobody can comment as someone else
+ok 65 - Members can't edit someone else's comment
+ok 66 - Members can't delete someone else's comment
+ok 67 - The feed counts visible comments
+ok 68 - Members can upvote a post
+ok 69 - The post's score goes up
+ok 70 - Nobody votes twice on the same post
+ok 71 - Members can change their vote
+ok 72 - The score follows the change
+ok 73 - The feed shows your own vote
+ok 74 - Nobody can vote as someone else
+ok 75 - Nobody can vote on their own post
+ok 76 - Authors can't see who voted on their post
+ok 77 - Members can upvote a comment
+ok 78 - The comment's score goes up
+ok 79 - Members can report a post
+ok 80 - A report is filed under the real reporter
+ok 81 - One report per person per post
+ok 82 - Nobody can file a report as someone else
+ok 83 - You can only report what you can see
+ok 84 - The author can't see who reported them
+ok 85 - A second report
+ok 86 - A third report
+ok 87 - Three reports hold a post for review
+ok 88 - Members can't moderate
+ok 89 - Calling the private function directly doesn't help
+ok 90 - Members can't write to the moderation log
+ok 91 - Members can't edit the watch list
+ok 92 - Members can't read the watch list
+ok 93 - Members can't read invite codes
+ok 94 - Members can't read Signal alerts
+ok 95 - Members can't read AI reviews
+ok 96 - Members can't see beta numbers
+ok 97 - A moderator removes a post
+ok 98 - The post is removed
+ok 99 - Its reports are closed as actioned
+ok 100 - The action is logged under the moderator
+ok 101 - Every action needs a reason
+ok 102 - A moderator restores a held post
+ok 103 - The restored post is visible
+ok 104 - Moderators can see the beta numbers
+ok 105 - Moderators can add to the watch list
+ok 106 - Moderators can create invite codes
+ok 107 - Members no longer see the removed post
+ok 108 - The author sees their post was removed
+ok 109 - and why
+ok 110 - A removed post can't be edited back
+ok 111 - A moderator suspends a member
+ok 112 - A suspended member can't comment
+ok 113 - A moderator can't ban an admin
+ok 114 - Nobody can act on their own account
+ok 115 - A moderator bans a member
+ok 116 - A ban removes the member's content
+ok 117 - Members can't make themselves admins
+ok 118 - Members can't mark themselves trusted
+ok 119 - Members can't create extra profiles
+ok 120 - Members can't pose as the AI reviewer
+ok 121 - Members can't call internal settings
+ok 122 - The AI reviewer can hold a post
+ok 123 - The AI hold takes effect
+ok 124 - The AI hold is logged
+a119d88b-83bd-4559-b8fe-f5fe92a4e95e
+32eb97f0-6045-4574-b712-7b099c1772be
+8e8acaec-6660-4a34-8c35-d081c189d6e8
+2f597bee-1c99-4319-9208-6776ea252262
+8e544a46-769c-4e18-b5f4-b3f246fa1fc9
+7984d4bc-6ab3-4ef9-8bc0-7858c4b2c7ea
+07140fb2-a7c7-46e3-84d2-469907f419d8
+ecdf60f0-e2a0-4ada-a5d9-1476aea95016
+cbc0b211-5854-489e-82c9-8a1649ec052e
+3d72026c-26aa-4031-8eec-b704b1e7dd8d
+ok 125 - Nine new accounts piling onto one compound raise one alert
+ok 126 - Normal activity raises no alert
+ok 127 - The profile is gone
+ok 128 - Their posts are gone
+ok 129 - Their votes are gone
+ok 130 - Their reports no longer point to them
+ok 131 - but the reports themselves stay for the record
+1..131

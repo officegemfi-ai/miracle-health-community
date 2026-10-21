@@ -1,0 +1,59 @@
+# Supabase CLI settings for local development and CI.
+# The live and test projects are configured in their dashboards; docs/SETUP.md
+# lists the exact settings (phone sign-in through Twilio Verify, Turnstile,
+# custom email, GraphQL off). Nothing secret is stored in this file.
+project_id = "miracle-health-community"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 200
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:4173"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = false
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+template = "Your Miracle Health code is {{ .Code }}"
+max_frequency = "60s"
+
+# Fixed codes for local development and the end-to-end test only.
+[auth.sms.test_otp]
+15555550101 = "123456"
+15555550102 = "123456"
+15555550103 = "123456"
+
+[auth.sms.twilio]
+enabled = true
+account_sid = "local-not-used"
+message_service_sid = "local-not-used"
+auth_token = "local-not-used"
+
+[functions.review-content]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true

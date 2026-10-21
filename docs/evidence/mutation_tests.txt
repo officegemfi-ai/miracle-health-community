@@ -1,0 +1,6 @@
+auto-hold on reports removed: 1 tests fail (0 stopped with an error)
+daily posting limit removed: 1 tests fail (0 stopped with an error)
+members allowed to write every post field: 4 tests fail (0 stopped with an error)
+RLS switched off on posts: 10 tests fail (1 stopped with an error)
+link and phrase checks removed: 14 tests fail (0 stopped with an error)
+everyone treated as a moderator: 11 tests fail (0 stopped with an error)

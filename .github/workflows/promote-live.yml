@@ -1,0 +1,46 @@
+# The only way to change the LIVE community: press "Run workflow" on a commit that
+# has passed on test. The "live" environment accepts runs from main only.
+name: Promote to live
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency: deploy-live
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    environment: live
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase link --project-ref "$REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Database changes
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+      - name: Function secrets
+        run: |
+          supabase secrets set --project-ref "$REF" \
+            ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+            REVIEW_SECRET="${{ secrets.REVIEW_SECRET }}" \
+            MODERATION_MODEL="${{ vars.MODERATION_MODEL }}" \
+            APP_ORIGINS="${{ vars.APP_ORIGINS }}"
+      - name: Functions
+        run: |
+          supabase functions deploy review-content --no-verify-jwt --project-ref "$REF"
+          supabase functions deploy delete-account --project-ref "$REF"
+      - name: Mark this commit as live
+        run: |
+          git tag -f live "$GITHUB_SHA"
+          git push -f origin refs/tags/live
+  site:
+    needs: backend
+    uses: ./.github/workflows/pages.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

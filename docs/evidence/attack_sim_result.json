@@ -1,0 +1,107 @@
+{
+  "bots_tried": 30,
+  "bots_in": 10,
+  "tally": {
+    "getting in": {
+      "refused without an invite": 30,
+      "joined with the leaked code": 10,
+      "refused once the leaked code ran out": 20
+    },
+    "spam posts": {
+      "refused by the rules": 20,
+      "held for a moderator": 30,
+      "stopped by the daily limit": 10
+    },
+    "spam comments": {
+      "refused": 250
+    },
+    "mass reporting": {
+      "report filed": 10
+    }
+  },
+  "open_alerts": [
+    {
+      "compound_id": "bpc157",
+      "new_accounts": 8,
+      "events": 9
+    },
+    {
+      "compound_id": "retatrutide",
+      "new_accounts": 8,
+      "events": 8
+    },
+    {
+      "compound_id": "ipamorelin",
+      "new_accounts": 8,
+      "events": 8
+    }
+  ],
+  "real_post_after_mass_reports": "visible",
+  "real_post_end": {
+    "status": "visible",
+    "title": "Eight weeks on BPC-157, honest notes"
+  },
+  "spam_posts_visible_to_members": 0,
+  "power_attempts": [
+    {
+      "attempt": "make itself admin",
+      "http": 403,
+      "worked": false
+    },
+    {
+      "attempt": "mark itself trusted",
+      "http": 403,
+      "worked": false
+    },
+    {
+      "attempt": "write to the moderation log",
+      "http": 403,
+      "worked": false
+    },
+    {
+      "attempt": "remove a real post as a moderator",
+      "http": 403,
+      "worked": false
+    },
+    {
+      "attempt": "pose as the AI reviewer",
+      "http": 403,
+      "worked": false
+    },
+    {
+      "attempt": "delete a real member’s post",
+      "http": 200,
+      "worked": false
+    },
+    {
+      "attempt": "edit a real member’s post",
+      "http": 200,
+      "worked": false
+    },
+    {
+      "attempt": "read other people’s reports",
+      "http": 200,
+      "worked": false
+    },
+    {
+      "attempt": "read the watch list",
+      "http": 200,
+      "worked": false
+    },
+    {
+      "attempt": "read invite codes",
+      "http": 200,
+      "worked": false
+    },
+    {
+      "attempt": "read private profile fields",
+      "http": 403,
+      "worked": false
+    },
+    {
+      "attempt": "vote as someone else",
+      "http": 403,
+      "worked": false
+    }
+  ]
+}
