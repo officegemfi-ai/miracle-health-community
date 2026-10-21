@@ -28,7 +28,8 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
 - Authentication > SMTP: Resend's SMTP settings, sender on your domain.
 - Database > Extensions: turn pg_graphql OFF (the app doesn't use GraphQL) and pg_net ON.
 - After the first deploy: run `scripts/setup_vault.sql` in the SQL editor.
-- Live only: run `scripts/first_admin.sql`, sign up, then make yourself admin.
+- Live only: run `scripts/first_admin.sql`. It shows a random founding invite code: sign up with it,
+  then make yourself admin with the line at the bottom of that file.
 
 ## 3. Namecheap (Advanced DNS)
 - CNAME `community` -> `YOUR-GITHUB-USERNAME.github.io`

@@ -10,7 +10,8 @@ permissions:
 concurrency: deploy-test
 jobs:
   backend:
-    if: github.event.workflow_run.conclusion == 'success'
+    # Skips quietly until the test project is connected (repository variable TEST_SUPABASE_URL)
+    if: github.event.workflow_run.conclusion == 'success' && vars.TEST_SUPABASE_URL != ''
     runs-on: ubuntu-latest
     environment: test
     env:
