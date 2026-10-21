@@ -1,5 +1,7 @@
 # Runs on every change: the access tests, Supabase's security checks, the server
 # function tests and a real browser going through the whole community flow.
+# Once Supabase is up, every check runs even if an earlier one fails, and each
+# failure leaves a readable note (annotation) on the run's summary page.
 name: CI
 on:
   push:
@@ -10,45 +12,73 @@ permissions:
 jobs:
   functions:
     name: Rules copies and server functions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/check_rules_sync.sh
+      - name: Rules copies match
+        run: |
+          set -o pipefail
+          scripts/check_rules_sync.sh 2>&1 | tee "$RUNNER_TEMP/rules.log" \
+            || { scripts/ci_annotate.sh "Rules copies" "$RUNNER_TEMP/rules.log"; exit 1; }
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.5.6
-      - run: deno test --allow-env supabase/functions
+      - name: Server function tests (Deno)
+        run: |
+          set -o pipefail
+          deno test --allow-env supabase/functions 2>&1 | tee "$RUNNER_TEMP/deno.log" \
+            || { scripts/ci_annotate.sh "Server function tests" "$RUNNER_TEMP/deno.log"; exit 1; }
   database:
     name: Access tests, security lints, end-to-end
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
           version: latest
       - name: Start a local Supabase (Docker)
-        run: supabase start -x studio,imgproxy,logflare,vector
+        id: start
+        run: |
+          set -o pipefail
+          supabase start -x studio,imgproxy,logflare,vector 2>&1 | tee "$RUNNER_TEMP/start.log" \
+            || { scripts/ci_annotate.sh "Supabase start" "$RUNNER_TEMP/start.log"; exit 1; }
       - name: Turn GraphQL off, as in the live project
+        id: graphql
         run: psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -c "drop extension if exists pg_graphql cascade"
       - name: Access tests (pgTAP)
-        run: supabase test db
+        if: always() && steps.start.outcome == 'success'
+        run: |
+          set -o pipefail
+          supabase test db 2>&1 | tee "$RUNNER_TEMP/pgtap.log" \
+            || { scripts/ci_annotate.sh "Access tests" "$RUNNER_TEMP/pgtap.log"; exit 1; }
       - name: Security lints (the Security Advisor's checks)
-        run: scripts/security_lints.sh "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+        if: always() && steps.graphql.outcome == 'success'
+        run: |
+          set -o pipefail
+          scripts/security_lints.sh "postgresql://postgres:postgres@127.0.0.1:54322/postgres" 2>&1 | tee "$RUNNER_TEMP/lints.log" \
+            || { scripts/ci_annotate.sh "Security lints" "$RUNNER_TEMP/lints.log"; exit 1; }
       - uses: actions/setup-node@v4
+        if: always() && steps.start.outcome == 'success'
         with:
           node-version: 22
       - name: End-to-end in a real browser
+        if: always() && steps.start.outcome == 'success'
         run: |
-          eval "$(supabase status -o env)"
-          export SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" ENVIRONMENT=ci
-          scripts/build_web.sh _site_ci
-          npm ci --prefix tests/e2e
-          npx --prefix tests/e2e playwright install --with-deps chromium
-          (cd _site_ci && python3 -m http.server 4173 >/dev/null 2>&1 &)
-          sleep 1
-          BASE_URL=http://127.0.0.1:4173/ DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" node tests/e2e/flow.mjs
+          set -o pipefail
+          # Chained with && so the first failure stops the step (set -e doesn't apply here)
+          {
+            eval "$(supabase status -o env)" &&
+            export SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" ENVIRONMENT=ci &&
+            scripts/build_web.sh _site_ci &&
+            npm ci --prefix tests/e2e &&
+            npx --prefix tests/e2e playwright install --with-deps chromium &&
+            { (cd _site_ci && python3 -m http.server 4173 >/dev/null 2>&1 &) ; sleep 1; } &&
+            BASE_URL=http://127.0.0.1:4173/ DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" node tests/e2e/flow.mjs
+          } 2>&1 | tee "$RUNNER_TEMP/e2e.log" \
+            || { scripts/ci_annotate.sh "End-to-end" "$RUNNER_TEMP/e2e.log"; exit 1; }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-screenshots
           path: tests/e2e/out
+          if-no-files-found: ignore

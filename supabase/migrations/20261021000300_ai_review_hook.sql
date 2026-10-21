@@ -10,7 +10,9 @@
 do $$
 begin
   if exists (select 1 from pg_available_extensions where name = 'pg_net') then
-    create extension if not exists pg_net;
+    -- pg_net's functions always live in the net schema, but the extension itself
+    -- belongs in extensions, not public (Supabase's "Extension in Public" check).
+    create extension if not exists pg_net with schema extensions;
   end if;
 end $$;
 
