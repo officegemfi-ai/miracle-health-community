@@ -97,7 +97,9 @@ check('They upvote it', true);
 await B.fill('#comment', 'Same here, week two was the turning point for me.');
 await B.click('form button[type=submit]');
 await B.waitForSelector('.comment');
-check('They comment', (await B.textContent('.comment')).includes('turning point'));
+check('They comment, and the count updates',
+  (await B.textContent('.comment')).includes('turning point')
+  && (await B.textContent('h2:has-text("Comments")')).includes('(1)'));
 await B.click('article button:text-is("Report")');
 await B.check('dialog input[value=dosing]');
 await B.click('dialog button[type=submit]');
@@ -147,12 +149,14 @@ check('Signed out, the API shows no posts', r.status >= 400 || (Array.isArray(r.
 const M = await person();
 await signIn(M, '5555550101');
 await M.waitForSelector('nav#nav a[data-nav=mod]:not([hidden])');
+await M.waitForSelector('h1:text("Feed")');
 check('The moderator sees the Moderation tab', true);
 await M.goto(`${BASE}#/mod/queue`);
 await M.waitForSelector(`[data-queue="${postId}"]`);
-check('The reported post is in the moderation queue', true);
-await shot(M, '05_queue');
 const card = M.locator(`[data-queue="${postId}"]`);
+check('The reported post is in the queue, on the rule the report named',
+  (await card.locator('select').inputValue()) === 'Rule 2: dosing instructions');
+await shot(M, '05_queue');
 await card.locator('select').selectOption('Rule 2: dosing instructions');
 await card.locator('button:text-is("Remove")').click();
 await M.waitForSelector(`[data-queue="${postId}"]`, { state: 'detached' });

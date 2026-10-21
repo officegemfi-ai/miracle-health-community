@@ -148,12 +148,14 @@ window.addEventListener('hashchange', () => { route(); });
 async function loadMe() {
   const { data, error } = await sb.rpc('me');
   S.me = !error && Array.isArray(data) && data[0] ? data[0] : null;
-  nav.hidden = !S.me;
-  nav.querySelector('[data-nav=mod]').hidden = !isMod();
   if (S.me && !S.compounds.length) {
     const r = await sb.from('compounds').select('id,name,category').order('name');
     S.compounds = r.data || [];
   }
+  // The menu appears only once everything is loaded, so a tap on it can't be
+  // undone by the jump to the feed that follows sign-in
+  nav.hidden = !S.me;
+  nav.querySelector('[data-nav=mod]').hidden = !isMod();
 }
 
 async function boot() {
@@ -439,6 +441,11 @@ async function renderPost(id) {
   }
   const visibleComments = (comments || []).filter((c) => c.status === 'visible' || c.is_mine);
   const list = h('div', {}, visibleComments.map((c) => commentView(c)));
+  // The count follows the list as comments are added or deleted on this page
+  const heading = h('h2', {});
+  const recount = () => { heading.textContent = `Comments (${list.children.length})`; };
+  recount();
+  new MutationObserver(recount).observe(list, { childList: true });
   const box = h('textarea', { class: 'input', id: 'comment', maxlength: 5000, rows: 4, placeholder: 'Add your experience or a question' });
   const send = h('button', { class: 'btn brand', type: 'submit' }, 'Comment');
   const cmsg = msgBox();
@@ -467,7 +474,7 @@ async function renderPost(id) {
       h('h1', {}, p.title), bodyBox,
       h('div', { class: 'meta' }, voteWidget('post', p), h('span', {}, `@${p.author_handle}`), h('span', {}, ago(p.created_at)), p.edited_at ? h('span', {}, 'edited') : null),
       actions, msg),
-    h('h2', {}, `Comments (${visibleComments.length})`), list, form);
+    heading, list, form);
 }
 
 function editPost(p, bodyBox, msg) {
@@ -630,7 +637,10 @@ async function renderMod(tab) {
 
 function modActions(item, done) {
   const msg = msgBox();
-  const reason = h('select', { class: 'input' }, MOD_REASONS.map((r) => h('option', { value: r }, r)));
+  // Start on the rule the reports point to, so the usual case is one click
+  const RULE_OF = { sourcing: 0, dosing: 1, medical_misinfo: 2, harassment: 3, personal_info: 4, spam: 5, off_topic: 6, underage: 7, self_harm: 9 };
+  const first = (item.reasons || []).map((r) => RULE_OF[r]).find((i) => i !== undefined);
+  const reason = h('select', { class: 'input' }, MOD_REASONS.map((r, i) => h('option', { value: r, selected: i === first }, r)));
   const note = h('input', { class: 'input', placeholder: 'Note for the log (optional)', maxlength: 300 });
   const act = (target_kind, target_id, action, days) => async () => {
     const { error } = await sb.rpc('moderate', { target_kind, target_id, action, reason: reason.value, note: note.value.trim() || null, days: days || null });

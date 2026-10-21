@@ -25,7 +25,7 @@
     "detail": ""
   },
   {
-    "name": "They comment",
+    "name": "They comment, and the count updates",
     "ok": true,
     "detail": ""
   },
@@ -80,7 +80,7 @@
     "detail": ""
   },
   {
-    "name": "The reported post is in the moderation queue",
+    "name": "The reported post is in the queue, on the rule the report named",
     "ok": true,
     "detail": ""
   },
