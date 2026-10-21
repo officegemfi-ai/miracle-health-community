@@ -8,7 +8,14 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
    or license) and push this code to it. A private repository needs GitHub Pro ($4 a month) for two
    things this setup uses: the website on GitHub Pages and the `test` and `live` environments.
    A public repository works on the free plan, but anyone could read the starting watch list.
-2. Settings > Pages: Source = GitHub Actions. Custom domain = `community.yourdomain.com`, then Enforce HTTPS.
+2. Your domain, in this order (GitHub's advice, so nobody else can claim the address):
+   a. Verify the domain: your profile Settings > Pages > Add a domain > `yourdomain.com`. GitHub shows
+      a TXT record; add it in Namecheap (section 3), then press Verify. Leave the record in place.
+   b. The repository's Settings > Pages: Source = GitHub Actions. Custom domain =
+      `community.yourdomain.com` > Save.
+   c. Add the `community` CNAME in Namecheap (section 3).
+   d. Back in Settings > Pages, tick Enforce HTTPS once it's offered (up to 24 hours).
+   The live app is then at `https://community.yourdomain.com` and the test app at `/test/`.
 3. Settings > Environments: create `test` and `live`. On each, under Deployment branches and tags,
    choose Selected branches and add `main`. Live changes only when you press "Run workflow" on
    "Promote to live". (Required reviewers on an environment work only in public repositories on
@@ -20,7 +27,7 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
    - Each environment: `SUPABASE_PROJECT_REF`, `MODERATION_MODEL` = `claude-haiku-5-5`,
      `APP_ORIGINS` = `https://community.yourdomain.com` (test: the same, the test app is at /test/)
    - Repository: `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `LIVE_SUPABASE_URL`, `LIVE_SUPABASE_ANON_KEY`,
-     `TURNSTILE_SITE_KEY`, `POSTHOG_KEY`, `SENTRY_DSN`, `CONTACT_EMAIL`, `PRIVACY_URL`, `COMMUNITY_DOMAIN`
+     `TURNSTILE_SITE_KEY`, `POSTHOG_KEY`, `SENTRY_DSN`, `CONTACT_EMAIL`, `PRIVACY_URL`
 
 ## 2. Supabase (both projects; live on the Pro plan)
 - Authentication > Sign In / Providers: Phone on (Twilio Verify: Account SID, Auth Token, Verify Service SID); Email sign-up off.
@@ -32,7 +39,10 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
   then make yourself admin with the line at the bottom of that file.
 
 ## 3. Namecheap (Advanced DNS)
-- CNAME `community` -> `YOUR-GITHUB-USERNAME.github.io`
+Namecheap's Host field takes only the part before your domain.
+- TXT `_github-pages-challenge-officegemfi-ai` -> the value GitHub shows when you add the domain
+- CNAME `community` -> `officegemfi-ai.github.io` (your GitHub username, never the repository name)
+- No wildcard (`*`) records: they let others claim subdomains.
 - Resend's SPF, DKIM and DMARC records, exactly as Resend's Domains page lists them.
 
 ## 4. PostHog and Sentry

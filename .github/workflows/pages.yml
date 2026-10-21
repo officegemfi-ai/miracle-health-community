@@ -47,7 +47,8 @@ jobs:
           else
             printf '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Miracle Health Community</title><p>Opening soon.</p>' > _site/index.html
           fi
-          echo "${{ vars.COMMUNITY_DOMAIN }}" > _site/CNAME
+          # No CNAME file: with a GitHub Actions deploy, the custom domain is set in
+          # Settings > Pages, and GitHub ignores a CNAME file.
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
