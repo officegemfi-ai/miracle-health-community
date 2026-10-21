@@ -14,8 +14,10 @@ step "building the app"
 scripts/build_web.sh _site_ci
 
 step "installing the test tools"
-npm ci --prefix tests/e2e --no-audit --no-fund
-timeout 600 npx --prefix tests/e2e playwright install --with-deps chromium
+npm ci --prefix tests/e2e --no-audit --no-fund --loglevel=error
+install_log="${RUNNER_TEMP:-/tmp}/playwright-install.log"
+timeout 600 npx --prefix tests/e2e playwright install --with-deps chromium >"$install_log" 2>&1 \
+  || { echo "Playwright install failed:"; grep -v $'■' "$install_log" | tail -n 20; exit 1; }
 
 step "serving the app on port 4173"
 # Fully detached from this script's output, or the log pipe would never close

@@ -1,5 +1,5 @@
 .pgdata/
-node_modules/
+node_modules
 _site/
 _site_ci/
 tests/e2e/out/
