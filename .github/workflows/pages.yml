@@ -1,9 +1,13 @@
 # Builds the website: the live app at the root (from the commit tagged "live")
 # and the test app at /test/ (from main). Called by the two deploy workflows.
 # With the repository secret SITE_PASSWORD set, both apps sit behind that password.
+# It can also be run by hand (Actions > Pages > Run workflow), for example to publish
+# the opening-soon page before Supabase is connected; the deploy workflows run it
+# only after the database is updated.
 name: Pages
 on:
   workflow_call: {}
+  workflow_dispatch: {}
 permissions:
   contents: read
   pages: write
@@ -30,7 +34,13 @@ jobs:
           CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
           PRIVACY_URL: ${{ vars.PRIVACY_URL }}
           SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
-        run: scripts/build_web.sh _site/test
+        run: |
+          mkdir -p _site
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "The test project isn't connected yet (TEST_SUPABASE_URL), so there's no test app to publish."
+          else
+            scripts/build_web.sh _site/test
+          fi
       - name: Live app at the root (tag "live")
         env:
           ENVIRONMENT: live
@@ -43,12 +53,16 @@ jobs:
           PRIVACY_URL: ${{ vars.PRIVACY_URL }}
           SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
         run: |
+          mkdir -p _site
           if git rev-parse -q --verify refs/tags/live >/dev/null; then
             git worktree add /tmp/live live
             (cd /tmp/live && scripts/build_web.sh "$GITHUB_WORKSPACE/_site/live-build")
             cp -R _site/live-build/. _site/ && rm -rf _site/live-build
           else
-            printf '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Miracle Health Community</title><p>Opening soon.</p>' > _site/index.html
+            # Until the first promotion: a branded "opening soon" page
+            cp site/soon.html _site/index.html
+            cp site/soon.css web/favicon.svg _site/
+            mkdir -p _site/fonts && cp web/fonts/unbounded.woff2 _site/fonts/
           fi
           # No CNAME file: with a GitHub Actions deploy, the custom domain is set in
           # Settings > Pages, and GitHub ignores a CNAME file.
