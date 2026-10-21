@@ -3,9 +3,12 @@
 // who can see or change what is enforced by the database, not by this file.
 
 const C = window.MH_CONFIG || {};
-const sb = window.supabase.createClient(C.supabaseUrl, C.supabaseAnonKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
-});
+let sb = null;   // made in boot(), once the site password (if the site has one) unlocks the key
+function connect(anonKey) {
+  sb = window.supabase.createClient(C.supabaseUrl, anonKey, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  });
+}
 
 const app = document.getElementById('app');
 const nav = document.getElementById('nav');
@@ -130,6 +133,7 @@ const ROUTES = {
   rules: () => renderRules(), account: () => renderAccount(), mod: (r) => renderMod(r.arg || 'queue'),
 };
 async function route() {
+  if (!sb) return;   // still behind the site password
   const r = parseHash();
   if (r.name === 'join' && r.arg) {
     try { sessionStorage.setItem('mh_invite', r.arg.toUpperCase()); } catch (_) { /* private mode */ }
@@ -158,12 +162,68 @@ async function loadMe() {
   nav.querySelector('[data-nav=mod]').hidden = !isMod();
 }
 
+// ---------------------------------------------------------------------------
+// Site password (for the beta). When the site has one, config.js carries the
+// public API key encrypted with it, so without the password the app can't reach
+// the community at all. This browser remembers the key until the password changes.
+// ---------------------------------------------------------------------------
+const fromB64 = (s) => Uint8Array.from(atob(s), (ch) => ch.charCodeAt(0));
+const toB64 = (u8) => btoa(String.fromCharCode(...u8));
+async function gateDerive(g, password) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: fromB64(g.salt), iterations: g.iter }, base, 256);
+  return new Uint8Array(bits);
+}
+async function gateOpen(g, raw) {
+  try {
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(g.iv) }, key, fromB64(g.ct));
+    return new TextDecoder().decode(plain);
+  } catch (_) {
+    return null;
+  }
+}
+async function unlock() {
+  const g = C.gate;
+  if (!g) return C.supabaseAnonKey;
+  const slot = `mh_gate:${g.salt}`;   // test and live remember their own
+  let saved = null;
+  try { saved = localStorage.getItem(slot); } catch (_) { /* private mode */ }
+  if (saved) {
+    const key = await gateOpen(g, fromB64(saved));
+    if (key) return key;
+    try { localStorage.removeItem(slot); } catch (_) { /* private mode */ }
+  }
+  return new Promise((resolve) => {
+    const msg = msgBox();
+    const pw = h('input', { class: 'input', type: 'password', id: 'site-password', autocomplete: 'current-password', required: true });
+    const go = h('button', { class: 'btn brand', type: 'submit' }, 'Enter');
+    render(h('section', { class: 'hero' },
+      h('h1', {}, 'Private beta'),
+      h('p', {}, 'The Miracle Health community is open to invited testers for now. Enter the beta password to continue.'),
+      h('form', {
+        onsubmit: async (e) => {
+          e.preventDefault();
+          go.disabled = true; say(msg, '');
+          const raw = await gateDerive(g, pw.value);
+          const key = await gateOpen(g, raw);
+          go.disabled = false;
+          if (!key) { say(msg, 'That password isn’t right.'); pw.select(); return; }
+          try { localStorage.setItem(slot, toB64(raw)); } catch (_) { /* private mode */ }
+          resolve(key);
+        },
+      }, h('label', { class: 'f', for: 'site-password' }, h('span', {}, 'Beta password'), pw), go, msg)));
+    pw.focus();
+  });
+}
+
 async function boot() {
   startTelemetry();
   S.rules = await fetch('rules.json').then((r) => r.json()).catch(() => null);
   const foot = document.getElementById('foot-text');
   if (S.rules?.footer) foot.textContent = S.rules.footer;
   if (C.contactEmail) foot.append(' Contact the moderators: ', h('a', { href: `mailto:${C.contactEmail}` }, C.contactEmail));
+  connect(await unlock());
   const { data } = await sb.auth.getSession();
   S.session = data.session;
   sb.auth.onAuthStateChange((_event, session) => { S.session = session; });

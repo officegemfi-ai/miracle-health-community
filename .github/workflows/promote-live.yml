@@ -41,6 +41,7 @@ jobs:
   site:
     needs: backend
     uses: ./.github/workflows/pages.yml
+    secrets: inherit
     permissions:
       contents: read
       pages: write

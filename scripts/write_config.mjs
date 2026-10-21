@@ -2,7 +2,9 @@
 // environment into a built copy of the web app.
 // Usage: node scripts/write_config.mjs <out_dir>
 // Reads: SUPABASE_URL, SUPABASE_ANON_KEY, TURNSTILE_SITE_KEY, POSTHOG_KEY,
-//        POSTHOG_HOST, SENTRY_DSN, CONTACT_EMAIL, PRIVACY_URL, ENVIRONMENT
+//        POSTHOG_HOST, SENTRY_DSN, CONTACT_EMAIL, PRIVACY_URL, ENVIRONMENT,
+//        SITE_PASSWORD (optional: puts the whole site behind a password)
+import { createCipheriv, createHash, pbkdf2Sync, randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -28,6 +30,20 @@ const cfg = {
   privacyUrl: E.PRIVACY_URL || '',
   sentryBundle: E.SENTRY_DSN ? `https://browser.sentry-cdn.com/${SENTRY_VERSION}/bundle.min.js` : '',
 };
+if (E.SITE_PASSWORD) {
+  // The public API key ships encrypted with the site password (PBKDF2 + AES-GCM),
+  // so the app can't reach the community until someone types the password.
+  // The salt is fixed per Supabase project, so a browser that knows the password
+  // stays unlocked across deploys until the password changes.
+  const iter = 600000;
+  const salt = createHash('sha256').update(`miracle-health-gate|${E.SUPABASE_URL}`).digest().subarray(0, 16);
+  const key = pbkdf2Sync(E.SITE_PASSWORD, salt, iter, 32, 'sha256');
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const ct = Buffer.concat([cipher.update(E.SUPABASE_ANON_KEY, 'utf8'), cipher.final(), cipher.getAuthTag()]);
+  cfg.gate = { iter, salt: salt.toString('base64'), iv: iv.toString('base64'), ct: ct.toString('base64') };
+  cfg.supabaseAnonKey = '';
+}
 writeFileSync(join(out, 'config.js'), `window.MH_CONFIG = ${JSON.stringify(cfg, null, 2)};\n`);
 
 const origin = (u) => { try { return new URL(u).origin; } catch { return ''; } };
@@ -47,4 +63,4 @@ const csp = [
 ].join('; ');
 const indexPath = join(out, 'index.html');
 writeFileSync(indexPath, readFileSync(indexPath, 'utf8').replace('__CSP__', csp));
-console.log(`wrote config.js and CSP for ${cfg.environment}`);
+console.log(`wrote config.js and CSP for ${cfg.environment}${cfg.gate ? ', behind the site password' : ''}`);

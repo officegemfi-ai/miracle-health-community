@@ -22,6 +22,10 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
    Free, Pro and Team plans, so a private repository relies on that button instead.)
 4. Secrets
    - Repository: `SUPABASE_ACCESS_TOKEN` (Supabase > Account > Access tokens)
+   - Repository, optional: `SITE_PASSWORD`, a password for the whole site during the beta. Visitors
+     type it once per browser, before the sign-in page. Without it the app can't reach Supabase at
+     all, because the public key ships encrypted with it. Change it to lock everyone out again;
+     delete it to open the site. Either takes effect on the next deploy.
    - Each environment: `SUPABASE_DB_PASSWORD`, `ANTHROPIC_API_KEY`, `REVIEW_SECRET` (any long random text)
 5. Variables
    - Each environment: `SUPABASE_PROJECT_REF`, `MODERATION_MODEL` = `claude-haiku-5-5`,

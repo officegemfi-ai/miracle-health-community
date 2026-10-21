@@ -1,5 +1,6 @@
 # Builds the website: the live app at the root (from the commit tagged "live")
 # and the test app at /test/ (from main). Called by the two deploy workflows.
+# With the repository secret SITE_PASSWORD set, both apps sit behind that password.
 name: Pages
 on:
   workflow_call: {}
@@ -28,6 +29,7 @@ jobs:
           SENTRY_DSN: ${{ vars.SENTRY_DSN }}
           CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
           PRIVACY_URL: ${{ vars.PRIVACY_URL }}
+          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
         run: scripts/build_web.sh _site/test
       - name: Live app at the root (tag "live")
         env:
@@ -39,6 +41,7 @@ jobs:
           SENTRY_DSN: ${{ vars.SENTRY_DSN }}
           CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
           PRIVACY_URL: ${{ vars.PRIVACY_URL }}
+          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
         run: |
           if git rev-parse -q --verify refs/tags/live >/dev/null; then
             git worktree add /tmp/live live

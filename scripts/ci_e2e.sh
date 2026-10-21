@@ -31,4 +31,16 @@ step "running the browser test"
 BASE_URL=http://127.0.0.1:4173/ \
 DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
   timeout 600 node tests/e2e/flow.mjs
+
+step "building and serving a copy behind a site password on port 4174"
+SITE_PASSWORD=ci-gate-password scripts/build_web.sh _site_gate
+(cd _site_gate && exec python3 -m http.server 4174) </dev/null >/dev/null 2>&1 &
+for _ in $(seq 1 20); do
+  curl -fsS -o /dev/null http://127.0.0.1:4174/ && break
+  sleep 0.5
+done
+
+step "running the site-password test"
+BASE_URL=http://127.0.0.1:4174/ GATE_PASSWORD=ci-gate-password ANON_KEY="$SUPABASE_ANON_KEY" \
+  timeout 300 node tests/e2e/gate.mjs
 step "done"
