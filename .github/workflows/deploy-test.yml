@@ -13,6 +13,7 @@ jobs:
     # Skips quietly until the test project is connected (repository variable TEST_SUPABASE_URL)
     if: github.event.workflow_run.conclusion == 'success' && vars.TEST_SUPABASE_URL != ''
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     environment: test
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

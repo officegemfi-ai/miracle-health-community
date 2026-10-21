@@ -13,6 +13,7 @@ jobs:
   functions:
     name: Rules copies and server functions
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Rules copies match
@@ -31,6 +32,7 @@ jobs:
   database:
     name: Access tests, security lints, end-to-end
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
@@ -65,16 +67,7 @@ jobs:
         if: always() && steps.start.outcome == 'success'
         run: |
           set -o pipefail
-          # Chained with && so the first failure stops the step (set -e doesn't apply here)
-          {
-            eval "$(supabase status -o env)" &&
-            export SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" ENVIRONMENT=ci &&
-            scripts/build_web.sh _site_ci &&
-            npm ci --prefix tests/e2e &&
-            npx --prefix tests/e2e playwright install --with-deps chromium &&
-            { (cd _site_ci && python3 -m http.server 4173 >/dev/null 2>&1 &) ; sleep 1; } &&
-            BASE_URL=http://127.0.0.1:4173/ DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" node tests/e2e/flow.mjs
-          } 2>&1 | tee "$RUNNER_TEMP/e2e.log" \
+          timeout 1200 scripts/ci_e2e.sh 2>&1 | tee "$RUNNER_TEMP/e2e.log" \
             || { scripts/ci_annotate.sh "End-to-end" "$RUNNER_TEMP/e2e.log"; exit 1; }
       - uses: actions/upload-artifact@v4
         if: always()

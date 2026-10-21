@@ -9,6 +9,7 @@ concurrency: deploy-live
 jobs:
   backend:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     environment: live
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
