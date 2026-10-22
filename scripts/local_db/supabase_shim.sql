@@ -95,3 +95,13 @@ grant execute on function auth.uid(), auth.role(), auth.jwt() to anon, authentic
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+
+-- Realtime's publication starts empty, as in a new project; the migrations add
+-- the tables members watch live
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    set local client_min_messages = error;  -- no wal_level warning on a test database
+    create publication supabase_realtime;
+  end if;
+end $$;

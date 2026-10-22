@@ -8,6 +8,7 @@ import { readFile } from 'node:fs/promises';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { extname, join, normalize } from 'node:path';
 import pg from 'pg';
+import { attachRealtime } from './realtime.mjs';
 
 const PORT = Number(process.env.PORT || 54321);
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres@127.0.0.1:54322/app';
@@ -67,11 +68,14 @@ function filters(params, values) {
   const where = [];
   for (const [k, raw] of params) {
     if (['select', 'order', 'limit', 'offset', 'columns', 'on_conflict'].includes(k)) continue;
-    const m = /^(eq|neq|lt|lte|gt|gte|is|in)\.(.*)$/s.exec(raw);
+    const m = /^(eq|neq|lt|lte|gt|gte|is|in|like|ilike)\.(.*)$/s.exec(raw);
     if (!m) throw Object.assign(new Error(`unsupported filter ${k}=${raw}`), { code: 'PGRST100' });
     const [, op, v] = m;
     const col = ident(k);
-    if (op === 'is') {
+    if (op === 'like' || op === 'ilike') {
+      values.push(v.replace(/\*/g, '%'));
+      where.push(`${col}::text ${op} $${values.length}`);
+    } else if (op === 'is') {
       const lit = { null: 'null', true: 'true', false: 'false' }[v];
       if (!lit) throw Object.assign(new Error('bad is filter'), { code: 'PGRST100' });
       where.push(`${col} is ${lit}`);
@@ -288,6 +292,8 @@ const server = http.createServer(async (req, res) => {
 });
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
+  // Live updates (Supabase Realtime's Postgres Changes) on the same port
+  await attachRealtime(server, { pool, verify, asCaller, log: (m) => console.log(m) });
   server.listen(PORT, '127.0.0.1', () => console.log(`local api on http://127.0.0.1:${PORT} (web app at /)`));
 }
 export { server, sign };

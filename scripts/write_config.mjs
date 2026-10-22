@@ -4,7 +4,8 @@
 // Reads: SUPABASE_URL, SUPABASE_ANON_KEY, TURNSTILE_SITE_KEY, POSTHOG_KEY,
 //        POSTHOG_HOST, SENTRY_DSN, CONTACT_EMAIL, PRIVACY_URL, ENVIRONMENT,
 //        SITE_PASSWORD (optional: puts the whole site behind a password),
-//        DEMO=1 (a preview build with sample posts and no backend; see web/demo.js)
+//        DEMO=1 (a preview build: the real database running in the browser with a
+//        sample community; see web/preview/engine.js and scripts/build_preview.mjs)
 import { createCipheriv, createHash, pbkdf2Sync, randomBytes } from 'node:crypto';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -56,8 +57,9 @@ const sentryIngest = cfg.sentryDsn ? `https://${new URL(cfg.sentryDsn).host}` : 
 const supa = origin(cfg.supabaseUrl);
 const csp = [
   "default-src 'self'",
-  `script-src 'self'${cfg.turnstileSiteKey ? ' https://challenges.cloudflare.com' : ''}${cfg.posthogKey ? ` ${origin(posthogAssets)}` : ''}${cfg.sentryDsn ? ' https://browser.sentry-cdn.com' : ''}`,
-  `connect-src 'self' ${supa} ${supa.replace('https://', 'wss://')}${cfg.posthogKey ? ` ${origin(posthogHost)} ${origin(posthogAssets)}` : ''}${sentryIngest ? ` ${sentryIngest}` : ''}`,
+  `script-src 'self'${demo ? " 'wasm-unsafe-eval'" : ''}${cfg.turnstileSiteKey ? ' https://challenges.cloudflare.com' : ''}${cfg.posthogKey ? ` ${origin(posthogAssets)}` : ''}${cfg.sentryDsn ? ' https://browser.sentry-cdn.com' : ''}`,
+  // Realtime runs over a websocket on the same host: wss:// for https://, ws:// for a local http:// one
+  `connect-src 'self' ${supa} ${supa.replace(/^http/, 'ws')}${cfg.posthogKey ? ` ${origin(posthogHost)} ${origin(posthogAssets)}` : ''}${sentryIngest ? ` ${sentryIngest}` : ''}`,
   `frame-src${cfg.turnstileSiteKey ? ' https://challenges.cloudflare.com' : " 'none'"}`,
   "img-src 'self' data:",
   "style-src 'self'",
@@ -68,10 +70,13 @@ const csp = [
 ].join('; ');
 const indexPath = join(out, 'index.html');
 let html = readFileSync(indexPath, 'utf8').replace('__CSP__', csp);
-if (!demo) {
-  // Real builds never carry the preview's stand-in backend
-  html = html.replace('<script src="demo.js"></script>\n', '');
-  rmSync(join(out, 'demo.js'), { force: true });
+if (demo) {
+  // Runs before app.js: it hands the app a client backed by the in-browser database
+  html = html.replace('<!--preview-engine-->', '<script type="module" src="preview/engine.js"></script>');
+} else {
+  // Real builds never carry the preview
+  html = html.replace('<!--preview-engine-->\n', '');
+  rmSync(join(out, 'preview'), { recursive: true, force: true });
 }
 writeFileSync(indexPath, html);
 console.log(`wrote config.js and CSP for ${cfg.environment}${demo ? ' (preview with sample posts)' : ''}${cfg.gate ? ', behind the site password' : ''}`);

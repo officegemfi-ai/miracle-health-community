@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Tools for the preview (the database that runs in the browser)
+        run: npm ci --prefix scripts/preview --no-audit --no-fund --loglevel=error
       - name: Test app at /test/ (main)
         env:
           ENVIRONMENT: test

@@ -45,12 +45,13 @@ BASE_URL=http://127.0.0.1:4174/ GATE_PASSWORD=ci-gate-password ANON_KEY="$SUPABA
   timeout 300 node tests/e2e/gate.mjs
 
 step "checking the real build carries none of the preview's stand-in code"
-if [ -e _site_ci/demo.js ] || grep -q 'demo.js' _site_ci/index.html; then
-  echo "The real build includes the preview's demo.js"
+if [ -e _site_ci/preview ] || grep -q 'preview/engine.js' _site_ci/index.html || grep -q "wasm-unsafe-eval" _site_ci/index.html; then
+  echo "The real build includes the preview's in-browser database"
   exit 1
 fi
 
 step "building and serving the preview (sample posts) behind a site password on port 4175"
+npm ci --prefix scripts/preview --no-audit --no-fund --loglevel=error
 env -u SUPABASE_URL -u SUPABASE_ANON_KEY DEMO=1 SITE_PASSWORD=ci-preview-password scripts/build_web.sh _site_preview
 (cd _site_preview && exec python3 -m http.server 4175) </dev/null >/dev/null 2>&1 &
 for _ in $(seq 1 20); do

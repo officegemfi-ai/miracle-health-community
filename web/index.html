@@ -2,35 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Miracle Health Community</title>
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#121E1D">
 <meta http-equiv="Content-Security-Policy" content="__CSP__">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/jakarta.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 <script src="config.js"></script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="demo.js"></script>
+<!--preview-engine-->
 <script type="module" src="app.js"></script>
 </head>
-<body>
+<body class="auth">
 <a class="skip" href="#app">Skip to content</a>
-<header class="top">
-  <a class="brand" href="#/feed" aria-label="Miracle Health Community, home">
-    <img src="favicon.svg" alt="" width="28" height="28">
-    <span>Miracle Health <em>Community</em></span>
+<div class="ticker" id="ticker" aria-label="Community Signal, live">
+  <span class="tick-lead"><span class="live-dot"></span>SIGNAL · LIVE</span>
+  <div class="tick-viewport"><div class="tick-track" id="tick-track"></div></div>
+</div>
+<header class="topbar">
+  <button class="burger" id="burger" type="button" aria-label="Open the menu" aria-controls="nav" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <a class="logo" href="#/home" aria-label="Miracle Health Community, home">
+    <img src="logo.webp" alt="Miracle Health" width="86" height="30">
+    <span class="tag">Community</span>
   </a>
-  <nav id="nav" aria-label="Main" hidden>
-    <a href="#/feed" data-nav="feed">Feed</a>
-    <a href="#/signal" data-nav="signal">Signal</a>
-    <a href="#/new" data-nav="new">New post</a>
-    <a href="#/rules" data-nav="rules">Rules</a>
-    <a href="#/account" data-nav="account">Account</a>
-    <a href="#/mod" data-nav="mod" hidden>Moderation</a>
-  </nav>
+  <div class="search" id="search"></div>
+  <div class="top-actions" id="top-actions"></div>
 </header>
-<main id="app" tabindex="-1"><p class="muted pad">Loading…</p></main>
+<div class="layout">
+  <nav class="leftnav" id="nav" aria-label="Main"></nav>
+  <main id="app" tabindex="-1"><div class="boot"><p>Loading…</p></div></main>
+  <aside class="rail" id="rail" aria-label="Community"></aside>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Quick links"></nav>
+<div class="sigdock" id="sigdock"></div>
 <footer class="foot"><span id="foot-text">Experiences, not medical advice. In a crisis, call or text 988 (US).</span></footer>
 </body>
 </html>

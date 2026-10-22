@@ -5,14 +5,16 @@ invite, posts, comments, votes, reports and moderation, built on Supabase.
 
 ## What's where
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
-- `supabase/tests/database/`: 166 access and Community Signal tests (pgTAP)
+- `supabase/tests/database/`: 261 access, Community Signal and game tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal) and `delete-account`
-- `web/`: the app (plain HTML, CSS and JavaScript; no build step)
+- `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
 - `shared/rules.json`: the community rules, copied to the app and the AI reviewer by `scripts/sync_rules.sh`
 - `shared/signal_baseline.json`: the Community Signal's public-forum starting point, loaded by a migration
   that `scripts/build_signal_baseline_sql.mjs` generates (CI checks they match)
-- `web/demo.js`: the preview's stand-in backend with sample posts (preview builds only)
-- `tests/e2e/`: a real-browser test of the whole flow, and a scripted spam attack
+- `web/preview/`, `scripts/build_preview.mjs`: the preview: the same migrations running in the browser
+  (PGlite) with a sample community (preview builds only)
+- `tests/e2e/`: real-browser tests (the whole flow with three people and live updates, the site
+  password, the preview) and a scripted spam attack
 - `.github/workflows/`: tests on every change, deploy to test, promote to live
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
 
@@ -22,7 +24,7 @@ scripts/local_db.sh up      # Postgres 16, set up like a Supabase project
 scripts/local_db.sh reset   # rebuild from the migrations and seed data
 scripts/local_db.sh test    # the access tests
 scripts/local_db.sh lint    # Supabase's security lints
-scripts/local_api.sh start  # a stand-in for Supabase's API, serving the app
+scripts/local_api.sh start  # a stand-in for Supabase's API and live updates, serving the app
 ```
 Open http://127.0.0.1:54321, sign in with any phone number and the code 123456,
 and join with the invite code BETATEST01. The moderator account is 555-555-0101.

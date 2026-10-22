@@ -1,0 +1,8 @@
+{
+  "name": "mh-community-preview-build",
+  "private": true,
+  "description": "Build-time only: PGlite, which the preview at /test/ uses to run the real database in the browser",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.8"
+  }
+}
