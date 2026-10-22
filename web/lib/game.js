@@ -28,6 +28,7 @@ export async function afterEarn(anchor, label) {
   const diff = S.card.points - before.points;
   const el = document.getElementById('my-points');
   if (el) tick(el, before.points, S.card.points, 0);
+  if (diff) refreshMeCards();
   if (diff > 0) {
     floatPlus(anchor, diff);
     if (label) toast([h('span', { class: 'pts' }, `+${diff}`), ` ${label}`], { art: sig(30, 'happy') });
@@ -40,13 +41,17 @@ export async function afterEarn(anchor, label) {
 // ---------------------------------------------------------------------------
 // Cards for the rail
 // ---------------------------------------------------------------------------
+// Every "Your emblem" card on screen follows the points as they change
+function refreshMeCards() {
+  document.querySelectorAll('[data-mecard]').forEach((el) => { const fresh = meCard(); if (fresh) el.replaceWith(fresh); });
+}
 export function meCard() {
   const c = S.card;
   if (!c) return null;
   const lv = levelOf(c.level);
   const next = S.levels.find((l) => l.n === c.level + 1);
   const pct = next ? (100 * (c.points - lv.min_points)) / (next.min_points - lv.min_points) : 100;
-  return h('section', { class: 'card' },
+  return h('section', { class: 'card', 'data-mecard': '' },
     h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Your emblem'), h('a', { href: `#/u/${encodeURIComponent(c.handle)}` }, 'Profile')),
     h('div', { class: 'me-card' },
       h('div', { class: 'ringwrap' }, emblemRing(c.level, pct, 84), emblem(c.level, 50, false, `${lv.name} emblem`)),
@@ -262,7 +267,7 @@ on('notification', async (n) => {
   const row = data && data[0];
   if (!row) return;
   loadUnread().then((c) => setUnread(c));
-  if (row.kind === 'level_up') { await loadCard(); renderTop(); levelUp(row.data); return; }
+  if (row.kind === 'level_up') { await loadCard(); renderTop(); refreshMeCards(); levelUp(row.data); return; }
   if (row.kind === 'counted') {
     const diff = await afterEarn(null);
     const [, text] = notifParts(row);

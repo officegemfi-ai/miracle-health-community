@@ -104,6 +104,7 @@ await A.waitForSelector('.quest button:has-text("Claim +20")');
 await A.click('.quest button:has-text("Claim +20")');
 check('Joining three spaces finishes a quest; claiming it pays 20, plus 5 for the first contribution of the day',
   (await waitPoints(A, 25)) === 25 && (await shown('kneeguy')) === 25, `${await points(A)} points`);
+check('and the emblem card beside the feed shows the same total', Number((await A.textContent('[data-mecard] .pts')).replace(/\D/g, '')) === 25);
 
 await A.goto(`${BASE}#/s/bpc157`);
 await A.waitForSelector('.space-hero h1:text("BPC-157.")');

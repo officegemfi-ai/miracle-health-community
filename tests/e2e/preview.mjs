@@ -87,6 +87,7 @@ await page.waitForSelector('.quest button:has-text("Claim +20")');
 await page.click('.quest button:has-text("Claim +20")');
 const afterQuest = await waitPoints(page, 0);
 check('Claiming a finished quest pays its points, plus the first-of-the-day bonus', afterQuest === 25, `${afterQuest} points`);
+check('and the emblem card beside the feed shows the same total', Number((await page.textContent('[data-mecard] .pts')).replace(/\D/g, '')) === afterQuest);
 
 // Same for me on a report
 await page.goto(`${BASE}#/popular?sort=reports`);
