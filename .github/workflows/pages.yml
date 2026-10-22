@@ -37,7 +37,8 @@ jobs:
         run: |
           mkdir -p _site
           if [ -z "$SUPABASE_URL" ]; then
-            echo "The test project isn't connected yet (TEST_SUPABASE_URL), so there's no test app to publish."
+            echo "The test project isn't connected yet (TEST_SUPABASE_URL): publishing the preview with sample posts at /test/."
+            DEMO=1 ENVIRONMENT=preview scripts/build_web.sh _site/test
           else
             scripts/build_web.sh _site/test
           fi

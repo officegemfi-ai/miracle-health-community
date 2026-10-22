@@ -16,6 +16,9 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
    c. Add the `community` CNAME in Namecheap (section 3).
    d. Back in Settings > Pages, tick Enforce HTTPS once it's offered (up to 24 hours).
    The live app is then at `https://community.yourdomain.com` and the test app at `/test/`.
+   Until the test project is connected, `/test/` shows a preview instead: the same app with sample
+   posts from made-up members, running entirely in the visitor's browser (web/demo.js), behind the
+   site password. To publish it by hand: Actions > Pages > Run workflow.
 3. Settings > Environments: create `test` and `live`. On each, under Deployment branches and tags,
    choose Selected branches and add `main`. Live changes only when you press "Run workflow" on
    "Promote to live". (Required reviewers on an environment work only in public repositories on

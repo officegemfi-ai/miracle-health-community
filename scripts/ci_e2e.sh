@@ -43,4 +43,21 @@ done
 step "running the site-password test"
 BASE_URL=http://127.0.0.1:4174/ GATE_PASSWORD=ci-gate-password ANON_KEY="$SUPABASE_ANON_KEY" \
   timeout 300 node tests/e2e/gate.mjs
+
+step "checking the real build carries none of the preview's stand-in code"
+if [ -e _site_ci/demo.js ] || grep -q 'demo.js' _site_ci/index.html; then
+  echo "The real build includes the preview's demo.js"
+  exit 1
+fi
+
+step "building and serving the preview (sample posts) behind a site password on port 4175"
+env -u SUPABASE_URL -u SUPABASE_ANON_KEY DEMO=1 SITE_PASSWORD=ci-preview-password scripts/build_web.sh _site_preview
+(cd _site_preview && exec python3 -m http.server 4175) </dev/null >/dev/null 2>&1 &
+for _ in $(seq 1 20); do
+  curl -fsS -o /dev/null http://127.0.0.1:4175/ && break
+  sleep 0.5
+done
+
+step "running the preview test"
+BASE_URL=http://127.0.0.1:4175/ GATE_PASSWORD=ci-preview-password timeout 300 node tests/e2e/preview.mjs
 step "done"
