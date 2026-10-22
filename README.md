@@ -5,10 +5,13 @@ invite, posts, comments, votes, reports and moderation, built on Supabase.
 
 ## What's where
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
-- `supabase/tests/database/`: 131 access tests (pgTAP)
-- `supabase/functions/`: `review-content` (Claude's first read) and `delete-account`
+- `supabase/tests/database/`: 166 access and Community Signal tests (pgTAP)
+- `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal) and `delete-account`
 - `web/`: the app (plain HTML, CSS and JavaScript; no build step)
 - `shared/rules.json`: the community rules, copied to the app and the AI reviewer by `scripts/sync_rules.sh`
+- `shared/signal_baseline.json`: the Community Signal's public-forum starting point, loaded by a migration
+  that `scripts/build_signal_baseline_sql.mjs` generates (CI checks they match)
+- `web/demo.js`: the preview's stand-in backend with sample posts (preview builds only)
 - `tests/e2e/`: a real-browser test of the whole flow, and a scripted spam attack
 - `.github/workflows/`: tests on every change, deploy to test, promote to live
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
