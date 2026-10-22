@@ -1,45 +1,110 @@
-# After CI passes on main: update the TEST Supabase project and the test app.
+# After CI passes on main: update the TEST Supabase project and the test app at /test/,
+# then check the deployed app end to end. It can also be run by hand (Actions >
+# Deploy to test > Run workflow).
+#
+# It stays quiet until the test project is connected: deploy/test.env names the
+# project (SUPABASE_PROJECT_REF) and the repository has these secrets:
+#   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY
+# Optional: REVIEW_SECRET (otherwise one is made and kept in the project's Vault),
+#   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (texts to real phones;
+#   without them only the test numbers sign in), TURNSTILE_SECRET_KEY,
+#   variables MODERATION_MODEL and APP_ORIGINS.
+# Each failing step leaves a readable note on the run's summary page.
 name: Deploy to test
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch: {}
 permissions:
   contents: read
 concurrency: deploy-test
 jobs:
-  backend:
-    # Skips quietly until the test project is connected (repository variable TEST_SUPABASE_URL)
-    if: github.event.workflow_run.conclusion == 'success' && vars.TEST_SUPABASE_URL != ''
+  check:
+    name: Is the test project connected?
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 5
+    outputs:
+      connected: ${{ steps.c.outputs.connected }}
+      ref: ${{ steps.c.outputs.ref }}
+      sha: ${{ steps.c.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - id: c
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          ref=$(sed -n 's/^SUPABASE_PROJECT_REF=//p' deploy/test.env | tr -d '[:space:]')
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          missing=""
+          [ -n "$ref" ] || missing="$missing SUPABASE_PROJECT_REF in deploy/test.env,"
+          [ -n "$TOKEN" ] || missing="$missing the SUPABASE_ACCESS_TOKEN secret,"
+          [ -n "$PASSWORD" ] || missing="$missing the SUPABASE_DB_PASSWORD secret,"
+          if [ -z "$missing" ]; then
+            echo "connected=true" >> "$GITHUB_OUTPUT"
+            echo "Deploying to the test project $ref"
+          else
+            echo "connected=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Test project not connected::Skipping the deploy. Missing:${missing%,}."
+          fi
+
+  backend:
+    name: Database, sign-in and functions
+    needs: check
+    if: needs.check.outputs.connected == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     environment: test
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      REF: ${{ needs.check.outputs.ref }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.check.outputs.sha }}
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - run: supabase link --project-ref "$REF" --password "$SUPABASE_DB_PASSWORD"
-      - name: Database changes
-        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
-      - name: Function secrets
+      - name: Link the project
         run: |
-          supabase secrets set --project-ref "$REF" \
-            ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
-            REVIEW_SECRET="${{ secrets.REVIEW_SECRET }}" \
-            MODERATION_MODEL="${{ vars.MODERATION_MODEL }}" \
-            APP_ORIGINS="${{ vars.APP_ORIGINS }}"
+          set -o pipefail
+          supabase link --project-ref "$REF" --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee "$RUNNER_TEMP/link.log" \
+            || { scripts/ci_annotate.sh "Link the test project" "$RUNNER_TEMP/link.log"; exit 1; }
+      - name: Database changes, and the test invites and moderator
+        run: |
+          set -o pipefail
+          supabase db push --include-seed --yes --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee "$RUNNER_TEMP/push.log" \
+            || { scripts/ci_annotate.sh "Database changes" "$RUNNER_TEMP/push.log"; exit 1; }
+      - name: Sign-in settings, Vault and function secrets
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REVIEW_SECRET: ${{ secrets.REVIEW_SECRET }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          MODERATION_MODEL: ${{ vars.MODERATION_MODEL }}
+          APP_ORIGINS: ${{ vars.APP_ORIGINS }}
+        run: |
+          set -o pipefail
+          scripts/supabase_project.sh test setup 2>&1 | tee "$RUNNER_TEMP/setup.log" \
+            || { scripts/ci_annotate.sh "Project settings" "$RUNNER_TEMP/setup.log"; exit 1; }
       - name: Functions
         run: |
-          supabase functions deploy review-content --no-verify-jwt --project-ref "$REF"
-          supabase functions deploy delete-account --project-ref "$REF"
+          set -o pipefail
+          { supabase functions deploy review-content --no-verify-jwt --project-ref "$REF" \
+            && supabase functions deploy delete-account --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
+            || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
+      - name: Supabase's security advisor
+        run: scripts/supabase_project.sh test advisors
+
   site:
     needs: backend
     uses: ./.github/workflows/pages.yml
@@ -48,3 +113,36 @@ jobs:
       contents: read
       pages: write
       id-token: write
+
+  smoke:
+    name: The deployed test app, end to end
+    needs: [check, site]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Browser
+        run: |
+          npm ci --prefix tests/e2e --no-audit --no-fund --loglevel=error
+          npx --prefix tests/e2e playwright install --with-deps chromium > "$RUNNER_TEMP/pw.log" 2>&1 \
+            || { tail -n 20 "$RUNNER_TEMP/pw.log"; exit 1; }
+      - name: Sign up with a test number, post, Miracle AI reads it, delete the account
+        env:
+          BASE_URL: https://community.miraclehealth.us/test/
+          GATE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+          EXPECT_SUPABASE_URL: https://${{ needs.check.outputs.ref }}.supabase.co
+        run: |
+          set -o pipefail
+          timeout 900 node tests/e2e/smoke.mjs 2>&1 | tee "$RUNNER_TEMP/smoke.log" \
+            || { scripts/ci_annotate.sh "The deployed test app" "$RUNNER_TEMP/smoke.log"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-app-screenshots
+          path: tests/e2e/out
+          if-no-files-found: ignore
