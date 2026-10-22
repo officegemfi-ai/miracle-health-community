@@ -7,7 +7,10 @@ export const CATEGORIES = [
   'underage', 'personal_info', 'self_harm', 'off_topic',
 ] as const;
 export type Category = typeof CATEGORIES[number];
-export type Verdict = { verdict: 'ok' | 'hold'; categories: Category[]; explanation: string };
+export type Outcome = 'better' | 'same' | 'worse';
+// What the writer says happened to them, for the Community Signal (posts only)
+export type SignalRead = { first_hand: boolean; outcome: Outcome | null; duration: string | null; side_effects: string[] };
+export type Verdict = { verdict: 'ok' | 'hold'; categories: Category[]; explanation: string; signal?: SignalRead };
 
 export function systemPrompt(): string {
   const list = rules.rules.map((r: { n: number; title: string; text: string }) => `${r.n}. ${r.title}: ${r.text}`).join('\n');
@@ -26,8 +29,16 @@ export function systemPrompt(): string {
     '- Posts mainly about steroids, SARMs or other non-peptide drugs are "off_topic".',
     'Only hold when a rule is likely broken; when in doubt between ok and hold for self_harm, hold.',
     '',
+    'For posts, also read what the writer says happened to them. It feeds the Community Signal, so read only what they wrote and never guess:',
+    '- first_hand: true only if the writer describes their own use of the compound. A question, someone else\'s story or general claims are false.',
+    '- outcome: how the writer says they are now compared with before they started: "better", "same" or "worse". null if they don\'t say.',
+    '- duration: how long they used it, short and in their words (for example "6 weeks"). null if they don\'t say.',
+    '- side_effects: up to three side effects they say they had, in plain words (for example "Nausea"). [] if none.',
+    '',
     'Answer with JSON only, no other text, in exactly this shape:',
-    '{"verdict":"ok"|"hold","categories":[...],"explanation":"one short sentence for the moderators"}',
+    '{"verdict":"ok"|"hold","categories":[...],"explanation":"one short sentence for the moderators",'
+      + '"signal":{"first_hand":true|false,"outcome":"better"|"same"|"worse"|null,"duration":"..."|null,"side_effects":[...]}}',
+    'For comments, leave "signal" out.',
     `Allowed categories: ${CATEGORIES.join(', ')}.`,
   ].join('\n');
 }
@@ -61,7 +72,22 @@ export function parseVerdict(raw: string): Verdict {
     : [];
   const verdict: Verdict['verdict'] = d.verdict === 'hold' ? 'hold' : 'ok';
   const explanation = typeof d.explanation === 'string' ? d.explanation.slice(0, 300) : '';
-  return { verdict, categories: verdict === 'hold' ? cats : [], explanation };
+  const out: Verdict = { verdict, categories: verdict === 'hold' ? cats : [], explanation };
+  const sg = d.signal;
+  if (sg && typeof sg === 'object' && !Array.isArray(sg)) {
+    const r = sg as Record<string, unknown>;
+    const outcome = (['better', 'same', 'worse'] as const).find((o) => o === r.outcome) ?? null;
+    out.signal = {
+      first_hand: r.first_hand === true,
+      outcome,
+      duration: typeof r.duration === 'string' && r.duration.trim() ? r.duration.trim().slice(0, 40) : null,
+      side_effects: Array.isArray(r.side_effects)
+        ? (r.side_effects as unknown[]).filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+          .map((x) => x.trim().slice(0, 40)).slice(0, 3)
+        : [],
+    };
+  }
+  return out;
 }
 
 export async function classify(
@@ -78,7 +104,7 @@ export async function classify(
     },
     body: JSON.stringify({
       model: opts.model,
-      max_tokens: 200,
+      max_tokens: 400,
       system: systemPrompt(),
       messages: [{ role: 'user', content: userMessage(input.kind, input.title, input.body) }],
     }),

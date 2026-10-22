@@ -1,5 +1,6 @@
 // review-content: Claude reads each new post or comment against the rules and
-// holds it for a moderator if it likely breaks one.
+// holds it for a moderator if it likely breaks one. For posts, the same read also
+// records what the writer says happened to them, which feeds the Community Signal.
 // Called by the database (see migration 20261021000300) with only an id.
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 import { classify } from './review.ts';
@@ -50,7 +51,15 @@ export async function handle(req: Request, deps: {
     categories: verdict.categories, explanation: verdict.explanation,
   });
   if (recErr) return json({ error: 'Could not record' }, 500);
-  return json({ verdict: verdict.verdict, categories: verdict.categories });
+  if (kind === 'post' && verdict.signal) {
+    const s = verdict.signal;
+    const { error: readErr } = await deps.db.rpc('record_post_read', {
+      post_id: id, counts: s.first_hand && s.outcome !== null, outcome: s.outcome,
+      duration: s.duration, side_effects: s.side_effects, model: verdict.model,
+    });
+    if (readErr) return json({ error: 'Could not record the read' }, 500);
+  }
+  return json({ verdict: verdict.verdict, categories: verdict.categories, signal: verdict.signal ?? null });
 }
 
 if (import.meta.main) {

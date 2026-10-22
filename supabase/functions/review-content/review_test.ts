@@ -44,10 +44,14 @@ Deno.test('classify sends the right request and reads the answer', async () => {
 });
 
 function fakeDb(row: Record<string, unknown> | null) {
-  const calls: { rpc?: Record<string, unknown> } = {};
+  const calls: { rpc?: Record<string, unknown>; byName: Record<string, Record<string, unknown>> } = { byName: {} };
   const db = {
     from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: row, error: null }) }) }) }),
-    rpc: async (_name: string, args: Record<string, unknown>) => { calls.rpc = args; return { error: null }; },
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      if (name === 'record_ai_review') calls.rpc = args;
+      calls.byName[name] = args;
+      return { error: null };
+    },
   };
   return { db, calls };
 }
@@ -81,4 +85,33 @@ Deno.test('if Claude is down, the post stays up', async () => {
   const res = await handle(req({ kind: 'post', id: '1' }), { secret: 's3cret', apiKey: 'k', db: db as never, fetchImpl: down });
   assertEquals(res.status, 202);
   assertEquals(calls.rpc, undefined);
+});
+
+Deno.test('the read for the Signal is parsed and kept tidy', () => {
+  const v = parseVerdict('{"verdict":"ok","categories":[],"explanation":"Fine","signal":{"first_hand":true,"outcome":"better","duration":" 6 weeks ","side_effects":["Nausea","Headache","Fatigue","Hair loss",3]}}');
+  assertEquals(v.signal, { first_hand: true, outcome: 'better', duration: '6 weeks', side_effects: ['Nausea', 'Headache', 'Fatigue'] });
+  const odd = parseVerdict('{"verdict":"ok","categories":[],"explanation":"x","signal":{"first_hand":"yes","outcome":"amazing"}}');
+  assertEquals(odd.signal, { first_hand: false, outcome: null, duration: null, side_effects: [] });
+  assertEquals(parseVerdict('{"verdict":"ok","categories":[],"explanation":"x"}').signal, undefined);
+});
+
+Deno.test('the prompt asks for the Signal read and says to leave it out for comments', () => {
+  const s = systemPrompt();
+  assert(s.includes('first_hand') && s.includes('"better", "same" or "worse"') && s.includes('leave "signal" out'));
+});
+
+const readFetch = (async () => new Response(JSON.stringify({ content: [{ type: 'text', text: '{"verdict":"ok","categories":[],"explanation":"First-hand report","signal":{"first_hand":true,"outcome":"worse","duration":"5 weeks","side_effects":["Nausea"]}}' }] }))) as unknown as typeof fetch;
+
+Deno.test('for a post, the function records the review and the Signal read', async () => {
+  const { db, calls } = fakeDb({ id: '7', title: 't', body: 'It made me sick', status: 'visible' });
+  const res = await handle(req({ kind: 'post', id: '7' }), { secret: 's3cret', apiKey: 'k', db: db as never, fetchImpl: readFetch });
+  assertEquals(res.status, 200);
+  assertEquals(calls.byName.record_ai_review.verdict, 'ok');
+  assertEquals(calls.byName.record_post_read, { post_id: '7', counts: true, outcome: 'worse', duration: '5 weeks', side_effects: ['Nausea'], model: 'claude-haiku-4-5' });
+});
+
+Deno.test('for a comment, nothing is recorded for the Signal', async () => {
+  const { db, calls } = fakeDb({ id: '8', body: 'Same here', status: 'visible' });
+  await handle(req({ kind: 'comment', id: '8' }), { secret: 's3cret', apiKey: 'k', db: db as never, fetchImpl: readFetch });
+  assertEquals(calls.byName.record_post_read, undefined);
 });

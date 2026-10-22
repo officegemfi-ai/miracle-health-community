@@ -26,7 +26,14 @@ case "${1:-}" in
     psql "$URL" -q -v ON_ERROR_STOP=1 -f supabase/seed.sql
     echo "database $DB rebuilt from the migrations" ;;
   test)
-    psql "$URL" -X -q -t -A -v ON_ERROR_STOP=1 -f supabase/tests/database/community.test.sql | grep -v '^$' ;;
+    status=0
+    for f in supabase/tests/database/*.test.sql; do
+      echo "# $f"
+      out=$(psql "$URL" -X -q -t -A -v ON_ERROR_STOP=1 -f "$f" 2>&1) || status=1
+      echo "$out" | grep -v '^$'
+      if echo "$out" | grep -q '^not ok'; then status=1; fi
+    done
+    exit $status ;;
   lint)
     scripts/security_lints.sh "$URL" "${SPLINTER_SQL:-}" ;;
   down)

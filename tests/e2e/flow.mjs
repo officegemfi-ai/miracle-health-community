@@ -73,6 +73,9 @@ await A.waitForSelector('h1:text("Week 4 on BPC-157")');
 const postUrl = A.url();
 const postId = decodeURIComponent(postUrl.split('#/post/')[1]);
 check('Their post goes up and opens', !!postId);
+// Claude's read of the post. Test runs have no Anthropic key, so the test records it
+// the way the review-content function does (with the database owner's rights).
+await db.query(`select public.record_post_read($1, true, 'better', '6 weeks', array['Nausea'], 'e2e')`, [postId]);
 await shot(A, '01_post');
 
 await newPost(A, 'semaglutide', 'Where to buy sema cheap?', 'Anyone know where to buy it?');
@@ -88,6 +91,8 @@ await signIn(B, '(555) 555-0103');
 await signUp(B, 'BETATEST01', 'sleepyjoe');
 await B.waitForSelector(`[data-post="${postId}"]`);
 check('Another member sees the post in the feed', true);
+await B.waitForSelector('.sigstrip .sig-num');
+check('The feed opens on the Community Signal', (await B.locator('.sigstrip .sig-chip').count()) >= 10);
 await shot(B, '03_feed_phone');
 await B.goto(`${BASE}#/post/${postId}`);
 await B.waitForSelector('.votes');
@@ -100,6 +105,13 @@ await B.waitForSelector('.comment');
 check('They comment, and the count updates',
   (await B.textContent('.comment')).includes('turning point')
   && (await B.textContent('h2:has-text("Comments")')).includes('(1)'));
+check('Claude’s read shows on the post, and it feeds the BPC-157 Signal',
+  (await B.textContent('article .chip.oc')).includes('Better') && (await B.textContent('.airead')).includes('BPC-157 Signal'));
+await B.click('article button.same');
+await B.waitForFunction(() => document.querySelector('article button.same')?.textContent.includes('· 1'));
+const signalAfterSame = (await db.query(`select first_hand, same_for_me from public.signal_board where compound_id = 'bpc157'`)).rows[0];
+check('“Same for me” adds to the Signal', signalAfterSame.first_hand === 1 && signalAfterSame.same_for_me === 1,
+  JSON.stringify(signalAfterSame));
 await B.click('article button:text-is("Report")');
 await B.check('dialog input[value=dosing]');
 await B.click('dialog button[type=submit]');
@@ -146,6 +158,10 @@ check('Signed out, the API shows no posts', r.status >= 400 || (Array.isArray(r.
 // ---------------------------------------------------------------------------
 // M: the moderator removes the reported post
 // ---------------------------------------------------------------------------
+await B.goto(`${BASE}#/signal`);
+await B.waitForSelector('.sig-row');
+check('The Signal tab ranks the compounds', (await B.locator('.sig-row').count()) >= 50);
+
 const M = await person();
 await signIn(M, '5555550101');
 await M.waitForSelector('nav#nav a[data-nav=mod]:not([hidden])');
@@ -161,6 +177,8 @@ await card.locator('select').selectOption('Rule 2: dosing instructions');
 await card.locator('button:text-is("Remove")').click();
 await M.waitForSelector(`[data-queue="${postId}"]`, { state: 'detached' });
 check('The moderator removes it', true);
+check('A removed post stops counting toward the Signal',
+  (await db.query(`select first_hand from public.signal_board where compound_id = 'bpc157'`)).rows[0].first_hand === 0);
 await M.goto(`${BASE}#/mod/numbers`);
 await M.waitForSelector('table.metrics');
 check('The beta numbers load for the moderator', (await M.textContent('table.metrics')).includes('week1 contributors pct'));
