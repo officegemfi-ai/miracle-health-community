@@ -129,7 +129,7 @@ function setNav(name) {
   nav.querySelectorAll('a[aria-current]').forEach((a) => a.setAttribute('aria-current', 'page'));
 }
 const ROUTES = {
-  feed: () => renderFeed(), post: (r) => renderPost(r.arg), new: () => renderNew(),
+  feed: () => renderFeed(), post: (r) => renderPost(r.arg), new: () => renderNew(), signal: () => renderSignal(),
   rules: () => renderRules(), account: () => renderAccount(), mod: (r) => renderMod(r.arg || 'queue'),
 };
 async function route() {
@@ -419,6 +419,171 @@ function statusChip(item) {
 }
 
 // ---------------------------------------------------------------------------
+// The Community Signal: one number per compound, built in the database from the
+// public-forum baseline and this community's first-hand reports. The app only
+// shows it; the math lives in the database (and web/demo.js for the preview).
+// ---------------------------------------------------------------------------
+const OUTCOME = { better: ['Better', 'pos'], same: ['About the same', 'warn'], worse: ['Worse', 'neg'] };
+const fmt1 = (x) => (x == null ? '–' : Number(x).toFixed(1));
+const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+let signalCache = null;
+async function loadSignal() {
+  const { data, error } = await sb.from('signal_board').select('*').order('score', { ascending: false });
+  signalCache = error ? (signalCache || []) : (data || []);
+  return signalCache;
+}
+const signalOf = (cid) => (signalCache || []).find((x) => x.compound_id === cid) || null;
+const delta = (s) => (s && s.prev_score != null && s.score != null ? Math.round((s.score - s.prev_score) * 10) / 10 : 0);
+function sigNumber(score, extra = '') {
+  return h('b', { class: `sig-num ${extra}`.trim() }, fmt1(score));
+}
+function movement(s) {
+  const d = delta(s);
+  if (d > 0) return h('span', { class: 'move up', title: 'Change at the last update' }, `▲ ${d.toFixed(1)}`);
+  if (d < 0) return h('span', { class: 'move down', title: 'Change at the last update' }, `▼ ${Math.abs(d).toFixed(1)}`);
+  return h('span', { class: 'move', title: 'No change at the last update' }, '– 0.0');
+}
+// Ticker: count from the old number to the new one, with a green or red flash
+function tick(el, from, to) {
+  if (!el || from == null || to == null || from === to) return;
+  el.classList.remove('flash-up', 'flash-down');
+  void el.offsetWidth;
+  el.classList.add(to > from ? 'flash-up' : 'flash-down');
+  if (reduceMotion()) { el.textContent = fmt1(to); return; }
+  const t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / 700);
+    el.textContent = fmt1(from + (to - from) * (1 - (1 - k) ** 3));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+// After a member changes something, fetch the new numbers and tick what's on screen
+async function refreshSignalOnScreen() {
+  const before = new Map((signalCache || []).map((x) => [x.compound_id, x.score]));
+  await loadSignal();
+  document.querySelectorAll('[data-sig-of]').forEach((el) => {
+    const now = signalOf(el.dataset.sigOf);
+    if (now) tick(el, before.get(el.dataset.sigOf), now.score);
+  });
+}
+function toast(text) {
+  const t = h('div', { class: 'toast', role: 'status' }, text);
+  document.body.append(t);
+  setTimeout(() => t.remove(), 2600);
+}
+function signalStrip() {
+  const rows = (signalCache || []).filter((x) => x.score != null).slice(0, 12);
+  if (!rows.length) return null;
+  return h('nav', { class: 'sigstrip', 'aria-label': 'Community Signal' },
+    rows.map((x) => h('a', { href: `#/feed?c=${encodeURIComponent(x.compound_id)}`, class: 'sig-chip' },
+      h('span', { class: 'xs' }, x.compound_name),
+      h('b', { class: 'sig-num', 'data-sig-of': x.compound_id }, fmt1(x.score)), movement(x))),
+    h('a', { href: '#/signal', class: 'sig-chip more' }, 'All', h('br', {}), 'compounds →'));
+}
+function signalCard(cid) {
+  const x = signalOf(cid);
+  const name = (S.compounds.find((c) => c.id === cid) || {}).name || cid;
+  if (!x || x.score == null) {
+    return h('div', { class: 'card sig-card' }, h('div', { class: 'xs muted' }, 'Community Signal'), h('b', {}, `${name}: no Signal yet`),
+      h('p', { class: 'small muted' }, 'It gets a number after three first-hand reports. Share yours, whether it worked or not.'));
+  }
+  const parts = [['Reported efficacy', 'efficacy', 65], ['Consistency', 'consistency', 15], ['Diversity of voices', 'diversity', 10], ['Confidence', 'confidence', 10]];
+  const bar = (v) => { const i = h('i', {}); i.style.width = `${Math.max(0, Math.min(100, v))}%`; return h('div', { class: 'bar' }, i); };
+  const fams = (x.source_families || []).join(', ');
+  return h('section', { class: 'card sig-card', 'aria-label': `${name} Community Signal` },
+    h('div', { class: 'row' },
+      h('div', { class: 'grow' }, h('div', { class: 'xs muted' }, 'Community Signal'), h('b', {}, name),
+        h('div', { class: 'small' }, `${x.summary_label} · ${x.confidence_label} confidence`)),
+      h('div', { class: 'sig-cell' }, h('b', { class: 'sig-num big', 'data-sig-of': cid }, fmt1(x.score)), movement(x))),
+    ...parts.map(([label, key, w]) => h('div', { class: 'bar-row' },
+      h('div', { class: 'row small' }, h('span', { class: 'grow' }, `${label} `, h('span', { class: 'muted' }, `· ${w}%`)), h('b', {}, String(x[key]))),
+      bar(x[key]))),
+    (x.themes || []).length ? h('div', { class: 'row wrap mt8' }, x.themes.map((t) => h('span', { class: 'chip' }, `${t.theme} · ${t.label}`))) : null,
+    h('p', { class: 'xs muted mt8' },
+      x.first_hand
+        ? `Built from ${x.first_hand} first-hand report${x.first_hand === 1 ? '' : 's'} here${x.same_for_me ? ` and ${x.same_for_me} “same for me”` : ''} (${x.internal_share}% of the number)${fams ? `, and public forums (${fams}) for the rest` : ''}.`
+        : `From public forums so far${fams ? ` (${fams})` : ''}. First-hand reports here take over as they add up.`,
+      ' ', h('a', { href: '#/signal' }, 'How it works')));
+}
+function sameButton(p) {
+  if (!p.counts_for_signal || p.is_mine || p.status !== 'visible') return null;
+  const b = h('button', { class: 'btn sm same', type: 'button', 'aria-pressed': String(!!p.i_same), title: 'Had the same experience? It adds to the Signal.' },
+    `Same for me · ${p.same_count}`);
+  b.addEventListener('click', async () => {
+    b.disabled = true;
+    const res = p.i_same
+      ? await sb.from('same_for_me').delete().eq('post_id', p.id)
+      : await sb.from('same_for_me').insert({ post_id: p.id });
+    b.disabled = false;
+    if (res.error) { toast(friendly(res.error)); return; }
+    p.i_same = !p.i_same;
+    p.same_count += p.i_same ? 1 : -1;
+    b.textContent = `Same for me · ${p.same_count}`;
+    b.setAttribute('aria-pressed', String(p.i_same));
+    track('same_for_me', { on: p.i_same });
+    if (p.i_same) toast('Added to the Signal. Thanks for sharing.');
+    refreshSignalOnScreen();
+  });
+  return b;
+}
+// What Miracle AI took from the post, and where it goes
+function readLine(p) {
+  if (p.kind === 'question') return null;
+  const x = signalOf(p.compound_id);
+  if (p.counts_for_signal && OUTCOME[p.outcome]) {
+    const bits = [OUTCOME[p.outcome][0], p.duration, (p.side_effects || []).length ? `side effects: ${p.side_effects.join(', ')}` : null].filter(Boolean).join(' · ');
+    return h('p', { class: 'airead small' }, h('b', {}, 'Miracle AI read: '), `${bits}. `,
+      x && x.score != null
+        ? ['It feeds the ', h('a', { href: `#/feed?c=${encodeURIComponent(p.compound_id)}` }, `${p.compound_name} Signal`), ', now ', h('b', { class: 'sig-num sm', 'data-sig-of': p.compound_id }, fmt1(x.score)), '.']
+        : `It counts toward the first ${p.compound_name} Signal.`);
+  }
+  if (p.read_pending) return h('p', { class: 'airead small muted' }, 'Miracle AI is reading this for the Signal…');
+  if (p.is_mine && p.status === 'visible') {
+    return h('p', { class: 'airead small muted' }, 'This doesn’t feed the Signal yet: Miracle AI couldn’t tell how it went. Edit it to say whether things were better, the same or worse than before you started.');
+  }
+  return null;
+}
+function outcomeChip(p) {
+  if (!p.counts_for_signal || !OUTCOME[p.outcome]) return null;
+  const [label, cls] = OUTCOME[p.outcome];
+  return h('span', { class: `chip oc ${cls}`, title: 'Miracle AI read this as a first-hand report. It feeds the Signal.' }, `Feeds the Signal · ${label}`);
+}
+
+async function renderSignal() {
+  const list = h('div', {}, h('p', { class: 'muted' }, 'Loading…'));
+  const movers = h('div', { class: 'movers' });
+  render(
+    h('h1', {}, 'Community Signal'),
+    h('p', { class: 'small' }, 'One number per compound, from 0 to 100: 65% what people report happened, 15% how much those reports agree, 10% how many independent voices there are, and 10% how much there is to go on.'),
+    h('p', { class: 'small muted' }, 'It starts from public forums and moves toward this community’s own first-hand reports as they add up, so every report, and every “same for me”, makes it more accurate. New accounts count half. It is calculated in the database, never in this page.'),
+    movers, list);
+  const rows = (await loadSignal()).filter((x) => x.score != null);
+  const ranked = [...rows].sort((a, b) => b.score - a.score);
+  const rising = rows.filter((x) => delta(x) > 0).sort((a, b) => delta(b) - delta(a)).slice(0, 3);
+  const falling = rows.filter((x) => delta(x) < 0).sort((a, b) => delta(a) - delta(b)).slice(0, 3);
+  const board = (title, items) => h('div', { class: 'card' }, h('b', { class: 'small' }, title),
+    items.length ? items.map((x) => h('a', { class: 'mover', href: `#/feed?c=${encodeURIComponent(x.compound_id)}` },
+      h('span', { class: 'grow' }, x.compound_name), sigNumber(x.score), movement(x)))
+      : h('p', { class: 'xs muted' }, 'Nothing yet.'));
+  movers.replaceChildren(board('Rising', rising), board('Falling', falling));
+  const nums = [];
+  list.replaceChildren(...ranked.map((x, i) => {
+    const num = h('b', { class: 'sig-num big', 'data-sig-of': x.compound_id }, fmt1(x.prev_score ?? x.score));
+    nums.push([num, x]);
+    return h('a', { class: 'sig-row card', href: `#/feed?c=${encodeURIComponent(x.compound_id)}`, 'data-signal': x.compound_id },
+      h('span', { class: 'rank' }, String(i + 1)),
+      h('span', { class: 'grow' }, h('b', {}, x.compound_name),
+        h('span', { class: 'xs muted' }, ` · ${x.category}`),
+        h('div', { class: 'xs muted' }, `${x.summary_label} · ${x.confidence_label} confidence`),
+        h('div', { class: 'xs muted' }, x.first_hand ? `${x.first_hand} first-hand report${x.first_hand === 1 ? '' : 's'} here · ${x.internal_share}% from this community` : 'From public forums so far')),
+      h('span', { class: 'sig-cell' }, num, movement(x)));
+  }));
+  // The ticker: each number runs from where it was to where it is now
+  nums.forEach(([el, x]) => tick(el, x.prev_score, x.score));
+}
+
+// ---------------------------------------------------------------------------
 // Feed
 // ---------------------------------------------------------------------------
 function compoundSelect(selected, opts = {}) {
@@ -430,16 +595,24 @@ function compoundSelect(selected, opts = {}) {
       groups[g].map((c) => h('option', { value: c.id, selected: c.id === selected }, c.name)))));
 }
 
+function compoundChip(p) {
+  const x = signalOf(p.compound_id);
+  return h('a', { class: 'chip cmp', href: `#/feed?c=${encodeURIComponent(p.compound_id)}`, title: x ? `${p.compound_name} Community Signal` : p.compound_name },
+    p.compound_name, x && x.score != null ? [' ', h('b', { class: 'sig-num sm', 'data-sig-of': p.compound_id }, fmt1(x.score))] : null);
+}
+
 function postCard(p) {
   return h('article', { class: 'card', 'data-post': p.id },
     h('div', { class: 'row' },
-      h('span', { class: 'chip' }, p.compound_name),
+      compoundChip(p),
       h('span', { class: 'chip' }, p.kind === 'question' ? 'Question' : 'Experience'),
+      outcomeChip(p),
       statusChip(p)),
     h('a', { class: 'post-t', href: `#/post/${encodeURIComponent(p.id)}` }, p.title),
     h('div', { class: 'excerpt' }, p.body),
     h('div', { class: 'meta' },
       voteWidget('post', p),
+      sameButton(p),
       h('span', {}, `@${p.author_handle}`),
       h('span', {}, ago(p.created_at)),
       h('a', { href: `#/post/${encodeURIComponent(p.id)}` }, `${p.comment_count} comment${p.comment_count === 1 ? '' : 's'}`)));
@@ -451,14 +624,17 @@ async function renderFeed() {
   const pick = compoundSelect(c, { id: 'filter', allLabel: 'All compounds' });
   pick.addEventListener('change', () => { location.hash = pick.value ? `#/feed?c=${encodeURIComponent(pick.value)}` : '#/feed'; });
   const list = h('div', {}, h('p', { class: 'muted' }, 'Loading…'));
+  const top = h('div', {});
   render(
     S.me.status === 'suspended' ? h('div', { class: 'note' }, `Your account is suspended until ${new Date(S.me.suspended_until).toLocaleString()}. You can read, but not post or comment.`) : null,
     h('div', { class: 'row' }, h('h1', { class: 'grow' }, 'Feed'), h('a', { class: 'btn brand sm', href: '#/new' }, 'New post')),
+    top,
     h('label', { class: 'f', for: 'filter' }, h('span', { class: 'sr' }, 'Compound'), pick),
     list);
   let query = sb.from('feed').select('*').order('created_at', { ascending: false }).limit(50);
   if (c) query = query.eq('compound_id', c);
-  const { data, error } = await query;
+  const [{ data, error }] = await Promise.all([query, loadSignal()]);
+  top.replaceChildren(...[c ? signalCard(c) : signalStrip()].filter(Boolean));
   if (error) return list.replaceChildren(h('div', { class: 'err' }, friendly(error)));
   const rows = (data || []).filter((p) => p.status === 'visible' || p.is_mine);
   list.replaceChildren(...(rows.length ? rows.map(postCard)
@@ -473,6 +649,7 @@ async function renderPost(id) {
   const [{ data: posts, error }, { data: comments }] = await Promise.all([
     sb.from('feed').select('*').eq('id', id).limit(1),
     sb.from('thread_comments').select('*').eq('post_id', id).order('created_at', { ascending: true }),
+    loadSignal(),
   ]);
   const p = posts && posts[0];
   if (error || !p) {
@@ -530,9 +707,10 @@ async function renderPost(id) {
   render(
     h('p', {}, h('a', { href: '#/feed' }, '← Feed')),
     h('article', { class: 'card' },
-      h('div', { class: 'row' }, h('span', { class: 'chip' }, p.compound_name), h('span', { class: 'chip' }, p.kind === 'question' ? 'Question' : 'Experience'), statusChip(p)),
+      h('div', { class: 'row' }, compoundChip(p), h('span', { class: 'chip' }, p.kind === 'question' ? 'Question' : 'Experience'), outcomeChip(p), statusChip(p)),
       h('h1', {}, p.title), bodyBox,
-      h('div', { class: 'meta' }, voteWidget('post', p), h('span', {}, `@${p.author_handle}`), h('span', {}, ago(p.created_at)), p.edited_at ? h('span', {}, 'edited') : null),
+      h('div', { class: 'meta' }, voteWidget('post', p), sameButton(p), h('span', {}, `@${p.author_handle}`), h('span', {}, ago(p.created_at)), p.edited_at ? h('span', {}, 'edited') : null),
+      readLine(p),
       actions, msg),
     heading, list, form);
 }

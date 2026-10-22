@@ -33,5 +33,6 @@ if (compounds.length < 10 || watch.length < 10 || domains.length < 5) {
   console.error(`Unexpected reference data: ${compounds.length} compounds, ${watch.length} terms, ${domains.length} domains`);
   process.exit(1);
 }
-writeFileSync(join(out, 'demo-data.json'), JSON.stringify({ compounds, watch_terms: watch, link_domains: domains }));
-console.log(`wrote demo-data.json: ${compounds.length} compounds, ${watch.length} watched terms, ${domains.length} link sites`);
+const baseline = JSON.parse(readFileSync(new URL('../shared/signal_baseline.json', import.meta.url), 'utf8')).compounds;
+writeFileSync(join(out, 'demo-data.json'), JSON.stringify({ compounds, watch_terms: watch, link_domains: domains, signal_baseline: baseline }));
+console.log(`wrote demo-data.json: ${compounds.length} compounds, ${watch.length} watched terms, ${domains.length} link sites, ${baseline.length} Signal baselines`);

@@ -1,0 +1,1707 @@
+{
+ "note": "Starting Community Signal per compound, from public sources (the prototype's scraped data). The live Signal blends from this toward first-hand reports as they grow.",
+ "compounds": [
+  {
+   "compound_id": "bpc157",
+   "score": 92,
+   "efficacy": 92,
+   "consistency": 92,
+   "diversity": 93,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Soft-tissue recovery",
+     "label": "Very common"
+    },
+    {
+     "theme": "Tendon / joint comfort",
+     "label": "Very common"
+    },
+    {
+     "theme": "Gut symptoms",
+     "label": "Common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "tirzepatide",
+   "score": 91,
+   "efficacy": 94,
+   "consistency": 89,
+   "diversity": 72,
+   "confidence": 89,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Appetite reduction",
+     "label": "Very common"
+    },
+    {
+     "theme": "Weight change",
+     "label": "Very common"
+    },
+    {
+     "theme": "GI side effects",
+     "label": "Common"
+    },
+    {
+     "theme": "Inflammation / mobility reports",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "semaglutide",
+   "score": 89,
+   "efficacy": 92,
+   "consistency": 87,
+   "diversity": 70,
+   "confidence": 89,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Appetite / food-noise reduction",
+     "label": "Very common"
+    },
+    {
+     "theme": "Weight change",
+     "label": "Very common"
+    },
+    {
+     "theme": "GI side effects",
+     "label": "Common"
+    },
+    {
+     "theme": "Fatigue / training changes",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "pt141",
+   "score": 89,
+   "efficacy": 93,
+   "consistency": 77,
+   "diversity": 83,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Libido / arousal",
+     "label": "Very common"
+    },
+    {
+     "theme": "Nausea",
+     "label": "Common"
+    },
+    {
+     "theme": "Flushing / headache",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Variable response window",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "tb500",
+   "score": 87,
+   "efficacy": 86,
+   "consistency": 86,
+   "diversity": 91,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Recovery",
+     "label": "Very common"
+    },
+    {
+     "theme": "Mobility / tissue comfort",
+     "label": "Common"
+    },
+    {
+     "theme": "Stacked with BPC-157",
+     "label": "Very common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "ghkcu",
+   "score": 86,
+   "efficacy": 85,
+   "consistency": 84,
+   "diversity": 89,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Skin quality",
+     "label": "Very common"
+    },
+    {
+     "theme": "Hair / scalp reports",
+     "label": "Common"
+    },
+    {
+     "theme": "Wound / recovery appearance",
+     "label": "Common"
+    },
+    {
+     "theme": "Injection / skin irritation",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "retatrutide",
+   "score": 85,
+   "efficacy": 85,
+   "consistency": 80,
+   "diversity": 87,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Fat / weight change",
+     "label": "Very common"
+    },
+    {
+     "theme": "Energy / training tolerance",
+     "label": "Common"
+    },
+    {
+     "theme": "Appetite suppression",
+     "label": "Common"
+    },
+    {
+     "theme": "GI / heart-rate concerns",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "testosterone",
+   "score": 84,
+   "efficacy": 85,
+   "consistency": 79,
+   "diversity": 81,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive with substantial side-effect discussion",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Libido / sexual function",
+     "label": "Very common"
+    },
+    {
+     "theme": "Energy / mood",
+     "label": "Very common"
+    },
+    {
+     "theme": "Muscle / training response",
+     "label": "Common"
+    },
+    {
+     "theme": "Estrogen / hematocrit / acne management",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "ipamorelin",
+   "score": 82,
+   "efficacy": 81,
+   "consistency": 80,
+   "diversity": 87,
+   "confidence": 84,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Sleep quality",
+     "label": "Very common"
+    },
+    {
+     "theme": "Recovery",
+     "label": "Common"
+    },
+    {
+     "theme": "Body-composition / appetite",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Vivid dreams / flushing",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "mt2",
+   "score": 82,
+   "efficacy": 82,
+   "consistency": 78,
+   "diversity": 85,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive for intended effect",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Tanning / pigmentation",
+     "label": "Very common"
+    },
+    {
+     "theme": "Libido changes",
+     "label": "Common"
+    },
+    {
+     "theme": "Nausea / appetite effects",
+     "label": "Common"
+    },
+    {
+     "theme": "Freckles / mole darkening",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "estradiol",
+   "score": 82,
+   "efficacy": 87,
+   "consistency": 84,
+   "diversity": 43,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive with adjustment effects",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Hot-flash relief",
+     "label": "Very common"
+    },
+    {
+     "theme": "Sleep / mood",
+     "label": "Very common"
+    },
+    {
+     "theme": "Vaginal / genitourinary symptoms",
+     "label": "Common"
+    },
+    {
+     "theme": "Bleeding / breast tenderness during adjustment",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "motsc",
+   "score": 81,
+   "efficacy": 78,
+   "consistency": 79,
+   "diversity": 96,
+   "confidence": 84,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube",
+    "YouTube index"
+   ],
+   "themes": [
+    {
+     "theme": "Energy / endurance",
+     "label": "Very common"
+    },
+    {
+     "theme": "Exercise tolerance",
+     "label": "Common"
+    },
+    {
+     "theme": "Metabolic / body-composition reports",
+     "label": "Common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "cjc1295",
+   "score": 80,
+   "efficacy": 79,
+   "consistency": 78,
+   "diversity": 87,
+   "confidence": 84,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Sleep quality",
+     "label": "Very common"
+    },
+    {
+     "theme": "Recovery",
+     "label": "Common"
+    },
+    {
+     "theme": "Body-composition changes",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Flushing / transient sensations",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "somatropin",
+   "score": 79,
+   "efficacy": 80,
+   "consistency": 74,
+   "diversity": 68,
+   "confidence": 89,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive with predictable tradeoffs",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Recovery / fullness",
+     "label": "Very common"
+    },
+    {
+     "theme": "Lean-mass / training response",
+     "label": "Common"
+    },
+    {
+     "theme": "Water retention / edema",
+     "label": "Common"
+    },
+    {
+     "theme": "Carpal-tunnel / glucose concerns",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "semax",
+   "score": 78,
+   "efficacy": 77,
+   "consistency": 77,
+   "diversity": 85,
+   "confidence": 84,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Focus / attention",
+     "label": "Very common"
+    },
+    {
+     "theme": "Motivation / drive",
+     "label": "Common"
+    },
+    {
+     "theme": "Mental clarity",
+     "label": "Common"
+    },
+    {
+     "theme": "Overstimulation / headache",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "hcg",
+   "score": 78,
+   "efficacy": 77,
+   "consistency": 73,
+   "diversity": 81,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Testicular volume / fertility",
+     "label": "Very common"
+    },
+    {
+     "theme": "Libido / sexual function",
+     "label": "Common"
+    },
+    {
+     "theme": "Estrogen fluctuations",
+     "label": "Common"
+    },
+    {
+     "theme": "Variable subjective response",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "ss31",
+   "score": 77,
+   "efficacy": 77,
+   "consistency": 78,
+   "diversity": 70,
+   "confidence": 83,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Energy / fatigue",
+     "label": "Common"
+    },
+    {
+     "theme": "Exercise tolerance",
+     "label": "Common"
+    },
+    {
+     "theme": "Mitochondrial / recovery reports",
+     "label": "Common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "liraglutide",
+   "score": 76,
+   "efficacy": 79,
+   "consistency": 75,
+   "diversity": 45,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Appetite reduction",
+     "label": "Very common"
+    },
+    {
+     "theme": "Weight change",
+     "label": "Common"
+    },
+    {
+     "theme": "Nausea / GI effects",
+     "label": "Common"
+    },
+    {
+     "theme": "Daily-injection burden",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "collagen",
+   "score": 76,
+   "efficacy": 78,
+   "consistency": 79,
+   "diversity": 43,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Skin / hydration",
+     "label": "Common"
+    },
+    {
+     "theme": "Joint comfort",
+     "label": "Common"
+    },
+    {
+     "theme": "Hair / nails",
+     "label": "Common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "melatonin",
+   "score": 75,
+   "efficacy": 78,
+   "consistency": 75,
+   "diversity": 45,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Sleep onset",
+     "label": "Very common"
+    },
+    {
+     "theme": "Vivid dreams",
+     "label": "Common"
+    },
+    {
+     "theme": "Morning grogginess",
+     "label": "Common"
+    },
+    {
+     "theme": "Variable benefit / tolerance",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "selank",
+   "score": 74,
+   "efficacy": 71,
+   "consistency": 73,
+   "diversity": 85,
+   "confidence": 84,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Calm / anxiety reduction",
+     "label": "Very common"
+    },
+    {
+     "theme": "Mental clarity",
+     "label": "Common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Fatigue / headache",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "cerebrolysin",
+   "score": 74,
+   "efficacy": 75,
+   "consistency": 73,
+   "diversity": 60,
+   "confidence": 82,
+   "confidence_label": "High",
+   "summary_label": "Mostly positive",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Cognitive clarity",
+     "label": "Common"
+    },
+    {
+     "theme": "Post-injury / recovery reports",
+     "label": "Common"
+    },
+    {
+     "theme": "Mood / motivation",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Administration burden",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "mk677",
+   "score": 73,
+   "efficacy": 71,
+   "consistency": 75,
+   "diversity": 66,
+   "confidence": 88,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Appetite increase",
+     "label": "Very common"
+    },
+    {
+     "theme": "Sleep / vivid dreams",
+     "label": "Common"
+    },
+    {
+     "theme": "Water retention",
+     "label": "Common"
+    },
+    {
+     "theme": "Recovery / fullness",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "sermorelin",
+   "score": 72,
+   "efficacy": 70,
+   "consistency": 72,
+   "diversity": 83,
+   "confidence": 76,
+   "confidence_label": "Medium",
+   "summary_label": "Positive-mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Sleep quality",
+     "label": "Common"
+    },
+    {
+     "theme": "Recovery",
+     "label": "Common"
+    },
+    {
+     "theme": "Energy",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Body-composition changes",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "kpv",
+   "score": 71,
+   "efficacy": 68,
+   "consistency": 69,
+   "diversity": 85,
+   "confidence": 77,
+   "confidence_label": "Medium",
+   "summary_label": "Positive-mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Gut / inflammatory symptoms",
+     "label": "Common"
+    },
+    {
+     "theme": "Skin symptoms",
+     "label": "Common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Mood / anhedonia reports",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "progesterone",
+   "score": 71,
+   "efficacy": 73,
+   "consistency": 70,
+   "diversity": 43,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Sleep / sedation",
+     "label": "Very common"
+    },
+    {
+     "theme": "Bleeding-pattern changes",
+     "label": "Common"
+    },
+    {
+     "theme": "Mood effects",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Dose / route sensitivity",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "metformin",
+   "score": 70,
+   "efficacy": 68,
+   "consistency": 70,
+   "diversity": 66,
+   "confidence": 88,
+   "confidence_label": "High",
+   "summary_label": "Mixed-positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "GI effects",
+     "label": "Very common"
+    },
+    {
+     "theme": "Glucose / appetite changes",
+     "label": "Common"
+    },
+    {
+     "theme": "Longevity use debate",
+     "label": "Common"
+    },
+    {
+     "theme": "Exercise-performance concern",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "afamelanotide",
+   "score": 69,
+   "efficacy": 72,
+   "consistency": 71,
+   "diversity": 43,
+   "confidence": 72,
+   "confidence_label": "Medium",
+   "summary_label": "Positive-mixed",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Photoprotection / pigmentation",
+     "label": "Common"
+    },
+    {
+     "theme": "Quality-of-life reports in photosensitivity",
+     "label": "Common"
+    },
+    {
+     "theme": "Nausea / implant-site effects",
+     "label": "Occasional"
+    },
+    {
+     "theme": "Access / treatment burden",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "rapamycin",
+   "score": 69,
+   "efficacy": 66,
+   "consistency": 70,
+   "diversity": 66,
+   "confidence": 88,
+   "confidence_label": "High",
+   "summary_label": "Mixed-positive",
+   "volume_label": "High",
+   "source_families": [
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Few immediate subjective effects",
+     "label": "Very common"
+    },
+    {
+     "theme": "Mouth sores / tolerability",
+     "label": "Common"
+    },
+    {
+     "theme": "Biomarker / longevity tracking",
+     "label": "Common"
+    },
+    {
+     "theme": "Exercise / recovery concerns",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "ta1",
+   "score": 68,
+   "efficacy": 64,
+   "consistency": 68,
+   "diversity": 83,
+   "confidence": 76,
+   "confidence_label": "Medium",
+   "summary_label": "Positive-mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Immune resilience",
+     "label": "Common"
+    },
+    {
+     "theme": "Fewer / shorter illness reports",
+     "label": "Common"
+    },
+    {
+     "theme": "Inflammatory symptoms",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "tesamorelin",
+   "score": 67,
+   "efficacy": 64,
+   "consistency": 66,
+   "diversity": 83,
+   "confidence": 76,
+   "confidence_label": "Medium",
+   "summary_label": "Positive-mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Body-composition / visceral-fat reports",
+     "label": "Common"
+    },
+    {
+     "theme": "Recovery / sleep",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Injection-site effects",
+     "label": "Occasional"
+    },
+    {
+     "theme": "Used with other GH-axis compounds",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "nad",
+   "score": 65,
+   "efficacy": 59,
+   "consistency": 62,
+   "diversity": 85,
+   "confidence": 90,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "Very High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Energy / fatigue",
+     "label": "Common"
+    },
+    {
+     "theme": "Mental clarity",
+     "label": "Common"
+    },
+    {
+     "theme": "Infusion / injection discomfort",
+     "label": "Common"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "anastrozole",
+   "score": 64,
+   "efficacy": 62,
+   "consistency": 68,
+   "diversity": 45,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Mixed",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "High-estrogen symptom relief",
+     "label": "Common"
+    },
+    {
+     "theme": "Low-estrogen / joint symptoms",
+     "label": "Very common"
+    },
+    {
+     "theme": "Libido sensitivity",
+     "label": "Common"
+    },
+    {
+     "theme": "Dose sensitivity dominates discussion",
+     "label": "Very common"
+    }
+   ]
+  },
+  {
+   "compound_id": "igf1lr3",
+   "score": 64,
+   "efficacy": 61,
+   "consistency": 63,
+   "diversity": 70,
+   "confidence": 76,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Pump / muscle fullness",
+     "label": "Common"
+    },
+    {
+     "theme": "Strength / recovery",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear effect beyond pump",
+     "label": "Common"
+    },
+    {
+     "theme": "Hypoglycemia / safety concern",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "kisspeptin",
+   "score": 63,
+   "efficacy": 60,
+   "consistency": 64,
+   "diversity": 81,
+   "confidence": 66,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed-positive",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Libido / sexual response",
+     "label": "Common"
+    },
+    {
+     "theme": "Hormonal response",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Short-lived / variable effects",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "epithalon",
+   "score": 63,
+   "efficacy": 58,
+   "consistency": 62,
+   "diversity": 85,
+   "confidence": 77,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed-positive",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Sleep / circadian changes",
+     "label": "Common"
+    },
+    {
+     "theme": "Dream intensity",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Energy / wellbeing",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear acute effect",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "clomiphene",
+   "score": 63,
+   "efficacy": 63,
+   "consistency": 63,
+   "diversity": 43,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Mixed-positive",
+   "volume_label": "Very High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Testosterone / energy",
+     "label": "Common"
+    },
+    {
+     "theme": "Libido",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Mood / visual side effects",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Variable estrogen-related symptoms",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "ll37",
+   "score": 61,
+   "efficacy": 58,
+   "consistency": 59,
+   "diversity": 83,
+   "confidence": 66,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Community aggregator",
+    "Podcast / YouTube",
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Infection / dysbiosis reports",
+     "label": "Common"
+    },
+    {
+     "theme": "Gut / immune symptoms",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Adverse-reaction reports",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Uncertainty / safety concern",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "dhea",
+   "score": 61,
+   "efficacy": 59,
+   "consistency": 63,
+   "diversity": 45,
+   "confidence": 87,
+   "confidence_label": "High",
+   "summary_label": "Mixed-positive",
+   "volume_label": "High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Libido",
+     "label": "Common"
+    },
+    {
+     "theme": "Energy / brain fog",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Mood",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Anxiety / acne / estrogenic effects",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "glutathione",
+   "score": 60,
+   "efficacy": 57,
+   "consistency": 61,
+   "diversity": 60,
+   "confidence": 82,
+   "confidence_label": "High",
+   "summary_label": "Positive-mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Skin brightness / appearance",
+     "label": "Common"
+    },
+    {
+     "theme": "Energy / recovery",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Hangover / illness recovery reports",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "ghrp2",
+   "score": 59,
+   "efficacy": 52,
+   "consistency": 62,
+   "diversity": 81,
+   "confidence": 75,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed-positive",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Hunger / appetite",
+     "label": "Very common"
+    },
+    {
+     "theme": "Recovery",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Sleep",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Hormonal side-effect concerns",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "ghrp6",
+   "score": 58,
+   "efficacy": 50,
+   "consistency": 65,
+   "diversity": 81,
+   "confidence": 75,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed-positive",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Hunger / appetite",
+     "label": "Very common"
+    },
+    {
+     "theme": "Recovery",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Sleep",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Appetite can be unwanted",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "oxytocin",
+   "score": 57,
+   "efficacy": 53,
+   "consistency": 59,
+   "diversity": 66,
+   "confidence": 75,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Social warmth / bonding",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Calm / stress effects",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear subjective effect",
+     "label": "Common"
+    },
+    {
+     "theme": "Headache / nasal irritation",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "aod9604",
+   "score": 56,
+   "efficacy": 50,
+   "consistency": 59,
+   "diversity": 81,
+   "confidence": 66,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "No clear change",
+     "label": "Common"
+    },
+    {
+     "theme": "Fat-loss reports",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Used inside stacks",
+     "label": "Common"
+    },
+    {
+     "theme": "Low acute side-effect burden",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "gonadorelin",
+   "score": 56,
+   "efficacy": 56,
+   "consistency": 65,
+   "diversity": 43,
+   "confidence": 53,
+   "confidence_label": "Low",
+   "summary_label": "Mixed",
+   "volume_label": "Low",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Libido / testicular-function reports",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Fertility-oriented use",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear subjective effect",
+     "label": "Common"
+    },
+    {
+     "theme": "Protocol confusion",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "dsip",
+   "score": 55,
+   "efficacy": 47,
+   "consistency": 61,
+   "diversity": 83,
+   "confidence": 66,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Drowsiness / sleep onset",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No improvement in sleep maintenance",
+     "label": "Common"
+    },
+    {
+     "theme": "Vivid dreams",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "hexarelin",
+   "score": 54,
+   "efficacy": 48,
+   "consistency": 51,
+   "diversity": 81,
+   "confidence": 66,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed",
+   "volume_label": "Moderate",
+   "source_families": [
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Recovery / GH-axis effects",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Sleep",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Desensitization concerns",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Appetite changes",
+     "label": "Occasional"
+    }
+   ]
+  },
+  {
+   "compound_id": "pda",
+   "score": 53,
+   "efficacy": 49,
+   "consistency": 73,
+   "diversity": 45,
+   "confidence": 54,
+   "confidence_label": "Low",
+   "summary_label": "Mixed",
+   "volume_label": "Low",
+   "source_families": [
+    "Forum"
+   ],
+   "themes": [
+    {
+     "theme": "Shoulder / tendon comfort",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Mobility / pain reports",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Unclear vs rest / time",
+     "label": "Very common"
+    },
+    {
+     "theme": "Limited community depth",
+     "label": "Very common"
+    }
+   ]
+  },
+  {
+   "compound_id": "dihexa",
+   "score": 53,
+   "efficacy": 44,
+   "consistency": 59,
+   "diversity": 96,
+   "confidence": 57,
+   "confidence_label": "Low",
+   "summary_label": "Mixed / uncertain",
+   "volume_label": "Low",
+   "source_families": [
+    "Editorial audit",
+    "Podcast / YouTube",
+    "Reddit",
+    "YouTube"
+   ],
+   "themes": [
+    {
+     "theme": "Cognition / memory reports",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear change",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Very limited first-person depth",
+     "label": "Common"
+    },
+    {
+     "theme": "Safety concern dominates discussion",
+     "label": "Common"
+    }
+   ]
+  },
+  {
+   "compound_id": "pregnenolone",
+   "score": 52,
+   "efficacy": 49,
+   "consistency": 55,
+   "diversity": 45,
+   "confidence": 74,
+   "confidence_label": "Medium",
+   "summary_label": "Mixed",
+   "volume_label": "High",
+   "source_families": [
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Cognition / clarity",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Sleep",
+     "label": "Mixed"
+    },
+    {
+     "theme": "Mood / anxiety variability",
+     "label": "Mixed"
+    },
+    {
+     "theme": "No clear effect",
+     "label": "Mixed"
+    }
+   ]
+  },
+  {
+   "compound_id": "humanin",
+   "score": 43,
+   "efficacy": 28,
+   "consistency": 62,
+   "diversity": 94,
+   "confidence": 57,
+   "confidence_label": "Low",
+   "summary_label": "Mixed / uncertain",
+   "volume_label": "Low",
+   "source_families": [
+    "Community aggregator",
+    "Editorial audit",
+    "Podcast / YouTube",
+    "Reddit"
+   ],
+   "themes": [
+    {
+     "theme": "Longevity interest dominates",
+     "label": "Common"
+    },
+    {
+     "theme": "No perceptible acute effect",
+     "label": "Common"
+    },
+    {
+     "theme": "Energy / resilience",
+     "label": "Occasional"
+    },
+    {
+     "theme": "Dose / identity uncertainty",
+     "label": "Very common"
+    }
+   ]
+  }
+ ]
+}

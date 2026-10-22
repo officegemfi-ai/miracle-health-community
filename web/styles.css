@@ -70,3 +70,31 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .mt8{margin-top:8px}
 .demo-banner{padding:8px 16px;background:var(--surface-2);border-bottom:1px solid var(--line);color:var(--ink-2);font-size:13px;line-height:1.45;text-align:center}
+/* Community Signal: the coral gradient number, its movement, and where it shows */
+.sig-num{font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1;background:linear-gradient(135deg,var(--coral),var(--coral-2));-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums;border-radius:6px}
+.sig-num.big{font-size:30px}.sig-num.sm{font-size:13px}
+.sig-num.flash-up{animation:flashUp 1.2s ease-out}.sig-num.flash-down{animation:flashDown 1.2s ease-out}
+@keyframes flashUp{0%{background-color:color-mix(in srgb,var(--pos) 35%,transparent)}100%{background-color:transparent}}
+@keyframes flashDown{0%{background-color:color-mix(in srgb,var(--neg) 35%,transparent)}100%{background-color:transparent}}
+.move{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}.move.up{color:var(--pos)}.move.down{color:var(--neg)}
+.sig-cell{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:64px}
+.sigstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:4px -2px 6px;scrollbar-width:thin}
+.sig-chip{flex:0 0 auto;display:flex;flex-direction:column;gap:3px;min-width:96px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);text-decoration:none;color:var(--ink-2)}
+.sig-chip.more{justify-content:center;font-size:13px;font-weight:600;color:var(--coral-text)}
+.sig-card .bar-row{margin:8px 0}
+.bar{height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--coral),var(--coral-2))}
+.sig-row{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
+.sig-row .rank{width:28px;text-align:center;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.movers{display:grid;grid-template-columns:1fr 1fr;gap:10px}.movers .card{margin:0}
+.mover{display:flex;align-items:center;gap:8px;padding:6px 0;text-decoration:none;color:var(--ink);border-top:1px solid var(--line)}.mover:first-of-type{border-top:0}
+.chip.cmp{text-decoration:none}.chip.cmp:hover{background:color-mix(in srgb,var(--coral) 12%,var(--surface-2))}
+.chip.oc.pos{background:color-mix(in srgb,var(--pos) 15%,var(--surface));color:var(--ink)}
+.chip.oc.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--ink)}
+.chip.oc.neg{background:color-mix(in srgb,var(--neg) 14%,var(--surface));color:var(--ink)}
+.btn.same[aria-pressed=true]{background:color-mix(in srgb,var(--coral) 14%,var(--surface));border-color:var(--coral);color:var(--ink)}
+.airead{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:var(--surface-2)}
+.wrap{flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:20;max-width:calc(100% - 32px);padding:10px 16px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:14px;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.18);animation:toastIn .25s ease-out}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (max-width:560px){.movers{grid-template-columns:1fr}.sig-num.big{font-size:26px}}
+@media (prefers-reduced-motion:reduce){.sig-num.flash-up,.sig-num.flash-down,.toast{animation:none}}

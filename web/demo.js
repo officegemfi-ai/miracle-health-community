@@ -6,7 +6,7 @@
   const C = window.MH_CONFIG || {};
   if (!C.demo) return;
 
-  const STORE = 'mh_preview_v1';
+  const STORE = 'mh_preview_v2';
   const H = 3600e3;
   const D = 24 * H;
   let db = null;
@@ -103,12 +103,119 @@
       { code: '7F3A9C21B4', note: 'Founding members', trusted: true, max_uses: 15, uses: 6, expires_at: null, created_at: ago(45 * D) },
       { code: '2D9E4B7A10', note: 'Wave 1: GLP-1 group', trusted: false, max_uses: 20, uses: 3, expires_at: null, created_at: ago(12 * D) },
     ];
-    return {
+    // What Miracle AI read in each sample post (the real backend asks Claude)
+    const read = (counts, outcome, duration, effects = []) => ({ counts, outcome, duration, side_effects: effects });
+    const reads = {
+      p1: read(true, 'better', '3 months', ['Nausea', 'Fatigue']), p2: read(true, 'same', '5 weeks'),
+      p3: read(false, null, '4 weeks', ['Reflux']), p4: read(true, 'better', '8 weeks'),
+      p5: read(true, 'better', '10 weeks'), p6: read(true, 'same', '3 weeks', ['Headache']),
+      p7: read(false, null, null), p8: read(true, 'better', '1 week'), p9: read(false, null, null),
+    };
+    const same = { p1: ['u_quiet', 'u_desk', 'u_runner', 'u_scar'], p2: ['u_desk', 'u_runner', 'u_sleepy'], p4: ['u_quiet'], p5: ['u_stairs', 'u_desk'] };
+    const sameRows = Object.entries(same).flatMap(([postId, users]) => users.map((u) => ({ post_id: postId, user_id: u, created_at: ago(2 * H) })));
+    const state = {
       compounds: ref.compounds, watch_terms: ref.watch_terms, link_domains: ref.link_domains,
+      signal_baseline: ref.signal_baseline || [], reads, same_for_me: sameRows, signal: {},
       profiles, posts, comments, reports, alerts, invites,
       post_votes: [], comment_votes: [], mod_log: [], session: null,
     };
+    // First the public-forum numbers alone, then with the community's reports: the
+    // movement shown on day one is what this community added
+    db = state;
+    state.signal_baseline.forEach((b) => { state.signal[b.compound_id] = { version: 1, prev: null, cur: snapshotFrom(b, 1) }; });
+    new Set(posts.map((p) => p.compound_id)).forEach(refreshSignal);
+    db = null;
+    return state;
   }
+
+  // -------------------------------------------------------------------------
+  // Miracle AI's read of a post (a quick stand-in for the Claude read the real
+  // backend does): first-hand or not, how it went, how long, side effects
+  // -------------------------------------------------------------------------
+  const AI_POS = [/\bbetter\b/, /\bimprov/, /\bhelp(ed|s|ing)?\b/, /\bwork(ed|s|ing)\b/, /\blost \d/, /\bdown \d+\s?(lb|lbs|kg|pounds)\b/, /\bdropped\b/, /\bgone\b/, /\bhealed\b/, /\brecover(ed|ing)\b/, /\bgreat\b/, /\bnoticeabl/, /\bstronger\b/, /\bmore energy\b/, /\bsleeping better\b/, /\bless pain\b/, /\beased\b/];
+  const AI_NEG = [/\bworse\b/, /\bdidn'?t work\b/, /\bdid not work\b/, /\bno effect\b/, /\bnothing (happened|changed)\b/, /\bgave up\b/, /\bmade me sick\b/, /\bterrible\b/, /\bwaste of\b/];
+  const AI_NEU = [/\bno (real |clear )?(change|difference)\b/, /\b(about|roughly|pretty much|basically) the same\b/, /\btoo early\b/, /\bnot sure yet\b/, /\bhard to (say|tell)\b/];
+  const SE_LEX = [['nausea', 'Nausea'], ['nauseous', 'Nausea'], ['queasy', 'Nausea'], ['vomit', 'Vomiting'], ['headache', 'Headache'], ['fatigue', 'Fatigue'], ['tired', 'Fatigue'], ['insomnia', 'Poor sleep'], ["couldn't sleep", 'Poor sleep'], ['injection site', 'Injection-site reaction'], ['dizz', 'Dizziness'], ['palpitation', 'Heart rate up'], ['constipat', 'Constipation'], ['diarrh', 'Diarrhea'], ['reflux', 'Reflux'], ['heartburn', 'Reflux'], ['bloat', 'Bloating'], ['water retention', 'Water retention'], ['tingl', 'Numbness or tingling'], ['hair loss', 'Hair loss']];
+  function readPost(p) {
+    const text = `${p.title}. ${p.body}`;
+    const s = text.toLowerCase();
+    const du = s.match(/\b(\d+)\s?(day|week|month|year)s?\b/);
+    const wk = s.match(/\b(week|month) ?(\d+)\b/);
+    const duration = du ? `${du[1]} ${du[2]}${du[1] === '1' ? '' : 's'}` : wk ? `${wk[1]} ${wk[2]}` : null;
+    const hits = (list) => list.reduce((n, re) => n + (re.test(s) ? 1 : 0), 0);
+    const pos = hits(AI_POS); const neg = hits(AI_NEG); const neu = hits(AI_NEU);
+    const outcome = pos || neg || neu ? (pos > neg && pos >= neu ? 'better' : neg > pos && neg >= neu ? 'worse' : 'same') : null;
+    const negated = (w) => new RegExp(`\\b(no|without|zero|not any)\\s+(\\w+\\s)?${escapeRe(w)}`).test(s);
+    const effects = [];
+    SE_LEX.forEach(([k, label]) => { if (s.includes(k) && !negated(k) && !effects.includes(label)) effects.push(label); });
+    const firstHand = /\b(i|i'm|i've|i'd|my|me)\b/i.test(text);
+    const counts = p.kind !== 'question' && firstHand && !!outcome;
+    return { counts, outcome: counts ? outcome : null, duration, side_effects: effects.slice(0, 3) };
+  }
+
+  // -------------------------------------------------------------------------
+  // The Community Signal: 65% reported efficacy, 15% consistency, 10% diversity
+  // of voices, 10% confidence. It starts from the public-forum baseline and moves
+  // toward this community's first-hand reports as they add up. New accounts count
+  // half. The real backend runs the same math in the database (private.signal_compute).
+  // -------------------------------------------------------------------------
+  const EXTERNAL_WEIGHT = 50;   // how many first-hand reports the public baseline is worth
+  const r1 = (x) => Math.round(x * 10) / 10;
+  const confidenceLabel = (c) => (c >= 80 ? 'High' : c >= 60 ? 'Moderate' : c >= 40 ? 'Building' : 'Low');
+  const summaryLabel = (e) => (e >= 75 ? 'Mostly positive' : e >= 60 ? 'Leaning positive' : e >= 45 ? 'Mixed' : 'Mostly negative');
+  function snapshotFrom(base, version) {
+    const score = r1(0.65 * base.efficacy + 0.15 * base.consistency + 0.10 * base.diversity + 0.10 * base.confidence);
+    return {
+      score, efficacy: base.efficacy, consistency: base.consistency, diversity: base.diversity, confidence: base.confidence,
+      first_hand: 0, same_for_me: 0, voices: 0, internal_share: 0, version, computed_at: now(),
+    };
+  }
+  function computeSignal(cid) {
+    const base = db.signal_baseline.find((b) => b.compound_id === cid) || null;
+    const V = { better: 1, same: 0.5, worse: 0 };
+    const tally = { better: 0, same: 0, worse: 0 };
+    const voices = new Set();
+    let n = 0; let sum = 0; let reports = 0; let sames = 0;
+    const weight = (uid) => { const p = db.profiles.find((x) => x.id === uid); return p && isNewMember(p) ? 0.5 : 1; };
+    for (const p of db.posts) {
+      const rd = db.reads[p.id];
+      if (p.compound_id !== cid || p.status !== 'visible' || !rd?.counts || !rd.outcome) continue;
+      const add = (uid) => { const w = weight(uid); n += w; sum += w * V[rd.outcome]; tally[rd.outcome] += w; voices.add(uid); };
+      add(p.author_id); reports += 1;
+      db.same_for_me.forEach((s) => { if (s.post_id === p.id) { add(s.user_id); sames += 1; } });
+    }
+    if (!base && n < 3) return null;
+    const N = base ? EXTERNAL_WEIGHT : 0;
+    const B = base || { efficacy: 0, consistency: 0, diversity: 0, confidence: 0 };
+    let entropy = 0;
+    Object.values(tally).forEach((x) => { if (x > 0) entropy -= (x / n) * Math.log(x / n); });
+    const inEff = n ? (100 * sum) / n : 0;
+    const inCons = n ? 100 * (1 - entropy / Math.log(3)) : 0;
+    const comp = {
+      efficacy: (N * B.efficacy + n * inEff) / (N + n || 1),
+      consistency: (N * B.consistency + n * inCons) / (N + n || 1),
+      diversity: 100 - (100 - B.diversity) * Math.exp(-voices.size / 40),
+      confidence: 100 - (100 - B.confidence) * Math.exp(-n / 60),
+    };
+    return {
+      score: r1(0.65 * comp.efficacy + 0.15 * comp.consistency + 0.10 * comp.diversity + 0.10 * comp.confidence),
+      efficacy: Math.round(comp.efficacy), consistency: Math.round(comp.consistency),
+      diversity: Math.round(comp.diversity), confidence: Math.round(comp.confidence),
+      first_hand: reports, same_for_me: sames, voices: voices.size,
+      internal_share: Math.round((100 * n) / (N + n || 1)), computed_at: now(),
+    };
+  }
+  function refreshSignal(cid) {
+    const cur = computeSignal(cid);
+    const slot = db.signal[cid];
+    if (!cur) { delete db.signal[cid]; return; }
+    if (!slot) { db.signal[cid] = { version: 1, prev: null, cur: { ...cur, version: 1 } }; return; }
+    if (slot.cur && slot.cur.score === cur.score) { slot.cur = { ...cur, version: slot.version }; return; }
+    slot.version += 1;
+    slot.prev = slot.cur;
+    slot.cur = { ...cur, version: slot.version };
+  }
+  const refreshFor = (postIds) => new Set([...postIds].map((id) => db.posts.find((p) => p.id === id)?.compound_id).filter(Boolean)).forEach(refreshSignal);
 
   // -------------------------------------------------------------------------
   // Who is signed in
@@ -199,6 +306,11 @@
       status_reason: p.author_id === myId() ? p.status_reason : null, created_at: p.created_at, edited_at: p.edited_at,
       score: score('post_votes', 'post_id', p), my_vote: myVote('post_votes', 'post_id', p.id), is_mine: p.author_id === myId(),
       comment_count: db.comments.filter((c) => c.post_id === p.id && c.status === 'visible').length,
+      counts_for_signal: !!db.reads[p.id]?.counts && p.status === 'visible', outcome: db.reads[p.id]?.outcome ?? null,
+      duration: db.reads[p.id]?.duration ?? null, side_effects: db.reads[p.id]?.side_effects ?? [],
+      same_count: db.same_for_me.filter((x) => x.post_id === p.id).length,
+      i_same: db.same_for_me.some((x) => x.post_id === p.id && x.user_id === myId()),
+      signal_score: db.signal[p.compound_id]?.cur?.score ?? null,
     })),
     thread_comments: () => db.comments.filter((c) => c.status === 'visible' || c.author_id === myId()).map((c) => ({
       id: c.id, post_id: c.post_id, author_id: c.author_id, author_handle: handleOf(c.author_id), body: c.body,
@@ -207,6 +319,18 @@
       is_mine: c.author_id === myId(),
     })),
     compounds: () => db.compounds,
+    signal_board: () => Object.entries(db.signal).map(([cid, slot]) => {
+      const c = db.compounds.find((x) => x.id === cid) || { name: cid, category: '' };
+      const b = db.signal_baseline.find((x) => x.compound_id === cid);
+      const cur = slot.cur;
+      return {
+        compound_id: cid, compound_name: c.name, category: c.category, score: cur.score, prev_score: slot.prev?.score ?? null,
+        efficacy: cur.efficacy, consistency: cur.consistency, diversity: cur.diversity, confidence: cur.confidence,
+        confidence_label: confidenceLabel(cur.confidence), summary_label: summaryLabel(cur.efficacy),
+        first_hand: cur.first_hand, same_for_me: cur.same_for_me, voices: cur.voices, internal_share: cur.internal_share,
+        themes: b?.themes || [], source_families: b?.source_families || [], version: cur.version, computed_at: cur.computed_at,
+      };
+    }),
     mod_queue: () => (isMod() ? queue() : []),
     signal_alerts: () => (isMod() ? db.alerts : []),
     watch_terms: () => (isMod() ? db.watch_terms : []),
@@ -240,7 +364,11 @@
     };
   }
   function dropContent(postIds, commentIds) {
+    const touched = new Set(db.posts.filter((p) => postIds.has(p.id)).map((p) => p.compound_id));
     db.posts = db.posts.filter((p) => !postIds.has(p.id));
+    db.same_for_me = db.same_for_me.filter((x) => !postIds.has(x.post_id));
+    postIds.forEach((id) => delete db.reads[id]);
+    touched.forEach(refreshSignal);
     db.comments = db.comments.filter((c) => !commentIds.has(c.id) && !postIds.has(c.post_id));
     const keep = new Set(db.comments.map((c) => c.id));
     db.post_votes = db.post_votes.filter((v) => !postIds.has(v.post_id));
@@ -267,6 +395,8 @@
           created_at: now(), edited_at: null, base: 0,
         };
         db.posts.push(row);
+        db.reads[row.id] = readPost(row);
+        refreshSignal(row.compound_id);
         return ok([{ id: row.id, status: row.status }]);
       },
       update(v, match) {
@@ -279,6 +409,8 @@
           if (c.verdict === 'block') return err(c.message, 'P0001');
           Object.assign(p, { title, body, edited_at: now() });
           if (c.verdict === 'hold') Object.assign(p, { status: 'held', status_reason: c.message });
+          db.reads[p.id] = readPost(p);
+          refreshSignal(p.compound_id);
         }
         return ok(rows);
       },
@@ -323,6 +455,25 @@
       delete(_, match) {
         const ids = new Set(db.comments.filter((x) => match(x) && x.author_id === myId()).map((x) => x.id));
         dropContent(new Set(), ids);
+        return ok([]);
+      },
+    },
+    same_for_me: {
+      insert(v) {
+        const u = me();
+        if (!u) return err('Sign in first.');
+        const p = db.posts.find((x) => x.id === v.post_id);
+        if (!p || p.status !== 'visible' || !db.reads[p.id]?.counts) return err('Only first-hand reports can take a Same for me.');
+        if (p.author_id === u.id) return err('That’s your own report.');
+        if (db.same_for_me.some((x) => x.post_id === p.id && x.user_id === u.id)) return err('duplicate key value', '23505');
+        db.same_for_me.push({ post_id: p.id, user_id: u.id, created_at: now() });
+        refreshSignal(p.compound_id);
+        return ok([]);
+      },
+      delete(_, match) {
+        const gone = db.same_for_me.filter((x) => match(x) && x.user_id === myId());
+        db.same_for_me = db.same_for_me.filter((x) => !gone.includes(x));
+        refreshFor(gone.map((x) => x.post_id));
         return ok([]);
       },
     },
@@ -447,6 +598,7 @@
         }
       }
       db.mod_log.push({ ...a, moderator_id: myId(), created_at: now() });
+      new Set(db.posts.map((p) => p.compound_id)).forEach(refreshSignal);
       return ok(null);
     },
     review_alert: (a) => {
@@ -508,8 +660,10 @@
       dropContent(new Set(db.posts.filter((p) => p.author_id === id).map((p) => p.id)), new Set(db.comments.filter((c) => c.author_id === id).map((c) => c.id)));
       db.post_votes = db.post_votes.filter((v) => v.user_id !== id);
       db.comment_votes = db.comment_votes.filter((v) => v.user_id !== id);
+      db.same_for_me = db.same_for_me.filter((x) => x.user_id !== id);
       db.reports.forEach((r) => { if (r.reporter_id === id) r.reporter_id = null; });
       db.profiles = db.profiles.filter((p) => p.id !== id);
+      new Set(db.posts.map((p) => p.compound_id)).forEach(refreshSignal);
       save();
       return { data: { deleted: true }, error: null };
     },
@@ -534,8 +688,8 @@
     const b = document.createElement('div');
     b.className = 'demo-banner';
     b.setAttribute('role', 'note');
-    b.textContent = 'Preview with sample posts from made-up members. Nothing you do is kept after you close this tab. '
-      + 'Sign in with any phone number and the code 123456; the invite code is PREVIEW. You join as a moderator, so you can see every screen.';
+    b.textContent = 'Preview: sample posts from made-up members, reset when you close the tab. '
+      + 'Sign in with any number, code 123456, invite PREVIEW.';
     document.body.prepend(b);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', banner);

@@ -41,6 +41,26 @@ await page.click('form button[type=submit]');
 await page.waitForSelector('h1:text("Feed")');
 await page.waitForSelector('[data-post="p1"]');
 check('Signing up with the preview invite opens a feed of sample posts', (await page.locator('[data-post]').count()) >= 6);
+await page.waitForSelector('.sigstrip .sig-num');
+check('The feed shows the Community Signal strip', (await page.locator('.sigstrip .sig-chip').count()) >= 6);
+
+await page.goto(`${BASE}#/signal`);
+await page.waitForSelector('.sig-row');
+const ranked = await page.locator('.sig-row').count();
+check('The Signal tab ranks every compound with a number', ranked >= 50, `${ranked} compounds`);
+
+await page.goto(`${BASE}#/feed?c=tirzepatide`);
+await page.waitForSelector('.sig-card .sig-num');
+check('A compound’s feed opens on its Signal card', (await page.textContent('.sig-card')).includes('Reported efficacy'));
+
+await page.goto(`${BASE}#/post/p1`);
+await page.waitForSelector('.airead .sig-num');
+const before = Number(await page.textContent('.airead .sig-num'));
+await page.click('article button.same');
+await page.waitForSelector('.toast');
+await page.waitForFunction((b) => Number(document.querySelector('.airead .sig-num')?.textContent) !== b, before, { timeout: 5000 }).catch(() => {});
+const after = Number(await page.textContent('.airead .sig-num'));
+check('Same for me adds to the Signal and the number moves', (await page.textContent('article button.same')).includes('5') && after !== before, `${before} → ${after}`);
 
 await page.goto(`${BASE}#/post/p2`);
 await page.waitForSelector('h1:text("BPC-157 for tennis elbow")');
@@ -61,10 +81,12 @@ await page.waitForSelector('.err');
 check('The rules still refuse a sourcing post', /rule 1/.test(await page.textContent('.err')));
 
 await page.fill('#title', 'Week 1 on semaglutide');
-await page.fill('#body', 'Less hungry from day three, a little queasy after dinner.');
+await page.fill('#body', 'Less hungry from day three and my cravings eased, a little queasy after dinner. Better than before I started.');
 await page.click('form button[type=submit]');
 await page.waitForSelector('h1:text("Week 1 on semaglutide")');
-check('A normal post goes up', true);
+await page.waitForSelector('.airead');
+const read = await page.textContent('.airead');
+check('A first-hand post is read by Miracle AI and feeds the Signal', /Better/.test(read) && /Nausea/.test(read) && /Semaglutide Signal/.test(read), read.slice(0, 120));
 
 await page.goto(`${BASE}#/mod/queue`);
 await page.waitForSelector('[data-queue="p9"]');
