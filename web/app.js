@@ -341,6 +341,23 @@ async function route() {
 }
 window.addEventListener('hashchange', () => { route(); });
 
+// A preview packed into one HTML file (skipSignIn) opens straight into the community
+// as a new member: no number, code or invite to type. Real builds never set it.
+async function enterPreview() {
+  const phone = `+1555${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`;
+  await sb.auth.signInWithOtp({ phone });
+  const { data, error } = await sb.auth.verifyOtp({ phone, token: '123456', type: 'sms' });
+  if (error || !data?.session) return false;
+  S.session = data.session;
+  const { error: e2 } = await sb.rpc('complete_signup', {
+    handle: `guest_${Math.floor(1000 + Math.random() * 9000)}`, invite_code: 'PREVIEW', confirm_adult: true,
+    rules_version: S.rules?.version || '', health_data_consent: true,
+  });
+  if (e2) return false;
+  await loadMe();
+  return !!S.me;
+}
+
 // ---------------------------------------------------------------------------
 async function boot() {
   startTelemetry();
@@ -355,6 +372,12 @@ async function boot() {
   const { data } = await sb.auth.getSession();
   S.session = data.session;
   sb.auth.onAuthStateChange((_event, session) => { S.session = session; });
+  if (!S.session && C.demo && C.skipSignIn && await enterPreview()) {
+    location.hash = '#/home';
+    await route();
+    onboarding();
+    return;
+  }
   if (S.session) await loadMe();
   await route();
 }

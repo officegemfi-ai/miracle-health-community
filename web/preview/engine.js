@@ -457,11 +457,12 @@ function banner() {
   b.setAttribute('role', 'note');
   const long = document.createElement('span');
   long.className = 'long';
+  const open = !!window.MH_CONFIG?.skipSignIn;   // the one-file preview signs you in by itself
   long.textContent = 'Preview: the real community software with sample posts from made-up members, who stay active in the background. '
-    + 'It resets when you close the tab. Sign in with any number, code 123456, invite PREVIEW.';
+    + (open ? 'You’re in as a new member; it starts fresh when you close the tab.' : 'It resets when you close the tab. Sign in with any number, code 123456, invite PREVIEW.');
   const short = document.createElement('span');
   short.className = 'short';
-  short.textContent = 'Preview with made-up members · any number · code 123456 · invite PREVIEW';
+  short.textContent = open ? 'Preview with made-up members · starts fresh when you close the tab' : 'Preview with made-up members · any number · code 123456 · invite PREVIEW';
   b.append(long, short);
   document.body.prepend(b);
 }
