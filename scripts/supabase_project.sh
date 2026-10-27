@@ -254,7 +254,8 @@ admin)
     echo "::error title=Admin::Give the member's handle: 3 to 20 letters, numbers or underscores."
     exit 1
   fi
-  made="$(sql "update public.profiles set role = 'admin' where lower(handle) = lower('$handle') returning handle" | jq -r '.[0].handle // empty')"
+  # Admins are trusted too: no first-week limits
+  made="$(sql "update public.profiles set role = 'admin', trusted = true where lower(handle) = lower('$handle') returning handle" | jq -r '.[0].handle // empty')"
   if [ -n "$made" ]; then echo "::notice title=Admin::u/$made is an admin."
   else echo "::error title=Admin::No member has the handle $handle. Sign up first, then run this again."; exit 1
   fi
