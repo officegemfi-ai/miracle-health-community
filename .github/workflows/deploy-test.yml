@@ -32,6 +32,7 @@ jobs:
       connected: ${{ steps.c.outputs.connected }}
       ref: ${{ steps.c.outputs.ref }}
       sha: ${{ steps.c.outputs.sha }}
+      live: ${{ steps.c.outputs.live }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,6 +50,13 @@ jobs:
           fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          # Once the community is live, the site is the live app only, and only Promote to
+          # live rebuilds it (a rebuild from here could race it and put back an older build)
+          if git ls-remote --exit-code --tags origin refs/tags/live >/dev/null 2>&1; then
+            echo "live=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "live=false" >> "$GITHUB_OUTPUT"
+          fi
           missing=""
           [ -n "$ref" ] || missing="$missing the test project (deploy/test.env, or a project named miracle-health-test that the token reaches),"
           [ -n "$TOKEN" ] || missing="$missing the SUPABASE_ACCESS_TOKEN secret,"
@@ -113,7 +121,8 @@ jobs:
         run: scripts/supabase_project.sh test advisors
 
   site:
-    needs: backend
+    needs: [check, backend]
+    if: needs.check.outputs.live != 'true'
     uses: ./.github/workflows/pages.yml
     secrets: inherit
     permissions:
