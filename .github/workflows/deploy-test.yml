@@ -39,11 +39,16 @@ jobs:
           TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          ref=$(sed -n 's/^SUPABASE_PROJECT_REF=//p' deploy/test.env | tr -d '[:space:]')
+          # The project: deploy/test.env names it, or the token finds miracle-health-test
+          ref=""
+          if [ -n "$TOKEN" ]; then
+            ref=$(SUPABASE_ACCESS_TOKEN="$TOKEN" scripts/supabase_project.sh test ref 2> "$RUNNER_TEMP/ref.err") \
+              || { echo "::warning title=Test project::$(head -c 500 "$RUNNER_TEMP/ref.err")"; ref=""; }
+          fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           missing=""
-          [ -n "$ref" ] || missing="$missing SUPABASE_PROJECT_REF in deploy/test.env,"
+          [ -n "$ref" ] || missing="$missing the test project (deploy/test.env, or a project named miracle-health-test that the token reaches),"
           [ -n "$TOKEN" ] || missing="$missing the SUPABASE_ACCESS_TOKEN secret,"
           [ -n "$PASSWORD" ] || missing="$missing the SUPABASE_DB_PASSWORD secret,"
           if [ -z "$missing" ]; then

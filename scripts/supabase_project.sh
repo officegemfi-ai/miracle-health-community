@@ -4,7 +4,9 @@
 # on every deploy (each step sets a value, it never adds a second copy).
 #
 # Usage: scripts/supabase_project.sh <test|live> <command>
-#   setup     API settings, sign-in settings, GraphQL off, the Vault secrets the AI
+#   ref       prints the project ref: from deploy/<env>.env, or else the project the token
+#             reaches that's named miracle-health-<env> (or the only one it reaches)
+#   setup    API settings, sign-in settings, GraphQL off, the Vault secrets the AI
 #             review hook reads, and the server functions' secrets
 #   keys      prints SUPABASE_URL=... and SUPABASE_ANON_KEY=... (the public key) for the build
 #   advisors  prints Supabase's security advisor findings (never fails the deploy)
@@ -17,10 +19,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ENV_NAME="${1:?test or live}"
-CMD="${2:?setup, keys or advisors}"
-REF="$(sed -n 's/^SUPABASE_PROJECT_REF=//p' "deploy/$ENV_NAME.env" | tr -d '[:space:]')"
-[ -n "$REF" ] || { echo "deploy/$ENV_NAME.env has no SUPABASE_PROJECT_REF" >&2; exit 1; }
+CMD="${2:?ref, setup, keys or advisors}"
 : "${SUPABASE_ACCESS_TOKEN:?SUPABASE_ACCESS_TOKEN is not set}"
+REF="$(sed -n 's/^SUPABASE_PROJECT_REF=//p' "deploy/$ENV_NAME.env" | tr -d '[:space:]')"
+if [ -z "$REF" ]; then
+  # Not written down yet: ask Supabase which projects the token can reach, and take the
+  # one named miracle-health-<env>, or the only one there is
+  list="$(curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "${SUPABASE_API_BASE:-https://api.supabase.com}/v1/projects")"
+  REF="$(jq -r --arg n "miracle-health-$ENV_NAME" 'if type == "array" then (map(select(.name == $n)) | if length == 1 then .[0].id else empty end) else empty end' <<<"$list" 2>/dev/null || true)"
+  [ -n "$REF" ] || REF="$(jq -r 'if type == "array" and length == 1 then .[0].id else empty end' <<<"$list" 2>/dev/null || true)"
+  [ -n "$REF" ] || { echo "Couldn't tell which Supabase project is the $ENV_NAME one. Supabase answered: $(head -c 300 <<<"$list")" >&2; exit 1; }
+fi
 API="${SUPABASE_API_BASE:-https://api.supabase.com}/v1/projects/$REF"
 mask() { [ -n "${GITHUB_ACTIONS:-}" ] && [ -n "$1" ] && echo "::add-mask::$1"; return 0; }
 
@@ -45,6 +54,10 @@ keys_json() { api GET '/api-keys?reveal=true'; }
 anon_key() { keys_json | jq -r '(map(select(.name == "anon")) + map(select(.type == "publishable")))[0].api_key // empty'; }
 
 case "$CMD" in
+ref)
+  echo "$REF"
+  ;;
+
 keys)
   # Only the two lines go to stdout (the caller masks the key before anything prints it)
   key="$(anon_key)"

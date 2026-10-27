@@ -41,13 +41,15 @@ jobs:
           SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
         run: |
           mkdir -p _site
-          ref=$(sed -n 's/^SUPABASE_PROJECT_REF=//p' deploy/test.env | tr -d '[:space:]')
           if [ -n "$TEST_SUPABASE_URL" ] && [ -n "$TEST_SUPABASE_ANON_KEY" ]; then
             export SUPABASE_URL="$TEST_SUPABASE_URL" SUPABASE_ANON_KEY="$TEST_SUPABASE_ANON_KEY"
-          elif [ -n "$ref" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
-            scripts/supabase_project.sh test keys > "$RUNNER_TEMP/test-keys.env"
-            set -a; . "$RUNNER_TEMP/test-keys.env"; set +a
-            echo "::add-mask::$SUPABASE_ANON_KEY"
+          elif [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            if scripts/supabase_project.sh test keys > "$RUNNER_TEMP/test-keys.env"; then
+              set -a; . "$RUNNER_TEMP/test-keys.env"; set +a
+              echo "::add-mask::$SUPABASE_ANON_KEY"
+            else
+              echo "::warning title=Test app::Couldn't get the test project's public key, so /test/ shows the preview."
+            fi
           fi
           if [ -n "${SUPABASE_URL:-}" ]; then
             echo "The test app runs on $SUPABASE_URL"
