@@ -12,20 +12,19 @@
 #             so the same job can link to it; later runs link without a password.
 #   setup     API settings, sign-in settings, GraphQL off, the Vault secrets the AI
 #             review hook reads, and the server functions' secrets
-#   founding  live only: the founder's one-time invite (FOUNDING_INVITE), and once the
-#             founder has signed up with it, makes that account the admin
+#   admin     live only: makes the member with the handle given as the third argument an admin
 #   keys      prints SUPABASE_URL=... and SUPABASE_ANON_KEY=... (the public key) for the build
 #   advisors  prints Supabase's security advisor findings (never fails the deploy)
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
 #   ANTHROPIC_API_KEY, REVIEW_SECRET, MODERATION_MODEL, APP_ORIGINS, SITE_URL,
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID,
-#   TURNSTILE_SECRET_KEY, FOUNDING_INVITE
+#   TURNSTILE_SECRET_KEY
 # Secret values are masked in the GitHub log and never printed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ENV_NAME="${1:?test or live}"
-CMD="${2:?ref, create, setup, founding, keys or advisors}"
+CMD="${2:?ref, create, setup, admin, keys or advisors}"
 case "$ENV_NAME" in test|live) ;; *) echo "The environment is test or live, not $ENV_NAME" >&2; exit 2 ;; esac
 : "${SUPABASE_ACCESS_TOKEN:?SUPABASE_ACCESS_TOKEN is not set}"
 BASE="${SUPABASE_API_BASE:-https://api.supabase.com}"
@@ -247,26 +246,17 @@ setup)
   echo "done"
   ;;
 
-founding)
-  [ "$ENV_NAME" = live ] || { echo "founding is only for the live project" >&2; exit 2; }
-  code="$(printf '%s' "${FOUNDING_INVITE:-}" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')"
-  if [ -z "$code" ]; then
-    echo "::notice title=Founder::No FOUNDING_INVITE secret, so no founder invite was made. Add one (6 to 40 letters and numbers) and run this again."
-    exit 0
-  fi
-  mask "$code"
-  if ! [[ "$code" =~ ^[A-Z0-9]{6,40}$ ]]; then
-    echo "::error title=Founder::FOUNDING_INVITE must be 6 to 40 letters and numbers, with no dashes or spaces."
+admin)
+  [ "$ENV_NAME" = live ] || { echo "admin is only for the live project" >&2; exit 2; }
+  handle="${3:-}"
+  handle="${handle#u/}"
+  if ! [[ "$handle" =~ ^[A-Za-z0-9_]{3,20}$ ]]; then
+    echo "::error title=Admin::Give the member's handle: 3 to 20 letters, numbers or underscores."
     exit 1
   fi
-  # One use, trusted (no first-week limits); kept if it already exists
-  sql "insert into public.invites (code, note, trusted, max_uses) values ('$code', 'Founder', true, 1)
-       on conflict (code) do nothing" >/dev/null
-  made="$(sql "update public.profiles set role = 'admin' where invite_code = '$code' and role <> 'admin' returning handle" | jq -r '.[0].handle // empty')"
-  who="$(sql "select handle from public.profiles where invite_code = '$code'" | jq -r '.[0].handle // empty')"
-  if [ -n "$made" ]; then echo "::notice title=Founder::u/$made signed up with the founding invite and is now the admin."
-  elif [ -n "$who" ]; then echo "u/$who is the admin."
-  else echo "::notice title=Founder::The founding invite is ready. Sign up with it, then run this workflow again to become the admin."
+  made="$(sql "update public.profiles set role = 'admin' where lower(handle) = lower('$handle') returning handle" | jq -r '.[0].handle // empty')"
+  if [ -n "$made" ]; then echo "::notice title=Admin::u/$made is an admin."
+  else echo "::error title=Admin::No member has the handle $handle. Sign up first, then run this again."; exit 1
   fi
   ;;
 

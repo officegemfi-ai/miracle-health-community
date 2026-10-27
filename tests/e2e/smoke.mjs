@@ -1,5 +1,5 @@
 // After a deploy: the test app, on the real test project, works end to end. A test
-// number (no text is sent to it) signs up with the test invite, joins a space, posts
+// number (no text is sent to it) signs up (no invite needed), joins a space, posts
 // a first-hand report, and Miracle AI reads it for real (the database asks the
 // review-content function, which asks Claude); the read and the points arrive live.
 // Then the account is deleted, which removes everything it wrote.
@@ -69,7 +69,6 @@ try {
   check('A test number signs in with its fixed code', true);
 
   if (await page.isVisible('#handle')) {
-    await page.fill('#invite', 'BETATEST01');
     await page.fill('#handle', `smoke_${String(Date.now()).slice(-6)}`);
     await page.check('#adult');
     await page.check('#rules-ok');
@@ -82,7 +81,7 @@ try {
     await page.click('dialog button:text("Next")');
     await page.click('dialog button:text("Let’s go")');
     await page.waitForSelector('h1:text("Your feed.")');
-    check('Sign-up with the test invite, then Sig’s onboarding', true);
+    check('Sign-up with no invite, then Sig’s onboarding', true);
   }
   await page.waitForSelector('#tick-track .tick-i', { state: 'attached', timeout: 30000 });
   check('The live Signal ticker shows the real numbers', (await page.locator('#tick-track .tick-i').count()) >= 20);

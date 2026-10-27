@@ -108,6 +108,8 @@ select tests.auth_user('nora');                -- signed in, phone confirmed, no
 select tests.auth_user('olga', false);         -- signed in, phone NOT confirmed
 select tests.auth_user('pete');                -- will sign up with a one-use code
 select tests.auth_user('quinn');               -- tries the same code
+select tests.auth_user('ria');                 -- joins without an invite
+select tests.auth_user('sol');                 -- joins without an invite (no code at all)
 insert into public.invites (code, trusted, max_uses) values ('FOUNDER01', true, 5), ('ONEUSE001', false, 1);
 insert into public.invites (code, max_uses, expires_at) values ('EXPIRED01', 5, now() - interval '1 day');
 
@@ -124,7 +126,7 @@ select throws_ok($$ select public.complete_signup('nora_n', 'FOUNDER01', false, 
 select throws_ok($$ select public.complete_signup('nora_n', 'FOUNDER01', true, '2026-10-21', false) $$,
   'P0001', 'To join, agree to how what you post about your health is collected and shown.', 'Sign-up needs consent to collect health information');
 select throws_ok($$ select public.complete_signup('nora_n', 'NOPE12345', true, '2026-10-21', true) $$,
-  'P0001', 'That invite code isn''t valid.', 'Sign-up needs a real invite code');
+  'P0001', 'That invite code isn''t valid.', 'A wrong invite code is refused');
 select throws_ok($$ select public.complete_signup('nora_n', 'EXPIRED01', true, '2026-10-21', true) $$,
   'P0001', 'That invite code isn''t valid.', 'An expired invite code is refused');
 select throws_ok($$ select public.complete_signup('no', 'FOUNDER01', true, '2026-10-21', true) $$,
@@ -146,6 +148,19 @@ select tests.as_user('quinn');
 select throws_ok($$ select public.complete_signup('quinn_q', 'ONEUSE001', true, '2026-10-21', true) $$,
   'P0001', 'That invite code isn''t valid.', 'A one-use code can''t be used twice');
 select is((select new_member from public.me()), null::boolean, 'Without a profile there is no member record');
+
+-- Sign-up is open: no invite needed, and a member without one starts untrusted
+select tests.as_user('ria');
+select lives_ok($$ select public.complete_signup('ria_r', '', true, '2026-10-21', true) $$,
+  'Sign-up is open: an empty invite code is fine');
+select is((select trusted from public.me()), false, 'Without an invite, a new member starts untrusted (first-week limits apply)');
+select tests.as_user('sol');
+select lives_ok($$ select public.complete_signup('sol_s', null, true, '2026-10-21', true) $$,
+  'Sign-up is open: no invite code at all is fine');
+select tests.as_owner();
+select is((select count(*) from public.profiles where handle in ('ria_r', 'sol_s') and invite_code is null), 2::bigint,
+  'Members who joined without an invite have no invite recorded');
+select is((select uses from public.invites where code = 'ONEUSE001'), 1, 'Joining without an invite uses up nobody''s invite');
 
 -- ===========================================================================
 -- 2. People who aren't members see nothing

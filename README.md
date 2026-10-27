@@ -1,11 +1,11 @@
 # Miracle Health Community
 
-The backend and web app for the Miracle Health community beta: phone sign-in with an
-invite, posts, comments, votes, reports and moderation, built on Supabase.
+The backend and web app for the Miracle Health community: phone sign-in (open to adults; an
+invite link adds its perks), posts, comments, votes, reports and moderation, built on Supabase.
 
 ## What's where
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
-- `supabase/tests/database/`: 261 access, Community Signal and game tests (pgTAP)
+- `supabase/tests/database/`: 266 access, Community Signal and game tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal) and `delete-account`
 - `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
 - `shared/rules.json`: the community rules, copied to the app and the AI reviewer by `scripts/sync_rules.sh`
@@ -26,8 +26,8 @@ scripts/local_db.sh test    # the access tests
 scripts/local_db.sh lint    # Supabase's security lints
 scripts/local_api.sh start  # a stand-in for Supabase's API and live updates, serving the app
 ```
-Open http://127.0.0.1:54321, sign in with any phone number and the code 123456,
-and join with the invite code BETATEST01. The moderator account is 555-555-0101.
+Open http://127.0.0.1:54321 and sign in with any phone number and the code 123456; no invite
+is needed. The moderator account is 555-555-0101.
 
 Then: `node tests/e2e/flow.mjs` (browser test) and `node tests/e2e/attack_sim.mjs` (attack).
 

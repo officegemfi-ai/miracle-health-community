@@ -52,7 +52,14 @@ async function signIn(page, phone) {
 }
 async function signUp(page, invite, handle) {
   await page.waitForSelector('#handle');
-  await page.fill('#invite', invite);
+  if (invite) {
+    // Sign-up is open; an invite comes in through its link, and the form then shows it
+    await page.evaluate((c) => { location.hash = `#/join/${c}`; }, invite);
+    await page.waitForSelector('#invite');
+    await page.fill('#invite', invite);
+  } else if (await page.isVisible('#invite')) {
+    throw new Error('The sign-up form asks for an invite without an invite link');
+  }
   await page.fill('#handle', handle);
   await page.check('#adult');
   await page.check('#rules-ok');
@@ -90,12 +97,12 @@ const tickerValue = (page, cid) => page.evaluate((c) => document.querySelector(`
 const shot = (page, name) => page.screenshot({ path: `${OUT}${name}.png` });
 
 // ---------------------------------------------------------------------------
-// A: a new member joins with an invite, gets their bearings with Sig, plays
+// A: a new member joins through an invite link, gets their bearings with Sig, plays
 // ---------------------------------------------------------------------------
 const A = await person();
 await signIn(A, '5555550102');
 await signUp(A, 'betatest01', 'kneeguy');
-check('A new member joins with an invite code, and Sig welcomes them', await A.isVisible('dialog .sig'));
+check('A new member joins through an invite link, and Sig welcomes them', await A.isVisible('dialog .sig'));
 const aSpaces = await onboard(A, async (p) => (await p.locator('dialog .pick b').allTextContents()).slice(0, 3));
 await A.waitForSelector('.kick:has-text("3 spaces you follow")');
 check('Onboarding joins three spaces, and the left menu lists them', (await A.locator('#nav .nav-space').count()) === 3, aSpaces.join(', '));
@@ -135,11 +142,12 @@ const postId = decodeURIComponent(A.url().split('#/post/')[1]);
 check('Their report goes up, and Miracle AI starts reading it', !!postId && await A.isVisible('.airead:has-text("Miracle AI is reading")'));
 
 // ---------------------------------------------------------------------------
-// B: a second member, on a phone, joins the same space
+// B: a second member, on a phone, joins with no invite at all, and follows the same space
 // ---------------------------------------------------------------------------
 const B = await person({ width: 390, height: 844 });
 await signIn(B, '(555) 555-0103');
-await signUp(B, 'BETATEST01', 'sleepyjoe');
+await signUp(B, '', 'sleepyjoe');
+check('Sign-up is open: someone joins with no invite, and the form never asks for one', await B.isVisible('dialog .sig'));
 await onboard(B, async () => ['BPC-157']);
 await B.waitForSelector(`[data-post="${postId}"]`);
 check('Another member joins s/BPC-157, and the report is on their Home feed', true);

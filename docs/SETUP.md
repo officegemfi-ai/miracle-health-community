@@ -29,9 +29,6 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
    - Texts to real phones: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`
      (Twilio Console > Verify > Services). Live needs them; on test, without them only the test
      numbers 555-555-0101 to 0104 sign in, with the code 123456.
-   - `FOUNDING_INVITE`: the founder's own invite code, 6 to 40 letters and numbers. Promote to live
-     makes it a one-use invite; sign up with it, run Promote to live again, and that account is
-     the admin. The admin makes everyone else's invites in the app (Moderation > Invites).
    - Optional: `SITE_PASSWORD`, a password for the whole site. Visitors type it once per browser,
      before the sign-in page; without it the app can't reach Supabase at all, because the public key
      ships encrypted with it. Delete it to open the site. Either takes effect on the next deploy.
@@ -62,7 +59,10 @@ Namecheap's Host field takes only the part before your domain.
 - Add either one to the privacy notice before turning it on.
 
 ## 5. Opening, and every change after that
-- Open the community: Actions > Promote to live > Run workflow. Then sign up at the community with
-  `FOUNDING_INVITE` and run Promote to live once more to become the admin.
+- Open the community: Actions > Promote to live > Run workflow. Sign-up is open to adults with a
+  phone number; no invite is needed. An invite link (made in Moderation > Invites) still works, and
+  a trusted one skips the first-week limits.
+- Make someone an admin: they sign up, then Actions > Promote to live > Run workflow with their
+  handle in the "admin" box.
 - Every change after that: push to main; the tests run, then the test project updates and the
   test app is checked end to end. When it's right: Actions > Promote to live > Run workflow.

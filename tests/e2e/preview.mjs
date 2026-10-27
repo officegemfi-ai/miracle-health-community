@@ -52,7 +52,6 @@ await page.waitForSelector('#code');
 await page.fill('#code', '123456');
 await page.click('form button[type=submit]');
 await page.waitForSelector('#handle');
-await page.fill('#invite', 'preview');
 await page.fill('#handle', 'first_look');
 await page.check('#adult');
 await page.check('#rules-ok');

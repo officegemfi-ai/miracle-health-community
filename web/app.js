@@ -104,7 +104,8 @@ async function unlock() {
 }
 
 // ---------------------------------------------------------------------------
-// Sign in with a phone number and a texted code, then join with an invite
+// Sign in with a phone number and a texted code, then join (open to adults; an invite
+// link still brings its invite along)
 // ---------------------------------------------------------------------------
 function e164(raw) {
   const s = String(raw || '').trim();
@@ -147,7 +148,7 @@ function renderSignIn() {
   const ts = h('div', { class: 'turnstile' });
   const send = h('button', { class: 'btn lime block', type: 'submit' }, 'Text me a code');
   authLayout(
-    h('div', { class: 'kick' }, '// Invite-only while we start'),
+    h('div', { class: 'kick' }, '// Free to join, 18 and over'),
     h('h2', {}, 'Sign in.'),
     h('p', { class: 'muted' }, 'We text you a code. Your number is never shown to anyone.'),
     h('form', {
@@ -195,7 +196,8 @@ function renderSignup() {
   const msg = msgBox();
   let saved = '';
   try { saved = sessionStorage.getItem('mh_invite') || ''; } catch (_) { /* private mode */ }
-  const invite = h('input', { class: 'input', id: 'invite', required: true, autocomplete: 'off', value: saved, placeholder: 'From your invite link' });
+  // No invite needed; one that came in with an invite link is shown, and can be cleared
+  const invite = saved ? h('input', { class: 'input', id: 'invite', autocomplete: 'off', value: saved }) : null;
   const handle = h('input', { class: 'input', id: 'handle', required: true, autocomplete: 'nickname', maxlength: 20, placeholder: 'letters, numbers, _' });
   const adult = h('input', { type: 'checkbox', id: 'adult' });
   const rules = h('input', { type: 'checkbox', id: 'rules-ok' });
@@ -213,7 +215,7 @@ function renderSignup() {
         if (!health.checked) return say(msg, 'To join, agree to how what you post about your health is collected and shown.');
         go.disabled = true; say(msg, '');
         const { error } = await sb.rpc('complete_signup', {
-          handle: handle.value.trim(), invite_code: invite.value.trim(), confirm_adult: true,
+          handle: handle.value.trim(), invite_code: invite ? invite.value.trim() : '', confirm_adult: true,
           rules_version: S.rules?.version || '', health_data_consent: true,
         });
         go.disabled = false;
@@ -225,7 +227,7 @@ function renderSignup() {
         onboarding();
       },
     },
-    h('label', { class: 'f', for: 'invite' }, h('span', {}, 'Invite code'), invite),
+    invite ? h('label', { class: 'f', for: 'invite' }, h('span', {}, 'Invite code (optional)'), invite) : null,
     h('label', { class: 'f', for: 'handle' }, h('span', {}, 'Handle'), handle),
     h('label', { class: 'check', for: 'adult' }, adult, h('span', {}, 'I’m 18 or older.')),
     h('label', { class: 'check', for: 'rules-ok' }, rules, h('span', {}, 'I’ve read the ', h('a', { href: '#/rules', target: '_blank', rel: 'noopener' }, 'community rules'), ' and will follow them.')),

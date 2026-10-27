@@ -3,18 +3,23 @@
 #
 # The first run creates the live Supabase project (miracle-health-live, next to the test
 # one); every run brings it up to date: database changes (never the test data), sign-in by
-# text through Twilio Verify, Miracle AI's settings and functions, and the founder's
-# invite. Then the commit is tagged "live" and the site is rebuilt with the live app at
-# the root; from then on the test app and the preview with sample posts stay off the site.
+# text through Twilio Verify, and Miracle AI's settings and functions. Then the commit is
+# tagged "live" and the site is rebuilt with the live app at the root; from then on the
+# test app and the preview with sample posts stay off the site.
+# To make someone an admin, run it with their handle (they sign up first).
 #
 # Needs these repository secrets: SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY,
-# TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID and FOUNDING_INVITE (the
-# founder's own invite code: sign up with it, then run this again to become the admin).
+# TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_VERIFY_SERVICE_SID.
 # Optional: LIVE_SUPABASE_DB_PASSWORD (only if the database won't take the access token's
 # temporary sign-in), TURNSTILE_SECRET_KEY, and the MODERATION_MODEL variable.
 name: Promote to live
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      admin:
+        description: Make this member an admin (their handle, after they've signed up)
+        required: false
+        default: ''
 permissions:
   contents: write
 concurrency: deploy-live
@@ -99,10 +104,11 @@ jobs:
           { supabase functions deploy review-content --no-verify-jwt --project-ref "$REF" \
             && supabase functions deploy delete-account --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
             || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
-      - name: The founder's invite (and admin, once signed up)
+      - name: Make a member an admin
+        if: inputs.admin != ''
         env:
-          FOUNDING_INVITE: ${{ secrets.FOUNDING_INVITE }}
-        run: scripts/supabase_project.sh live founding
+          ADMIN: ${{ inputs.admin }}
+        run: scripts/supabase_project.sh live admin "$ADMIN"
       - name: Supabase's security advisor
         run: scripts/supabase_project.sh live advisors
       - name: Mark this commit as live
