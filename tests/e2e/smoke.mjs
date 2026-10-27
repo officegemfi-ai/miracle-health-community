@@ -3,8 +3,8 @@
 // a first-hand report, and Miracle AI reads it for real (the database asks the
 // review-content function, which asks Claude); the read and the points arrive live.
 // Then the account is deleted, which removes everything it wrote.
-// Usage: BASE_URL=https://community.miraclehealth.us/test/ GATE_PASSWORD=...
-//        EXPECT_SUPABASE_URL=https://<ref>.supabase.co node tests/e2e/smoke.mjs
+// Usage: BASE_URL=<the test app, e.g. served from the runner: http://127.0.0.1:4173/test/>
+//        EXPECT_SUPABASE_URL=https://<ref>.supabase.co [GATE_PASSWORD=...] node tests/e2e/smoke.mjs
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 

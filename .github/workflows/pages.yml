@@ -1,11 +1,13 @@
-# Builds the website: the live app at the root (from the commit tagged "live"), the
-# test app at /test/ (from main) and the preview with sample posts at /preview/.
-# Called by the two deploy workflows, after the database is updated.
+# Builds the website at community.miraclehealth.us.
+# Before the community opens: an "opening soon" page at the root, the test app at /test/
+# (from main) and the preview with sample posts at /preview/.
+# Once it's open (a commit is tagged "live" by Promote to live): the live app at the root,
+# from that commit, and nothing else; the test app and the preview stay off the site.
+# Called by the two deploy workflows, after the database is updated. It can also be run
+# by hand (Actions > Pages > Run workflow).
 # With the repository secret SITE_PASSWORD set, every app sits behind that password.
-# It can also be run by hand (Actions > Pages > Run workflow).
-# The test app runs on the project named in deploy/test.env; its public key comes
-# from Supabase with the SUPABASE_ACCESS_TOKEN secret (or the TEST_SUPABASE_URL and
-# TEST_SUPABASE_ANON_KEY variables, when set). Until then /test/ shows the preview too.
+# Each app's public key comes from Supabase with the SUPABASE_ACCESS_TOKEN secret (or the
+# TEST_/LIVE_SUPABASE_URL and _ANON_KEY variables, when set).
 name: Pages
 on:
   workflow_call: {}
@@ -18,6 +20,15 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      # The privacy notice and contact address the apps link to
+      PRIVACY_URL: ${{ vars.PRIVACY_URL || 'https://miraclehealth.us/privacy' }}
+      CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL || 'hello@miraclehealth.us' }}
+      TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+      POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+      SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,22 +36,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Tools for the preview (the database that runs in the browser)
-        run: npm ci --prefix scripts/preview --no-audit --no-fund --loglevel=error
-      - name: Test app at /test/ (main)
-        env:
-          ENVIRONMENT: test
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          TEST_SUPABASE_URL: ${{ vars.TEST_SUPABASE_URL }}
-          TEST_SUPABASE_ANON_KEY: ${{ vars.TEST_SUPABASE_ANON_KEY }}
-          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-          POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
-          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
-          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
-          PRIVACY_URL: ${{ vars.PRIVACY_URL }}
-          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+      - name: Is the community open?
+        id: live
         run: |
           mkdir -p _site
+          if git rev-parse -q --verify refs/tags/live >/dev/null; then
+            echo "open=true" >> "$GITHUB_OUTPUT"
+            echo "The community is open: the live app goes at the root, and nothing else."
+          else
+            echo "open=false" >> "$GITHUB_OUTPUT"
+            echo "Not open yet: an opening-soon page at the root, the test app and the preview."
+          fi
+      - name: Tools for the preview (the database that runs in the browser)
+        if: steps.live.outputs.open != 'true'
+        run: npm ci --prefix scripts/preview --no-audit --no-fund --loglevel=error
+      - name: Test app at /test/ (main)
+        if: steps.live.outputs.open != 'true'
+        env:
+          ENVIRONMENT: test
+          TEST_SUPABASE_URL: ${{ vars.TEST_SUPABASE_URL }}
+          TEST_SUPABASE_ANON_KEY: ${{ vars.TEST_SUPABASE_ANON_KEY }}
+        run: |
           if [ -n "$TEST_SUPABASE_URL" ] && [ -n "$TEST_SUPABASE_ANON_KEY" ]; then
             export SUPABASE_URL="$TEST_SUPABASE_URL" SUPABASE_ANON_KEY="$TEST_SUPABASE_ANON_KEY"
           elif [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
@@ -59,33 +75,34 @@ jobs:
             DEMO=1 ENVIRONMENT=preview scripts/build_web.sh _site/test
           fi
       - name: The preview with sample posts at /preview/
+        if: steps.live.outputs.open != 'true'
         env:
           ENVIRONMENT: preview
-          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
         run: DEMO=1 scripts/build_web.sh _site/preview
-      - name: Live app at the root (tag "live")
+      - name: Opening-soon page at the root
+        if: steps.live.outputs.open != 'true'
+        run: |
+          cp site/soon.html _site/index.html
+          cp site/soon.css web/favicon.svg _site/
+          mkdir -p _site/fonts && cp web/fonts/unbounded.woff2 _site/fonts/
+      - name: Live app at the root (the commit tagged "live")
+        if: steps.live.outputs.open == 'true'
         env:
           ENVIRONMENT: live
-          SUPABASE_URL: ${{ vars.LIVE_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.LIVE_SUPABASE_ANON_KEY }}
-          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-          POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
-          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
-          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
-          PRIVACY_URL: ${{ vars.PRIVACY_URL }}
-          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+          LIVE_SUPABASE_URL: ${{ vars.LIVE_SUPABASE_URL }}
+          LIVE_SUPABASE_ANON_KEY: ${{ vars.LIVE_SUPABASE_ANON_KEY }}
         run: |
-          mkdir -p _site
-          if git rev-parse -q --verify refs/tags/live >/dev/null; then
-            git worktree add /tmp/live live
-            (cd /tmp/live && scripts/build_web.sh "$GITHUB_WORKSPACE/_site/live-build")
-            cp -R _site/live-build/. _site/ && rm -rf _site/live-build
+          if [ -n "$LIVE_SUPABASE_URL" ] && [ -n "$LIVE_SUPABASE_ANON_KEY" ]; then
+            export SUPABASE_URL="$LIVE_SUPABASE_URL" SUPABASE_ANON_KEY="$LIVE_SUPABASE_ANON_KEY"
           else
-            # Until the first promotion: a branded "opening soon" page
-            cp site/soon.html _site/index.html
-            cp site/soon.css web/favicon.svg _site/
-            mkdir -p _site/fonts && cp web/fonts/unbounded.woff2 _site/fonts/
+            scripts/supabase_project.sh live keys > "$RUNNER_TEMP/live-keys.env" \
+              || { echo "::error title=Live app::Couldn't get the live project's public key"; exit 1; }
+            set -a; . "$RUNNER_TEMP/live-keys.env"; set +a
+            echo "::add-mask::$SUPABASE_ANON_KEY"
           fi
+          echo "The live app runs on $SUPABASE_URL"
+          git worktree add /tmp/live live
+          (cd /tmp/live && scripts/build_web.sh "$GITHUB_WORKSPACE/_site")
           # No CNAME file: with a GitHub Actions deploy, the custom domain is set in
           # Settings > Pages, and GitHub ignores a CNAME file.
       - uses: actions/configure-pages@v5

@@ -1,5 +1,17 @@
-# The only way to change the LIVE community: press "Run workflow" on a commit that
-# has passed on test. The "live" environment accepts runs from main only.
+# Opens, and later updates, the LIVE community at https://community.miraclehealth.us.
+# Press "Run workflow" (Actions > Promote to live) on main once a change has passed on test.
+#
+# The first run creates the live Supabase project (miracle-health-live, next to the test
+# one); every run brings it up to date: database changes (never the test data), sign-in by
+# text through Twilio Verify, Miracle AI's settings and functions, and the founder's
+# invite. Then the commit is tagged "live" and the site is rebuilt with the live app at
+# the root; from then on the test app and the preview with sample posts stay off the site.
+#
+# Needs these repository secrets: SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY,
+# TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID and FOUNDING_INVITE (the
+# founder's own invite code: sign up with it, then run this again to become the admin).
+# Optional: LIVE_SUPABASE_DB_PASSWORD (only if the database won't take the access token's
+# temporary sign-in), TURNSTILE_SECRET_KEY, and the MODERATION_MODEL variable.
 name: Promote to live
 on:
   workflow_dispatch: {}
@@ -8,36 +20,96 @@ permissions:
 concurrency: deploy-live
 jobs:
   backend:
+    name: Live database, sign-in and functions
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 40
     environment: live
+    outputs:
+      ref: ${{ steps.project.outputs.ref }}
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      REF: ${{ vars.SUPABASE_PROJECT_REF }}
     steps:
       - uses: actions/checkout@v4
+      - name: Everything going live needs is in place
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+        run: |
+          missing=""
+          for v in SUPABASE_ACCESS_TOKEN ANTHROPIC_API_KEY TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
+            [ -n "${!v}" ] || missing="$missing $v,"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Not ready to go live::Add these repository secrets first:${missing%,}."
+            exit 1
+          fi
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - run: supabase link --project-ref "$REF" --password "$SUPABASE_DB_PASSWORD"
-      - name: Database changes
-        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
-      - name: Function secrets
+      - name: The live Supabase project (made on the first run)
+        id: project
         run: |
-          supabase secrets set --project-ref "$REF" \
-            ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
-            REVIEW_SECRET="${{ secrets.REVIEW_SECRET }}" \
-            MODERATION_MODEL="${{ vars.MODERATION_MODEL }}" \
-            APP_ORIGINS="${{ vars.APP_ORIGINS }}"
+          # Progress and masks go to the log; only the ref comes back
+          ref="$(scripts/supabase_project.sh live create)" \
+            || { echo "::error title=The live project::Couldn't make or reach the live Supabase project. This step's log says why."; exit 1; }
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "The live project is $ref"
+      - name: Link the project
+        env:
+          REF: ${{ steps.project.outputs.ref }}
+          LIVE_DB_PASSWORD: ${{ secrets.LIVE_SUPABASE_DB_PASSWORD }}
+        run: |
+          set -o pipefail
+          # The first run knows the new database's password (the step above set it); later
+          # runs sign in with the access token (Supabase makes a temporary login role), or
+          # with LIVE_SUPABASE_DB_PASSWORD when that secret exists
+          if [ -n "$LIVE_DB_PASSWORD" ]; then
+            echo "::add-mask::$LIVE_DB_PASSWORD"
+            echo "SUPABASE_DB_PASSWORD=$LIVE_DB_PASSWORD" >> "$GITHUB_ENV"
+            export SUPABASE_DB_PASSWORD="$LIVE_DB_PASSWORD"
+          fi
+          supabase link --project-ref "$REF" < /dev/null 2>&1 | tee "$RUNNER_TEMP/link.log" \
+            || { scripts/ci_annotate.sh "Link the live project" "$RUNNER_TEMP/link.log"; exit 1; }
+      - name: Database changes (no test data)
+        run: |
+          set -o pipefail
+          supabase db push --yes < /dev/null 2>&1 | tee "$RUNNER_TEMP/push.log" \
+            || { scripts/ci_annotate.sh "Database changes" "$RUNNER_TEMP/push.log"; exit 1; }
+      - name: Sign-in by text, Vault and function secrets
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          MODERATION_MODEL: ${{ vars.MODERATION_MODEL }}
+        run: |
+          set -o pipefail
+          # The review secret lives only in the live project's Vault (made on the first run)
+          scripts/supabase_project.sh live setup 2>&1 | tee "$RUNNER_TEMP/setup.log" \
+            || { scripts/ci_annotate.sh "Live project settings" "$RUNNER_TEMP/setup.log"; exit 1; }
       - name: Functions
+        env:
+          REF: ${{ steps.project.outputs.ref }}
         run: |
-          supabase functions deploy review-content --no-verify-jwt --project-ref "$REF"
-          supabase functions deploy delete-account --project-ref "$REF"
+          set -o pipefail
+          { supabase functions deploy review-content --no-verify-jwt --project-ref "$REF" \
+            && supabase functions deploy delete-account --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
+            || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
+      - name: The founder's invite (and admin, once signed up)
+        env:
+          FOUNDING_INVITE: ${{ secrets.FOUNDING_INVITE }}
+        run: scripts/supabase_project.sh live founding
+      - name: Supabase's security advisor
+        run: scripts/supabase_project.sh live advisors
       - name: Mark this commit as live
         run: |
           git tag -f live "$GITHUB_SHA"
           git push -f origin refs/tags/live
+
   site:
     needs: backend
     uses: ./.github/workflows/pages.yml
@@ -46,3 +118,31 @@ jobs:
       contents: read
       pages: write
       id-token: write
+
+  check:
+    name: The live site
+    needs: [backend, site]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: The live app is up on the live project, and test and preview are off the site
+        env:
+          EXPECT: https://${{ needs.backend.outputs.ref }}.supabase.co
+          SITE: https://community.miraclehealth.us
+        run: |
+          # GitHub Pages can take a few minutes to serve a new build
+          cfg=""
+          for _ in $(seq 1 36); do
+            cfg="$(curl -fsS "$SITE/config.js?$(date +%s)" || true)"
+            if grep -q "\"supabaseUrl\": \"$EXPECT\"" <<<"$cfg"; then break; fi
+            sleep 10
+          done
+          if ! grep -q "\"supabaseUrl\": \"$EXPECT\"" <<<"$cfg"; then
+            echo "::error title=Live site::$SITE isn't serving the live app yet. Run Actions > Pages by hand if it doesn't show up within a few minutes."
+            exit 1
+          fi
+          for p in test/ preview/; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/$p?$(date +%s)")
+            if [ "$code" != 404 ]; then echo "::error title=Live site::$SITE/$p still answers ($code)"; exit 1; fi
+          done
+          echo "::notice title=Live::The community is live at $SITE"
