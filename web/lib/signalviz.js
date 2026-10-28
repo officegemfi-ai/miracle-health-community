@@ -187,8 +187,8 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
 // ---------------------------------------------------------------------------
 // points: [{ share: 0-100, level, label }]; w: what the forums count as; you: a point to call
 // out ({ share, label } or { n, label } for a number of reports); still: don't draw the line in
-export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {}, { compact = false, still = false } = {}) {
-  const W = compact ? 360 : 720; const H = compact ? 230 : 250;
+export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {}, { compact = false, still = false, width = 0 } = {}) {
+  const W = width || (compact ? 360 : 720); const H = compact ? 230 : 250;
   const L = compact ? 34 : 54; const R = compact ? 14 : 24; const T = 18; const B = compact ? 40 : 44;
   const pw = W - L - R; const ph = H - T - B;
   const X = (n) => L + (Math.min(n, max) / max) * pw;
@@ -304,4 +304,47 @@ export function radarSvg({ axes = [], layers = [] } = {}, { size = 340, labels =
     return `<text x="${x.toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}" class="rd-label">${esc(a.label)}</text>`;
   }).join('') : '';
   return `<svg class="radar" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${rings}${spokes}${shapes}${text}</svg>`;
+}
+
+// ---------------------------------------------------------------------------
+// A rose: the radar for sparse data. Each goal gets a slice, and each layer a petal in it
+// whose length is its value (0-1), side by side, so a compound used for two things shows
+// two clear petals instead of a collapsed polygon.
+// ---------------------------------------------------------------------------
+// axes: [{ id, label }]; layers: [{ values: { id: 0-1 }, cls }]
+export function roseSvg({ axes = [], layers = [] } = {}, { size = 340, labels = true, title = 'Rose' } = {}) {
+  const n = axes.length;
+  if (!n) return '';
+  const W = size + (labels ? 70 : 0); const H = size + (labels ? 10 : 0);
+  const cx = W / 2; const cy = H / 2;
+  const R = size / 2 - (labels ? 46 : 6); const r0 = R * 0.16;
+  const slice = (2 * Math.PI) / n;
+  const k = Math.max(1, layers.length);
+  const width = (slice * 0.9) / k;
+  const pt = (a, r) => [cx + r * Math.cos(a), cy + r * Math.sin(a)].map((x) => x.toFixed(1)).join(' ');
+  const petal = (a0, a1, r) => `M${pt(a0, r0)} L${pt(a0, r)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${pt(a1, r)} L${pt(a1, r0)} A${r0.toFixed(1)} ${r0.toFixed(1)} 0 0 0 ${pt(a0, r0)} Z`;
+  const rings = [0.25, 0.5, 0.75, 1].map((f) => `<circle cx="${cx}" cy="${cy}" r="${(r0 + (R - r0) * f).toFixed(1)}" fill="none" stroke="currentColor" stroke-opacity="${f === 1 ? 0.26 : 0.1}"/>`).join('')
+    + `<circle cx="${cx}" cy="${cy}" r="${r0.toFixed(1)}" fill="none" stroke="currentColor" stroke-opacity=".18"/>`;
+  const spokes = axes.map((_, i) => {
+    const a = -Math.PI / 2 + slice * (i + 0.5);
+    return `<line x1="${pt(a, r0).split(' ')[0]}" y1="${pt(a, r0).split(' ')[1]}" x2="${pt(a, R).split(' ')[0]}" y2="${pt(a, R).split(' ')[1]}" stroke="currentColor" stroke-opacity=".08"/>`;
+  }).join('');
+  const shapes = layers.map((l, j) => {
+    const paths = axes.map((ax, i) => {
+      const v = Math.max(0, Math.min(1, Number(l.values?.[ax.id]) || 0));
+      if (!v) return '';
+      const mid = -Math.PI / 2 + slice * i;
+      const a0 = mid - (slice * 0.9) / 2 + width * j; const a1 = a0 + width;
+      return `<path d="${petal(a0, a1, r0 + (R - r0) * v)}"/>`;
+    }).join('');
+    return paths ? `<g class="rd-layer rd-${esc(l.cls || 'studied')}" transform-origin="${cx} ${cy}">${paths}</g>` : '';
+  }).join('');
+  const text = labels ? axes.map((a, i) => {
+    const ang = -Math.PI / 2 + slice * i;
+    const x = cx + (R + 16) * Math.cos(ang); const y = cy + (R + 16) * Math.sin(ang);
+    const anchor = Math.abs(x - cx) < 8 ? 'middle' : x > cx ? 'start' : 'end';
+    const dy = y < cy - R * 0.8 ? -2 : y > cy + R * 0.8 ? 10 : 4;
+    return `<text x="${x.toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}" class="rd-label">${esc(a.label)}</text>`;
+  }).join('') : '';
+  return `<svg class="radar rose" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${rings}${spokes}${shapes}${text}</svg>`;
 }
