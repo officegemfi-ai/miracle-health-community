@@ -116,9 +116,14 @@ export function emblemRing(level, pct, size = 120) {
 // Space tiles: initials on ink, in the category's color
 // ---------------------------------------------------------------------------
 const CAT = {
-  Metabolic: '#D8FF3D', 'Healing & recovery': '#6EE7B7', 'Growth-hormone axis': '#7DD3FC', 'Hormone balance': '#F9A8D4',
-  Longevity: '#FCD34D', 'Cognition & mood': '#C4B5FD', Supplements: '#E5E7EB', 'Vitamins & minerals': '#FDBA74',
-  'Skin & appearance': '#FDA4AF', Sleep: '#93C5FD', 'Sexual health': '#FB7185', Immune: '#5EEAD4', 'Gut & inflammation': '#BEF264',
+  'Metabolic & weight': '#D8FF3D', 'Growth-hormone axis': '#7DD3FC', 'Healing & recovery': '#6EE7B7', 'Gut & digestion': '#BEF264',
+  'Immune & inflammation': '#5EEAD4', 'Cognition & focus': '#C4B5FD', 'Mood & stress': '#A5B4FC', Sleep: '#93C5FD',
+  'Sexual health': '#FB7185', 'Skin & hair': '#FDA4AF', Longevity: '#FCD34D', 'Hormone balance': '#F9A8D4',
+  'Muscle & performance': '#FCA5A5', 'Heart & circulation': '#F87171', 'Energy & mitochondria': '#FDE68A',
+  'Vitamins & minerals': '#FDBA74', 'Liver & detox': '#A3E635', 'Joints & bones': '#D6D3D1', Stacks: '#D8FF3D',
+  // older names, for anything saved before the library grew
+  Metabolic: '#D8FF3D', 'Cognition & mood': '#C4B5FD', Supplements: '#E5E7EB', 'Skin & appearance': '#FDA4AF',
+  Immune: '#5EEAD4', 'Gut & inflammation': '#BEF264',
 };
 export const catColor = (cat) => CAT[cat] || '#D8FF3D';
 export function initials(name) {
@@ -131,6 +136,15 @@ export function initials(name) {
 }
 export function spaceTile(space, size = 32) {
   const color = catColor(space?.category);
+  if (space?.kind === 'stack') {
+    // A stack: layered plates, with how many compounds are in it
+    const n = (space.part_ids || []).length || '';
+    return svg(`<svg class="tile" viewBox="0 0 32 32" width="${size}" height="${size}" aria-hidden="true">
+      <rect width="32" height="32" rx="9" fill="#121E1D"/><rect x=".5" y=".5" width="31" height="31" rx="8.5" fill="none" stroke="${color}" stroke-opacity=".45"/>
+      <path d="M9 13.5 16 10l7 3.5-7 3.5z" fill="${color}"/><path d="m9 17.5 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
+      <path d="m9 21 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/>
+      ${n ? `<circle cx="25" cy="7" r="5" fill="${color}"/><text x="25" y="9.6" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="7.5" fill="#121E1D">${Number(n)}</text>` : ''}</svg>`);
+  }
   const txt = initials(space?.name || space?.compound_name || space?.id);
   const fs = txt.length > 2 ? 11 : 13;
   return svg(`<svg class="tile" viewBox="0 0 32 32" width="${size}" height="${size}" aria-hidden="true">

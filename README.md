@@ -3,9 +3,15 @@
 The backend and web app for the Miracle Health community: phone sign-in (open to adults; an
 invite link adds its perks), posts, comments, votes, reports and moderation, built on Supabase.
 
+Posts name what the member took, from a library of about 300 peptides, hormones, supplements,
+medications and pre-mixed blends (searchable by brand names and nicknames too). Several picked
+together make a stack: a space of its own with its own Signal, scored only from reports of that
+exact stack. "Find your stack" searches every report that includes what you take. Members suggest
+what the library is missing; moderators add it under Moderation > Library.
+
 ## What's where
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
-- `supabase/tests/database/`: 266 access, Community Signal and game tests (pgTAP)
+- `supabase/tests/database/`: 332 access, Community Signal, game and stack tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal) and `delete-account`
 - `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
 - `shared/rules.json`: the community rules, copied to the app and the AI reviewer by `scripts/sync_rules.sh`

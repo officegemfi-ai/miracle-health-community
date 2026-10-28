@@ -10,6 +10,7 @@ import {
 import { render, setRail, renderNav, renderTop, renderTabbar, mountSig, sigSay, closeDrawer } from './lib/shell.js';
 import { renderTicker, renderSignalPage } from './lib/signal.js';
 import { renderHome, renderPopular, renderSpace, renderExplore, renderNew } from './lib/feed.js';
+import { renderStack } from './lib/library.js';
 import { renderPost } from './lib/post.js';
 import { renderProfile, renderBuilders, renderQuests, renderNotifications, refreshQuests, onboarding, setUnread } from './lib/game.js';
 import { renderMod } from './lib/mod.js';
@@ -134,7 +135,7 @@ function authLayout(...formKids) {
       h('div', { class: 'sig-hero' }, sig(150, 'happy')),
       h('div', { class: 'kick' }, '// The Miracle Health community'),
       h('h1', {}, 'Built by the people who take it.'),
-      h('p', { class: 'lede' }, 'Real experiences with peptides, from the adults who took them: what for, how long, and whether it was better, the same or worse. Every report moves a live number.'),
+      h('p', { class: 'lede' }, 'Real experiences with peptides, hormones and supplements, from the adults who took them: what for, how long, and whether it was better, the same or worse. Every report moves a live number.'),
       h('div', { class: 'proof' },
         h('div', {}, h('b', {}, 'Live'), h('span', {}, 'A Signal per compound')),
         h('div', {}, h('b', {}, '0'), h('span', {}, 'Sellers allowed')),
@@ -314,12 +315,13 @@ async function route() {
     home: () => renderHome(sort),
     popular: () => renderPopular(sort),
     signal: () => renderSignalPage(),
-    explore: () => renderExplore(),
+    explore: () => renderExplore(r.q.get('f') || ''),
+    stack: () => renderStack(r.q.get('c') || '', r.q.get('sort') || 'new'),
     builders: () => renderBuilders(),
     quests: () => renderQuests(),
     notifications: () => renderNotifications(),
     new: () => renderNew(r.q.get('c') || ''),
-    s: () => { current.name = 'space'; navKey = ''; return renderSpace(r.arg, sort); },
+    s: () => { current.name = 'space'; navKey = ''; return renderSpace(r.arg, sort, r.q.get('only') || 'all'); },
     post: () => { navKey = ''; return renderPost(r.arg, { edit: r.q.get('edit') === '1', focus: r.q.get('c') }); },
     u: () => { navKey = r.arg === S.me.handle ? 'me' : ''; return renderProfile(r.arg, r.q.get('t') || 'posts'); },
     how: () => renderHow(),

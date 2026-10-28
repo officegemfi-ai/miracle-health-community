@@ -160,12 +160,13 @@ export async function renderSignalPage() {
   const movers = h('div', { class: 'movers' });
   const stats = h('div', { class: 'hero-stats' });
   let sort = 'score';
+  let only = 'all';
   const sortbar = h('div', { class: 'sortbar' });
   render(
     h('section', { class: 'hero' },
       h('div', { class: 'kick' }, '// The Community Signal'),
       h('h1', {}, 'The Signal.'),
-      h('p', { class: 'lede' }, 'One number per compound, 0 to 100: 65% what people report happened, 15% how much those reports agree, 10% how many independent voices there are, 10% how much there is to go on. It starts from public forums and moves toward this community’s own first-hand reports, live.'),
+      h('p', { class: 'lede' }, 'One number per compound, blend and stack, 0 to 100: 65% what people report happened, 15% how much those reports agree, 10% how many independent voices there are, 10% how much there is to go on. It starts from public forums and moves toward this community’s own first-hand reports, live.'),
       stats),
     movers, sortbar, list,
     h('section', { class: 'card mt16' },
@@ -191,11 +192,15 @@ export async function renderSignalPage() {
   movers.replaceChildren(board('Rising', rising, 'up'), board('Falling', falling, 'dn'));
 
   const draw = () => {
-    const ranked = [...live].sort(sort === 'move' ? (a, b) => Math.abs(delta(b)) - Math.abs(delta(a))
+    const shown = live.filter((x) => only === 'all' || (only === 'stacks' ? ['stack', 'blend'].includes(x.kind) : !['stack', 'blend'].includes(x.kind)));
+    const ranked = [...shown].sort(sort === 'move' ? (a, b) => Math.abs(delta(b)) - Math.abs(delta(a))
       : sort === 'community' ? (a, b) => b.internal_share - a.internal_share || b.score - a.score
         : (a, b) => b.score - a.score);
     sortbar.replaceChildren(...[['score', 'Highest'], ['move', 'Biggest moves'], ['community', 'Most community data']].map(([k, l]) =>
-      h('a', { href: '#/signal', 'aria-current': sort === k ? 'page' : null, onclick: (e) => { e.preventDefault(); sort = k; draw(); } }, l)));
+      h('a', { href: '#/signal', 'aria-current': sort === k ? 'page' : null, onclick: (e) => { e.preventDefault(); sort = k; draw(); } }, l)),
+    h('span', { class: 'grow' }),
+    ...[['all', 'All'], ['single', 'Compounds'], ['stacks', 'Stacks & blends']].map(([k, l]) =>
+      h('a', { href: '#/signal', 'aria-current': only === k ? 'page' : null, onclick: (e) => { e.preventDefault(); only = k; draw(); } }, l)));
     const nums = [];
     list.replaceChildren(...ranked.map((x, i) => {
       const num = h('span', { class: 'sc', 'data-sig-of': x.compound_id }, fmt1(x.prev_score ?? x.score));

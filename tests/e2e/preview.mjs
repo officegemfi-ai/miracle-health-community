@@ -154,7 +154,11 @@ check('Replies nest under the comment they answer', true);
 // The rules still apply
 await page.goto(`${BASE}#/new`);
 await page.waitForSelector('#title');
-await page.selectOption('#compound', 'semaglutide');
+await page.fill('#compound', 'Ozempic');
+await page.waitForSelector('.cpick-opt.on:has-text("Semaglutide")');
+await page.keyboard.press('Enter');
+await page.waitForSelector('.cchip:has-text("Semaglutide")');
+check('Brand names find compounds: Ozempic picks semaglutide', true);
 await page.fill('#title', 'Where to buy sema cheap?');
 await page.fill('#body', 'Anyone know where to buy it?');
 await page.click('form button[type=submit]:text("Post")');

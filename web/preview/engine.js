@@ -172,6 +172,7 @@ class Query {
   ilike(c, v) { this.wheres.push([c, 'ilike', v]); return this; }
   like(c, v) { this.wheres.push([c, 'like', v]); return this; }
   in(c, list) { this.wheres.push([c, 'in', list]); return this; }
+  contains(c, list) { this.wheres.push([c, 'contains', list]); return this; }
   is(c, v) { this.wheres.push([c, 'is', v]); return this; }
   order(c, o = {}) { this.orders.push([c, o.ascending !== false, o.nullsFirst]); return this; }
   limit(n) { this.max = n; return this; }
@@ -186,6 +187,7 @@ class Query {
     const where = this.wheres.length ? ` where ${this.wheres.map(([c, op, v]) => {
       if (op === 'is') return `${ident(c)} is ${v === null ? 'null' : v ? 'true' : 'false'}`;
       if (op === 'in') return `${ident(c)} = any(${p(v)})`;
+      if (op === 'contains') return `${ident(c)} @> ${p(v)}::text[]`;
       return `${ident(c)} ${op} ${p(v)}`;
     }).join(' and ')}` : '';
     const t = `public.${ident(this.table)}`;
@@ -241,6 +243,7 @@ async function rpc(name, args = {}) {
       await asOwner((d) => d.query(`update public.profiles set role = 'moderator' where id = $1`, [session.user.id]));
     }
     let data;
+    if (name === 'create_post' && res.rows[0]) aiRead(Object.values(res.rows[0])[0]);
     if (meta.proretset) data = res.rows;
     else if (meta.typname === 'void') data = null;
     else if (meta.typtype === 'c') data = res.rows[0] ?? null;

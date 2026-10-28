@@ -5,6 +5,7 @@ import { sig, emblem, spaceTile } from './art.js';
 import { S, sb, isMod, levelOf } from './state.js';
 import { signalCard, movesCard } from './signal.js';
 import { meCard, questsCard, buildersCard, goalsCard, seasonCard, bellButton, claimable } from './game.js';
+import { searchLibrary, familyLabel } from './library.js';
 
 const app = document.getElementById('app');
 const rail = document.getElementById('rail');
@@ -55,7 +56,8 @@ async function aboutSpace(cid) {
 // ---------------------------------------------------------------------------
 const MAIN = [
   ['home', 'Home', 'home', '#/home'], ['popular', 'Popular', 'flame', '#/popular'], ['signal', 'The Signal', 'pulse', '#/signal'],
-  ['explore', 'Explore spaces', 'compass', '#/explore'], ['builders', 'Signal Builders', 'trophy', '#/builders'], ['quests', 'Quests', 'target', '#/quests'],
+  ['explore', 'Explore spaces', 'compass', '#/explore'], ['stack', 'Find your stack', 'layers', '#/stack'],
+  ['builders', 'Signal Builders', 'trophy', '#/builders'], ['quests', 'Quests', 'target', '#/quests'],
 ];
 let spacesOpen = true;
 let lastNav = ['', ''];
@@ -120,7 +122,7 @@ export function renderTabbar(current = '') {
 }
 
 function renderSearch() {
-  const input = h('input', { type: 'search', placeholder: 'Search spaces, posts, members', 'aria-label': 'Search', autocomplete: 'off' });
+  const input = h('input', { type: 'search', placeholder: 'Search compounds, stacks, posts, members', 'aria-label': 'Search', autocomplete: 'off' });
   const pop = h('div', { class: 'search-pop hide', role: 'listbox' });
   let timer = null;
   const go = (href) => { pop.classList.add('hide'); input.value = ''; location.hash = href; };
@@ -128,13 +130,14 @@ function renderSearch() {
     const q = input.value.trim();
     if (q.length < 2) { pop.classList.add('hide'); return; }
     const like = `%${q.replace(/[%_]/g, '')}%`;
-    const spaces = S.spaces.filter((s) => s.name.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
+    const spaces = searchLibrary(q, { kinds: ['compound', 'blend', 'stack'], limit: 5 });
     const [posts, people] = await Promise.all([
       sb.from('feed').select('id,title,compound_name,status').ilike('title', like).eq('status', 'visible').limit(5),
       sb.from('member_cards').select('handle,level').ilike('handle', like).limit(4),
     ]);
     const rows = [
-      ...spaces.map((s) => h('a', { href: `#/s/${encodeURIComponent(s.compound_id)}`, onclick: (e) => { e.preventDefault(); go(`#/s/${s.compound_id}`); } }, spaceTile(s, 26), h('span', { class: 'grow' }, `s/${s.name}`), h('span', { class: 'xs muted' }, 'Space'))),
+      ...spaces.map(({ sp: s, via }) => h('a', { href: `#/s/${encodeURIComponent(s.compound_id)}`, onclick: (e) => { e.preventDefault(); go(`#/s/${s.compound_id}`); } }, spaceTile(s, 26),
+        h('span', { class: 'grow' }, `s/${s.name}`, via ? h('span', { class: 'xs muted' }, ` · “${via}”`) : null), h('span', { class: 'xs muted' }, familyLabel(s)))),
       ...(posts.data || []).map((p) => h('a', { href: `#/post/${p.id}`, onclick: (e) => { e.preventDefault(); go(`#/post/${p.id}`); } }, icon('comment', 18), h('span', { class: 'grow' }, p.title), h('span', { class: 'xs muted' }, p.compound_name))),
       ...(people.data || []).map((m) => h('a', { href: `#/u/${m.handle}`, onclick: (e) => { e.preventDefault(); go(`#/u/${m.handle}`); } }, emblem(m.level, 24), h('span', { class: 'grow' }, `u/${m.handle}`), h('span', { class: 'xs muted' }, 'Member'))),
     ];

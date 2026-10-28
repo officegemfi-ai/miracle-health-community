@@ -2,7 +2,8 @@
 // thread, reporting and editing.
 import { h, icon, fmtN, fmt1, ago, toast, friendly, msgBox, say, modal, confirmBox } from './ui.js';
 import { sig, emblem } from './art.js';
-import { S, sb, signalOf, loadCard, track } from './state.js';
+import { S, sb, signalOf, spaceOf, loadCard, track } from './state.js';
+import { partChips } from './library.js';
 import { render, setRail, railCards, sigSay } from './shell.js';
 import { OUTCOME, outcomeChip, sigNum, refreshSignal } from './signal.js';
 import { voteWidget, sameButton, statusChip, spaceLink, authorLink, stickerRow, reactButton, moreButton } from './feed.js';
@@ -15,7 +16,7 @@ export const REASONS = [
   ['harassment', 'Harassment or hate (rule 4)'],
   ['personal_info', 'Private information (rule 5)'],
   ['spam', 'Spam or self-promotion (rule 6)'],
-  ['off_topic', 'Not about peptides (rule 7)'],
+  ['off_topic', 'Off topic: not in the library (rule 7)'],
   ['underage', 'Someone under 18 (rule 8)'],
   ['self_harm', 'Someone may be at risk (rule 10)'],
   ['other', 'Something else'],
@@ -82,7 +83,7 @@ function readPanel(p, refresh) {
         h('p', {}, h('b', {}, `${bits}. `),
           x && x.score != null
             ? ['It feeds the ', h('a', { href: `#/s/${encodeURIComponent(p.compound_id)}` }, `${p.compound_name} Signal`), ', now ', sigNum(p.compound_id), '.']
-            : `It counts toward the first ${p.compound_name} Signal.`),
+            : `It counts toward the first ${p.compound_name} Signal${p.compound_kind === 'stack' ? ' (this exact stack)' : ''}.`),
         p.is_mine && !p.read_confirmed && p.status === 'visible' ? confirmRow('Is that right? +10') : null));
   }
   if (p.read_pending) {
@@ -263,6 +264,7 @@ export async function renderPost(id, opts = {}) {
       h('div', { class: 'post-main' },
         h('div', { class: 'post-head' }, spaceLink(p), h('span', { class: 'sep' }, '·'), authorLink(p), h('span', { class: 'sep' }, '·'), h('span', {}, ago(p.created_at)), p.edited_at ? h('span', {}, '· edited') : null),
         h('h1', { class: 'post-title' }, p.title),
+        partChips(spaceOf(p.compound_id), p.compound_kind === 'stack' ? 'Stack' : p.compound_kind === 'blend' ? 'Blend of' : ''),
         h('div', { class: 'post-chips' }, p.kind === 'question' ? h('span', { class: 'chip' }, 'Question') : h('span', { class: 'chip' }, 'Report'), outcomeChip(p), statusChip(p)),
         bodyBox,
         readBox,

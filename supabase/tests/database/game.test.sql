@@ -347,8 +347,8 @@ select is((select members from public.community_pulse), (select count(*) from pu
 select ok((select season_name like 'Season 1%' from public.community_pulse), 'during Season 1');
 select is((select kind || ':' || need from public.community_goals where compound_id = 'bpc157'), 'takeover:50',
   'A compound with forum data has a goal: this community passes half its Signal');
-select is((select kind || ':' || need from public.community_goals where compound_id = 'creatine'), 'unlock:3',
-  'One without has a goal to unlock its first Signal');
+select is((select count(*) from public.community_goals where compound_id = 'creatine'), 0::bigint,
+  'One without forum data gets a goal once someone reports on it (stacks.test.sql), not before');
 select is((select handle from public.signal_builders where rank = 1), 'bob', 'Signal Builders ranks this month''s points');
 select ok((select is_me from public.signal_builders where handle = 'bob'), 'and marks you');
 select is((select badges from public.member_cards where handle = 'alice'), array['founding'], 'Badges show on profiles');

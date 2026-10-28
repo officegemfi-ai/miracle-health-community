@@ -195,6 +195,7 @@ export function notifParts(n) {
     case 'level_up': return [emblem(d.level, 34), `You reached ${d.name}. Level ${d.level} of 15, ${d.tier} tier.`, null, `#/u/${encodeURIComponent(S.me?.handle || '')}`];
     case 'badge': return [h('span', { class: 'seal' }, icon('check', 18)), `New badge: ${d.name}`, d.description, `#/u/${encodeURIComponent(S.me?.handle || '')}`];
     case 'mod': return [icon('shield', 18), (MOD_TEXT[d.action] || (() => 'A note from the moderators'))(d), n.post_title, n.post_id ? `#/post/${n.post_id}` : '#/rules'];
+    case 'library': return [sig(34, 'happy'), `${d.name || n.compound_name} is in the library now, as you suggested. Thanks for building it out.`, null, n.compound_id ? `#/s/${encodeURIComponent(n.compound_id)}` : '#/explore'];
     default: return [icon('bell', 18), 'Something new', null, '#/notifications'];
   }
 }

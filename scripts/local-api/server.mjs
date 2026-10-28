@@ -68,7 +68,7 @@ function filters(params, values) {
   const where = [];
   for (const [k, raw] of params) {
     if (['select', 'order', 'limit', 'offset', 'columns', 'on_conflict'].includes(k)) continue;
-    const m = /^(eq|neq|lt|lte|gt|gte|is|in|like|ilike)\.(.*)$/s.exec(raw);
+    const m = /^(eq|neq|lt|lte|gt|gte|is|in|cs|like|ilike)\.(.*)$/s.exec(raw);
     if (!m) throw Object.assign(new Error(`unsupported filter ${k}=${raw}`), { code: 'PGRST100' });
     const [, op, v] = m;
     const col = ident(k);
@@ -79,6 +79,11 @@ function filters(params, values) {
       const lit = { null: 'null', true: 'true', false: 'false' }[v];
       if (!lit) throw Object.assign(new Error('bad is filter'), { code: 'PGRST100' });
       where.push(`${col} is ${lit}`);
+    } else if (op === 'cs') {
+      // array contains: cs.{a,b}
+      const items = v.replace(/^\{|\}$/g, '').split(',').filter(Boolean).map((x) => x.replace(/^"|"$/g, ''));
+      values.push(items);
+      where.push(`${col} @> $${values.length}::text[]`);
     } else if (op === 'in') {
       const items = v.replace(/^\(|\)$/g, '').split(',').map((x) => x.replace(/^"|"$/g, ''));
       values.push(items);

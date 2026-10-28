@@ -1,25 +1,27 @@
 // Moderation: the queue, Signal alerts, beta numbers, the watch list, invites.
-import { h, ago, friendly, msgBox, say } from './ui.js';
+import { h, ago, friendly, msgBox, say, toast } from './ui.js';
 import { sb, S, track } from './state.js';
 import { render, setRail } from './shell.js';
 import { REASONS } from './post.js';
+import { CATEGORIES } from './library.js';
+import { loadSpaces } from './state.js';
 
 const MOD_REASONS = [
   'Rule 1: sourcing or selling', 'Rule 2: dosing instructions', 'Rule 3: dangerous medical claims',
   'Rule 4: harassment', 'Rule 5: private information', 'Rule 6: spam or self-promotion',
-  'Rule 7: not about peptides', 'Rule 8: under 18', 'Rule 9: fake account or vote ring', 'Rule 10: self-harm (reached out)',
+  'Rule 7: off topic', 'Rule 8: under 18', 'Rule 9: fake account or vote ring', 'Rule 10: self-harm (reached out)',
   'Not a rule break',
 ];
 
 export async function renderMod(tab = 'queue') {
-  const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
+  const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['library', 'Library'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
   const body = h('div', {}, h('div', { class: 'skel' }));
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Keeping it safe'), h('h1', {}, 'Moderation.'))),
     h('nav', { class: 'tabs', 'aria-label': 'Moderation' }, tabs.map(([k, l]) => h('a', { href: `#/mod/${k}`, 'aria-current': k === tab ? 'page' : null }, l))),
     body);
   setRail([]);
-  const views = { queue: modQueue, alerts: modAlerts, numbers: modNumbers, terms: modTerms, invites: modInvites };
+  const views = { queue: modQueue, alerts: modAlerts, library: modLibrary, numbers: modNumbers, terms: modTerms, invites: modInvites };
   await (views[tab] || modQueue)(body);
 }
 
@@ -136,4 +138,50 @@ async function modInvites(body) {
       h('div', { class: 'row' }, h('b', { class: 'grow mono' }, i.code), i.trusted ? h('span', { class: 'chip lime' }, 'founding') : null, h('span', { class: 'kick' }, `${i.uses} of ${i.max_uses} used`)),
       i.note ? h('div', { class: 'small muted' }, i.note) : null,
       h('div', { class: 'xs mono mt4' }, link(i.code)))));
+}
+
+// The library: what members suggest, and adding to it
+function addForm(req, done) {
+  const msg = msgBox();
+  const name = h('input', { class: 'input', maxlength: 80, required: true, value: req?.name || '', placeholder: 'Name, as people know it' });
+  const family = h('select', { class: 'input' }, ['Peptides', 'Hormones', 'Supplements', 'Medications', 'Blends'].map((f) => h('option', { value: f }, f)));
+  const category = h('select', { class: 'input' }, CATEGORIES.map((c) => h('option', { value: c }, c)));
+  const aliases = h('input', { class: 'input', maxlength: 600, placeholder: 'Other names, brand names, nicknames (commas between)' });
+  const add = h('button', { class: 'btn ink sm', type: 'submit' }, req ? 'Add to the library' : 'Add');
+  const form = h('form', {
+    class: req ? 'mt8' : 'card',
+    onsubmit: async (e) => {
+      e.preventDefault();
+      add.disabled = true;
+      const { data, error } = await sb.rpc('add_compound', {
+        name: name.value.trim(), family: family.value, category: category.value,
+        aliases: aliases.value.split(',').map((x) => x.trim()).filter(Boolean), request_id: req?.id ?? null,
+      });
+      add.disabled = false;
+      if (error) return say(msg, friendly(error));
+      track('library_add');
+      await loadSpaces();
+      toast(`Added to the library: s/${data}`);
+      done();
+    },
+  }, req ? null : h('h3', {}, 'Add to the library'),
+  h('div', { class: 'mt8' }, name), h('div', { class: 'row nw mt8' }, family, category), h('div', { class: 'mt8' }, aliases),
+  h('div', { class: 'row end mt8' },
+    req ? h('button', { class: 'btn sm', type: 'button', onclick: async () => { const { error } = await sb.rpc('dismiss_compound_request', { request_id: req.id }); if (error) return say(msg, friendly(error)); done(); } }, 'Not for the library') : null,
+    add), msg);
+  return form;
+}
+
+async function modLibrary(body) {
+  const { data, error } = await sb.from('library_requests').select('*').eq('status', 'open').order('created_at', { ascending: true });
+  if (error) return body.replaceChildren(h('div', { class: 'msg err' }, friendly(error)));
+  const lib = S.spaces.filter((s) => s.kind !== 'stack').length;
+  body.replaceChildren(
+    h('p', { class: 'small muted' }, `${lib} entries in the library. Members suggest what’s missing; add it here (check the name and pick a family and category), or turn it down. Whoever suggested it gets a note when it’s added.`),
+    h('div', { class: 'kick cat-h' }, data.length ? `${data.length} waiting` : 'No suggestions waiting'),
+    ...data.map((r) => h('article', { class: 'card mod-card' },
+      h('div', { class: 'row' }, h('b', { class: 'grow' }, r.name), h('span', { class: 'kick' }, `u/${r.requested_by_handle || 'deleted'} · ${ago(r.created_at)}`)),
+      r.note ? h('p', { class: 'small muted' }, r.note) : null,
+      addForm(r, () => modLibrary(body)))),
+    h('div', { class: 'mt16' }, addForm(null, () => modLibrary(body))));
 }

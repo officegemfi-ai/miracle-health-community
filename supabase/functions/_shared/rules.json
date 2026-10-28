@@ -1,6 +1,6 @@
 {
   "version": "2026-10-21",
-  "intro": "Miracle Health is where adults share what actually happened when they took a peptide: what they took it for, how long, and whether it was better, the same or worse than before they started. These rules keep it honest, safe and free of sellers.",
+  "intro": "Miracle Health is where adults share what actually happened when they took a peptide, a hormone, a supplement or a stack of them: what they took it for, how long, and whether it was better, the same or worse than before they started. These rules keep it honest, safe and free of sellers.",
   "rules": [
     {
       "n": 1,
@@ -46,8 +46,8 @@
     },
     {
       "n": 7,
-      "title": "Stay on peptides",
-      "text": "Posts are about the compounds in the library. Steroids, SARMs and other drugs belong somewhere else.",
+      "title": "Stay on topic",
+      "text": "Posts are about what's in the library: peptides, hormones, supplements, blends and the medications people take with them, alone or stacked. Testosterone therapy is fine; other anabolic steroids, SARMs and recreational drugs belong somewhere else.",
       "ok": "",
       "not_ok": ""
     },

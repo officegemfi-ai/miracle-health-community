@@ -7,6 +7,7 @@ import { render, setRail, railCards, renderNav, sigSay } from './shell.js';
 import { signalCard, sigNum, outcomeChip, readMini, refreshSignal, movement } from './signal.js';
 import { afterEarn } from './game.js';
 import { openReport } from './post.js';
+import { compoundPicker, picksNote, idsFrom, partChips, searchLibrary, FAMILIES, isStack, familyLabel, containing, suggestCompound } from './library.js';
 
 // ---------------------------------------------------------------------------
 // Votes, "same for me", stickers
@@ -212,11 +213,11 @@ export function joinButton(sp, cls = '') {
 // Feeds
 // ---------------------------------------------------------------------------
 const SORTS = [['hot', 'Hot', 'flame'], ['new', 'New', 'clock'], ['top', 'Top', 'up'], ['reports', 'Reports', 'pulse']];
-function sortbar(base, sort) {
+export function sortbar(base, sort) {
   return h('div', { class: 'sortbar', role: 'tablist', 'aria-label': 'Sort' },
     SORTS.map(([k, l, ic]) => h('a', { href: `${base}${base.includes('?') ? '&' : '?'}sort=${k}`, 'aria-current': sort === k ? 'page' : null, role: 'tab' }, icon(ic, 15), l)));
 }
-function query(sort) {
+export function feedQuery(sort) {
   let q = sb.from('feed').select('*');
   if (sort === 'new') q = q.order('created_at', { ascending: false });
   else if (sort === 'top') q = q.gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()).order('score', { ascending: false }).order('created_at', { ascending: false });
@@ -228,7 +229,8 @@ function composerBar(cid = '') {
   const sp = cid ? spaceOf(cid) : null;
   return h('div', { class: 'card composer-bar' },
     emblem(S.card?.level || 1, 36),
-    h('a', { class: 'fake', href: `#/new${cid ? `?c=${encodeURIComponent(cid)}` : ''}`, role: 'button' }, sp ? `Share how ${sp.name} went for you…` : 'Share how it went for you…'),
+    h('a', { class: 'fake', href: `#/new${cid ? `?c=${encodeURIComponent(cid)}` : ''}`, role: 'button' },
+      sp ? (isStack(sp) ? 'Share how this stack went for you…' : `Share how ${sp.name} went for you…`) : 'Share how it went for you…'),
     h('a', { class: 'btn ink sm', href: `#/new${cid ? `?c=${encodeURIComponent(cid)}` : ''}` }, icon('plus', 16), 'Post'));
 }
 
@@ -246,7 +248,7 @@ function newPostsPill(list, matcher, reload) {
   return box;
 }
 
-async function fillFeed(list, q, empty) {
+export async function fillFeed(list, q, empty) {
   list.replaceChildren(h('div', { class: 'skel' }), h('div', { class: 'skel' }), h('div', { class: 'skel' }));
   const { data, error } = await q;
   if (error) { list.replaceChildren(h('div', { class: 'msg err' }, friendly(error))); return []; }
@@ -258,14 +260,14 @@ async function fillFeed(list, q, empty) {
 export async function renderHome(sort = 'hot') {
   const joined = S.spaces.filter((s) => s.joined);
   const list = h('div', {});
-  const reload = () => fillFeed(list, joined.length ? query(sort).eq('in_my_spaces', true) : query(sort), emptyHome());
+  const reload = () => fillFeed(list, joined.length ? feedQuery(sort).eq('in_my_spaces', true) : feedQuery(sort), emptyHome());
   render(
     S.me.status === 'suspended' ? h('div', { class: 'msg note' }, `Your account is paused until ${new Date(S.me.suspended_until).toLocaleString()}. You can read, but not post or comment.`) : null,
     h('div', { class: 'page-h' },
       h('div', {}, h('div', { class: 'kick' }, joined.length ? `// ${joined.length} space${joined.length === 1 ? '' : 's'} you follow` : '// Everything, until you join spaces'), h('h1', {}, 'Your feed.')),
       h('p', { class: 'cap' }, 'First-hand reports, read by Miracle AI into the Community Signal.')),
     composerBar(), sortbar('#/home', sort),
-    newPostsPill(list, (row) => !joined.length || joined.some((s) => s.compound_id === row.compound_id), reload),
+    newPostsPill(list, (row) => !joined.length || (row.part_ids?.length ? row.part_ids : [row.compound_id]).some((id) => joined.some((s) => s.compound_id === id)), reload),
     list);
   setRail(await railCards('home'));
   await reload();
@@ -277,7 +279,7 @@ function emptyHome() {
 
 export async function renderPopular(sort = 'hot') {
   const list = h('div', {});
-  const reload = () => fillFeed(list, query(sort), emptyHome());
+  const reload = () => fillFeed(list, feedQuery(sort), emptyHome());
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Every space'), h('h1', {}, 'Popular.')),
       h('p', { class: 'cap' }, 'What the whole community is reading and backing up right now.')),
@@ -286,51 +288,86 @@ export async function renderPopular(sort = 'hot') {
   await reload();
 }
 
-export async function renderSpace(cid, sort = 'hot') {
+export async function renderSpace(cid, sort = 'hot', only = 'all') {
   const sp = spaceOf(cid);
   if (!sp) { render(h('div', { class: 'empty card' }, sig(72, 'curious'), h('p', {}, 'That space doesn’t exist.'), h('a', { class: 'btn sm', href: '#/explore' }, 'Explore spaces'))); return; }
   const list = h('div', {});
-  const base = `#/s/${encodeURIComponent(cid)}`;
-  const reload = () => fillFeed(list, query(sort).eq('compound_id', cid), h('div', { class: 'empty card' }, sig(72, 'curious'),
-    h('p', {}, `No posts in s/${sp.name} yet. The first first-hand report here earns the Pioneer badge.`), h('a', { class: 'btn lime sm', href: `#/new?c=${encodeURIComponent(cid)}` }, 'Share how it went')));
+  const stack = isStack(sp);
+  const single = !stack && sp.kind !== 'blend';
+  const base = `#/s/${encodeURIComponent(cid)}${only !== 'all' ? `?only=${only}` : ''}`;
+  // A compound's space shows its own posts and the stacks and blends it's in; "only" narrows that
+  let q = feedQuery(sort);
+  q = only === 'own' ? q.eq('compound_id', cid) : only === 'stacks' ? q.contains('part_ids', [cid]).neq('compound_id', cid) : q.contains('part_ids', [cid]);
+  const reload = () => fillFeed(list, q, h('div', { class: 'empty card' }, sig(72, 'curious'),
+    h('p', {}, stack ? `No posts in this stack yet.` : `No posts in s/${sp.name} yet. The first first-hand report here earns the Pioneer badge.`),
+    h('a', { class: 'btn lime sm', href: `#/new?c=${encodeURIComponent(cid)}` }, 'Share how it went')));
   const x = signalOf(cid);
+  const inStacks = single ? containing([cid]) : [];
+  const kick = stack ? `Stack · ${plural((sp.part_ids || []).length, 'compound')}` : `${familyLabel(sp)} · ${sp.category}`;
   render(
     h('section', { class: 'hero' },
       h('div', { class: 'space-hero' },
         spaceTile(sp, 72),
-        h('div', {}, h('div', { class: 'kick' }, `s/${sp.compound_id} · ${sp.category}`), h('h1', {}, `${sp.name}.`),
+        h('div', {}, h('div', { class: 'kick' }, kick), h('h1', {}, `${sp.name}.`),
           h('p', { class: 'lede' }, `${fmtN(sp.members_count)} member${sp.members_count === 1 ? '' : 's'} · ${fmtN(sp.posts_week)} post${sp.posts_week === 1 ? '' : 's'} this week · ${fmtN(sp.reports)} first-hand report${sp.reports === 1 ? '' : 's'}`)),
-        h('div', { class: 'join' }, joinButton(sp)))),
+        h('div', { class: 'join' }, joinButton(sp))),
+      stack ? partChips(sp, 'In this stack') : sp.kind === 'blend' ? partChips(sp, 'In the vial') : null,
+      sp.aliases?.length ? h('p', { class: 'xs muted mt8 aka' }, `Also called ${sp.aliases.slice(0, 8).join(', ')}`) : null),
+    stack ? h('p', { class: 'msg note' }, 'This stack’s Signal comes only from reports of exactly this stack. Each compound’s own number counts only reports of it alone.') : null,
     signalCard(cid),
     x && x.themes && x.themes.length ? h('div', { class: 'post-chips mt12' }, h('span', { class: 'kick' }, 'What people mention'), x.themes.map((t) => h('span', { class: 'chip' }, `${t.theme} · ${t.label}`))) : null,
+    inStacks.length ? h('div', { class: 'post-chips mt12' }, h('span', { class: 'kick' }, 'Also in'),
+      inStacks.slice(0, 6).map((st) => h('a', { class: 'chip part', href: `#/s/${encodeURIComponent(st.compound_id)}` }, spaceTile(st, 16), st.name)),
+      h('a', { class: 'chip', href: `#/stack?c=${encodeURIComponent(cid)}` }, icon('layers', 14), 'Find a stack')) : null,
     h('div', { class: 'mt16' }, composerBar(cid)),
+    single ? h('div', { class: 'sortbar only', role: 'tablist', 'aria-label': 'Which posts' },
+      [['all', 'All posts'], ['own', `Just ${sp.name}`], ['stacks', 'In stacks and blends']].map(([k, l]) =>
+        h('a', { href: `#/s/${encodeURIComponent(cid)}${k !== 'all' ? `?only=${k}` : ''}${sort !== 'hot' ? `${k !== 'all' ? '&' : '?'}sort=${sort}` : ''}`, role: 'tab', 'aria-current': only === k ? 'page' : null }, l))) : null,
     sortbar(base, sort),
-    newPostsPill(list, (row) => row.compound_id === cid, reload),
+    newPostsPill(list, (row) => (row.part_ids?.length ? row.part_ids : [row.compound_id]).includes(cid) && (only !== 'own' || row.compound_id === cid) && (only !== 'stacks' || row.compound_id !== cid), reload),
     list);
   setRail(await railCards('space', { cid }));
   await reload();
 }
 
-export async function renderExplore() {
-  const filter = h('input', { class: 'input', type: 'search', placeholder: 'Find a space', 'aria-label': 'Find a space' });
+export async function renderExplore(family = '') {
+  const filter = h('input', { class: 'input', type: 'search', placeholder: 'Find anything: a name, a brand, what it’s for', 'aria-label': 'Find in the library' });
   const box = h('div', {});
+  const lib = S.spaces.filter((s) => !isStack(s));
+  const stacks = S.spaces.filter(isStack);
+  const counts = Object.fromEntries(FAMILIES.map((f) => [f, S.spaces.filter((s) => s.family === f).length]));
+  const tabs = h('nav', { class: 'tabs fam', 'aria-label': 'Families' },
+    [['', 'All', S.spaces.length], ...FAMILIES.map((f) => [f, f, counts[f]])].map(([k, l, n]) =>
+      h('a', { href: `#/explore${k ? `?f=${encodeURIComponent(k)}` : ''}`, 'aria-current': family === k ? 'page' : null }, l, h('span', { class: 'n' }, fmtN(n)))));
+  const card = (s) => h('a', { class: 'card space-card', href: `#/s/${encodeURIComponent(s.compound_id)}` },
+    h('div', { class: 'top' }, spaceTile(s, 36), h('b', { class: 'grow' }, s.name)),
+    isStack(s) || s.kind === 'blend' ? h('div', { class: 'xs muted' }, (s.part_ids || []).map((id) => spaceOf(id)?.name || id).join(' · ')) : null,
+    h('div', { class: 'row between' }, s.score != null ? h('span', { class: 'sc num', 'data-sig-of': s.compound_id }, fmt1(s.score)) : h('span', { class: 'kick' }, 'No Signal yet'), s.score != null ? movement(signalOf(s.compound_id)) : null),
+    h('div', { class: 'meta' }, h('span', {}, `${plural(s.members_count, 'member')} · ${plural(s.reports, 'report')}`), joinButton(s)));
+  const suggest = h('p', { class: 'small muted mt16' }, 'Missing something? ', h('button', { class: 'lnk', type: 'button', onclick: () => suggestCompound(filter.value.trim()) }, 'Suggest it for the library'), '.');
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `// ${S.spaces.length} spaces`), h('h1', {}, 'Explore spaces.')),
-      h('p', { class: 'cap' }, 'One space per compound. Join the ones you care about.')),
-    filter, box);
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `// ${fmtN(lib.length)} in the library · ${plural(stacks.length, 'stack')}`), h('h1', {}, 'Explore spaces.')),
+      h('p', { class: 'cap' }, 'One space per compound, blend and stack. Join the ones you care about.')),
+    h('div', { class: 'row nw explore-bar' }, filter, h('a', { class: 'btn ink sm', href: '#/stack' }, icon('layers', 16), 'Find your stack')),
+    tabs, box, suggest);
   const draw = () => {
-    const q = filter.value.trim().toLowerCase();
+    const q = filter.value.trim();
+    if (q) {
+      const hits = searchLibrary(q, { kinds: ['compound', 'blend', 'stack'], limit: 0, family });
+      box.replaceChildren(hits.length ? h('div', { class: 'space-grid mt12' }, hits.slice(0, 60).map((r) => card(r.sp)))
+        : h('div', { class: 'empty card mt12' }, sig(72, 'curious'), h('p', {}, `Nothing called “${q}” yet.`),
+          h('button', { class: 'btn lime sm', type: 'button', onclick: () => suggestCompound(q) }, 'Suggest it for the library')));
+      return;
+    }
     const groups = {};
-    S.spaces.filter((s) => !q || s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
-      .forEach((s) => { (groups[s.category] ||= []).push(s); });
-    box.replaceChildren(...Object.keys(groups).sort().map((cat) => [
-      h('div', { class: 'kick cat-h' }, cat),
-      h('div', { class: 'space-grid' }, groups[cat].sort((a, b) => (b.score ?? -1) - (a.score ?? -1)).map((s) => h('a', { class: 'card space-card', href: `#/s/${encodeURIComponent(s.compound_id)}` },
-        h('div', { class: 'top' }, spaceTile(s, 36), h('b', { class: 'grow' }, s.name)),
-        h('div', { class: 'row between' }, s.score != null ? h('span', { class: 'sc num', 'data-sig-of': s.compound_id }, fmt1(s.score)) : h('span', { class: 'kick' }, 'No Signal yet'), s.score != null ? movement(signalOf(s.compound_id)) : null),
-        h('div', { class: 'meta' }, h('span', {}, `${plural(s.members_count, 'member')} · ${plural(s.reports, 'report')}`), joinButton(s)))))]).flat());
+    S.spaces.filter((s) => !family || s.family === family).forEach((s) => { (groups[isStack(s) ? 'Stacks' : s.category] ||= []).push(s); });
+    const order = Object.keys(groups).sort((a, b) => (a === 'Stacks') - (b === 'Stacks') || a.localeCompare(b));
+    box.replaceChildren(...order.map((cat) => [
+      h('div', { class: 'kick cat-h' }, `${cat} · ${groups[cat].length}`),
+      h('div', { class: 'space-grid' }, groups[cat].sort((a, b) => ((b.reports || 0) - (a.reports || 0)) || ((b.score ?? -1) - (a.score ?? -1)) || a.name.localeCompare(b.name)).map(card))]).flat());
   };
-  filter.addEventListener('input', draw);
+  let t = null;
+  filter.addEventListener('input', () => { clearTimeout(t); t = setTimeout(draw, 120); });
   draw();
   setRail(await railCards('explore'));
 }
@@ -338,22 +375,15 @@ export async function renderExplore() {
 // ---------------------------------------------------------------------------
 // New post
 // ---------------------------------------------------------------------------
-export function compoundSelect(selected, id = 'compound') {
-  const groups = {};
-  S.spaces.forEach((c) => { (groups[c.category] ||= []).push(c); });
-  return h('select', { class: 'input', id, required: true },
-    h('option', { value: '', disabled: true, selected: !selected }, 'Choose a space'),
-    Object.keys(groups).sort().map((g) => h('optgroup', { label: g },
-      groups[g].map((c) => h('option', { value: c.compound_id, selected: c.compound_id === selected }, `s/${c.name}`)))));
-}
-
-export function renderNew(cid = '') {
+export function renderNew(param = '') {
   if (S.me.status === 'suspended') { render(h('div', { class: 'msg note' }, 'Your account is paused, so you can’t post right now.')); return; }
   const msg = msgBox();
-  const pick = compoundSelect(cid);
+  const note = h('p', { class: 'cpick-note', 'aria-live': 'polite' });
+  const pick = compoundPicker({ selected: idsFrom(param), onChange: (ids) => note.replaceChildren(...picksNote(ids)) });
+  note.replaceChildren(...picksNote(pick.value));
   const kindExp = h('input', { type: 'radio', name: 'kind', value: 'experience', checked: true });
   const kindQ = h('input', { type: 'radio', name: 'kind', value: 'question' });
-  const title = h('input', { class: 'input', id: 'title', maxlength: 140, required: true, placeholder: 'e.g. Week 6 on BPC-157 for a knee injury' });
+  const title = h('input', { class: 'input', id: 'title', maxlength: 140, required: true, placeholder: 'e.g. Week 6 on BPC-157 + TB-500 for a knee injury' });
   const body = h('textarea', { class: 'input', id: 'body', maxlength: 10000, required: true, placeholder: 'What you took it for, how long, and how it compares to before you started: better, about the same, or worse. Side effects too.' });
   const go = h('button', { class: 'btn lime', type: 'submit' }, 'Post');
   const hint = h('div', { class: 'rules-note' }, sig(40, 'think'), h('div', {},
@@ -367,21 +397,22 @@ export function renderNew(cid = '') {
       class: 'card',
       onsubmit: async (e) => {
         e.preventDefault();
-        if (!pick.value) return say(msg, 'Choose a space.');
+        const compounds = pick.value;
+        if (!compounds.length) { say(msg, 'Pick what you took first.'); pick.querySelector('input')?.focus(); return; }
         go.disabled = true; say(msg, '');
         const kind = kindQ.checked ? 'question' : 'experience';
-        const { data, error } = await sb.from('posts')
-          .insert({ compound_id: pick.value, kind, title: title.value.trim(), body: body.value.trim() })
-          .select('id,status');
+        const { data, error } = await sb.rpc('create_post', { compounds, kind, title: title.value.trim(), body: body.value.trim() });
         go.disabled = false;
         if (error) return say(msg, friendly(error));
-        track('post', { kind });
-        S.mine.add(data[0].id);
+        track('post', { kind, compounds: compounds.length });
+        S.mine.add(data);
+        if (compounds.length > 1) await loadSpaces();
         afterEarn(go);
-        location.hash = `#/post/${encodeURIComponent(data[0].id)}`;
+        location.hash = `#/post/${encodeURIComponent(data)}`;
       },
     },
-    h('label', { class: 'f', for: 'compound' }, h('span', {}, 'Space'), pick),
+    h('label', { class: 'f', for: 'compound' }, h('span', {}, 'What did you take?'), pick),
+    note,
     h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Kind of post' },
       h('label', {}, kindExp, 'My experience'), h('label', {}, kindQ, 'A question')),
     h('label', { class: 'f', for: 'title' }, h('span', {}, 'Title'), title),

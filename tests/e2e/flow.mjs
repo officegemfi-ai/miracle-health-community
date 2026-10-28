@@ -125,7 +125,11 @@ await shot(A, '01_space');
 // The rules apply before anything is saved
 await A.goto(`${BASE}#/new`);
 await A.waitForSelector('#title');
-await A.selectOption('#compound', 'semaglutide');
+await A.fill('#compound', 'Ozempic');
+await A.waitForSelector('.cpick-opt.on:has-text("Semaglutide")');
+await A.keyboard.press('Enter');
+await A.waitForSelector('.cchip:has-text("Semaglutide")');
+check('Picking what you took: brand names find compounds (Ozempic is semaglutide)', true);
 await A.fill('#title', 'Where to buy sema cheap?');
 await A.fill('#body', 'Anyone know where to buy it?');
 await A.click('form button[type=submit]:text("Post")');
@@ -383,6 +387,69 @@ await A.goto(`${BASE}#/u/kneeguy`);
 await A.waitForSelector('h1:text("u/kneeguy")');
 check('A profile shows the emblem and the badges earned', (await A.locator('.bdg:not(.locked)').count()) >= 2, `${await A.locator('.bdg:not(.locked)').count()} badges`);
 await shot(A, '08_profile');
+
+// ---------------------------------------------------------------------------
+// Stacks: B posts two compounds taken together, then finds the stack
+// ---------------------------------------------------------------------------
+await B.goto(`${BASE}#/new`);
+await B.waitForSelector('#compound');
+await B.fill('#compound', 'bpc');
+await B.waitForSelector('.cpick-opt.on:has-text("BPC-157")');
+await B.keyboard.press('Enter');
+await B.fill('#compound', 'tb 500');
+await B.waitForSelector('.cpick-opt.on:has-text("TB-500")');
+await B.keyboard.press('Enter');
+await B.waitForSelector('.cpick-note:has-text("A stack")');
+check('Two picks make a stack, and the form says so before posting',
+  /BPC-157 \+ TB-500/.test(await B.textContent('.cpick-note')) && /first to post this exact stack/.test(await B.textContent('.cpick-note')));
+await shot(B, '09_stack_compose');
+await B.fill('#title', 'BPC-157 + TB-500 for a shoulder, week 5');
+await B.fill('#body', 'Reaching overhead is easier than before I started both. Five weeks, no side effects.');
+await B.click('form button[type=submit]:text("Post")');
+await B.waitForSelector('h1.post-title:text("BPC-157 + TB-500 for a shoulder")');
+const stackPost = decodeURIComponent(B.url().split('#/post/')[1]);
+const stackRow = (await db.query(`select p.compound_id, c.name, c.kind from public.posts p join public.compounds c on c.id = p.compound_id where p.id = $1`, [stackPost])).rows[0];
+check('The post goes to the stack’s own space, made for it', stackRow?.kind === 'stack' && stackRow.name === 'BPC-157 + TB-500', JSON.stringify(stackRow));
+const partsShown = await B.locator('.post-chips.parts a').evaluateAll((els) => els.map((e) => e.lastChild.textContent));
+check('and the post lists what’s in the stack', partsShown.join('|') === 'BPC-157|TB-500', partsShown.join('|'));
+await B.goto(`${BASE}#/stack?c=bpc157,tb500`);
+await B.waitForSelector('.stack-hit h2:text("BPC-157 + TB-500")');
+await B.waitForSelector(`[data-post="${stackPost}"]`);
+check('Find your stack shows that exact stack and its posts', true);
+await B.waitForSelector('.lib-row:has-text("Wolverine blend")');
+check('and the blends that contain it', true);
+await shot(B, '10_find_stack');
+await B.goto(`${BASE}#/s/bpc157?only=stacks`);
+await B.waitForSelector(`[data-post="${stackPost}"]`);
+check('BPC-157’s space shows it under "In stacks and blends"', true);
+await B.goto(`${BASE}#/s/bpc157?only=own`);
+await B.waitForSelector('.space-hero h1');
+await B.waitForTimeout(800);
+check('and not under "Just BPC-157"', !(await B.isVisible(`[data-post="${stackPost}"]`)));
+
+// Something missing: B suggests it, the moderator adds it, B hears back
+await B.goto(`${BASE}#/new`);
+await B.fill('#compound', 'Glycocyamine');
+await B.waitForSelector('.cpick-none button:has-text("Suggest it")');
+await B.click('.cpick-none button:has-text("Suggest it")');
+await B.waitForSelector('dialog h2:text("Suggest for the library")');
+await B.click('dialog button[type=submit]');
+await B.waitForSelector('dialog h2:text("Thanks, a moderator will add it")');
+await B.click('dialog button:text("Close")');
+check('A member suggests something the library is missing', true);
+await M.goto(`${BASE}#/mod/library`);
+await M.waitForSelector('.mod-card:has-text("Glycocyamine")');
+await M.locator('.mod-card:has-text("Glycocyamine") select').nth(0).selectOption('Supplements');
+await M.locator('.mod-card:has-text("Glycocyamine") select').nth(1).selectOption('Muscle & performance');
+await M.click('.mod-card:has-text("Glycocyamine") button:text("Add to the library")');
+await M.waitForSelector('.toast:has-text("Added to the library")');
+const added = (await db.query(`select c.family, c.category, r.status from public.compounds c join public.compound_requests r on r.compound_id = c.id where c.name = 'Glycocyamine'`)).rows[0];
+check('The moderator adds it to the library', added?.status === 'added' && added.category === 'Muscle & performance', JSON.stringify(added));
+check('and whoever suggested it gets a note', Number((await db.query(`select count(*) from public.notifications where user_id = $1 and kind = 'library'`, [bId])).rows[0].count) === 1);
+await M.fill('#search input', 'Ozempic');
+await M.waitForSelector('.search-pop:not(.hide) a:has-text("s/Semaglutide")');
+check('Search knows brand names', true);
+await M.keyboard.press('Escape');
 
 // ---------------------------------------------------------------------------
 // A deletes their account
