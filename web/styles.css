@@ -601,14 +601,21 @@ label.f.nm{margin:0}
 .viz svg{display:block;width:100%;height:auto}
 .viz-compact{display:none}
 .signal-hero .lede{max-width:60ch}
-.flow-box{position:relative;z-index:1;margin-top:18px;padding:14px 10px 6px;border-radius:16px;border:1px solid var(--ink-line);background:radial-gradient(70% 90% at 58% 50%,rgba(216,255,61,.07),transparent 70%),rgba(255,255,255,.02)}
+/* The flow panel: an instrument face, a faint dot grid under a lime glow */
+.flow-box{position:relative;z-index:1;margin-top:20px;padding:18px 14px 8px;border-radius:18px;border:1px solid var(--ink-line);
+  background:radial-gradient(52% 70% at 58% 48%,rgba(216,255,61,.08),rgba(216,255,61,0) 72%),radial-gradient(circle,rgba(255,255,255,.06) 1px,rgba(255,255,255,0) 1.3px) 0 0/16px 16px,rgba(255,255,255,.015);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
 .flow-box .skel.dark{height:260px;background:rgba(255,255,255,.04);border-color:var(--ink-line)}
-.flow-cap{margin:8px 6px 4px;color:var(--on-ink-2)}
-.flowviz .flow{animation:flowdash 1.3s linear infinite}
-.flowviz .flow.m{animation-duration:2.4s}
-.flowviz .flow.o{animation-duration:.9s}
-@keyframes flowdash{to{stroke-dashoffset:-13}}
-.flowviz .spin{animation:spin 48s linear infinite;transform-box:view-box}
+.flow-cap{margin:6px 8px 6px;max-width:72ch;font-size:13.5px;line-height:1.55;color:var(--on-ink-2)}
+.flowviz .spin{animation:spin 60s linear infinite;transform-box:view-box}
+.flowviz .ping{animation:fvping 2.4s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes fvping{0%{transform:scale(1);opacity:.8}100%{transform:scale(3.2);opacity:0}}
+/* The numbers under it: one row of cells with hairlines between */
+.signal-hero .hero-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin-top:14px;border:1px solid var(--ink-line);border-radius:14px;overflow:hidden;background:rgba(255,255,255,.02)}
+.signal-hero .hero-stats div{gap:6px;padding:14px 16px;border-left:1px solid var(--ink-line)}
+.signal-hero .hero-stats div:first-child{border-left:0}
+.signal-hero .hero-stats b{font-size:28px}
+.signal-hero .hero-stats span{font-size:10px;line-height:1.4}
 @keyframes spin{to{transform:rotate(360deg)}}
 .takeover .draw{animation:draw 1.8s cubic-bezier(.2,.7,.2,1) .2s both}
 .takeover.still .draw{animation:none}
@@ -715,7 +722,13 @@ label.f.nm{margin:0}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   .tick-track{animation:none}
+  .flowviz .pt,.flowviz .ping{display:none}
 }
 .stats.two{grid-template-columns:1fr 1fr}
 .preview-boot{position:fixed;left:50%;top:calc(var(--tick-h) + var(--top-h) + 14px);transform:translateX(-50%);z-index:70;padding:8px 14px;border-radius:9999px;background:var(--ink);color:var(--lime);font:600 11.5px var(--mono);letter-spacing:.06em;box-shadow:var(--shadow)}
-@media (max-width:640px){.viz-wide{display:none}.viz-compact{display:block}.flow-box{padding:8px 4px 4px}}
+@media (max-width:640px){.viz-wide{display:none}.viz-compact{display:block}.flow-box{padding:10px 4px 6px}
+  .signal-hero .hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .signal-hero .hero-stats div{border-left:0;border-top:1px solid var(--ink-line)}
+  .signal-hero .hero-stats div:nth-child(2n){border-left:1px solid var(--ink-line)}
+  .signal-hero .hero-stats div:nth-child(-n+2){border-top:0}
+  .signal-hero .hero-stats div:last-child{grid-column:1/-1}}

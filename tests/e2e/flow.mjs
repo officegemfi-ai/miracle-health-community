@@ -350,7 +350,8 @@ check('The Signal page ranks the compounds', (await B.locator('.sig-row').count(
 check('and lists the live moves with their causes', (await B.locator('.move-i').count()) >= 1);
 await B.waitForSelector('.viz-compact .flowviz.compact');
 check('It draws how the number is made: public forums and members’ reports in, one number out',
-  /FROM MEMBERS/.test(await B.textContent('.viz-compact .flowviz')) && /\d+ reports?\b/.test(await B.textContent('.viz-compact .flowviz')));
+  /FROM MEMBERS/.test(await B.textContent('.viz-compact .flowviz')) && /[\d,]+ first-hand reports?\b/.test(await B.textContent('.viz-compact .flowviz'))
+  && /THE FORMULA/.test(await B.textContent('.viz-compact .flowviz')));
 const ladderCounts = await B.locator('.ladder-steps .step-l .cnt b').allTextContents();
 check('with the certification ladder, which counts every Signal once',
   ladderCounts.length === 5 && ladderCounts.reduce((a, t) => a + Number(t.replace(/\D/g, '')), 0) === await B.locator('.sig-row').count(), ladderCounts.join(' '));

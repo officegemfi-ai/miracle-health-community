@@ -60,124 +60,201 @@ const sealAt = (key, x, y, size) => `<g transform="translate(${x} ${y}) scale(${
 // sources: [{ name, n }] (public-source families and how many Signals use each)
 // share: 0-100, how much of the Signals comes from members here on average
 // reports, sames, signals: counts; levels: { forum: n, early: n, ... }
+// Drawn as an instrument: slim inputs with ports, smooth curves that meet the dial square on,
+// particles that flow along them (SMIL, so no script; hidden for reduced motion by the page's
+// CSS via .pt), a dial that shows only the members-versus-forums share, the formula as its own
+// segmented bar, and the output card with the levels as a stacked bar and seals.
 export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signals = 0, levels = {}, weight = 50 }, { compact = false } = {}) {
   const s = Math.max(0, Math.min(100, Number(share) || 0)) / 100;
   const src = sources.slice(0, 4);
   while (src.length < 4) src.push({ name: '', n: 0 });
   const total = src.reduce((a, x) => a + (x.n || 0), 0) || 1;
-  const forumW = 3 + 18 * (1 - s);
-  const memberW = Math.max(2, 3 + 18 * s);
   const id = uid('fl');
   const fmt = (n) => Number(n || 0).toLocaleString('en-US');
   const level = (k) => Number(levels[k] || 0);
-  const ladder = (gap, size) => LEVELS.map((l, i) => `${sealAt(l.key, i * gap, 0, size)}<text x="${i * gap + size / 2}" y="${size + 14}" text-anchor="middle" class="t-mono" font-size="10" fill="#FCFCFC" fill-opacity=".85">${level(l.key)}</text>`).join('');
-  const defs = `<defs>
-    <radialGradient id="${id}-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${LIME}" stop-opacity=".24"/><stop offset="1" stop-color="${LIME}" stop-opacity="0"/></radialGradient>
-  </defs>`;
-  // The engine: the formula as a ring (65 what happened, 15 agreement, 10 voices, 10 volume) and the share inside
-  const engine = (cx, cy, r) => {
+  const pct = Math.round(s * 100);
+  const f1 = (n) => Number(n).toFixed(1);
+  const rad = (deg) => (deg * Math.PI) / 180;
+  const WHITE = '#FCFCFC';
+
+  // Particles along a path: n dots, evenly spaced in time, fading in and out at the ends
+  const dots = (pid, n, dur, color, r = 2.1) => Array.from({ length: n }, (_, i) => {
+    const b = `${f1((-i * dur) / n)}s`;
+    return `<circle class="pt" r="${r}" fill="${color}" opacity="0"><animateMotion dur="${dur}s" begin="${b}" repeatCount="indefinite"><mpath href="#${pid}" xlink:href="#${pid}"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.15;.8;1" dur="${dur}s" begin="${b}" repeatCount="indefinite"/></circle>`;
+  }).join('');
+  // A wire: a faint track, the visible line, a port where it lands, and its particles
+  const wire = (pid, d, color, width, n, dur, end, still) => `<path id="${pid}" d="${d}" fill="none" stroke="${color}" stroke-opacity="${still ? 0.16 : 0.12}" stroke-width="${f1(width + 5)}" stroke-linecap="round"/>
+      <path d="${d}" fill="none" stroke="${color}" stroke-opacity="${still ? 0.3 : 0.62}" stroke-width="${f1(width)}" stroke-linecap="round"${still ? ' stroke-dasharray="2 5"' : ''}/>
+      ${end ? `<circle cx="${f1(end[0])}" cy="${f1(end[1])}" r="2.6" fill="${color}" fill-opacity="${still ? 0.4 : 0.9}"/>` : ''}
+      ${still ? '' : dots(pid, n, dur, color)}`;
+  const head = (x, y, text, color, anchor = 'start') => `<text x="${x}" y="${y}" text-anchor="${anchor}" class="t-mono" font-size="9.5" letter-spacing="1.4" fill="${color}">${text}</text>`;
+
+  // An input: a slim row with an initial tile, the name, how many Signals use it, and a port
+  const chip = (x, y, w, name, n, portX, portY) => `<g>
+      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="#121B19"/>
+      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="${WHITE}" fill-opacity=".035" stroke="${WHITE}" stroke-opacity=".1"/>
+      <rect x="${x + 8}" y="${y + 8}" width="24" height="24" rx="7" fill="${FORUM}" fill-opacity=".14"/>
+      <text x="${x + 20}" y="${y + 24}" text-anchor="middle" class="t-mono" font-size="11" font-weight="600" fill="${FORUM}">${esc((name || ' ')[0])}</text>
+      <text x="${x + 42}" y="${y + 18}" class="t-head" font-size="13.5" fill="${WHITE}">${esc(name)}</text>
+      <text x="${x + 42}" y="${y + 31}" class="t-mono" font-size="9" letter-spacing=".5" fill="${WHITE}" fill-opacity=".55">IN ${fmt(n)} SIGNAL${n === 1 ? '' : 'S'}</text>
+      <circle cx="${portX}" cy="${portY}" r="3" fill="#0C1413" stroke="${FORUM}" stroke-width="1.4"/>
+    </g>`;
+  const member = (x, y, w, portX, portY) => `<g>
+      <rect x="${x}" y="${y}" width="${w}" height="48" rx="13" fill="#121B19"/>
+      <rect x="${x}" y="${y}" width="${w}" height="48" rx="13" fill="${LIME}" fill-opacity=".07" stroke="${LIME}" stroke-opacity=".5"/>
+      <circle cx="${x + 24}" cy="${y + 24}" r="11" fill="none" stroke="${LIME}" stroke-width="1.6"/>
+      <circle cx="${x + 24}" cy="${y + 24}" r="4.2" fill="${LIME}"/>
+      <text x="${x + 44}" y="${y + 21}" class="t-head" font-size="14" fill="${WHITE}">${fmt(reports)} first-hand report${reports === 1 ? '' : 's'}</text>
+      <text x="${x + 44}" y="${y + 36}" class="t-mono" font-size="9" letter-spacing=".5" fill="${LIME}" fill-opacity=".85">+ ${fmt(sames)} “SAME FOR ME”</text>
+      <circle cx="${portX}" cy="${portY}" r="3" fill="#0C1413" stroke="${LIME}" stroke-width="1.4"/>
+    </g>`;
+
+  // The dial: the members' share in lime, the forums' in blue-grey, a tick ring, a slow orbit
+  const dial = (cx, cy, r, big) => {
     const C = 2 * Math.PI * r;
-    const parts = [[0.65, LIME], [0.15, '#B8E62A'], [0.10, '#9BE35A'], [0.10, '#6EE7B7']];
-    let off = 0;
-    const arcs = parts.map(([f, c]) => {
-      const len = Math.max(0, f * C - 4);
-      const a = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="13" stroke-dasharray="${len.toFixed(1)} ${(C - len).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>`;
-      off += f * C;
-      return a;
+    const gap = s > 0 && s < 1 ? 3 : 0;
+    const mLen = Math.max(0, s * C - gap);
+    const fLen = Math.max(0, (1 - s) * C - gap);
+    const ticks = Array.from({ length: 60 }, (_, i) => {
+      const a = rad(i * 6); const major = i % 15 === 0;
+      const r1 = r + 11; const r2 = r + (major ? 19 : 14);
+      return `<line x1="${f1(cx + r1 * Math.sin(a))}" y1="${f1(cy - r1 * Math.cos(a))}" x2="${f1(cx + r2 * Math.sin(a))}" y2="${f1(cy - r2 * Math.cos(a))}" stroke="${WHITE}" stroke-opacity="${major ? 0.42 : 0.13}" stroke-width="${major ? 1.4 : 1}"/>`;
     }).join('');
-    return `<circle cx="${cx}" cy="${cy}" r="${r + 40}" fill="url(#${id}-glow)"/>
-      <circle class="spin" cx="${cx}" cy="${cy}" r="${r + 20}" fill="none" stroke="${LIME}" stroke-opacity=".3" stroke-width="1.3" stroke-dasharray="2 7" transform-origin="${cx} ${cy}"/>
-      ${arcs}
-      <circle cx="${cx}" cy="${cy}" r="${r - 13}" fill="#0C1413"/>
-      <text x="${cx}" y="${cy - 22}" text-anchor="middle" class="t-mono" font-size="9" letter-spacing="1.2" fill="${FORUM}">${Math.round((1 - s) * 100)}% FORUMS</text>
-      <text x="${cx}" y="${cy + 11}" text-anchor="middle" class="t-head" font-size="${compact ? 32 : 38}" fill="${LIME}">${Math.round(s * 100)}%</text>
-      <text x="${cx}" y="${cy + 29}" text-anchor="middle" class="t-mono" font-size="9" letter-spacing="1.2" fill="#FCFCFC" fill-opacity=".75">FROM MEMBERS</text>`;
+    const arc = (len, off, color, width, op) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-opacity="${op}" stroke-width="${width}" stroke-linecap="${gap ? 'round' : 'butt'}" stroke-dasharray="${f1(len)} ${f1(C)}" stroke-dashoffset="${f1(-off)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    return `<circle cx="${cx}" cy="${cy}" r="${r + 64}" fill="url(#${id}-glow)"/>
+      ${ticks}
+      <circle class="spin" cx="${cx}" cy="${cy}" r="${r + 28}" fill="none" stroke="${LIME}" stroke-opacity=".22" stroke-width="1" stroke-dasharray="1.5 7" transform-origin="${cx} ${cy}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${WHITE}" stroke-opacity=".06" stroke-width="11"/>
+      ${fLen > 0 ? arc(fLen, s * C + gap / 2, FORUM, 11, 0.5) : ''}
+      ${mLen > 0 ? `${arc(mLen, gap / 2, LIME, 22, 0.13)}${arc(mLen, gap / 2, LIME, 11, 1)}` : `<circle cx="${cx}" cy="${cy - r}" r="3.4" fill="${LIME}"/>`}
+      <circle cx="${cx}" cy="${cy}" r="${r - 15}" fill="url(#${id}-core)" stroke="${WHITE}" stroke-opacity=".07"/>
+      <text x="${cx}" y="${cy + (big ? 6 : 3)}" text-anchor="middle" class="t-head" font-size="${big ? 40 : 30}" fill="${LIME}">${pct}%</text>
+      <text x="${cx}" y="${cy + (big ? 23 : 17)}" text-anchor="middle" class="t-mono" font-size="${big ? 8.5 : 7.5}" letter-spacing="1.2" fill="${WHITE}" fill-opacity=".75">FROM MEMBERS</text>
+      <line x1="${cx - 16}" y1="${cy + (big ? 31 : 23)}" x2="${cx + 16}" y2="${cy + (big ? 31 : 23)}" stroke="${WHITE}" stroke-opacity=".14"/>
+      <text x="${cx}" y="${cy + (big ? 43 : 33)}" text-anchor="middle" class="t-mono" font-size="${big ? 8 : 7}" letter-spacing="1" fill="${FORUM}">${100 - pct}% FORUMS</text>`;
   };
-  const pill = (x, y, w, hgt, label, sub, member) => `<g>
-      <rect x="${x}" y="${y}" width="${w}" height="${hgt}" rx="${hgt / 2}" fill="${member ? 'rgba(216,255,61,.12)' : '#16231F'}" stroke="${member ? LIME : 'rgba(255,255,255,.16)'}" stroke-opacity="${member ? 0.65 : 1}"/>
-      <circle cx="${x + hgt / 2}" cy="${y + hgt / 2}" r="${hgt / 2 - 8}" fill="${member ? LIME : 'rgba(159,179,200,.2)'}"/>
-      <text x="${x + hgt / 2}" y="${y + hgt / 2 + 4.5}" text-anchor="middle" class="t-mono" font-size="12" font-weight="600" fill="${member ? '#121E1D' : FORUM}">${esc((label || ' ')[0])}</text>
-      <text x="${x + hgt + 2}" y="${y + hgt / 2 - 1}" class="t-head" font-size="15" fill="#FCFCFC">${esc(label)}</text>
-      <text x="${x + hgt + 2}" y="${y + hgt / 2 + 14}" class="t-mono" font-size="10" fill="#FCFCFC" fill-opacity=".62">${esc(sub)}</text>
-    </g>`;
-  const stream = (d, width, color, cls) => {
-    const waiting = cls === 'm' && s === 0;
-    return `<path d="${d}" fill="none" stroke="${color}" stroke-opacity="${waiting ? 0.18 : 0.26}" stroke-width="${width.toFixed(1)}" stroke-linecap="round"/>
-      <path class="flow ${cls}" d="${d}" fill="none" stroke="${color}" stroke-width="${waiting ? 2 : 3.2}" stroke-linecap="round" stroke-dasharray="${waiting ? '0.5 12.5' : '0.5 12.5'}"/>`;
+
+  // The formula: 65 what happened, 15 agreement, 10 voices, 10 volume
+  const formula = (cx, y, w) => {
+    const parts = [[65, 'WHAT HAPPENED', LIME], [15, 'AGREEMENT', '#B8E62A'], [10, 'VOICES', '#9BE35A'], [10, 'VOLUME', '#6EE7B7']];
+    let x = cx - w / 2;
+    const bar = parts.map(([p, , c]) => { const wd = (w * p) / 100 - 2; const r = `<rect x="${f1(x)}" y="${y}" width="${f1(wd)}" height="5" rx="2.5" fill="${c}"/>`; x += (w * p) / 100; return r; }).join('');
+    const item = ([p, t, c]) => `<tspan fill="${c}">●</tspan><tspan fill="${WHITE}" fill-opacity=".62">\u00A0${p} ${t}</tspan>`;
+    const sep = '<tspan>\u00A0\u00A0\u00A0</tspan>';
+    return `<text x="${cx}" y="${y - 9}" text-anchor="middle" class="t-mono" font-size="9" letter-spacing="1.4" fill="${WHITE}" fill-opacity=".45">THE FORMULA</text>
+      ${bar}
+      <text x="${cx}" y="${y + 21}" text-anchor="middle" class="t-mono" font-size="8.5" letter-spacing=".6">${item(parts[0])}${sep}${item(parts[1])}</text>
+      <text x="${cx}" y="${y + 35}" text-anchor="middle" class="t-mono" font-size="8.5" letter-spacing=".6">${item(parts[2])}${sep}${item(parts[3])}</text>`;
   };
-  const head = (x, y, text, color) => `<text x="${x}" y="${y}" class="t-mono" font-size="10" letter-spacing="1.4" fill="${color}">${text}</text>`;
-  const card = (x, y, wd, ht, big) => `<g transform="translate(${x} ${y})">
-      <rect width="${wd}" height="${ht}" rx="16" fill="#101817" stroke="${LIME}" stroke-opacity=".4"/>
-      <text x="16" y="26" class="t-mono" font-size="10" letter-spacing="1.4" fill="${LIME}">THE SIGNAL</text>
-      <text x="16" y="${big ? 66 : 58}" class="t-head" font-size="${big ? 38 : 30}" fill="#FCFCFC">${fmt(signals)}</text>
-      <text x="16" y="${big ? 86 : 76}" class="t-mono" font-size="9.5" fill="#FCFCFC" fill-opacity=".65">NUMBERS, 0–100</text>
-      <g transform="translate(${big ? 14 : wd - 158} ${big ? 104 : 22})">${ladder(30, 22)}</g>
-    </g>`;
-  const label = `How the Signal is made: public forums and members' first-hand reports feed one number per compound. Right now ${Math.round(s * 100)}% of it comes from members.`;
+
+  // The output: the number of live Signals, the levels as a stacked bar and as seals
+  const levelColors = { forum: FORUM, early: 'rgba(216,255,61,.38)', backed: 'rgba(216,255,61,.6)', verified: 'rgba(216,255,61,.82)', certified: LIME };
+  const stack = (x, y, w) => {
+    const tot = LEVELS.reduce((a, l) => a + level(l.key), 0);
+    if (!tot) return `<rect x="${x}" y="${y}" width="${w}" height="5" rx="2.5" fill="${WHITE}" fill-opacity=".08"/>`;
+    let cx = x;
+    return `<rect x="${x}" y="${y}" width="${w}" height="5" rx="2.5" fill="${WHITE}" fill-opacity=".08"/>${LEVELS.map((l) => {
+      const wd = (w * level(l.key)) / tot; if (!wd) return '';
+      const r = `<rect x="${f1(cx)}" y="${y}" width="${f1(Math.max(1.5, wd - 1.5))}" height="5" rx="2" fill="${levelColors[l.key]}"/>`; cx += wd; return r;
+    }).join('')}`;
+  };
+  const seals = (x, y, w, size) => {
+    const step = (w - size) / 4;
+    return LEVELS.map((l, i) => `${sealAt(l.key, x + i * step, y, size)}<text x="${f1(x + i * step + size / 2)}" y="${y + size + 13}" text-anchor="middle" class="t-mono" font-size="9.5" fill="${WHITE}" fill-opacity="${level(l.key) ? 0.9 : 0.45}">${level(l.key)}</text>`).join('');
+  };
+  const liveDot = (x, y) => `<circle class="ping" cx="${x}" cy="${y}" r="3.4" fill="${LIME}" fill-opacity=".5"/><circle cx="${x}" cy="${y}" r="3.4" fill="${LIME}"/>`;
+
+  const defs = `<defs>
+    <radialGradient id="${id}-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${LIME}" stop-opacity=".2"/><stop offset=".55" stop-color="${LIME}" stop-opacity=".05"/><stop offset="1" stop-color="${LIME}" stop-opacity="0"/></radialGradient>
+    <radialGradient id="${id}-core" cx="50%" cy="35%" r="70%"><stop offset="0" stop-color="#17231F"/><stop offset="1" stop-color="#0A110F"/></radialGradient>
+    <linearGradient id="${id}-card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#15201E"/><stop offset="1" stop-color="#0D1513"/></linearGradient>
+  </defs>`;
+  const label = `How the Signal is made: public forums and members' first-hand reports feed one number per compound. Right now ${pct}% of it comes from members.`;
+  const quiet = s === 0;   // no member data yet: the members' wire waits, dashed
 
   if (!compact) {
-    const W = 748; const H = 330;
-    const cx = 428; const cy = 168; const r = 82;
-    const ys = [32, 88, 144, 200];
-    const streams = src.map((x, i) => {
-      const y0 = ys[i] + 22;
-      const y1 = cy - 34 + i * 15;
-      const w = forumW * ((x.n || 0) / total) * 2.2;
-      return { x, y: ys[i], d: `M212 ${y0} C 290 ${y0}, ${cx - r - 86} ${y1}, ${cx - r - 16} ${y1}`, w: Math.max(1.2, Math.min(16, w)) };
-    });
-    const memberD = `M212 290 C 300 290, ${cx - r - 70} ${cy + 52}, ${cx - r - 12} ${cy + 40}`;
-    const outD = `M${cx + r + 16} ${cy} C ${cx + r + 40} ${cy}, 540 ${cy}, 566 ${cy}`;
-    return `<svg class="flowviz" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">
+    const W = 760; const H = 332;
+    const cx = 442; const cy = 150; const r = 74; const R = r + 23;
+    const chipX = 12; const chipW = 212; const ys = [28, 74, 120, 166];
+    const angles = [150, 165, 180, 195]; const mAngle = 216;
+    const at = (deg) => [cx + R * Math.cos(rad(deg)), cy - R * Math.sin(rad(deg))];
+    const curve = (x0, y0, deg) => {
+      const [ex, ey] = at(deg);
+      const c2 = [ex + 52 * Math.cos(rad(deg)), ey - 52 * Math.sin(rad(deg))];
+      return { d: `M${x0} ${y0} C ${x0 + 70} ${y0}, ${f1(c2[0])} ${f1(c2[1])}, ${f1(ex)} ${f1(ey)}`, end: [ex, ey] };
+    };
+    const forumWires = src.map((x, i) => {
+      if (!x.name) return '';
+      const c = curve(chipX + chipW, ys[i] + 20, angles[i]);
+      const n = Math.max(1, Math.round(1 + 3 * ((x.n || 0) / total) * (1 - s)));
+      return wire(`${id}-f${i}`, c.d, FORUM, 1 + 2.2 * ((x.n || 0) / total) * (1 - s) + 0.6, n, 3.4 + i * 0.25, c.end, false);
+    }).join('');
+    const mc = curve(chipX + chipW, 240 + 24, mAngle);
+    const memberWire = wire(`${id}-m`, mc.d, LIME, 1.4 + 2.4 * s, Math.max(1, Math.round(1 + 4 * s)), 2.8, mc.end, quiet);
+    const cardX = 592; const cardY = cy - 82; const cardW = 156; const cardH = 164;
+    const outWire = wire(`${id}-o`, `M${cx + R} ${cy} L${cardX} ${cy}`, LIME, 1.8, 3, 1.6, null, false);
+    return `<svg class="flowviz" viewBox="0 0 ${W} ${H}" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="${label}">
       ${defs}
-      ${head(12, 20, `PUBLIC FORUMS · ${weight} REPORTS EACH`, FORUM)}
-      ${streams.map((p) => stream(p.d, p.w, FORUM, 'f')).join('')}
-      ${stream(memberD, memberW, LIME, 'm')}
-      ${stream(outD, 7, LIME, 'o')}
-      ${streams.map((p) => (p.x.name ? pill(12, p.y, 200, 44, p.x.name, `${p.x.n} Signal${p.x.n === 1 ? '' : 's'} start here`, false) : '')).join('')}
-      ${head(12, 262, 'MEMBERS HERE · FIRST-HAND', LIME)}
-      ${pill(12, 268, 200, 46, `${fmt(reports)} report${reports === 1 ? '' : 's'}`, `+ ${fmt(sames)} “same for me”`, true)}
-      ${engine(cx, cy, r)}
-      <text x="${cx}" y="${cy + r + 46}" text-anchor="middle" class="t-mono" font-size="9.5" letter-spacing="1" fill="#FCFCFC" fill-opacity=".55">65 WHAT HAPPENED · 15 AGREEMENT · 10 VOICES · 10 VOLUME</text>
-      ${card(566, cy - 78, 170, 156, true)}
+      ${head(chipX, 16, `PUBLIC FORUMS · COUNT AS ${weight} REPORTS`, FORUM)}
+      ${forumWires}
+      ${memberWire}
+      ${outWire}
+      ${src.map((x, i) => (x.name ? chip(chipX, ys[i], chipW, x.name, x.n || 0, chipX + chipW, ys[i] + 20) : '')).join('')}
+      ${head(chipX, 232, 'MEMBERS HERE · FIRST-HAND', LIME)}
+      ${member(chipX, 240, chipW, chipX + chipW, 264)}
+      ${dial(cx, cy, r, true)}
+      ${formula(cx, 283, 200)}
+      <g transform="translate(${cardX} ${cardY})">
+        <rect width="${cardW}" height="${cardH}" rx="16" fill="url(#${id}-card)" stroke="${LIME}" stroke-opacity=".38"/>
+        <circle cx="0" cy="${cardH / 2}" r="3" fill="#0C1413" stroke="${LIME}" stroke-width="1.4"/>
+        ${head(16, 25, 'THE SIGNAL', LIME)}${liveDot(cardW - 18, 21.5)}
+        <text x="16" y="68" class="t-head" font-size="40" fill="${WHITE}">${fmt(signals)}</text>
+        <text x="16" y="86" class="t-mono" font-size="8.5" letter-spacing=".8" fill="${WHITE}" fill-opacity=".6">LIVE SIGNALS, 0–100</text>
+        ${stack(16, 98, cardW - 32)}
+        ${seals(16, 114, cardW - 32, 18)}
+      </g>
     </svg>`;
   }
   // Phones, a funnel: the forums come down the sides, members straight down the middle, the
-  // engine mixes them and the number comes out at the bottom
-  const W = 360; const H = 508;
-  const cx = 180; const cy = 318; const r = 60; const R = r + 14;
-  const pos = [[8, 28], [184, 28], [8, 76], [184, 76]];
-  const lane = [46, 314, 76, 284];        // where each forum's stream runs down
-  const angle = [-62, 62, -38, 38];       // and where it meets the engine (degrees from the top)
-  const streams = src.map((x, i) => {
-    const [px, py] = pos[i];
-    const x0 = lane[i]; const y0 = py + 40;
-    const a = (angle[i] * Math.PI) / 180;
-    const tx = cx + R * Math.sin(a); const ty = cy - R * Math.cos(a);
-    const ux = (cx - tx) / R; const uy = (cy - ty) / R;
-    const w = forumW * ((x.n || 0) / total) * 2;
-    return { x, px, py, d: `M${x0} ${y0} C ${x0} ${(y0 + (ty - y0) * 0.62).toFixed(1)}, ${(tx - 38 * ux).toFixed(1)} ${(ty - 38 * uy).toFixed(1)}, ${tx.toFixed(1)} ${ty.toFixed(1)}`, w: Math.max(1.2, Math.min(14, w)) };
-  });
-  const my = 162;                          // the members' pill
-  const memberD = `M${cx} ${my + 46} L${cx} ${cy - R}`;
-  const outD = `M${cx} ${cy + R} L${cx} ${cy + R + 26}`;
-  const oy = cy + R + 26;                  // the number's card
-  return `<svg class="flowviz compact" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">
+  // dial mixes them, the number comes out below and the formula sits at the foot
+  const W = 360; const H = 612;
+  const cx = 180; const cy = 318; const r = 60; const R = r + 21;
+  const pos = [[8, 26], [184, 26], [8, 72], [184, 72]];
+  const starts = [[30, 66], [330, 66], [62, 112], [298, 112]];
+  const angles = [128, 52, 148, 32];
+  const at = (deg) => [cx + R * Math.cos(rad(deg)), cy - R * Math.sin(rad(deg))];
+  const forumWires = src.map((x, i) => {
+    if (!x.name) return '';
+    const [x0, y0] = starts[i]; const [ex, ey] = at(angles[i]);
+    const c2 = [ex + 46 * Math.cos(rad(angles[i])), ey - 46 * Math.sin(rad(angles[i]))];
+    const d = `M${x0} ${y0} C ${x0} ${y0 + 96}, ${f1(c2[0])} ${f1(c2[1])}, ${f1(ex)} ${f1(ey)}`;
+    const n = Math.max(1, Math.round(1 + 2 * ((x.n || 0) / total) * (1 - s)));
+    return wire(`${id}-f${i}`, d, FORUM, 1 + 1.8 * ((x.n || 0) / total) * (1 - s) + 0.5, n, 3.2 + i * 0.2, [ex, ey], false);
+  }).join('');
+  const my = 148;
+  const memberWire = wire(`${id}-m`, `M${cx} ${my + 48} L${cx} ${cy - R}`, LIME, 1.4 + 2 * s, Math.max(1, Math.round(1 + 3 * s)), 2.2, [cx, cy - R], quiet);
+  const oy = cy + R + 24; const cardW = 260; const cardH = 108;
+  const outWire = wire(`${id}-o`, `M${cx} ${cy + R} L${cx} ${oy}`, LIME, 1.8, 2, 1.2, null, false);
+  return `<svg class="flowviz compact" viewBox="0 0 ${W} ${H}" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="${label}">
     ${defs}
-    ${head(8, 18, `PUBLIC FORUMS · ${weight} REPORTS EACH`, FORUM)}
-    ${streams.map((p) => stream(p.d, p.w, FORUM, 'f')).join('')}
-    ${stream(memberD, memberW, LIME, 'm')}
-    ${stream(outD, 6, LIME, 'o')}
-    ${streams.map((p) => (p.x.name ? pill(p.px, p.py, 168, 40, p.x.name, `${p.x.n} Signal${p.x.n === 1 ? '' : 's'}`, false) : '')).join('')}
-    <text x="${cx}" y="${my - 8}" text-anchor="middle" class="t-mono" font-size="9.5" letter-spacing="1.3" fill="${LIME}">MEMBERS HERE · FIRST-HAND</text>
-    ${pill(cx - 82, my, 164, 46, `${fmt(reports)} report${reports === 1 ? '' : 's'}`, `+ ${fmt(sames)} “same for me”`, true)}
-    ${engine(cx, cy, r)}
-    <g transform="translate(${cx - 120} ${oy})">
-      <rect width="240" height="84" rx="16" fill="#101817" stroke="${LIME}" stroke-opacity=".4"/>
-      <text x="16" y="24" class="t-mono" font-size="9.5" letter-spacing="1.3" fill="${LIME}">THE SIGNAL</text>
-      <text x="16" y="58" class="t-head" font-size="30" fill="#FCFCFC">${fmt(signals)}</text>
-      <text x="16" y="74" class="t-mono" font-size="8.5" fill="#FCFCFC" fill-opacity=".6">NUMBERS, 0–100</text>
-      <g transform="translate(112 26)">${LEVELS.map((l, i) => `${sealAt(l.key, i * 23, 0, 17)}<text x="${i * 23 + 8.5}" y="32" text-anchor="middle" class="t-mono" font-size="9" fill="#FCFCFC" fill-opacity=".85">${level(l.key)}</text>`).join('')}</g>
+    ${head(8, 16, `PUBLIC FORUMS · COUNT AS ${weight} REPORTS`, FORUM)}
+    ${forumWires}
+    ${memberWire}
+    ${outWire}
+    ${src.map((x, i) => (x.name ? chip(pos[i][0], pos[i][1], 168, x.name, x.n || 0, starts[i][0], pos[i][1] + 40) : '')).join('')}
+    ${head(cx, my - 8, 'MEMBERS HERE · FIRST-HAND', LIME, 'middle')}
+    ${member(cx - 104, my, 208, cx, my + 48)}
+    ${dial(cx, cy, r, false)}
+    <g transform="translate(${cx - cardW / 2} ${oy})">
+      <rect width="${cardW}" height="${cardH}" rx="16" fill="url(#${id}-card)" stroke="${LIME}" stroke-opacity=".38"/>
+      <circle cx="${cardW / 2}" cy="0" r="3" fill="#0C1413" stroke="${LIME}" stroke-width="1.4"/>
+      ${head(16, 24, 'THE SIGNAL', LIME)}${liveDot(98, 20.5)}
+      <text x="16" y="60" class="t-head" font-size="32" fill="${WHITE}">${fmt(signals)}</text>
+      <text x="16" y="76" class="t-mono" font-size="8" letter-spacing=".6" fill="${WHITE}" fill-opacity=".6">LIVE SIGNALS</text>
+      ${seals(126, 26, 118, 16)}
+      ${stack(16, 90, cardW - 32)}
     </g>
+    ${formula(cx, oy + cardH + 34, 220)}
   </svg>`;
 }
 
