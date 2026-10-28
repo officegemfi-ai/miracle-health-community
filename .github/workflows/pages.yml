@@ -4,7 +4,8 @@
 # Once it's open (a commit is tagged "live" by Promote to live): the live app at the root,
 # from that commit, and nothing else; the test app and the preview stay off the site.
 # Called by the two deploy workflows, after the database is updated. It can also be run
-# by hand (Actions > Pages > Run workflow).
+# by hand (Actions > Pages > Run workflow), and it runs every hour so the public library's
+# numbers (snapshot.json, read by miraclehealth.us/library) stay current.
 # With the repository secret SITE_PASSWORD set, every app sits behind that password.
 # Each app's public key comes from Supabase with the SUPABASE_ACCESS_TOKEN secret (or the
 # TEST_/LIVE_SUPABASE_URL and _ANON_KEY variables, when set).
@@ -12,6 +13,8 @@ name: Pages
 on:
   workflow_call: {}
   workflow_dispatch: {}
+  schedule:
+    - cron: '23 * * * *'
 permissions:
   contents: read
   pages: write
@@ -107,6 +110,20 @@ jobs:
           echo "The live app runs on $SUPABASE_URL"
           git worktree add /tmp/live live
           (cd /tmp/live && scripts/build_web.sh "$GITHUB_WORKSPACE/_site")
+      - name: The public library's numbers (snapshot.json)
+        if: steps.live.outputs.open == 'true'
+        run: |
+          # Aggregate totals only (private.public_snapshot): Signals, levels, how reports went,
+          # ratings by use, side effects once three reports mention them. No posts, no names.
+          # The library at miraclehealth.us reads it from here.
+          if scripts/supabase_project.sh live snapshot > "$RUNNER_TEMP/snapshot.json"; then
+            cp "$RUNNER_TEMP/snapshot.json" _site/snapshot.json
+            echo "snapshot.json: $(jq '.signals | length' _site/snapshot.json) Signals"
+          else
+            echo "::warning title=Library numbers::Couldn't make a new snapshot; keeping the one that's up."
+            curl -fsS https://community.miraclehealth.us/snapshot.json -o _site/snapshot.json \
+              || echo "::warning title=Library numbers::No snapshot to keep; the library shows its pages without live numbers."
+          fi
           # No CNAME file: with a GitHub Actions deploy, the custom domain is set in
           # Settings > Pages, and GitHub ignores a CNAME file.
       - uses: actions/configure-pages@v5

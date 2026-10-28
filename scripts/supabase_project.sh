@@ -15,6 +15,8 @@
 #   admin     live only: makes the member with the handle given as the third argument an admin
 #   keys      prints SUPABASE_URL=... and SUPABASE_ANON_KEY=... (the public key) for the build
 #   advisors  prints Supabase's security advisor findings (never fails the deploy)
+#   snapshot  prints the public library's numbers as JSON (private.public_snapshot():
+#             aggregate totals only, no posts or names), for the site's snapshot.json
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
 #   ANTHROPIC_API_KEY, REVIEW_SECRET, MODERATION_MODEL, APP_ORIGINS, SITE_URL,
@@ -24,7 +26,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ENV_NAME="${1:?test or live}"
-CMD="${2:?ref, create, setup, admin, keys or advisors}"
+CMD="${2:?ref, create, setup, admin, keys, advisors or snapshot}"
 case "$ENV_NAME" in test|live) ;; *) echo "The environment is test or live, not $ENV_NAME" >&2; exit 2 ;; esac
 : "${SUPABASE_ACCESS_TOKEN:?SUPABASE_ACCESS_TOKEN is not set}"
 BASE="${SUPABASE_API_BASE:-https://api.supabase.com}"
@@ -259,6 +261,11 @@ admin)
   if [ -n "$made" ]; then echo "::notice title=Admin::u/$made is an admin."
   else echo "::error title=Admin::No member has the handle $handle. Sign up first, then run this again."; exit 1
   fi
+  ;;
+
+snapshot)
+  # One row, one column: the JSON itself; anything else (an error) fails the command
+  sql "select private.public_snapshot() as j" | jq -ce 'if type == "array" and (.[0].j | type) == "object" then .[0].j else error("no snapshot") end'
   ;;
 
 *)

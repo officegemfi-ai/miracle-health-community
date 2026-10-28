@@ -272,3 +272,36 @@ export function splitBar({ better = 0, same = 0, worse = 0 } = {}) {
   });
   return box;
 }
+
+// ---------------------------------------------------------------------------
+// A radar: one spoke per goal (values 0-1), with layers drawn in order: an outline for what
+// studies look at, a fill for what members report. The shapes grow from the middle.
+// ---------------------------------------------------------------------------
+// axes: [{ id, label }]; layers: [{ values: { id: 0-1 }, cls: 'studied' | 'members' | 'forums', label }]
+export function radarSvg({ axes = [], layers = [] } = {}, { size = 340, labels = true, title = 'Radar' } = {}) {
+  const n = axes.length;
+  if (!n) return '';
+  const pad = labels ? 64 : 8;
+  const W = size + (labels ? 60 : 0); const H = size;
+  const cx = W / 2; const cy = H / 2; const R = size / 2 - pad + (labels ? 14 : 0);
+  const at = (i, v) => {
+    const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
+    return [cx + R * v * Math.cos(a), cy + R * v * Math.sin(a)];
+  };
+  const poly = (vals) => vals.map((v, i) => at(i, v).map((x) => x.toFixed(1)).join(',')).join(' ');
+  const rings = [0.25, 0.5, 0.75, 1].map((r) => `<polygon points="${poly(axes.map(() => r))}" fill="none" stroke="currentColor" stroke-opacity="${r === 1 ? 0.28 : 0.12}"/>`).join('');
+  const spokes = axes.map((_, i) => { const [x, y] = at(i, 1); return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="currentColor" stroke-opacity=".12"/>`; }).join('');
+  const shapes = layers.map((l) => {
+    const vals = axes.map((a) => Math.max(0, Math.min(1, Number(l.values?.[a.id]) || 0)));
+    if (!vals.some((v) => v > 0)) return '';
+    const dots = vals.map((v, i) => (v > 0 ? `<circle cx="${at(i, v)[0].toFixed(1)}" cy="${at(i, v)[1].toFixed(1)}" r="3"/>` : '')).join('');
+    return `<g class="rd-layer rd-${esc(l.cls || 'studied')}" transform-origin="${cx} ${cy}"><polygon points="${poly(vals)}"/>${dots}</g>`;
+  }).join('');
+  const text = labels ? axes.map((a, i) => {
+    const [x, y] = at(i, 1.13);
+    const anchor = Math.abs(x - cx) < 6 ? 'middle' : x > cx ? 'start' : 'end';
+    const dy = y < cy - R * 0.9 ? -2 : y > cy + R * 0.9 ? 10 : 4;
+    return `<text x="${x.toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}" class="rd-label">${esc(a.label)}</text>`;
+  }).join('') : '';
+  return `<svg class="radar" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${rings}${spokes}${shapes}${text}</svg>`;
+}

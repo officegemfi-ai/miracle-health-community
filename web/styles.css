@@ -590,6 +590,10 @@ label.f.nm{margin:0}
 .stack-hit .big-sc b.num{font:600 34px/1 var(--head);letter-spacing:-.03em}
 .right{text-align:right}
 .sortbar.only{margin-top:14px;margin-bottom:0}
+.lib-link{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);text-decoration:none}
+.lib-link:hover{border-color:var(--line-2)}
+.lib-link b{display:block;font:600 14px var(--head)}
+.lib-link .xs{display:block;margin-top:1px}
 
 /* ---------------------------------------------------------------- the Signal, drawn */
 .t-mono{font-family:var(--mono);font-weight:500}

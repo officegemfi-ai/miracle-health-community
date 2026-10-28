@@ -38,6 +38,8 @@ export async function railCards(kind, ctx = {}) {
   }
 }
 
+// The public library, with a fact sheet for every compound and blend in the community's
+export const LIBRARY = 'https://miraclehealth.us/library/';
 async function aboutSpace(cid) {
   const sp = S.spaces.find((s) => s.compound_id === cid);
   if (!sp) return null;
@@ -48,7 +50,9 @@ async function aboutSpace(cid) {
       h('div', { class: 'stat card' }, h('b', { class: 'num' }, fmtN(sp.members_count)), h('span', {}, 'Members')),
       h('div', { class: 'stat card' }, h('b', { class: 'num' }, fmtN(sp.reports)), h('span', {}, 'Reports'))),
     h('div', { class: 'mt12' }, joinButton(sp, 'block')),
-    h('a', { class: 'btn ghost block mt8', href: `#/new?c=${encodeURIComponent(cid)}` }, icon('plus', 16), 'Share how it went'));
+    h('a', { class: 'btn ghost block mt8', href: `#/new?c=${encodeURIComponent(cid)}` }, icon('plus', 16), 'Share how it went'),
+    sp.kind === 'stack' ? null : h('a', { class: 'lib-link mt12', href: `${LIBRARY}${encodeURIComponent(cid)}/`, target: '_blank', rel: 'noopener' },
+      icon('flask', 18), h('span', { class: 'grow' }, h('b', {}, 'Fact sheet'), h('span', { class: 'xs muted' }, 'Evidence, risks and blood markers, with sources')), icon('chevron', 16)));
 }
 
 // ---------------------------------------------------------------------------
@@ -79,6 +83,7 @@ export function renderNav(current = '', cid = '') {
         spaceTile(s, 24), h('span', { class: 'grow' }, s.name), h('span', { class: 's', 'data-sig-of': s.compound_id }, s.score != null ? fmt1(s.score) : '')))
       : [h('p', { class: 'nav-empty' }, 'You haven’t joined any yet. ', h('a', { href: '#/explore' }, 'Explore spaces'))]),
     h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Resources')),
+    h('a', { class: 'nav-i', href: LIBRARY, target: '_blank', rel: 'noopener' }, icon('flask', 20), 'The Library'),
     h('a', { class: 'nav-i', href: '#/how', 'aria-current': current === 'how' ? 'page' : null }, icon('info', 20), 'How it works'),
     h('a', { class: 'nav-i', href: '#/rules', 'data-nav': 'rules', 'aria-current': current === 'rules' ? 'page' : null }, icon('book', 20), 'Community rules'),
     h('a', { class: 'nav-i', href: '#/account', 'data-nav': 'account', 'aria-current': current === 'account' ? 'page' : null }, icon('gear', 20), 'Account'),
