@@ -321,9 +321,12 @@ export function onboarding() {
   const popular = [...S.spaces].sort((a, b) => (b.members_count - a.members_count) || ((b.score ?? 0) - (a.score ?? 0))).slice(0, 16);
   const dots = () => h('div', { class: 'step-dots' }, [0, 1, 2].map((i) => h('i', { class: i === step ? 'on' : '' })));
   const finish = async () => {
+    const at = location.hash;
     await loadSpaces();
     await refreshQuests();
-    if (location.hash === '#/home') window.dispatchEvent(new HashChangeEvent('hashchange'));
+    // Someone who has already moved on (opened a post, started one) stays where they are
+    if (location.hash !== at) return;
+    if (at === '#/home') window.dispatchEvent(new HashChangeEvent('hashchange'));
     else location.hash = '#/home';
   };
   const { dlg, close } = modal(() => h('div', { class: 'onboard pad' }), { label: 'Welcome', sticky: true, onclose: finish });
