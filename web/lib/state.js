@@ -44,9 +44,9 @@ export async function loadReference() {
 // The API hands back at most 200 rows a request (the project's max_rows), so lists
 // that can be longer (the library has 300 entries and grows) come in pages
 const PAGE = 200;
-async function allRows(build) {
+async function allRows(build, max = 20000) {
   const rows = [];
-  for (let from = 0; from < 20000; from += PAGE) {
+  for (let from = 0; from < max; from += PAGE) {
     const { data, error } = await build().range(from, from + PAGE - 1);
     if (error || !data) return rows.length ? rows : null;
     rows.push(...data);
@@ -68,9 +68,16 @@ export async function loadSignal() {
 }
 
 export async function loadHistory(cid) {
-  let q = sb.from('signal_history').select('compound_id,version,score').order('version', { ascending: true });
-  if (cid) q = q.eq('compound_id', cid);
-  const { data } = await q.limit(cid ? 60 : 3000);
+  let data;
+  if (cid) {
+    // The latest 60 versions, oldest first
+    const res = await sb.from('signal_history').select('compound_id,version,score').eq('compound_id', cid)
+      .order('version', { ascending: false }).limit(60);
+    data = (res.data || []).reverse();
+  } else {
+    data = await allRows(() => sb.from('signal_history').select('compound_id,version,score')
+      .order('version', { ascending: true }).order('compound_id'), 4000);
+  }
   const map = new Map();
   (data || []).forEach((r) => {
     if (r.score == null) return;
