@@ -15,6 +15,7 @@ const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres@127.0.0.
 const WEB_ROOT = process.env.WEB_ROOT || new URL('../../web/', import.meta.url).pathname;
 const SECRET = 'local-only-jwt-secret-not-used-anywhere-else-0123456789';
 const TEST_CODE = '123456';
+const MAX_ROWS = Number(process.env.MAX_ROWS || 200);
 
 const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 8 });
 const refreshTokens = new Map();
@@ -136,7 +137,8 @@ async function rest(req, url, claims, body) {
   const values = [];
   if (req.method === 'GET') {
     let sql = `select ${cols(p.get('select'))} from ${table}${filters(p, values)}${order(p.get('order'))}`;
-    if (p.get('limit')) sql += ` limit ${Number(p.get('limit')) | 0}`;
+    // Like the projects (max_rows = 200): never more than 200 rows a request
+    sql += ` limit ${Math.min(Number(p.get('limit')) || MAX_ROWS, MAX_ROWS) | 0}`;
     if (p.get('offset')) sql += ` offset ${Number(p.get('offset')) | 0}`;
     return asCaller(claims, async (c) => ({ status: 200, data: (await c.query(`select coalesce(json_agg(t), '[]') as j from (${sql}) t`, values)).rows[0].j }));
   }

@@ -41,14 +41,28 @@ export async function loadReference() {
   S.pointRules = Object.fromEntries((pr.data || []).map((r) => [r.reason, r]));
 }
 
+// The API hands back at most 200 rows a request (the project's max_rows), so lists
+// that can be longer (the library has 300 entries and grows) come in pages
+const PAGE = 200;
+async function allRows(build) {
+  const rows = [];
+  for (let from = 0; from < 20000; from += PAGE) {
+    const { data, error } = await build().range(from, from + PAGE - 1);
+    if (error || !data) return rows.length ? rows : null;
+    rows.push(...data);
+    if (data.length < PAGE) break;
+  }
+  return rows;
+}
+
 export async function loadSpaces() {
-  const { data } = await sb.from('spaces').select('*').order('name');
+  const data = await allRows(() => sb.from('spaces').select('*').order('name').order('compound_id'));
   if (data) S.spaces = data;
   return S.spaces;
 }
 
 export async function loadSignal() {
-  const { data } = await sb.from('signal_board').select('*').order('score', { ascending: false });
+  const data = await allRows(() => sb.from('signal_board').select('*').order('score', { ascending: false, nullsFirst: false }).order('compound_id'));
   if (data) S.signal = data;
   return S.signal;
 }
