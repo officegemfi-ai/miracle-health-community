@@ -1,7 +1,7 @@
 // The community's art, drawn in code: Sig (the Community Signal in person) in
 // every mood, the fifteen emblems from Spark to Organism, Sig stickers, space
 // tiles and sparklines. Sig keeps the prototype's shape, face and moods, in the
-// new lime.
+// new lime, drawn as a muscle fibre.
 import { svg } from './ui.js';
 
 let uid = 0;
@@ -28,6 +28,38 @@ const EXTRAS = {
 };
 const MOOD_FACE = { idle: 'idle', happy: 'happy', think: 'think', sleepy: 'sleepy', watching: 'watching', curious: 'curious', concerned: 'concerned', cheer: 'happy', support: 'happy', offline: 'sleepy', burst: 'happy' };
 
+// Sig is a muscle fibre in the brand's lime: fine strands, alternately darker and lighter, run
+// from a white tendon at the tip and fan over the belly; three soft grooves split it into four
+// bundles; a few glossy streaks catch the light. Small Sigs (stickers) keep fewer strands.
+const f2 = (n) => Number(n).toFixed(2);
+function fibre(xb, top = 14, wob = 0) {
+  const k = xb - 32;
+  return `M${f2(32 + k * 0.06)} ${top} C${f2(32 + k * 0.35)} ${top + 8}, ${f2(32 + k * 1.02 + wob)} ${top + 16}, ${f2(xb)} ${top + 27} S${f2(xb + k * 0.02 - wob)} 56, ${f2(xb - k * 0.12)} 66`;
+}
+function muscle(g, off, detail) {
+  const tone = off ? '#5A6260' : '#5E9A0E';
+  const light = off ? '#EEF1F0' : '#F6FFD2';
+  const n = detail ? 17 : 7;
+  const xs = Array.from({ length: n }, (_, i) => 12.6 + (i * 38.8) / (n - 1));
+  const darkF = xs.filter((_, i) => i % 2 === 0);
+  const liteF = xs.filter((_, i) => i % 2 === 1);
+  const grooves = [22.4, 32, 41.6].map((x) => fibre(x, 15)).join(' ');
+  const defs = `<clipPath id="${g}c"><path d="${DROP}"/></clipPath>
+    <linearGradient id="${g}t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#F4F7EE" stop-opacity=".85"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+    <radialGradient id="${g}v" cx=".44" cy=".4" r=".66"><stop offset=".5" stop-color="${tone}" stop-opacity="0"/><stop offset="1" stop-color="${tone}" stop-opacity=".42"/></radialGradient>`;
+  const body = `<g clip-path="url(#${g}c)">
+        <path d="${darkF.map((x, i) => fibre(x, 14, (i % 3) - 1)).join(' ')}" fill="none" stroke="${tone}" stroke-opacity="${detail ? 0.26 : 0.3}" stroke-width="${detail ? 0.9 : 1.3}" stroke-linecap="round"/>
+        <path d="${liteF.map((x, i) => fibre(x, 16, 1 - (i % 3))).join(' ')}" fill="none" stroke="${light}" stroke-opacity="${detail ? 0.55 : 0.45}" stroke-width="${detail ? 0.8 : 1.2}" stroke-linecap="round"/>
+        <path d="${grooves}" fill="none" stroke="${tone}" stroke-opacity=".15" stroke-width="${detail ? 3.4 : 4}" stroke-linecap="round"/>
+        <path d="${grooves}" fill="none" stroke="${tone}" stroke-opacity=".48" stroke-width="${detail ? 1 : 1.3}" stroke-linecap="round"/>
+        ${detail ? `<path d="${[17.6, 26.8].map((x) => fibre(x, 22)).join(' ')}" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="2" stroke-linecap="round" stroke-dasharray="9 40"/>` : ''}
+        <rect width="64" height="64" fill="url(#${g}v)"/>
+        <path d="M32 6 C35 9.6 37.6 13 39.6 16.6 Q32 20.6 24.4 16.6 C26.4 13 29 9.6 32 6 Z" fill="url(#${g}t)"/>
+        <path d="${DROP}" fill="none" stroke="${light}" stroke-opacity=".55" stroke-width="2.4"/>
+      </g>`;
+  return { defs, body };
+}
+
 export function sig(size = 56, mood = 'idle', cls = '') {
   const g = nextId('sg');
   const face = FACES[MOOD_FACE[mood] || 'idle'];
@@ -35,13 +67,16 @@ export function sig(size = 56, mood = 'idle', cls = '') {
   const stops = off
     ? '<stop offset="0" stop-color="#C9CFCC"/><stop offset="1" stop-color="#8E9693"/>'
     : '<stop offset="0" stop-color="#F2FFB3"/><stop offset=".5" stop-color="#D8FF3D"/><stop offset="1" stop-color="#9BE35A"/>';
+  const m = muscle(g, off, size >= 36);
   return svg(`<svg class="sig ${mood} ${cls}" viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">
     <defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient>
-    <radialGradient id="${g}h" cx=".35" cy=".28" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+    <radialGradient id="${g}h" cx=".35" cy=".28" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>${m.defs}</defs>
     <ellipse class="sig-shadow" cx="32" cy="61" rx="13" ry="2.2" fill="#121E1D" opacity=".14"/>
     <g class="sig-body">
-      <path d="${DROP}" fill="url(#${g})" stroke="#121E1D" stroke-opacity=".18" stroke-width="1"/>
+      <path d="${DROP}" fill="url(#${g})"/>
+      ${m.body}
       <path d="${DROP}" fill="url(#${g}h)"/>
+      <path d="${DROP}" fill="none" stroke="#121E1D" stroke-opacity=".18" stroke-width="1"/>
       <circle class="sig-node" cx="32" cy="9.2" r="3.1" fill="#fff"/>
       <g class="sig-face">${face}</g>
       <circle cx="19.8" cy="44.5" r="2.4" fill="#FF8FA3" opacity=".45"/><circle cx="44.2" cy="44.5" r="2.4" fill="#FF8FA3" opacity=".45"/>
