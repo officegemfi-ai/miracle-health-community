@@ -160,13 +160,15 @@ const bpcBefore = await tickerValue(B, 'bpc157');
 
 // Miracle AI reads the report. Test runs have no Anthropic key, so the test records
 // the read the way the review-content function does (with the database owner's rights).
-await db.query(`select public.record_post_read($1, true, 'better', '6 weeks', array['Nausea'], 'e2e')`, [postId]);
+await db.query(`select public.record_post_read($1, true, 'better', '6 weeks', array['Nausea'], 'e2e',
+                 '[{"use": "injury", "outcome": "better"}, {"use": "joints", "outcome": "better"}]')`, [postId]);
 
 await A.waitForSelector('.sigsay.in:has-text("Miracle AI read your report")', { timeout: 20000 });
 check('The author hears from Sig the moment the read lands, without a reload (live)', /Better/.test(await A.textContent('.sigsay')), (await A.textContent('.sigsay')).slice(0, 100));
 await A.waitForSelector('.airead:has-text("Better")', { timeout: 15000 });
-check('The post shows what Miracle AI read: better, for 6 weeks, side effects, feeding the BPC-157 Signal',
-  /6 weeks/.test(await A.textContent('.airead')) && /Nausea/.test(await A.textContent('.airead')) && /BPC-157 Signal/.test(await A.textContent('.airead')));
+check('The post shows what Miracle AI read: better, what for, for 6 weeks, side effects, feeding the BPC-157 Signal',
+  /6 weeks/.test(await A.textContent('.airead')) && /Nausea/.test(await A.textContent('.airead')) && /BPC-157 Signal/.test(await A.textContent('.airead'))
+  && /for injury healing, joint pain/.test(await A.textContent('.airead')), (await A.textContent('.airead')).slice(0, 160));
 await A.waitForSelector('dialog .celebrate h2:text("You reached Pulse.")', { timeout: 15000 });
 check('Passing 60 points celebrates the second emblem, Pulse (live)', (await waitPoints(A, 70)) === 70 && (await shown('kneeguy')) === 70, `${await points(A)} points`);
 await shot(A, '02_level_up');
@@ -333,6 +335,9 @@ check('Signed out, the API shows no posts', none(r), `HTTP ${r.status}`);
 await B.goto(`${BASE}#/s/bpc157`);
 await B.waitForSelector('.sigcard .tools .cert-row');
 const tools = await B.textContent('.sigcard .tools');
+const jointRow = (await B.textContent('.sigcard .uses [data-use="joints"]')) || '';
+check('A space rates the compound by use: joint pain shows its first report and how often the forums mention it',
+  /Joint pain/.test(jointRow) && /1 report/.test(jointRow) && /forums: very common/i.test(jointRow) && /2 more to rate/i.test(jointRow), jointRow);
 check('A space shows its Signal’s measuring tools: the level, how first-hand reports went with a 95% interval, and the takeover line',
   /Forum data/.test(tools) && /How 1 first-hand report went/.test(tools) && /95% CI \d+–\d+%/.test(tools)
   && await B.isVisible('.sigcard .split') && await B.isVisible('.sigcard .viz-compact .takeover .tk-you'), tools.slice(0, 160));

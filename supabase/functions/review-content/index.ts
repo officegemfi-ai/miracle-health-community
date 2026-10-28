@@ -55,7 +55,7 @@ export async function handle(req: Request, deps: {
     const s = verdict.signal;
     const { error: readErr } = await deps.db.rpc('record_post_read', {
       post_id: id, counts: s.first_hand && s.outcome !== null, outcome: s.outcome,
-      duration: s.duration, side_effects: s.side_effects, model: verdict.model,
+      duration: s.duration, side_effects: s.side_effects, model: verdict.model, uses: s.uses,
     });
     if (readErr) return json({ error: 'Could not record the read' }, 500);
   }

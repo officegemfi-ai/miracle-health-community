@@ -12,6 +12,7 @@ export const S = {
   signal: [],        // signal_board
   history: new Map(),// compound_id -> [scores by version]
   rules: null,
+  uses: null,          // shared/uses.json: what members take things for, and the twelve goals
   levels: [],
   badges: [],
   pointRules: {},

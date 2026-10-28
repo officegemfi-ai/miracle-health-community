@@ -7,5 +7,6 @@ out="$1"
 mkdir -p "$out"
 cp -R web/. "$out/"
 cp shared/rules.json "$out/rules.json"
+cp shared/uses.json "$out/uses.json"
 node scripts/write_config.mjs "$out"
 if [ "${DEMO:-}" = "1" ]; then node scripts/build_preview.mjs "$out"; fi

@@ -1,6 +1,7 @@
 // The part of review-content that can be tested without a network:
 // building the request to Claude and reading its answer safely.
 import rules from '../_shared/rules.json' with { type: 'json' };
+import usesList from '../_shared/uses.json' with { type: 'json' };
 
 export const CATEGORIES = [
   'sourcing', 'dosing', 'medical_misinfo', 'harassment', 'spam',
@@ -8,8 +9,13 @@ export const CATEGORIES = [
 ] as const;
 export type Category = typeof CATEGORIES[number];
 export type Outcome = 'better' | 'same' | 'worse';
+// What members take things for (shared/uses.json; the database checks the same list)
+export const USES: readonly { id: string; label: string }[] = usesList.uses;
+export type UseRead = { use: string; outcome: Outcome };
 // What the writer says happened to them, for the Community Signal (posts only)
-export type SignalRead = { first_hand: boolean; outcome: Outcome | null; duration: string | null; side_effects: string[] };
+export type SignalRead = {
+  first_hand: boolean; outcome: Outcome | null; duration: string | null; side_effects: string[]; uses: UseRead[];
+};
 export type Verdict = { verdict: 'ok' | 'hold'; categories: Category[]; explanation: string; signal?: SignalRead };
 
 export function systemPrompt(): string {
@@ -35,10 +41,13 @@ export function systemPrompt(): string {
     '- outcome: how the writer says they are now compared with before they started: "better", "same" or "worse". null if they don\'t say.',
     '- duration: how long they used it, short and in their words (for example "6 weeks"). null if they don\'t say.',
     '- side_effects: up to three side effects they say they had, in plain words (for example "Nausea"). [] if none.',
+    '- uses: what they took it for, up to three, each with how that went for them ("better", "same" or "worse"). Pick only from these ids: '
+      + USES.map((u) => `${u.id} (${u.label})`).join(', ') + '. [] if they don\'t say what it was for. Side effects are not uses.',
     '',
     'Answer with JSON only, no other text, in exactly this shape:',
     '{"verdict":"ok"|"hold","categories":[...],"explanation":"one short sentence for the moderators",'
-      + '"signal":{"first_hand":true|false,"outcome":"better"|"same"|"worse"|null,"duration":"..."|null,"side_effects":[...]}}',
+      + '"signal":{"first_hand":true|false,"outcome":"better"|"same"|"worse"|null,"duration":"..."|null,"side_effects":[...],'
+      + '"uses":[{"use":"<id>","outcome":"better"|"same"|"worse"}]}}',
     'For comments, leave "signal" out.',
     `Allowed categories: ${CATEGORIES.join(', ')}.`,
   ].join('\n');
@@ -86,7 +95,26 @@ export function parseVerdict(raw: string): Verdict {
         ? (r.side_effects as unknown[]).filter((x): x is string => typeof x === 'string' && x.trim() !== '')
           .map((x) => x.trim().slice(0, 40)).slice(0, 3)
         : [],
+      uses: readUses(r.uses, outcome),
     };
+  }
+  return out;
+}
+
+// Known uses only, once each, at most three; a use without its own outcome takes the
+// report's (the database applies the same rules)
+export function readUses(raw: unknown, outcome: Outcome | null): UseRead[] {
+  if (!Array.isArray(raw)) return [];
+  const known = new Set(USES.map((u) => u.id));
+  const out: UseRead[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const r = item as Record<string, unknown>;
+    const use = typeof r.use === 'string' ? r.use : '';
+    const o = (['better', 'same', 'worse'] as const).find((x) => x === r.outcome) ?? outcome;
+    if (!known.has(use) || !o || out.some((u) => u.use === use)) continue;
+    out.push({ use, outcome: o });
+    if (out.length === 3) break;
   }
   return out;
 }
@@ -105,7 +133,7 @@ export async function classify(
     },
     body: JSON.stringify({
       model: opts.model,
-      max_tokens: 400,
+      max_tokens: 500,
       system: systemPrompt(),
       messages: [{ role: 'user', content: userMessage(input.kind, input.title, input.body) }],
     }),

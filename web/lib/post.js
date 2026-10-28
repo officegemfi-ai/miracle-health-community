@@ -5,7 +5,7 @@ import { sig, emblem } from './art.js';
 import { S, sb, signalOf, spaceOf, loadCard, track } from './state.js';
 import { partChips } from './library.js';
 import { render, setRail, railCards, sigSay } from './shell.js';
-import { OUTCOME, outcomeChip, sigNum, refreshSignal } from './signal.js';
+import { OUTCOME, outcomeChip, sigNum, refreshSignal, useLabel } from './signal.js';
 import { voteWidget, sameButton, statusChip, spaceLink, authorLink, stickerRow, reactButton, moreButton } from './feed.js';
 import { afterEarn } from './game.js';
 
@@ -75,7 +75,9 @@ function readPanel(p, refresh) {
       },
     }, name)));
   if (p.counts_for_signal && OUTCOME[p.outcome]) {
-    const bits = [OUTCOME[p.outcome][0], p.duration, (p.side_effects || []).length ? `side effects: ${p.side_effects.join(', ')}` : null].filter(Boolean).join(' · ');
+    const uses = (p.read_uses || []).map((u) => `${useLabel(u.use).toLowerCase()}${u.outcome !== p.outcome && OUTCOME[u.outcome] ? ` (${OUTCOME[u.outcome][0].toLowerCase()})` : ''}`);
+    const bits = [OUTCOME[p.outcome][0], uses.length ? `for ${uses.join(', ')}` : null, p.duration,
+      (p.side_effects || []).length ? `side effects: ${p.side_effects.join(', ')}` : null].filter(Boolean).join(' · ');
     return h('section', { class: 'airead', 'aria-label': 'What Miracle AI read' },
       sig(40, p.read_confirmed ? 'happy' : 'watching'),
       h('div', { class: 'grow' },

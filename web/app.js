@@ -365,7 +365,10 @@ async function enterPreview() {
 // ---------------------------------------------------------------------------
 async function boot() {
   startTelemetry();
-  S.rules = await fetch('rules.json').then((r) => r.json()).catch(() => null);
+  [S.rules, S.uses] = await Promise.all([
+    fetch('rules.json').then((r) => r.json()).catch(() => null),
+    fetch('uses.json').then((r) => r.json()).catch(() => null),
+  ]);
   const foot = document.getElementById('foot-text');
   if (S.rules?.footer) foot.textContent = S.rules.footer;
   if (C.contactEmail) foot.append(' Contact the moderators: ', h('a', { href: `mailto:${C.contactEmail}` }, C.contactEmail));

@@ -354,6 +354,36 @@ const AI_NEG = [/\bworse\b/, /\bdidn'?t work\b/, /\bdid not work\b/, /\bno effec
 const AI_NEU = [/\bno (real |clear )?(change|difference)\b/, /\b(about|roughly|pretty much|basically) the same\b/, /\bthe same\b/, /\btoo early\b/, /\bnot sure yet\b/, /\bhard to (say|tell)\b/];
 const SE_LEX = [['nausea', 'Nausea'], ['nauseous', 'Nausea'], ['queasy', 'Nausea'], ['vomit', 'Vomiting'], ['headache', 'Headache'], ['fatigue', 'Fatigue'], ['tired', 'Fatigue'], ['insomnia', 'Poor sleep'], ["couldn't sleep", 'Poor sleep'], ['injection site', 'Injection-site reaction'], ['dizz', 'Dizziness'], ['palpitation', 'Heart rate up'], ['constipat', 'Constipation'], ['diarrh', 'Diarrhea'], ['reflux', 'Reflux'], ['heartburn', 'Reflux'], ['bloat', 'Bloating'], ['water retention', 'Water retention'], ['water weight', 'Water retention'], ['tingl', 'Numbness or tingling'], ['hair loss', 'Hair loss']];
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// What a report was for: the first words that name a use (shared/uses.json), up to three
+const USE_LEX = [
+  [/\b(injur\w*|strain\w*|sprain\w*|tear|torn|surgery|heal(ing|ed)?)\b/, 'injury'],
+  [/\b(knee|joint\w*|shoulder|hip|elbow|back pain|arthritis)\b/, 'joints'],
+  [/\b(tendon\w*|ligament\w*|tendinitis|impingement)\b/, 'tendons'],
+  [/\b(recovery|sore(ness)?|doms)\b/, 'training_recovery'],
+  [/\b(weight|lbs?|pounds|kg|fat)\b/, 'fat_loss'],
+  [/\b(appetite|craving\w*|snacking|food noise|hunger)\b/, 'appetite'],
+  [/\b(blood sugar|glucose|a1c)\b/, 'blood_sugar'],
+  [/\b(muscle|lean mass)\b/, 'muscle'],
+  [/\b(reps|strength|stronger|lifts?|bench|squat)\b/, 'strength'],
+  [/\b(energy|energetic)\b/, 'energy'],
+  [/\b(10k|5k|running|endurance|cardio|marathon)\b/, 'endurance'],
+  [/\b(sleep\w*|insomnia)\b/, 'sleep'],
+  [/\b(focus\w*|memory|brain fog|concentrat\w*)\b/, 'focus'],
+  [/\b(mood|motivat\w*|depress\w*)\b/, 'mood'],
+  [/\b(stress\w*|anxi\w*|calm\w*|presentations?|nervous)\b/, 'anxiety'],
+  [/\b(skin|wrinkle\w*|acne|serum)\b/, 'skin'],
+  [/\b(hair|scalp)\b/, 'hair'],
+  [/\b(tan|tanning)\b/, 'tanning'],
+  [/\b(libido|erection\w*|sex drive)\b/, 'libido'],
+  [/\b(gut|ibs|digest\w*|stomach)\b/, 'gut'],
+  [/\b(inflammation|inflamed)\b/, 'inflammation'],
+  [/\b(immune|sick less|colds?)\b/, 'immune'],
+  [/\b(testosterone|trt)\b/, 'testosterone'],
+  [/\b(hot flash\w*|menopaus\w*|perimenopaus\w*)\b/, 'menopause'],
+  [/\b(fertility|sperm)\b/, 'fertility'],
+  [/\b(aging|longevity|lifespan)\b/, 'aging'],
+  [/\b(blood pressure|cholesterol)\b/, 'heart'],
+];
 function readPost(p) {
   const text = `${p.title}. ${p.body}`;
   const s = text.toLowerCase();
@@ -367,7 +397,9 @@ function readPost(p) {
   const effects = [];
   SE_LEX.forEach(([k, label]) => { if (s.includes(k) && !negated(k) && !effects.includes(label)) effects.push(label); });
   const firstHand = /\b(i|i'm|i've|i'd|my|me)\b/i.test(text);
-  return { counts: firstHand && !!outcome, outcome, duration, side_effects: effects.slice(0, 3) };
+  const uses = USE_LEX.map(([re, use]) => [s.search(re), use]).filter(([at]) => at >= 0)
+    .sort((a, b) => a[0] - b[0]).slice(0, 3).map(([, use]) => ({ use, outcome }));
+  return { counts: firstHand && !!outcome, outcome, duration, side_effects: effects.slice(0, 3), uses: outcome ? uses : [] };
 }
 function aiRead(postId) {
   setTimeout(async () => {
@@ -376,8 +408,8 @@ function aiRead(postId) {
       const p = r.rows[0];
       if (!p || p.kind !== 'experience' || p.status !== 'visible') return;
       const read = readPost(p);
-      await as('service_role', null, (tx) => tx.query('select public.record_post_read($1, $2, $3, $4, $5, $6)',
-        [p.id, read.counts, read.outcome, read.duration, read.side_effects, 'preview-reader']));
+      await as('service_role', null, (tx) => tx.query('select public.record_post_read($1, $2, $3, $4, $5, $6, $7::jsonb)',
+        [p.id, read.counts, read.outcome, read.duration, read.side_effects, 'preview-reader', JSON.stringify(read.uses)]));
       soon();
     } catch (_) { /* the post stays up either way */ }
   }, 3200);

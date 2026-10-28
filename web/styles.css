@@ -276,6 +276,24 @@ a.post-title:hover{text-decoration:underline;text-decoration-color:var(--line-2)
 .comp{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin-top:14px;font-size:13px}
 .comp span{color:var(--on-ink-2)}.comp b{font:600 12.5px var(--mono);color:var(--on-ink)}
 .comp .bar{grid-column:1/-1;height:4px}
+/* Rated by use: what members took it for and how it went */
+.uses{display:grid;gap:13px;margin-top:16px}
+.uses .kick{color:var(--on-ink-2)}
+.uses .dim,.tools .dim{color:rgba(252,252,252,.5)}
+.use{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;align-items:baseline}
+.use-n{font:500 15px/1.3 var(--body);color:var(--on-ink)}
+.use .num{font:600 16px var(--mono);color:var(--lime)}
+.use.waiting .num{color:rgba(252,252,252,.4)}
+.use .bar{grid-column:1/-1;height:6px}
+.use .bar.wait{background:repeating-linear-gradient(90deg,rgba(255,255,255,.14) 0 5px,transparent 5px 10px)}
+.use-meta{grid-column:1/-1;font:500 10.5px/1.45 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:rgba(252,252,252,.52)}
+.uses.compact{gap:10px}
+.uses.compact .use-meta{display:none}
+.built summary{cursor:pointer;list-style:none;color:var(--on-ink-2)}
+.built summary::-webkit-details-marker{display:none}
+.built summary::after{content:'  +';color:var(--lime)}
+.built[open] summary::after{content:'  –'}
+.built .comp{margin-top:10px}
 .share-meter{margin-top:14px;padding-top:14px;border-top:1px solid var(--ink-line)}
 .share-meter .row{font-size:13px}
 .share-meter b{font:600 13px var(--mono);color:var(--lime)}

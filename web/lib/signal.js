@@ -108,17 +108,15 @@ export function signalCard(cid, opts = {}) {
       h('p', { class: 'small', text: `${name} has no Signal yet. It unlocks after three first-hand reports here: share yours, whether it worked or not.` }),
       sp ? h('div', { class: 'share-meter' }, h('div', { class: 'row between' }, h('span', {}, 'Reports so far'), h('b', {}, `${sp.reports} of 3`)), bar((sp.reports / 3) * 100)) : null);
   }
-  const parts = [['Reported efficacy', 'efficacy', 65], ['Consistency', 'consistency', 15], ['Diversity of voices', 'diversity', 10], ['Confidence', 'confidence', 10]];
   const fams = (x.source_families || []).join(', ');
   const hist = S.history.get(cid);
   const card = h('section', { class: 'card dark sigcard', 'aria-label': `${name} Community Signal` },
     h('div', { class: 'lbl' }, h('span', { class: 'kick' }, opts.title || `${name} · Community Signal`), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'LIVE')),
     h('div', { class: 'sig-big' }, h('b', { 'data-sig-of': cid }, fmt1(x.score)), h('span', {}, '/100'), h('span', { class: 'grow' }), h('span', { 'data-mv-of': cid }, movement(x))),
     scale(x.score),
-    h('div', { class: 'cap2' }, `${x.summary_label} · ${x.confidence_label} confidence`),
+    h('div', { class: 'cap2' }, `Overall rating · ${x.summary_label} · ${x.confidence_label} confidence`),
     hist && hist.length > 1 ? h('div', { class: 'mt8' }, sparkline(hist.slice(-24), 280, 40, 'lime')) : null,
-    opts.compact ? null : h('div', { class: 'comp' }, parts.map(([label, key, w]) => [
-      h('span', {}, `${label} · ${w}%`), h('b', {}, String(x[key] ?? '–')), bar(x[key])])),
+    opts.compact ? byUse(x, 3, true) : byUse(x),
     opts.compact ? null : measuringTools(x, name),
     h('div', { class: 'share-meter' },
       h('div', { class: 'row between' }, h('span', {}, 'This community’s share'), h('b', {}, `${x.internal_share}%`)),
@@ -129,12 +127,41 @@ export function signalCard(cid, opts = {}) {
   return card;
 }
 
+// What a use is called, and the forums' word for how often they mention it
+export const useLabel = (id) => S.uses?.uses?.find((u) => u.id === id)?.label || String(id).replace(/_/g, ' ');
+const FORUM_WORD = { 'Very common': 'very common', Common: 'common', Mixed: 'mixed', Occasional: 'occasional' };
+
+// Rated by use: what members took it for and how it went, from first-hand reports (a use
+// gets its 0-100 rating once three reports name it), next to how often the forums mention it
+function byUse(x, max = 6, compact = false) {
+  const list = x.by_use || [];
+  if (!list.length) return null;
+  const rated = list.filter((u) => u.rating != null);
+  if (compact && !rated.length) return null;
+  const shown = (compact ? rated : list).slice(0, max);
+  return h('div', { class: `uses ${compact ? 'compact' : ''}`.trim(), 'aria-label': 'Rated by use' },
+    h('div', { class: 'row between' }, h('span', { class: 'kick' }, 'Rated by use'),
+      h('span', { class: 'xs mono dim' }, rated.length ? 'From first-hand reports' : 'Each use is rated after 3 reports')),
+    shown.map((u) => h('div', { class: `use ${u.rating != null ? 'rated' : 'waiting'}`, 'data-use': u.use },
+      h('span', { class: 'use-n' }, useLabel(u.use)),
+      h('b', { class: 'num' }, u.rating != null ? String(u.rating) : '—'),
+      u.rating != null ? bar(u.rating) : h('div', { class: 'bar wait' }),
+      h('span', { class: 'use-meta' }, [
+        u.reports ? `${fmtN(u.reports)} report${u.reports === 1 ? '' : 's'}` : 'No reports yet',
+        u.forum ? `forums: ${FORUM_WORD[u.forum] || String(u.forum).toLowerCase()}` : null,
+        u.rating == null && u.reports < 3 ? `${3 - (u.reports || 0)} more to rate` : null,
+      ].filter(Boolean).join(' · ')))),
+    !compact && list.length > max ? h('p', { class: 'xs dim' }, `+ ${list.length - max} more use${list.length - max === 1 ? '' : 's'}`) : null);
+}
+
 // The measuring tools under a Signal: its level, how first-hand reports split (with a 95%
-// interval for "better"), the side effects members mention, and where it sits on the line
+// interval for "better"), the side effects members mention, where it sits on the line, and
+// how the overall number is built
 function measuringTools(x, name) {
   const lvl = levelOf(x.certification);
   const n = (x.reports_better || 0) + (x.reports_same || 0) + (x.reports_worse || 0);
   const w = S.pulse?.external_weight ?? 50;
+  const parts = [['Reported efficacy', 'efficacy', 65], ['Consistency', 'consistency', 15], ['Diversity of voices', 'diversity', 10], ['Confidence', 'confidence', 10]];
   return h('div', { class: 'tools' },
     h('div', { class: 'cert-row' }, seal(x.certification, 30),
       h('div', { class: 'grow' }, h('b', {}, lvl.name), h('div', { class: 'xs' }, lvl.rule))),
@@ -147,7 +174,11 @@ function measuringTools(x, name) {
     (x.side_effects_top || []).length ? h('div', { class: 'tool' }, h('span', { class: 'kick' }, 'Side effects members mention'),
       h('div', { class: 'post-chips' }, x.side_effects_top.map((e) => h('span', { class: 'chip fx' }, `${e.effect} · ${e.n}`)))) : null,
     h('div', { class: 'tool' }, h('span', { class: 'kick' }, 'On the takeover line'),
-      both((compact) => takeoverSvg({ w, max: w * 6, you: { share: x.internal_share, label: name.toUpperCase().slice(0, 18) } }, { compact }))));
+      both((compact) => takeoverSvg({ w, max: w * 6, you: { share: x.internal_share, label: name.toUpperCase().slice(0, 18) } }, { compact }))),
+    h('details', { class: 'tool built' },
+      h('summary', { class: 'kick' }, 'How the overall number is built'),
+      h('div', { class: 'comp' }, parts.map(([label, key, wt]) => [
+        h('span', {}, `${label} · ${wt}%`), h('b', {}, String(x[key] ?? '–')), bar(x[key])]))));
 }
 
 // ---------------------------------------------------------------------------
