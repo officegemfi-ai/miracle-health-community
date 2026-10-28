@@ -3,6 +3,8 @@ import { h, icon, friendly, msgBox, say, fmtN } from './ui.js';
 import { sig, emblem } from './art.js';
 import { S, C, sb, levelOf, track, stopLive } from './state.js';
 import { render, setRail, railCards } from './shell.js';
+import { LEVELS } from './signalviz.js';
+import { seal } from './signal.js';
 
 export function renderRules(standalone = false) {
   const R = S.rules;
@@ -38,6 +40,11 @@ export async function renderHow() {
         h('div', {}, h('span', {}, 'Diversity: how many independent voices there are'), h('b', {}, '10%')),
         h('div', {}, h('span', {}, 'Confidence: how much there is to go on'), h('b', {}, '10%'))),
       h('p', { class: 'small muted mt12' }, 'It starts from what people say on public forums, and moves toward this community’s own first-hand reports as they add up. New accounts count half, so a wave of fresh accounts can’t push a number around. Every change is kept as a new version, and the math runs in the database, never in this page.')),
+    h('h2', {}, 'Certification'),
+    h('section', { class: 'card' },
+      h('p', {}, `Public forums count as ${S.pulse?.external_weight ?? 50} reports for each compound. As members’ first-hand reports add up, each Signal earns a level:`),
+      h('div', { class: 'ledger levels' }, LEVELS.map((l) => h('div', {}, h('span', { class: 'row nw' }, seal(l.key, 26, true), h('span', {}, h('strong', {}, l.name), ` · ${l.rule}`))))),
+      h('p', { class: 'small muted mt12' }, 'Each space also shows how first-hand reports split (better, about the same or worse), with a 95% interval for “better” so you can see how sure that share is, and the side effects members mention.')),
     h('h2', {}, 'Miracle AI’s read'),
     h('section', { class: 'card row nw' }, sig(64, 'watching'),
       h('p', {}, 'When you post an experience, Miracle AI reads it: is it first-hand, did it go better, the same or worse, for how long, any side effects. That read feeds the Signal. You can confirm or correct it on your post, and your word wins.')),

@@ -330,10 +330,27 @@ check('Signed out, the API shows no posts', none(r), `HTTP ${r.status}`);
 // ---------------------------------------------------------------------------
 // M: the moderator removes the reported post
 // ---------------------------------------------------------------------------
+await B.goto(`${BASE}#/s/bpc157`);
+await B.waitForSelector('.sigcard .tools .cert-row');
+const tools = await B.textContent('.sigcard .tools');
+check('A space shows its Signal’s measuring tools: the level, how first-hand reports went with a 95% interval, and the takeover line',
+  /Forum data/.test(tools) && /How 1 first-hand report went/.test(tools) && /95% CI \d+–\d+%/.test(tools)
+  && await B.isVisible('.sigcard .split') && await B.isVisible('.sigcard .viz-compact .takeover .tk-you'), tools.slice(0, 160));
+
 await B.goto(`${BASE}#/signal`);
 await B.waitForSelector('.sig-row');
 check('The Signal page ranks the compounds', (await B.locator('.sig-row').count()) >= 50);
 check('and lists the live moves with their causes', (await B.locator('.move-i').count()) >= 1);
+await B.waitForSelector('.viz-compact .flowviz.compact');
+check('It draws how the number is made: public forums and members’ reports in, one number out',
+  /FROM MEMBERS/.test(await B.textContent('.viz-compact .flowviz')) && /\d+ reports?\b/.test(await B.textContent('.viz-compact .flowviz')));
+const ladderCounts = await B.locator('.ladder-steps .step-l .cnt b').allTextContents();
+check('with the certification ladder, which counts every Signal once',
+  ladderCounts.length === 5 && ladderCounts.reduce((a, t) => a + Number(t.replace(/\D/g, '')), 0) === await B.locator('.sig-row').count(), ladderCounts.join(' '));
+await B.$eval('#sim-n', (el) => { el.value = '150'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+check('The takeover slider shows what 150 first-hand reports would do: 75% from members, Signal Certified',
+  /75% from members/.test(await B.textContent('.sim-out')) && /Signal Certified/.test(await B.textContent('.sim-out'))
+  && /150 REPORTS · 75%/.test(await B.textContent('.takeover-card .viz-compact .tk-you')));
 
 const M = await person();
 await signIn(M, '5555550101');

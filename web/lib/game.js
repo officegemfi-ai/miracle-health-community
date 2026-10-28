@@ -155,7 +155,7 @@ export function seasonCard(big = false) {
     h('div', { class: 'card-h' }, h('span', { class: 'kick' }, p.season_name), h('span', { class: 'kick' }, `${left} days left`)),
     h('div', { class: 'sig-big' }, h('b', { class: 'num' }, fmtN(p.season_reports)), h('span', {}, `/ ${fmtN(p.season_goal)} reports`)),
     bar(pct, 'scale-fill'),
-    h('p', { class: 'small muted mt12' }, `${fmtN(p.members)} members are building this together. Three first-hand reports this season earns the Season 1 badge.`),
+    h('p', { class: 'small muted mt12' }, `${fmtN(p.members)} ${p.members === 1 ? 'member is' : 'members are'} building this together. Three first-hand reports this season earns the Season 1 badge.`),
     big ? h('div', { class: 'hero-stats' },
       h('div', {}, h('b', {}, fmtN(p.reports_week)), h('span', {}, 'Reports this week')),
       h('div', {}, h('b', {}, fmtN(p.same_total)), h('span', {}, '“Same for me”')),

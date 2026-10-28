@@ -9,9 +9,16 @@ together make a stack: a space of its own with its own Signal, scored only from 
 exact stack. "Find your stack" searches every report that includes what you take. Members suggest
 what the library is missing; moderators add it under Moderation > Library.
 
+Every Signal earns a certification level from the database (Forum data, Early signal,
+Community-backed, Community-verified, Signal Certified) as members' first-hand reports take over
+from the public forums, which count as 50 reports per compound. Each space shows its measuring
+tools: how first-hand reports split, with a 95% interval for "better", the side effects members
+mention and where it sits on the takeover line. `web/lib/signalviz.js` draws these as plain SVG,
+so the public library on miraclehealth.us can use the same drawings.
+
 ## What's where
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
-- `supabase/tests/database/`: 332 access, Community Signal, game and stack tests (pgTAP)
+- `supabase/tests/database/`: 356 access, Community Signal, certification, game and stack tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal) and `delete-account`
 - `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
 - `shared/rules.json`: the community rules, copied to the app and the AI reviewer by `scripts/sync_rules.sh`

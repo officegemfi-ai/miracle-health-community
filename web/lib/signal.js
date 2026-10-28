@@ -1,9 +1,10 @@
 // The Community Signal on screen: the live ticker, the readiness-style card,
 // live numbers everywhere ([data-sig-of]), the moves feed and The Signal page.
-import { h, icon, fmt1, fmtN, ago, tick, bar, reduceMotion } from './ui.js';
+import { h, icon, fmt1, fmtN, ago, tick, bar, reduceMotion, svg } from './ui.js';
 import { scale, sparkline, spaceTile, sig } from './art.js';
 import { S, sb, on, signalOf, spaceOf, nameOf, delta, loadSignal, loadHistory, loadPulse } from './state.js';
 import { render, setRail, railCards, sigSay } from './shell.js';
+import { LEVELS, levelOf, levelAfter, shareAfter, sealSvg, flowSvg, takeoverSvg, splitBar } from './signalviz.js';
 
 export const OUTCOME = { better: ['Better', 'pos'], same: ['About the same', 'neu'], worse: ['Worse', 'neg'] };
 const CAUSE = {
@@ -118,6 +119,7 @@ export function signalCard(cid, opts = {}) {
     hist && hist.length > 1 ? h('div', { class: 'mt8' }, sparkline(hist.slice(-24), 280, 40, 'lime')) : null,
     opts.compact ? null : h('div', { class: 'comp' }, parts.map(([label, key, w]) => [
       h('span', {}, `${label} · ${w}%`), h('b', {}, String(x[key] ?? '–')), bar(x[key])])),
+    opts.compact ? null : measuringTools(x, name),
     h('div', { class: 'share-meter' },
       h('div', { class: 'row between' }, h('span', {}, 'This community’s share'), h('b', {}, `${x.internal_share}%`)),
       h('div', { class: 'mt8' }, bar(Math.min(100, (x.internal_share / 50) * 100))),
@@ -125,6 +127,27 @@ export function signalCard(cid, opts = {}) {
         ? 'Most of this number now comes from members here.'
         : `${x.first_hand ? `${fmtN(x.first_hand)} first-hand report${x.first_hand === 1 ? '' : 's'} here` : 'No reports here yet'}${x.same_for_me ? ` + ${fmtN(x.same_for_me)} “same for me”` : ''}${fams ? ` · the rest from ${fams}` : ''}. At 50% it’s ours.`)));
   return card;
+}
+
+// The measuring tools under a Signal: its level, how first-hand reports split (with a 95%
+// interval for "better"), the side effects members mention, and where it sits on the line
+function measuringTools(x, name) {
+  const lvl = levelOf(x.certification);
+  const n = (x.reports_better || 0) + (x.reports_same || 0) + (x.reports_worse || 0);
+  const w = S.pulse?.external_weight ?? 50;
+  return h('div', { class: 'tools' },
+    h('div', { class: 'cert-row' }, seal(x.certification, 30),
+      h('div', { class: 'grow' }, h('b', {}, lvl.name), h('div', { class: 'xs' }, lvl.rule))),
+    n ? h('div', { class: 'tool' },
+      h('div', { class: 'row between' }, h('span', { class: 'kick' }, `How ${n} first-hand report${n === 1 ? '' : 's'} went`),
+        x.better_pct != null ? h('span', { class: 'xs mono', title: 'A 95% Wilson interval: with this many reports, the true share is likely in this range' }, `${x.better_pct}% better · 95% CI ${x.better_low}–${x.better_high}%`) : null),
+      splitBar({ better: x.reports_better || 0, same: x.reports_same || 0, worse: x.reports_worse || 0 }),
+      h('div', { class: 'split-key xs' }, h('span', { class: 'b' }, `Better ${x.reports_better || 0}`), h('span', { class: 's' }, `About the same ${x.reports_same || 0}`), h('span', { class: 'w' }, `Worse ${x.reports_worse || 0}`)))
+      : h('p', { class: 'xs tool' }, 'No first-hand reports here yet. With the first one you’ll see how reports split: better, about the same or worse.'),
+    (x.side_effects_top || []).length ? h('div', { class: 'tool' }, h('span', { class: 'kick' }, 'Side effects members mention'),
+      h('div', { class: 'post-chips' }, x.side_effects_top.map((e) => h('span', { class: 'chip fx' }, `${e.effect} · ${e.n}`)))) : null,
+    h('div', { class: 'tool' }, h('span', { class: 'kick' }, 'On the takeover line'),
+      both((compact) => takeoverSvg({ w, max: w * 6, you: { share: x.internal_share, label: name.toUpperCase().slice(0, 18) } }, { compact }))));
 }
 
 // ---------------------------------------------------------------------------
@@ -155,32 +178,95 @@ export async function movesCard(dark = true) {
 // ---------------------------------------------------------------------------
 // The Signal page
 // ---------------------------------------------------------------------------
+// Where the public data came from, grouped the way the picture shows it
+const FAMILY = { Reddit: 'Reddit', YouTube: 'YouTube', 'YouTube index': 'YouTube', 'Podcast / YouTube': 'Podcasts' };
+export function sourceFamilies(rows) {
+  const count = new Map();
+  rows.forEach((x) => {
+    const fams = new Set((x.source_families || []).map((f) => FAMILY[f] || 'Forums & reviews'));
+    fams.forEach((f) => count.set(f, (count.get(f) || 0) + 1));
+  });
+  const order = ['Reddit', 'YouTube', 'Podcasts', 'Forums & reviews'];
+  return order.map((name) => ({ name, n: count.get(name) || 0 }));
+}
+
+// The two drawings for whatever screen this is: wide, or phone-sized
+function both(make) {
+  return h('div', { class: 'viz' }, h('div', { class: 'viz-wide' }, svg(make(false))), h('div', { class: 'viz-compact' }, svg(make(true))));
+}
+
+export function seal(key, size = 22, disc = false) { return svg(sealSvg(key, size, disc)); }
+
 export async function renderSignalPage() {
   const list = h('div', { class: 'board' }, [1, 2, 3, 4].map(() => h('div', { class: 'skel' })));
   const movers = h('div', { class: 'movers' });
   const stats = h('div', { class: 'hero-stats' });
+  const flow = h('div', { class: 'flow-box' }, h('div', { class: 'skel dark' }));
+  const takeover = h('section', { class: 'card dark takeover-card' });
+  const ladder = h('section', { class: 'ladder' });
   let sort = 'score';
   let only = 'all';
   const sortbar = h('div', { class: 'sortbar' });
   render(
-    h('section', { class: 'hero' },
+    h('section', { class: 'hero signal-hero' },
       h('div', { class: 'kick' }, '// The Community Signal'),
       h('h1', {}, 'The Signal.'),
-      h('p', { class: 'lede' }, 'One number per compound, blend and stack, 0 to 100: 65% what people report happened, 15% how much those reports agree, 10% how many independent voices there are, 10% how much there is to go on. It starts from public forums and moves toward this community’s own first-hand reports, live.'),
+      h('p', { class: 'lede' }, 'A certificate of human experience. Every number starts from what people say on public forums, then gets rewritten, report by report, by members who took it themselves. One number per compound, blend and stack, 0 to 100.'),
+      flow,
       stats),
+    takeover,
+    ladder,
     movers, sortbar, list,
     h('section', { class: 'card mt16' },
       h('h3', {}, 'How the number moves'),
-      h('p', { class: 'small muted' }, 'Every first-hand report Miracle AI reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
+      h('p', { class: 'small muted' }, '65% is what people report happened, 15% how much those reports agree, 10% how many independent voices there are and 10% how much there is to go on. Every first-hand report Miracle AI reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
       h('a', { class: 'lnk small', href: '#/how' }, 'More on how it works')));
   setRail(await railCards('signal'));
   const [rows, pulse] = await Promise.all([loadSignal(), loadPulse(), loadHistory()]);
   const live = rows.filter((x) => x.score != null);
+  const levels = Object.fromEntries(LEVELS.map((l) => [l.key, live.filter((x) => (x.certification || 'forum') === l.key).length]));
+  const share = pulse?.community_share ?? 0;
+  const w = pulse?.external_weight ?? 50;
+  const data = { sources: sourceFamilies(live), share, reports: pulse?.reports ?? 0, sames: pulse?.same_total ?? 0, signals: live.length, levels, weight: w };
+  flow.replaceChildren(both((compact) => flowSvg(data, { compact })),
+    h('p', { class: 'cap2 flow-cap' }, `${share}% of all Signals now comes from members here. Public forums count as ${w} reports for each compound; every first-hand report shifts the balance.`));
   stats.replaceChildren(
     h('div', {}, h('b', {}, fmtN(live.length)), h('span', {}, 'Signals')),
     h('div', {}, h('b', {}, fmtN(pulse?.moves_today ?? 0)), h('span', {}, 'Moves today')),
     h('div', {}, h('b', {}, fmtN(pulse?.reports ?? 0)), h('span', {}, 'First-hand reports')),
-    h('div', {}, h('b', {}, fmtN(pulse?.community_signals ?? 0)), h('span', {}, 'Run by this community')));
+    h('div', {}, h('b', {}, fmtN(pulse?.community_signals ?? 0)), h('span', {}, 'Run by this community')),
+    h('div', {}, h('b', {}, fmtN(levels.certified || 0)), h('span', {}, 'Signal Certified')));
+
+  // The takeover line, with every Signal where its share puts it, and a slider to try it
+  const points = live.map((x) => ({ share: x.internal_share, level: x.certification }));
+  const chart = h('div');
+  const out = h('output', { class: 'sim-out', for: 'sim-n', 'aria-live': 'polite' });
+  const simulate = (n, still) => {
+    chart.replaceChildren(both((compact) => takeoverSvg({ w, points, max: w * 6, you: { n, label: `${n} REPORT${n === 1 ? '' : 'S'}` } }, { compact, still })));
+    const lvl = levelAfter(n, w);
+    out.replaceChildren(seal(lvl, 26), h('span', {},
+      h('b', {}, `${Math.round(shareAfter(n, w))}% from members`), ` after ${fmtN(n)} first-hand report${n === 1 ? '' : 's'}: `,
+      h('b', {}, levelOf(lvl).name), lvl === 'forum' ? '' : ', if each comes from a different person'));
+  };
+  takeover.replaceChildren(
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'The takeover line'), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'LIVE')),
+    h('h2', {}, 'From forum chatter to certified human data.'),
+    h('p', { class: 'small' }, `Forums count as ${w} reports for each compound. After ${w} first-hand reports here, half of the number is members’ own experience; after ${w * 3}, three quarters. Each dot is a Signal today.`),
+    chart,
+    h('div', { class: 'sim' },
+      h('label', { class: 'kick', for: 'sim-n' }, 'Try it: first-hand reports on one compound'),
+      h('input', { type: 'range', id: 'sim-n', min: '0', max: String(w * 6), step: '1', value: String(w), oninput: (e) => simulate(Number(e.target.value), true) }),
+      out));
+  simulate(w, false);
+
+  // The certification ladder
+  ladder.replaceChildren(
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Certification'), h('span', { class: 'xs muted' }, 'Each Signal earns its level from the database, live')),
+    h('div', { class: 'ladder-steps' }, LEVELS.map((l, i) => h('div', { class: `step-l card ${levels[l.key] ? 'has' : ''}` },
+      h('div', { class: 'row nw' }, seal(l.key, 34, true), h('span', { class: 'n mono' }, `0${i + 1}`)),
+      h('b', {}, l.name), h('p', { class: 'xs muted' }, l.rule),
+      h('div', { class: 'cnt' }, h('b', { class: 'num' }, fmtN(levels[l.key] || 0)), h('span', { class: 'xs muted' }, ` Signal${levels[l.key] === 1 ? '' : 's'}`))))));
+
   const rising = live.filter((x) => delta(x) > 0).sort((a, b) => delta(b) - delta(a)).slice(0, 4);
   const falling = live.filter((x) => delta(x) < 0).sort((a, b) => delta(a) - delta(b)).slice(0, 4);
   const board = (title, items, cls) => h('section', { class: 'card' },
@@ -192,27 +278,27 @@ export async function renderSignalPage() {
   movers.replaceChildren(board('Rising', rising, 'up'), board('Falling', falling, 'dn'));
 
   const draw = () => {
-    const shown = live.filter((x) => only === 'all' || (only === 'stacks' ? ['stack', 'blend'].includes(x.kind) : !['stack', 'blend'].includes(x.kind)));
+    const shown = live.filter((x) => only === 'all' || (only === 'stacks' ? ['stack', 'blend'].includes(x.kind) : only === 'certified' ? ['verified', 'certified'].includes(x.certification) : !['stack', 'blend'].includes(x.kind)));
     const ranked = [...shown].sort(sort === 'move' ? (a, b) => Math.abs(delta(b)) - Math.abs(delta(a))
       : sort === 'community' ? (a, b) => b.internal_share - a.internal_share || b.score - a.score
         : (a, b) => b.score - a.score);
     sortbar.replaceChildren(...[['score', 'Highest'], ['move', 'Biggest moves'], ['community', 'Most community data']].map(([k, l]) =>
       h('a', { href: '#/signal', 'aria-current': sort === k ? 'page' : null, onclick: (e) => { e.preventDefault(); sort = k; draw(); } }, l)),
     h('span', { class: 'grow' }),
-    ...[['all', 'All'], ['single', 'Compounds'], ['stacks', 'Stacks & blends']].map(([k, l]) =>
+    ...[['all', 'All'], ['single', 'Compounds'], ['stacks', 'Stacks & blends'], ['certified', 'Verified+']].map(([k, l]) =>
       h('a', { href: '#/signal', 'aria-current': only === k ? 'page' : null, onclick: (e) => { e.preventDefault(); only = k; draw(); } }, l)));
     const nums = [];
-    list.replaceChildren(...ranked.map((x, i) => {
+    list.replaceChildren(...(ranked.length ? ranked.map((x, i) => {
       const num = h('span', { class: 'sc', 'data-sig-of': x.compound_id }, fmt1(x.prev_score ?? x.score));
       nums.push([num, x]);
       return h('a', { class: 'brow card sig-row', href: `#/s/${encodeURIComponent(x.compound_id)}`, 'data-signal': x.compound_id },
         h('span', { class: 'rk' }, String(i + 1).padStart(2, '0')),
         spaceTile(spaceOf(x.compound_id) || x, 36),
-        h('span', { class: 'nm' }, h('b', {}, x.compound_name), h('span', {}, `${x.category} · ${x.summary_label}`)),
+        h('span', { class: 'nm' }, h('b', {}, x.compound_name), h('span', {}, seal(x.certification, 16, true), ` ${levelOf(x.certification).name} · ${x.summary_label}`)),
         sparkline((S.history.get(x.compound_id) || []).slice(-20), 100, 30),
-        h('span', { class: 'sh' }, `${x.internal_share}% here`, bar(Math.min(100, x.internal_share * 2))),
+        h('span', { class: 'sh' }, `${x.internal_share}% members`, bar(x.internal_share)),
         h('span', { class: 'row nw end' }, num));
-    }));
+    }) : [h('div', { class: 'empty card' }, sig(60, 'curious'), h('p', {}, 'None yet. Every first-hand report moves a Signal up the line.'))]));
     // The ticker: each number runs from its last version to now
     if (!reduceMotion()) nums.forEach(([el, x]) => tick(el, x.prev_score, x.score));
     else nums.forEach(([el, x]) => { el.textContent = fmt1(x.score); });
