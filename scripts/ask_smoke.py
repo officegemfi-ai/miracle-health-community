@@ -67,7 +67,20 @@ def report(n, title, r):
         check = 'all cleared'
     else:
         check = f"edited {review.get('edited')}, held back {review.get('held')}"
-    head = f"{r['secs']:.1f}s · steps {', '.join(dict.fromkeys(steps))} · cards {', '.join(cards) or 'none'} · check {check}"
+    # The order things arrived in: text (with its length) and cards
+    outline, run = [], 0
+    for e, d in ev:
+        if e == 'text':
+            run += len(d.get('d', ''))
+        elif e == 'card':
+            if run:
+                outline.append(f'text {run}')
+                run = 0
+            outline.append(d.get('type', '?'))
+    if run:
+        outline.append(f'text {run}')
+    head = (f"{r['secs']:.1f}s · steps {', '.join(dict.fromkeys(steps))} · check {check}"
+            f" · order: {', '.join(outline) or 'nothing'}")
     print(f'[{n}] {title}: {head}')
     print(f'::notice title=Miracle AI {n}. {title}::{esc(head + chr(10) + chr(10) + final_text(ev)[:3500])}')
     return steps, cards, review
