@@ -45,7 +45,11 @@ through five agents, and the page shows each step as it happens:
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
 2. **Recommender** (Claude Sonnet, the voice of the chat) works from the public Library
    (`miraclehealth.us/library/data/index.json` and each fact sheet) and the Community Signal
-   (`snapshot.json`), with tools to rank options for a goal, open fact sheets and search.
+   (`snapshot.json`), with tools to rank options for a goal, open fact sheets and search. It
+   talks like a caring clinician: when it doesn't yet know what would change its answer, it
+   first asks 2 to 4 questions, the way a clinician takes a history (age range, sex, medicines,
+   conditions, what they've tried), on a card the visitor answers by tapping or typing. It
+   never asks for names, contact details, birthdays, amounts taken or where things come from.
 3. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
    conditions: overlapping mechanisms, additive risks, interactions.
 4. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
@@ -66,7 +70,7 @@ deleted after two days; never the address) and for the whole site: 8 per ten min
 1,000 a day in all (`private.settings`, keys `ask_*`; set `ask_enabled` to `off` to pause it).
 Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAST_MODEL`,
 `ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
-project five real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
+project six real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
 ## Run it on your machine (no Docker needed)
 ```

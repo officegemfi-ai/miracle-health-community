@@ -354,7 +354,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   assertEquals(g.length, 3);
   const sys = g[0].body.system as { text: string; cache_control?: unknown }[];
   assert(sys[0].cache_control && sys[1].text.includes('medicines they take, in their words: "sertraline"') && sys[1].text.includes('### BPC-157 (id bpc157)'));
-  assertEquals((g[0].body.tools as unknown[]).length, 6);
+  assertEquals((g[0].body.tools as unknown[]).length, 7);
   assertEquals(g[0].body.output_config, { effort: 'low' });
   const round2 = g[1].body.messages as { role: string; content: { type: string; signature?: string; cache_control?: unknown }[] }[];
   assertEquals(round2[1].content[0], { type: 'thinking', thinking: '', signature: 'sig123' });        // sent back unchanged
@@ -543,6 +543,45 @@ Deno.test('cards asked for after the words go out where they were asked for', as
   const ev = await events(await handle(ask([{ role: 'user', content: 'what helps strength?' }]), deps(f)));
   const order = ev.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text'));
   assertEquals(order, ['text', 'shortlist', 'text', 'questions', 'text']);
+});
+
+Deno.test('the guide asks the member questions they can answer by tapping, never for who they are', async () => {
+  const { f } = fakeWorld({
+    screen: NONE,
+    rounds: [
+      { text: 'Poor sleep wears you down. ' + WORDS, tool: { name: 'ask_member', input: { questions: [
+        { q: 'Roughly how old are you?', options: ['18–29', '30–49', '50–64', '65 or older', '30–49'] },
+        { q: 'Which medicines do you take?' },
+        { q: 'What is your email, so I can follow up?' },
+        { q: 'Which of these apply to you?', options: ['Heart condition', 'Kidney problems', 'None', 'Take 5 mg nightly'], multi: true },
+        { q: 'How much melatonin are you taking now?' },
+      ] } } },
+      { text: '' },
+    ],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'What should I take to sleep better?' }]), deps(f)));
+  const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
+  assertEquals(card.questions.map((q: { q: string }) => q.q), ['Roughly how old are you?', 'Which medicines do you take?', 'Which of these apply to you?']);
+  assertEquals(card.questions[0].options, ['18–29', '30–49', '50–64', '65 or older']);
+  assertEquals(card.questions[2].multi, true);
+  assert(!card.questions[2].options.some((o: string) => /\bmg\b|\d/.test(o)));
+  assert(ev.some((e) => e.event === 'step' && /Asked 3 questions/.test(e.data.title ?? '')));
+  const done = ev.find((e) => e.event === 'done')!.data;
+  assert(done.memo.includes('questions for the member: Roughly how old are you?'));
+});
+
+Deno.test('a question the check flags is dropped from the card', async () => {
+  const { f } = fakeWorld({
+    screen: NONE,
+    rounds: [
+      { text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'Roughly how old are you?', options: ['18–29', '30–49'] }, { q: 'Which pharmacy-grade product?' }, { q: 'Anything you have tried already?' }] } } },
+      { text: '' },
+    ],
+    review: (p) => ({ ok: !/tried already/.test(p.text) }),
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(f)));
+  const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
+  assertEquals(card.questions.map((q: { q: string }) => q.q), ['Roughly how old are you?']);
 });
 
 Deno.test('tools are capped per turn', async () => {

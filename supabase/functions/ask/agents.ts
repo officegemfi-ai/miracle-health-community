@@ -39,8 +39,11 @@ export type Audit = { findings: Finding[]; summary: string; ok: boolean };
 const MAX_ROUNDS = 6;
 const MAX_TOOLS_PER_ROUND = 6;
 const TOOL_LIMITS: Record<string, number> = {
-  find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2,
+  find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2, ask_member: 1,
 };
+// What Miracle AI never asks a member: who they are or how to reach them, amounts they take,
+// or where they get things
+const NOT_TO_ASK = /\byour\s+(?:full\s+|first\s+|last\s+)?name\b|\be-?mail\b|\b(?:phone|cell)\s+number\b|\b(?:home|street|mailing)\s+address\b|\byour\s+address\b|\bzip\s*code\b|\bpostal\s+code\b|\bdate\s+of\s+birth\b|\bbirth\s?day\b|\bsocial\s+security\b|\binsurance\s+(?:id|number)\b|\bhow\s+(?:much|many)\b[^?]*\b(?:take|taking|use|using|inject|injecting|run|running)\b|\bdos(?:e|es|age|ing)\b|\bwhere\s+(?:do|did|would|will|can|could)\s+you\s+(?:get|buy|order|source)\b|\b(?:buy|purchase|vendor|seller|supplier|pharmac(?:y|ies))\b/i;
 const strs = (x: unknown, n: number, len = 80) =>
   (Array.isArray(x) ? x : []).filter((s) => typeof s === 'string' && s.trim()).map((s) => String(s).trim().slice(0, len)).slice(0, n);
 // "No medicines" written into the list of medicines is no medicine
@@ -444,7 +447,7 @@ const proven = (key: string) => (['approved', 'otc', 'supplement'].includes(key)
 type Ctx = {
   items: Item[]; byId: Map<string, Item>; snap: Snapshot; screen: Screen; st: Standing; ownMeds: Set<string>;
   sheets: Map<string, Sheet | null>; emit: Emit; deps: TurnDeps; gate: Gate; shortlistsOn: boolean;
-  opened: Set<string>; stepN: number; memo: string[]; shortlists: number; questions: number; uses: Record<string, number>;
+  opened: Set<string>; stepN: number; memo: string[]; shortlists: number; questions: number; asked: number; uses: Record<string, number>;
 };
 
 async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | null>> {
@@ -604,6 +607,26 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       });
       return ctx.gate.waiting ? 'They\'ll be shown right after your answer in words. Write it now.' : 'Shown.';
     }
+    case 'ask_member': {
+      const raw = (Array.isArray(input.questions) ? input.questions : []) as Record<string, unknown>[];
+      const qs = raw.slice(0, 4).map((r) => ({
+        q: cleanField(r?.q, 140),
+        options: [...new Set(strs(r?.options, 6, 80).map((o) => cleanField(o, 40)).filter(Boolean))],
+        multi: r?.multi === true,
+      })).filter((x) => x.q && !NOT_TO_ASK.test(x.q) && !x.options.some((o) => NOT_TO_ASK.test(o)));
+      if (!qs.length) return 'No questions shown. Don\'t ask for names, contact details, birthdays, amounts or where they get things.';
+      ctx.asked++;
+      const card = `card${++ctx.stepN}`;
+      step(ctx, { id: nextId(ctx, 'ask'), agent: 'recommender', status: 'done', title: `Asked ${qs.length} question${qs.length === 1 ? '' : 's'} to tailor this` });
+      ctx.gate.card(qs.map((x, i) => ({ key: `q${i}`, text: x.options.length ? `${x.q} Answers to tap: ${x.options.join(' | ')}` : x.q })), (ok) => {
+        const kept = qs.filter((_, i) => ok.has(`q${i}`));
+        if (kept.length) ctx.memo.push(`questions for the member: ${kept.map((x) => x.q).join(' / ')}`);
+        return kept.length ? { type: 'intake', id: card, questions: kept } : null;
+      });
+      return ctx.gate.waiting
+        ? 'The questions will be shown right after your words. If you have said what you need to, end your reply here.'
+        : 'Shown. End your reply here; their answers come back as their next message.';
+    }
   }
   return 'Unknown tool.';
 }
@@ -636,7 +659,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
     sheets: new Map(), emit, deps, gate, shortlistsOn: !held && !st.crisis && screen.ok,
-    opened: new Set(), stepN: 0, memo: [], shortlists: 0, questions: 0, uses: {},
+    opened: new Set(), stepN: 0, memo: [], shortlists: 0, questions: 0, asked: 0, uses: {},
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
@@ -783,7 +806,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     + gate.released).slice(0, 6000);
   deps.log?.({
     ask: {
-      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, shortlists: ctx.shortlists,
+      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, shortlists: ctx.shortlists, asked: ctx.asked,
       parts: { checked: gate.checked, edited: gate.edited, held: gate.held, unchecked: gate.unchecked }, tokens: usage,
     },
   });
