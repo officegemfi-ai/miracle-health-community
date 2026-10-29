@@ -646,6 +646,36 @@ Deno.test('someone who injects gets the safety basics once in a chat; not someon
   assertEquals(plainScreen('my knee hurts').injects, false);
 });
 
+Deno.test('a reply that came out as cards and a line is written again, once, in words', async () => {
+  const { f, calls } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'], injects: true }, rounds: [
+    { tools: [
+      { name: 'warning_signs', input: { ids: ['injection_site', 'breathing'] } },
+      { name: 'clinician_questions', input: { questions: ['Could this spot be infected?'] } },
+    ] },
+    { text: 'Have you noticed a fever?' },
+    { text: 'Short version: **get that spot seen today**. ' + WORDS, tool: { name: 'present_shortlist', input: { items: [{ id: 'creatine', role: 'Supports training', why: 'Strength' }] } } },
+    { text: 'Is anything else going on?' },
+  ] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I inject BPC-157 and the spot is red and warm. What should I do?' }]), deps(f)));
+  const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
+  assert(!text.includes('Have you noticed a fever?'));                       // the line on its own isn't shown
+  assert(text.startsWith('Short version: **get that spot seen today**.'));
+  assert(text.endsWith('Is anything else going on?'));
+  assert(ev.findIndex((e) => e.event === 'text') < ev.findIndex((e) => e.event === 'card'));   // words first
+  const types = ev.filter((e) => e.event === 'card').map((e) => e.data.type);
+  assertEquals(types.filter((t) => t === 'warn' || t === 'questions').length, 2);
+  assert(!ev.some((e) => e.event === 'card' && e.data.type === 'shortlist' && e.data.kind !== 'yours'));   // no new cards while rewriting
+  const guide = calls.filter((c) => c.kind === 'guide');
+  assertEquals(guide.length, 4);
+  const asked = JSON.stringify(guide[2].body.messages);
+  assert(asked.includes('That reply isn') && asked.includes('Have you noticed a fever?'));
+  // A short plain answer with no cards stays as it is, with no second go
+  const plain = fakeWorld({ screen: NONE, rounds: [{ text: 'No. It isn\'t FDA-approved for any use.' }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'Is BPC-157 approved?' }]), deps(plain.f)));
+  assertEquals(ev2.filter((e) => e.event === 'text').map((e) => e.data.d).join(''), 'No. It isn\'t FDA-approved for any use.');
+  assertEquals(plain.calls.filter((c) => c.kind === 'guide').length, 1);
+});
+
 Deno.test('ask or answer, not both: no card of questions after a full answer', async () => {
   const long = 'This is the full answer. '.repeat(40);
   const { f } = fakeWorld({ screen: NONE, rounds: [

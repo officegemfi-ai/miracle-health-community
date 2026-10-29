@@ -39,7 +39,12 @@ export type Finding = { ids: string[]; kind: string; level: 'avoid' | 'caution' 
 export type Audit = { findings: Finding[]; summary: string; ok: boolean };
 
 const MAX_ROUNDS = 6;
+// A reply with cards but fewer characters of words than this gets written again, once
+const FEW_WORDS = 160;
+const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the short version of what they asked (two or three sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, the one caution line, and at most one short question at the end. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
+// Tools that put a card on the member's screen
+const CARD_TOOLS = new Set(['present_shortlist', 'clinician_questions', 'warning_signs', 'ask_member', 'audit_combination']);
 const TOOL_LIMITS: Record<string, number> = {
   find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2, ask_member: 2,
   warning_signs: 1,
@@ -302,6 +307,7 @@ export class Gate {
   cards = 0;
   checked = 0; edited = 0; held = 0; unchecked = 0;
   wordsFirst = false;
+  offered = 0;
   private words = 0;
   private later: Out[] = [];
   private pending = '';
@@ -315,11 +321,15 @@ export class Gate {
   text(t: string) { this.words += t.length; this.pending += t; this.cut(false); }
   // The words so far go out; cards waiting for words follow when there are enough
   endText() { this.cut(true); }
+  // Words not yet sent that won't be shown after all (a reply that was almost only cards gets
+  // written again)
+  dropPending() { this.words -= this.pending.length; this.pending = ''; }
   flush() { this.cut(true); this.catchUp(false); }
   trusted(text: string) { this.flush(); this.push({ type: 'text', text, trusted: true }); }
   // A safety card (when to get help, injection basics) goes ahead of any card still waiting
   card(fields: Field[], build: (ok: Set<string>) => Record<string, unknown> | null, opts: { first?: boolean; tag?: string } = {}) {
     this.cut(true);
+    this.offered++;
     const o: Out = { type: 'card', fields, build, first: opts.first, tag: opts.tag };
     if (this.wordsFirst && this.words < WORDS_FIRST) {
       if (o.first) this.later.splice(this.later.filter((x) => x.type === 'card' && x.first).length, 0, o);
@@ -600,6 +610,7 @@ type Ctx = {
   items: Item[]; byId: Map<string, Item>; snap: Snapshot; screen: Screen; st: Standing; ownMeds: Set<string>;
   sheets: Map<string, Sheet | null>; emit: Emit; deps: TurnDeps; gate: Gate; shortlistsOn: boolean;
   opened: Set<string>; stepN: number; memo: string[]; shortlists: number; stacks: number; questions: number; asked: number; uses: Record<string, number>;
+  wordsOnly?: boolean;
   injectShown: boolean;
   signs: Set<string>;   // warning signs already on a card this turn
 };
@@ -676,6 +687,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
   const s = ctx.screen;
   ctx.uses[name] = (ctx.uses[name] ?? 0) + 1;
   if (ctx.uses[name] > (TOOL_LIMITS[name] ?? 2)) return 'That tool has been used enough for this turn; answer from what you have.';
+  if (ctx.wordsOnly && CARD_TOOLS.has(name)) return 'The cards are already on their screen: write the reply in words now.';
   switch (name) {
     case 'find_options': {
       const goal = String(input.goal ?? '') as Goal;
@@ -949,6 +961,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   let wrote = '';
   let model = deps.models.guide;
   let rounds = 0;
+  let rewrote = false;
   const usage = { in: 0, out: 0, cacheRead: 0, cacheWrite: 0 };
   for (; rounds < MAX_ROUNDS; rounds++) {
     let sawText = false;
@@ -970,19 +983,32 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       }
       throw e;
     }
-    gate.endText();
+    const uses = r.content.filter((b) => b.type === 'tool_use');
+    const last = r.stop !== 'tool_use' || !uses.length;
+    // Words first and words that carry the answer: a reply that came out as cards and a line
+    // gets one more go (what it wrote isn't shown, unless it already went out)
+    const again = last && !rewrote && tools.length > 0 && r.stop !== 'refusal' && !ctx.asked
+      && gate.offered > 0 && wrote.trim().length < FEW_WORDS && rounds < MAX_ROUNDS - 1;
+    if (again) { gate.dropPending(); rewrote = true; wrote = ''; } else gate.endText();
     usage.in += Number(r.usage.input_tokens ?? 0);
     usage.out += Number(r.usage.output_tokens ?? 0);
     usage.cacheRead += Number(r.usage.cache_read_input_tokens ?? 0);
     usage.cacheWrite += Number(r.usage.cache_creation_input_tokens ?? 0);
-    convo.push({ role: 'assistant', content: r.content });
+    if (r.content.length || !again) convo.push({ role: 'assistant', content: r.content });
     if (r.stop === 'refusal' && !wrote.trim()) {
       gate.trusted('I can’t help with that one. I’m happy to talk through what the evidence says about a compound, how it might fit a goal, and what to ask a clinician.');
       wrote = 'refusal';
       break;
     }
-    const uses = r.content.filter((b) => b.type === 'tool_use');
-    if (r.stop !== 'tool_use' || !uses.length) break;
+    if (again) {
+      const note: Block = { type: 'text', text: MORE_WORDS };
+      const prev = convo[convo.length - 1];
+      if (prev.role === 'user') prev.content = [...(typeof prev.content === 'string' ? [{ type: 'text', text: prev.content }] : prev.content), note];
+      else convo.push({ role: 'user', content: [note] });
+      ctx.wordsOnly = true;
+      continue;
+    }
+    if (last) break;
     // When to get help goes first among this round's cards, whatever order they were asked in
     const outs = new Map<string, string>();
     const order = uses.slice(0, MAX_TOOLS_PER_ROUND).sort((a, b) => Number(b.name === 'warning_signs') - Number(a.name === 'warning_signs'));
