@@ -26,7 +26,7 @@ export type Sheet = {
   evidence: { grade: string; why: string };
   status_us: { key: string; label: string; note: string };
   goals: Record<string, number>;
-  benefits: { claim: string; evidence: string }[];
+  benefits: { claim: string; evidence: string; sources?: number[] }[];
   risks: { risk: string; how_common: string }[];
   avoid_if: string[]; interactions: string[];
   labs: { before: string[]; during: string[]; why: string };

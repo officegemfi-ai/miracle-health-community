@@ -2,8 +2,8 @@ import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/stric
 import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet } from './library.ts';
 import { cleanField, CRISIS, redact, scan } from './guard.ts';
-import { benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor } from './agents.ts';
-import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, v6net } from './index.ts';
+import { benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor, useOf } from './agents.ts';
+import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
 
 // ---------------------------------------------------------------------------
@@ -22,7 +22,7 @@ const SHEET_BPC: Sheet = {
   id: 'bpc157', name: 'BPC-157', summary: 'A peptide.', what_it_is: 'A 15-amino-acid peptide studied in rodents.',
   evidence: { grade: 'limited', why: 'Mostly rodent studies.' },
   status_us: { key: 'under_review', label: 'Not approved; compounding not yet allowed', note: 'FDA has not decided.' },
-  goals: { recovery: 1 }, benefits: [{ claim: 'Faster tendon healing in rodents', evidence: 'preclinical' }],
+  goals: { recovery: 1 }, benefits: [{ claim: 'Faster tendon healing in rodents', evidence: 'preclinical', sources: [1] }],
   risks: [{ risk: 'Unknown cancer risk', how_common: 'theoretical' }], avoid_if: ['Pregnant or breastfeeding'],
   interactions: ['None well documented'], labs: { before: ['CBC'], during: [], why: '' },
   ask_your_clinician: ['What does the human evidence show?'],
@@ -217,6 +217,18 @@ Deno.test('crisis words are caught; a gym injury is not', () => {
   assertEquals(plainScreen('my chest pain started an hour ago').red_flag, 'emergency');
 });
 
+Deno.test('evidence for the use asked about: the best matching finding, the main use, or none', () => {
+  const sheet = { ...SHEET_BPC, goals: { recovery: 1, gut: 0.5 }, benefits: [
+    { claim: 'Faster healing of cut tendons in rodents', evidence: 'preclinical' },
+    { claim: 'Lower colitis scores in 53 people', evidence: 'limited' },
+  ] };
+  assertEquals(useOf(sheet, 'recovery'), { grade: 'preclinical', fits: true });   // not the colitis trial's "limited"
+  assertEquals(useOf(sheet, 'sleep'), { grade: 'none', fits: false });
+  assertEquals(useOf({ ...sheet, goals: { sleep: 1 } }, 'sleep'), { grade: 'limited', fits: true });   // its main use
+  assertEquals(useOf(sheet), { grade: 'limited', fits: true });
+  assertEquals(useOf(null, 'sleep'), { grade: null, fits: false });
+});
+
 Deno.test('benefits on a card: the best evidence in people first, two at most, no amounts', () => {
   const sheet = { ...SHEET_BPC, benefits: [
     { claim: 'Healed tendons in rats', evidence: 'preclinical' },
@@ -234,6 +246,11 @@ Deno.test('benefits on a card: the best evidence in people first, two at most, n
   ] };
   assertEquals(benefitsOf(collagen, 'recovery')[0].claim, 'Lower osteoarthritis symptom scores than placebo');
   assertEquals(benefitsOf(collagen, 'skin')[0].claim, 'Better skin hydration and elasticity in 23 trials');
+  // Only the findings about their goal, when there are any: no skin results under a tendon question
+  assertEquals(benefitsOf(collagen, 'recovery').map((b) => b.claim), ['Lower osteoarthritis symptom scores than placebo']);
+  assertEquals(benefitsOf(collagen, 'skin').length, 2);
+  // None about it: what it has been studied for, which the card introduces as such
+  assertEquals(benefitsOf(collagen, 'sleep').map((b) => b.claim), ['Better skin hydration and elasticity in 23 trials', 'Better skin brightness in 19 trials']);
 });
 
 Deno.test('card tags and cautions follow US status and family', () => {
@@ -331,6 +348,42 @@ Deno.test('over the limit: a clear 429, and Claude is never called', async () =>
   assertEquals(res2.status, 503);
 });
 
+Deno.test('a limit or a pause never turns away someone in crisis: a reply written in advance, no AI call', async () => {
+  let counted = 0;
+  const full = { quota: async () => { counted++; return { ok: false, reason: 'visitor_day' } as const; } };
+  const { f, calls } = fakeWorld({ screen: NONE, rounds: [{ text: 'x' }] });
+  const res = await handle(ask([{ role: 'user', content: 'I want to end my life tonight' }]), deps(f, full));
+  assertEquals(res.status, 200);
+  const ev = await events(res);
+  assertEquals(ev.filter((e) => e.event === 'card').map((e) => e.data.type), ['crisis']);
+  assert(ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('').includes('988'));
+  const done = ev.find((e) => e.event === 'done')!.data;
+  assert(done.memo.startsWith('[Safety: crisis]'));
+  assertEquals(done.sig, await signReply('salt', done.memo));   // it carries on like any reply
+  // An emergency: 911 first
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'I have chest pain after my injection' }]), deps(f, full)));
+  assertEquals(ev2.filter((e) => e.event === 'card').map((e) => e.data.type), ['urgent']);
+  assert(ev2.filter((e) => e.event === 'text').map((e) => e.data.d).join('').includes('911'));
+  // Later in a chat where a crisis came up, with the counter down or Miracle AI paused
+  for (const quota of [async () => { throw new Error('db down'); }, async () => ({ ok: false, reason: 'off' })]) {
+    const res3 = await handle(ask([
+      { role: 'user', content: 'I want to die' }, { role: 'assistant', content: 'Please call 988.' }, { role: 'user', content: 'what about magnesium' },
+    ]), deps(f, { quota }));
+    assertEquals(res3.status, 200);
+    assert((await events(res3)).some((e) => e.event === 'text' && /988/.test(e.data.d)));
+  }
+  // Every message is counted, and the model is never called for these replies
+  assertEquals(counted, 2);
+  assertEquals(calls.length, 0);
+  // Everyone else still meets the limit
+  assertEquals((await handle(ask([{ role: 'user', content: 'creatine?' }]), deps(f, full))).status, 429);
+  // Under the limit, someone in crisis gets the full, caring conversation (the AI's own words)
+  const crisis = fakeWorld({ screen: { ...NONE, red_flag: 'self_harm' }, rounds: [{ text: 'I’m really glad you told me. Please call or text 988.' }] });
+  const ev4 = await events(await handle(ask([{ role: 'user', content: 'I want to end my life tonight' }]), deps(crisis.f)));
+  assert(ev4.some((e) => e.event === 'text' && /glad you told me/.test(e.data.d)));
+  assert(crisis.calls.length > 0);
+});
+
 Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with its audit, questions, final check', async () => {
   const { f, calls } = fakeWorld({
     screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'], medications: ['sertraline'] },
@@ -362,9 +415,15 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   assertEquals(short.items.map((i: { id: string }) => i.id), ['creatine', 'bpc157']);           // MK-677 removed, unknown dropped
   assertEquals(short.items[0].why, 'Strong evidence for strength; take daily');                   // the amount is gone
   assertEquals(short.items[1].tag, 'Not approved');
+  // Evidence for the goal asked about, a source for each finding, labs from the sheet
+  assertEquals(stack.items[0].use, { grade: 'preclinical', fits: true });
+  assertEquals(stack.items[0].benefits[0].source?.url, 'https://www.fda.gov/x');
+  assertEquals(stack.items[0].labs, ['CBC']);
+  assert(ev.filter((e) => e.event === 'step' && e.data.agent === 'recommender').every((e) => !e.data.chips || e.data.id === 'lookup'));
+  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'clinician' && /^Not yet: take your packet/.test(e.data.title)));
   // What the studies found comes from the fact sheet, on every option
   assertEquals(short.items[0].benefits, [{ claim: 'More strength gains with resistance training in adults', evidence: 'strong' }]);
-  assertEquals(stack.items[0].benefits, [{ claim: 'Faster tendon healing in rodents', evidence: 'preclinical' }]);
+  assertEquals(stack.items[0].benefits.map((b: { claim: string; evidence: string }) => [b.claim, b.evidence]), [['Faster tendon healing in rodents', 'preclinical']]);
   assert(short.items[1].signal.score === 71.2);
   const audits = ev.filter((e) => e.event === 'card' && e.data.type === 'audit');
   assert(audits.some((a) => a.data.for === short.id) && audits.some((a) => a.data.for === stack.id));

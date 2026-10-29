@@ -140,6 +140,30 @@ export async function screenMessage(messages: ChatMessage[], deps: TurnDeps): Pr
   return s;
 }
 
+// When Miracle AI can't answer (today's limit, a pause, the counter down), someone in crisis or
+// describing an emergency still gets help at once: a reply written in advance, with no AI call,
+// so there's nothing in it to game and nothing else in it
+export type Urgent = 'self_harm' | 'emergency' | 'crisis_earlier';
+export function urgentKind(messages: ChatMessage[]): Urgent | null {
+  const last = messages[messages.length - 1]?.content ?? '';
+  if (CRISIS.test(last)) return 'self_harm';
+  if (URGENT.test(last)) return 'emergency';
+  return standing(messages).crisis ? 'crisis_earlier' : null;
+}
+export const HELD_REPLY: Record<Urgent, string> = {
+  self_harm: 'I’m really sorry you’re going through this, and I’m glad you said something. Please call or text 988 now to talk with someone at the Suicide & Crisis Lifeline, or call 911 if you’re in danger right now. You don’t have to face this alone. Miracle AI can’t write more here today, but 988 is there any time, day or night.',
+  emergency: 'If this is happening now, please call 911 or go to the nearest emergency room. If you took too much of something, Poison Control is at 1-800-222-1222.',
+  crisis_earlier: 'Miracle AI can’t answer more messages here today. If things feel heavy, you can call or text 988 any time, day or night, or chat at 988lifeline.org. If you’re in danger right now, call 911.',
+};
+export function heldReply(kind: Urgent, messages: ChatMessage[], emit: Emit): string {
+  const st = standing(messages);
+  const crisis = kind !== 'emergency' || st.crisis;
+  emit('step', { id: 'safety', agent: 'safety', status: 'done', title: kind === 'emergency' ? 'Possible emergency: call 911 first' : 'Support comes first', flag: kind === 'emergency' ? 'emergency' : 'self_harm' });
+  emit('card', { type: kind === 'emergency' ? 'urgent' : 'crisis' });
+  emit('text', { d: HELD_REPLY[kind] });
+  return `${crisis ? `${SAFETY_MARK.crisis}\n` : ''}${HELD_REPLY[kind]}`;
+}
+
 export function screenTitle(s: Screen, st: Standing = { minor: false, pregnant: false, crisis: false }): string {
   if (s.red_flag === 'self_harm') return 'Support comes first';
   if (s.red_flag === 'emergency') return 'Possible emergency: call 911 first';
@@ -414,11 +438,17 @@ export class Gate {
 // ---------------------------------------------------------------------------
 // Cards
 // ---------------------------------------------------------------------------
+export type StudyFinding = { claim: string; evidence: string; source?: { title: string; year: string; url: string } };
 export type CardItem = {
   id: string; name: string; family: string; role: string; why: string; url: string;
   status: { key: string; label: string } | null; grade: string | null;
-  signal: { score: number; level: string } | null; tag: string; tone: 'ok' | 'warn' | 'none'; caution: string;
-  benefits: { claim: string; evidence: string }[];
+  // The evidence for what the member asked about (from the findings that match their goal):
+  // "none" when nothing in the fact sheet studies it
+  use: { grade: string | null; fits: boolean };
+  signal: { score: number; level: string; reports: number | null; effects: string[] } | null;
+  tag: string; tone: 'ok' | 'warn' | 'none'; caution: string;
+  benefits: StudyFinding[];
+  labs: string[];
 };
 
 // What the studies found, from the fact sheet: the two findings with the best evidence in people
@@ -436,7 +466,7 @@ const lead = (claim: string) => {
 const GOAL_WORDS: Record<string, RegExp> = {
   weight: /weight|fat\b|obes|\bbmi\b|waist|appetite|metabolic|insulin|blood sugar|glucose|diabet/i,
   muscle: /muscle|strength|lean mass|power|sprint|weightlift|body composition|sarcopen/i,
-  recovery: /tendon|ligament|joint|osteoarth|arthrit|injur|heal|recover|sore|pain|cartilage|bone|fractur|stiff/i,
+  recovery: /tendon|ligament|joint|osteoarth|arthrit|injur|wound|recover|soreness|muscle damage|cartilage|bone|fractur|stiff|knee|shoulder|back pain|musculoskeletal/i,
   energy: /fatigue|energy|tired|vitality|endurance|exhaust/i,
   sleep: /sleep|insomnia|jet lag|circadian/i,
   cognition: /memory|attention|focus|cognit|mood|anxiety|stress|depress|learning|brain|bdnf|mental/i,
@@ -449,12 +479,57 @@ const GOAL_WORDS: Record<string, RegExp> = {
 };
 export function benefitsOf(sheet: Sheet | null | undefined, goal?: string, n = 2): CardItem['benefits'] {
   const fits = goal ? GOAL_WORDS[goal] : undefined;
-  return (sheet?.benefits ?? [])
+  const ranked = (sheet?.benefits ?? [])
     .map((b, i) => ({ b, i, r: EVIDENCE_RANK[b.evidence] ?? 5, off: fits && !fits.test(b.claim) ? 1 : 0 }))
-    .sort((x, y) => x.off - y.off || x.r - y.r || x.i - y.i)
+    .sort((x, y) => x.off - y.off || x.r - y.r || x.i - y.i);
+  // Findings about their goal only, when there are any; otherwise what it has been studied for
+  const about = ranked.filter((x) => !x.off);
+  return (about.length ? about : ranked)
     .slice(0, n)
-    .map(({ b }) => ({ claim: cleanField(strict(lead(b.claim)), 220), evidence: String(b.evidence || '') }))
+    .map(({ b }) => {
+      const source = sourceOf(sheet, b.sources?.[0]);
+      return { claim: cleanField(strict(lead(b.claim)), 220), evidence: String(b.evidence || ''), ...(source ? { source } : {}) };
+    })
     .filter((b) => b.claim);
+}
+function sourceOf(sheet: Sheet | null | undefined, n: number | undefined): StudyFinding['source'] {
+  const src = sheet?.sources?.find((x) => x.n === n);
+  if (!src || !/^https:\/\/[^\s"'<>]+$/.test(src.url ?? '')) return undefined;
+  return { title: cleanField(src.title, 160), year: String(src.year ?? ''), url: src.url };
+}
+// How strong the evidence is for this member's goal: the best finding that's about it, or
+// the sheet's overall grade when the goal is its main use; "none" when nothing studies it
+export function useOf(sheet: Sheet | null | undefined, goal?: string): CardItem['use'] {
+  if (!sheet) return { grade: null, fits: false };
+  const fits = goal ? GOAL_WORDS[goal] : undefined;
+  if (!fits) return { grade: sheet.evidence?.grade ?? null, fits: true };
+  const ranks = (sheet.benefits ?? []).filter((b) => fits.test(b.claim)).map((b) => EVIDENCE_RANK[b.evidence] ?? 5);
+  if (ranks.length) {
+    const best = Math.min(...ranks);
+    return { grade: Object.keys(EVIDENCE_RANK).find((k) => EVIDENCE_RANK[k] === best) ?? null, fits: true };
+  }
+  if (Number(sheet.goals?.[goal!] ?? 0) >= 0.75) return { grade: sheet.evidence?.grade ?? null, fits: true };
+  return { grade: 'none', fits: false };
+}
+// Labs the fact sheet lists, before and during, for the packet a member takes to a clinician
+const labsOf = (sheet: Sheet | null | undefined) =>
+  [...(sheet?.labs?.before ?? []), ...(sheet?.labs?.during ?? [])].map((l) => cleanField(l, 160)).filter(Boolean).slice(0, 4);
+
+// What every card item shares, whoever laid it out
+function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot }, pregnant: boolean, goal?: string) {
+  const sig = ctx.snap.signals[it.id] as Signal | undefined;
+  const { tag, tone } = tagFor(it, sh);
+  return {
+    id: it.id, name: sh?.name ?? it.name, family: familyOne(it.family), url: `/library/${it.id}/`,
+    status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null, grade: sh?.evidence?.grade ?? it.grade ?? null,
+    use: useOf(sh, goal),
+    signal: sig && typeof sig.score === 'number' ? {
+      score: Number(sig.score), level: LEVEL_SHORT[sig.certification ?? 'forum'] ?? 'Forum data',
+      reports: typeof sig.first_hand === 'number' && sig.first_hand > 0 ? sig.first_hand : null,
+      effects: (sig.side_effects ?? []).slice(0, 2).map((e) => cleanField(e.effect, 40)).filter(Boolean),
+    } : null,
+    tag, tone, caution: cautionFor(it, sh, pregnant), benefits: benefitsOf(sh, goal), labs: labsOf(sh),
+  };
 }
 
 export function tagFor(item: Item, sheet: Sheet | null | undefined): { tag: string; tone: CardItem['tone'] } {
@@ -532,17 +607,12 @@ function stackCard(ids: string[], a: Audit, ctx: Ctx): string | null {
     const it = ctx.byId.get(id)!;
     const sh = ctx.sheets.get(id);
     const key = sh?.status_us?.key ?? it.status ?? '';
-    const sig = ctx.snap.signals[id] as Signal | undefined;
-    const { tag, tone } = tagFor(it, sh);
     return {
-      id: it.id, name: sh?.name ?? it.name, family: familyOne(it.family),
+      ...baseItem(it, sh, ctx, pregnant, ctx.screen.goals[0]),
       role: BLOCKED.has(key) ? 'On FDA’s safety-risk list'
         : UNAPPROVED.has(key) || key === 'investigational' ? 'Research stage'
         : ctx.ownMeds.has(id) ? 'Your prescription' : familyOne(it.family),
-      why: cleanField(sh?.summary ?? it.summary ?? '', 180), url: `/library/${it.id}/`,
-      status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null, grade: sh?.evidence?.grade ?? it.grade ?? null,
-      signal: sig && typeof sig.score === 'number' ? { score: Number(sig.score), level: LEVEL_SHORT[sig.certification ?? 'forum'] ?? 'Forum data' } : null,
-      tag, tone, caution: cautionFor(it, sh, pregnant), benefits: benefitsOf(sh, ctx.screen.goals[0]),
+      why: cleanField(sh?.summary ?? it.summary ?? '', 180),
     };
   });
   if (!items.length) return null;
@@ -572,7 +642,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       if (!(GOALS as readonly string[]).includes(goal)) return `Unknown goal. Use one of: ${GOALS.join(', ')}.`;
       const fams = strs(input.families, 5, 20);
       const opts = rank(ctx.items, ctx.snap.signals, goal, { families: fams, exclude: strs(input.exclude, 20, 40) });
-      step(ctx, { id: nextId(ctx, 'rec'), agent: 'recommender', status: 'done', title: `Ranked options for ${GOAL_LABEL[goal]}`, chips: opts.slice(0, 6).map((o) => chip(o.id, ctx)) });
+      step(ctx, { id: nextId(ctx, 'rec'), agent: 'recommender', status: 'done', title: `Looked up options for ${GOAL_LABEL[goal]} in the Library` });
       if (!opts.length) return `Nothing in the Library is mainly used or studied for ${GOAL_LABEL[goal]}.`;
       return `Options for ${GOAL_LABEL[goal]}, best first (fit = how much it's used or studied for this goal, 0.5 to 1):\n${opts.map(optionLine).join('\n')}\nOpen the ones you want to discuss with read_fact_sheets before making specific claims.`;
     }
@@ -630,16 +700,11 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
           dropped.push(`${it.name} (removed by the Safety agent: not for pregnancy, trying to conceive or breastfeeding)`);
           continue;
         }
-        const sig = ctx.snap.signals[p.id] as Signal | undefined;
-        const { tag, tone } = tagFor(it, sh);
         const research = UNAPPROVED.has(key) || key === 'investigational';
         items.push({
-          id: it.id, name: sh?.name ?? it.name, family: familyOne(it.family),
+          ...baseItem(it, sh, ctx, pregnant, s.goals[0]),
           role: research ? 'Research stage' : cleanField(p.role, 40) || familyOne(it.family),
-          why: cleanField(p.why, 180), url: `/library/${it.id}/`,
-          status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null, grade: sh?.evidence?.grade ?? it.grade ?? null,
-          signal: sig && typeof sig.score === 'number' ? { score: Number(sig.score), level: LEVEL_SHORT[sig.certification ?? 'forum'] ?? 'Forum data' } : null,
-          tag, tone, caution: cautionFor(it, sh, pregnant), benefits: benefitsOf(sh, s.goals[0]),
+          why: cleanField(p.why, 180),
         });
       }
       if (!items.length) return `Nothing could be shown. ${dropped.join('; ')}`;
@@ -767,7 +832,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     if (goal) {
       const opts = rank(items, snap.signals, goal, { limit: 8 });
       if (opts.length) {
-        emit('step', { id: 'rank', agent: 'recommender', status: 'done', title: `Ranked options for ${GOAL_LABEL[goal]}`, chips: opts.slice(0, 6).map((o) => chip(o.id, ctx)) });
+        emit('step', { id: 'rank', agent: 'recommender', status: 'done', title: `Looked up options for ${GOAL_LABEL[goal]} in the Library` });
         recNote += ` Options for ${GOAL_LABEL[goal]} (best first):\n${opts.map(optionLine).join('\n')}`;
       }
     }
@@ -888,7 +953,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   emit('step', { id: 'review', agent: 'review', status: 'done', title, fixed: !!(gate.edited || notShown) });
   emit('review', { ok: !(gate.edited || notShown), edited: gate.edited, held: notShown });
   if (ctx.shortlists || ctx.stacks || ctx.questions) {
-    emit('step', { id: 'clinician', agent: 'clinician', status: 'pending', title: 'Pending: take this to a licensed clinician who knows you' });
+    emit('step', { id: 'clinician', agent: 'clinician', status: 'pending', title: 'Not yet: take your packet to a clinician who knows you' });
   }
   const marks = [
     minor ? SAFETY_MARK.minor : '',

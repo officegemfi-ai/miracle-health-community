@@ -6,7 +6,7 @@
 // a random secret that changes daily and is thrown away after two days, so the free chat
 // can't be run up (migrations 20261030000100 and 20261030000300).
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
-import { type ChatMessage, type Models, runTurn } from './agents.ts';
+import { type ChatMessage, heldReply, type Models, runTurn, urgentKind } from './agents.ts';
 import { createLibrary, type Library } from './library.ts';
 
 export const LIMITS = { messages: 24, userChars: 2000, assistantChars: 6000, totalChars: 24000, bodyBytes: 200_000 };
@@ -130,7 +130,6 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405, cors);
   if (!deps.origins.includes(req.headers.get('Origin') ?? '')) return json({ error: 'Not allowed from here.' }, 403, cors);
-  if (!deps.apiKey) return json({ error: MESSAGES.unavailable[1], code: 'unavailable' }, 503, cors);
 
   const raw = await req.text().catch(() => '');
   if (raw.length > LIMITS.bodyBytes) return json({ error: 'That conversation is too long. Start a new chat.' }, 413, cors);
@@ -140,13 +139,18 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
   if ('error' in conv) return json({ error: conv.error }, conv.status, cors);
   const messages = await checkReplies(conv.messages, deps.salt);
 
-  let q: Quota;
-  try {
-    q = await deps.quota(clientAddress(req));
-  } catch {
-    q = { ok: false, reason: 'unavailable' };
+  let q: Quota = { ok: false, reason: 'unavailable' };
+  if (deps.apiKey) {
+    try {
+      q = await deps.quota(clientAddress(req));
+    } catch {
+      q = { ok: false, reason: 'unavailable' };
+    }
   }
-  if (!q.ok) {
+  // A limit or a pause never turns away someone in crisis, or describing an emergency: they get
+  // the reply written in advance for it (988, or 911), with no AI call
+  const held = q.ok ? null : urgentKind(messages);
+  if (!q.ok && !held) {
     const [status, message] = MESSAGES[q.reason ?? 'unavailable'] ?? MESSAGES.unavailable;
     return json({ error: message, code: q.reason ?? 'unavailable' }, status, cors);
   }
@@ -169,12 +173,13 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
       const t0 = Date.now();
       send('meta', { v: 1, left: q.left ?? null });
       try {
-        const { memo } = await runTurn(messages, {
+        const { memo } = held ? { memo: heldReply(held, messages, send) } : await runTurn(messages, {
           apiKey: deps.apiKey, models: deps.models, effort: deps.effort, library: deps.library,
           fetchImpl: deps.fetchImpl, signal: abort.signal, log: deps.log,
         }, send);
+        if (held) deps.log?.({ ask_held: { kind: held, reason: q.reason ?? 'unavailable' } });
         const reply = cleanText(memo).slice(0, LIMITS.assistantChars);
-        send('done', { memo: reply, sig: await signReply(deps.salt, reply), left: q.left ?? null, ms: Date.now() - t0 });
+        send('done', { memo: reply, sig: await signReply(deps.salt, reply), left: q.left ?? null, ms: held ? null : Date.now() - t0 });
       } catch (e) {
         if (!cancelled) {
           const busy = (e as { retryable?: boolean })?.retryable;
