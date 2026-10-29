@@ -292,7 +292,19 @@ function auditText(a: Audit, byId: Map<string, Item>): string {
 // the member sees it. Parts are paragraphs (and each card's labels); they're checked in
 // small batches while the guide keeps writing, and go out in order.
 // ---------------------------------------------------------------------------
-type Verdict = { ok: boolean; revised?: string; broken?: number[] };
+type Fix = { find: string; replace: string };
+type Verdict = { ok: boolean; revised?: string; broken?: number[]; fixes?: Fix[] };
+// The check's smallest changes, applied to the part as written; null if any of them doesn't fit
+export function applyFixes(text: string, fixes?: Fix[]): string | null {
+  if (!fixes?.length) return null;
+  let out = text;
+  for (const f of fixes) {
+    if (!f.find || !out.includes(f.find)) return null;
+    out = out.split(f.find).join(f.replace);
+  }
+  out = out.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]+([.,;:!?])/g, '$1').trim();
+  return out || null;
+}
 type Field = { key: string; text: string };
 type Out =
   | { type: 'text'; text: string; trusted?: boolean }
@@ -421,8 +433,9 @@ export class Gate {
           if (!v) { this.unchecked++; continue; }            // couldn't be checked: held back
           this.checked++;
           if (!v.ok) this.rules.push(...(v.broken?.length ? v.broken : [0]));
+          const fixed = v.ok ? null : applyFixes(o.text, v.fixes) ?? (v.revised?.trim() || null);
           if (v.ok) this.release(o.text);
-          else if (v.revised && v.revised.trim()) { this.edited++; this.release(v.revised.trim()); }
+          else if (fixed) { this.edited++; this.release(fixed); }
           else this.held++;
         } else {
           const ok = new Set<string>();
@@ -469,6 +482,10 @@ export class Gate {
         out.set(v.id, {
           ok: v.ok === true,
           revised: typeof v.revised === 'string' ? v.revised.slice(0, 4000) : undefined,
+          fixes: Array.isArray(v.fixes)
+            ? (v.fixes as Record<string, unknown>[]).filter((f) => typeof f?.find === 'string' && f.find).slice(0, 8)
+              .map((f) => ({ find: String(f.find).slice(0, 600), replace: typeof f.replace === 'string' ? f.replace.slice(0, 600) : '' }))
+            : undefined,
           broken: (Array.isArray(v.broken) ? v.broken : []).map(Number).filter((n) => n >= 1 && n <= 7),
         });
       }

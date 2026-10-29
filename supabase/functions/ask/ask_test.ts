@@ -3,7 +3,7 @@ import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet } from './library.ts';
 import { cleanField, CRISIS, MINOR, redact, scan } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
-import { benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor, useOf } from './agents.ts';
+import { applyFixes, benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor, useOf } from './agents.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
 
@@ -89,7 +89,7 @@ type Part = { id: string; text: string };
 type Script = {
   screen?: unknown; audit?: unknown; rounds: Round[]; failGuide?: number;
   // The final check: by default every part is fine; a function judges each part; null is unreadable
-  review?: ((p: Part) => { ok: boolean; revised?: string }) | null;
+  review?: ((p: Part) => { ok: boolean; revised?: string; broken?: number[]; fixes?: { find: string; replace: string }[] }) | null;
 };
 // The parts the gate sent for checking, from the marked-up prompt
 function partsOf(prompt: string): Part[] {
@@ -497,6 +497,24 @@ Deno.test('a part that slips in a dose is rewritten before anyone sees it', asyn
   assert(!JSON.stringify(ev).includes('250 mcg'));
   assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [1] });   // which rule, never the text
   assert(ev[ev.length - 1].data.memo.startsWith('Miracle Health doesn’t give doses.'));
+});
+
+Deno.test('the check changes only the words that break a rule: a claim softened, nothing added', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157'] },
+    review: (p) => (/speeds/.test(p.text)
+      ? { ok: false, broken: [4], fixes: [{ find: 'speeds tendon healing', replace: 'may speed tendon healing' }], revised: 'BPC-157 is unapproved and unproven. Talk to a clinician.' }
+      : { ok: true }),
+    rounds: [{ text: '**Your stack is aimed at repair.** BPC-157 speeds tendon healing, and on forums people describe quicker recovery.\n\nThe one caution: it is research-stage.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'What will BPC-157 do for my tendon?' }]), deps(f)));
+  const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
+  assertEquals(text, '**Your stack is aimed at repair.** BPC-157 may speed tendon healing, and on forums people describe quicker recovery.\n\nThe one caution: it is research-stage.');
+  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [4] });
+  // Changes that don't fit the words as written fall back to the rewrite, or hold the part
+  assertEquals(applyFixes('It speeds healing.', [{ find: 'heals fast', replace: 'may heal' }]), null);
+  assertEquals(applyFixes('Most people use 250 mcg daily. It may help.', [{ find: 'Most people use 250 mcg daily.', replace: '' }]), 'It may help.');
+  assertEquals(applyFixes('Only this.', [{ find: 'Only this.', replace: '' }]), null);
 });
 
 Deno.test('amounts in dosing units never go out, even if the check misses them', async () => {
