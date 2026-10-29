@@ -19,7 +19,7 @@ export const SCHEDULE = new RegExp(String.raw`\b(?:once|twice|three times|\d+\s?
 export const LINK = /\bhttps?:\/\/(?!(?:www\.)?miraclehealth\.us\b|community\.miraclehealth\.us\b)[^\s)\]]+/gi;
 export const SALES = /\b(?:discount|coupon|promo|affiliate)\s+codes?\b|\buse\s+code\b|\b(?:buy|order|get)\s+(?:it|them|some)\s+(?:from|at|on)\b|\bresearch[- ]chemical\s+(?:sites?|vendors?|shops?|stores?|suppliers?)\b/gi;
 // Supplement-extract brands the Library never prints (the same list as the site's library build)
-export const BRANDS = /\b(?:KSM-?66|Sensoril|Bacognize|Synapsa|GlucoVantage|CarnoSyn|5-?Loxin|Rejuvant|Cognizin|Meriva|Longvida|BCM-?95|LMNT|Liquid\s?I\.?V\.?|Testofen|PharmaGABA|Iodoral|Suntheanine|Magtein|Relora|Ovasitol|Tru\s?Niagen|Niagen|Levagen|Florastor|Affron|PrimaVie|SpermidineLIFE|Avmacol|TeaCrine|LJ100|Mitopure|Pepzingi)\b/gi;
+export const BRANDS = /\b(?:KSM-?66|Sensoril|Bacognize|Synapsa|GlucoVantage|CarnoSyn|5-?Loxin|Rejuvant|Cognizin|Meriva|Longvida|BCM-?95|LMNT|Liquid\s?I\.?V\.?|Testofen|PharmaGABA|Iodoral|Suntheanine|Magtein|Relora|Ovasitol|Tru\s?Niagen|Niagen|Levagen|Kyolic|Florastor|Affron|PrimaVie|SpermidineLIFE|Avmacol|TeaCrine|LJ100|Mitopure|Pepzingi)\b/gi;
 
 export type Hit = { kind: 'dose' | 'schedule' | 'link' | 'sales' | 'brand'; text: string };
 
@@ -62,5 +62,9 @@ export function cleanField(s: unknown, max: number): string {
 // indirect wording and other languages too)
 export const CRISIS = /\b(?:kill(?:ing)?\s+my\s?self|kms|suicid\w*|end(?:ing)?\s+my\s+(?:own\s+)?life|end(?:ing)?\s+it\s+all|want(?:ing)?\s+to\s+die|wish\s+i\s+(?:was|were)\s+dead|better\s+off\s+dead|no\s+reason\s+to\s+live|don'?t\s+want\s+to\s+(?:live|be\s+alive|wake\s+up|be\s+here)|(?:never|not)\s+wake\s+up|self[- ]?harm\w*|cut(?:ting)?\s+myself|overdos(?:e|ing)\s+on\s+purpose|(?:me\s+)?quiero\s+morir|suicidarme|matarme)\b/i;
 export const URGENT = /\b(?:chest pain|can'?t breathe|cannot breathe|trouble breathing|short(?:ness)? of breath|face (?:is )?drooping|slurred speech|passed out|fainted|seizure|anaphyla\w*|throat (?:is )?(?:closing|swelling)|overdos(?:e|ed)|took (?:way )?too much|can'?t stop (?:vomiting|throwing up))\b/i;
-// "I'm 16", "15 years old", "in high school" (not "I'm 15 years into lifting" or "I'm 12% body fat")
-export const MINOR = /\b(?:i'?m|i\s+am|im)\s+(?:only\s+|just\s+)?(?:1[0-7])\b(?!\s*(?:%|percent|kg|kilos?|lbs?|pounds?|weeks?|days?|months?|years?(?!\s*old)|hours?|cm|inches|in\b|ft|feet|mg|mcg|g\b|stone|reps?|sets?))|\b(?:1[0-7])\s*(?:yo|y\/o|years?\s*old|yrs?\s*old)\b|\b(?:in|at)\s+(?:middle|high)\s+school\b|\b(?:9th|10th|11th|12th)\s+grade\b|\bmy\s+(?:mom|dad|parents?)\s+(?:won'?t|don'?t|wont|dont)\s+let\s+me\b/i;
+// "I'm 16", "I'm 15 years old", "I'm in high school" (not "I'm 15 years into lifting", "I'm 15
+// minutes from the gym" or "my son is in high school"). Used only when the Safety agent can't read
+// the message; otherwise whether someone is under 18 is its call.
+export const MINOR = /\b(?:i'?m|i\s+am|im)\s+(?:only\s+|just\s+)?(?:1[0-7])\b(?!\s*(?:%|percent|kg|kilos?|lbs?|pounds?|weeks?|days?|months?|years?(?!\s*old)|hours?|minutes?|mins?|seconds?|miles?|km|kilometers?|sessions?|cm|inches|in\b|ft|feet|mg|mcg|g\b|stone|reps?|sets?|laps?|runs?|times?|percent|out\b|into\b|away\b|from\b|weeks?|wks?))|\b(?:i'?m|i\s+am|im)\s+(?:1[0-7])\s*(?:yo|y\/o|years?\s*old|yrs?\s*old)\b|\b(?:i'?m|i\s+am|im)\s+(?:in|at)\s+(?:middle|high)\s+school\b|\b(?:i'?m|i\s+am|im)\s+in\s+(?:9th|10th|11th|12th)\s+grade\b|\bmy\s+(?:mom|dad|parents?)\s+(?:won'?t|don'?t|wont|dont)\s+let\s+me\b/i;
+// "I'm pregnant", "I'm 12 weeks pregnant", "trying to conceive", "I'm breastfeeding"
+export const PREGNANT = /\b(?:i'?m|i\s+am|im)\s+(?:\d+\s+(?:weeks?|months?)\s+)?pregnant\b|\b(?:we'?re|i'?m|i\s+am|we\s+are)\s+trying\s+to\s+(?:conceive|get\s+pregnant)\b|\b(?:i'?m|i\s+am|im)\s+(?:currently\s+)?(?:breast-?feeding|nursing)\b|\bwe'?re\s+(?:pregnant|expecting)\b/i;

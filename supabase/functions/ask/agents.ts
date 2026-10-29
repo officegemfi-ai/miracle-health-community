@@ -12,7 +12,7 @@ import {
 import {
   AUDIT_SYSTEM, AUDIT_TOOL, GUIDE_TOOLS, guideSystem, REVIEW_SYSTEM, REVIEW_TOOL, SCREEN_SYSTEM, SCREEN_TOOL, turnNotes,
 } from './prompts.ts';
-import { cleanField, CRISIS, MINOR, scan, strict, URGENT } from './guard.ts';
+import { cleanField, CRISIS, MINOR, PREGNANT, scan, strict, URGENT } from './guard.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export type Emit = (event: string, data: Record<string, unknown>) => void;
@@ -58,13 +58,16 @@ const markers = (code: string) =>
 // What earlier turns established, read from Miracle AI's own signed replies
 export const SAFETY_MARK = { minor: '[Safety: under 18]', pregnant: '[Safety: pregnancy]', crisis: '[Safety: crisis]' };
 export type Standing = { minor: boolean; pregnant: boolean; crisis: boolean };
+// Under 18 carries over only through the Safety agent's own mark (a plain pattern alone is too
+// easily wrong: "I'm 15 minutes from the gym"); crisis and pregnancy also from the member's own
+// earlier words, so a stopped or failed turn doesn't lose them.
 export function standing(messages: ChatMessage[]): Standing {
   const said = messages.slice(0, -1).filter((m) => m.role === 'assistant').map((m) => m.content).join('\n');
-  const asked = messages.filter((m) => m.role === 'user').map((m) => m.content);
+  const earlier = messages.slice(0, -1).filter((m) => m.role === 'user').map((m) => m.content);
   return {
-    minor: said.includes(SAFETY_MARK.minor) || asked.some((t) => MINOR.test(t)),
-    pregnant: said.includes(SAFETY_MARK.pregnant),
-    crisis: said.includes(SAFETY_MARK.crisis),
+    minor: said.includes(SAFETY_MARK.minor),
+    pregnant: said.includes(SAFETY_MARK.pregnant) || earlier.some((t) => PREGNANT.test(t)),
+    crisis: said.includes(SAFETY_MARK.crisis) || earlier.some((t) => CRISIS.test(t)),
   };
 }
 
@@ -85,7 +88,7 @@ function transcript(messages: ChatMessage[], code: string): string {
 export function plainScreen(text: string): Screen {
   return {
     red_flag: CRISIS.test(text) ? 'self_harm' : URGENT.test(text) ? 'emergency' : MINOR.test(text) ? 'minor' : 'none',
-    compounds: [], goals: [], medications: [], conditions: [], pregnant: false, tested_athlete: false,
+    compounds: [], goals: [], medications: [], conditions: [], pregnant: PREGNANT.test(text), tested_athlete: false,
     asks_dose: false, asks_source: false, note: '', ok: false,
   };
 }
@@ -116,11 +119,13 @@ export async function screenMessage(messages: ChatMessage[], deps: TurnDeps): Pr
     note: typeof raw.note === 'string' ? raw.note.slice(0, 200) : '',
     ok: true,
   };
-  // The plain checks still apply: a crisis sign, an emergency or a minor is never left to one reader
+  // The plain checks still apply: a sign of crisis or an emergency is never left to one reader
+  // (whether someone is under 18 is the Safety agent's call when it can read the message)
   if (s.red_flag === 'none') {
-    const p = plainScreen(last);
-    if (p.red_flag !== 'none') s.red_flag = p.red_flag;
+    if (CRISIS.test(last)) s.red_flag = 'self_harm';
+    else if (URGENT.test(last)) s.red_flag = 'emergency';
   }
+  if (!s.pregnant && PREGNANT.test(last)) s.pregnant = true;
   return s;
 }
 
@@ -251,9 +256,13 @@ export class Gate {
   flush() { this.cut(true); }
   trusted(text: string) { this.flush(); this.push({ type: 'text', text, trusted: true }); }
   card(fields: Field[], build: (ok: Set<string>) => Record<string, unknown> | null) { this.flush(); this.push({ type: 'card', fields, build }); }
+  // Wait until everything queued has been checked and sent (or the turn was stopped)
   async drain() {
     this.flush();
-    while (this.working) await this.working;
+    while (this.working || this.queue.length) {
+      if (!this.working) this.kick();
+      await this.working;
+    }
   }
 
   private cut(final: boolean) {
@@ -275,7 +284,22 @@ export class Gate {
       this.emit('step', { id: 'review', agent: 'review', status: 'run', title: 'Checking each part before you see it' });
     }
     this.queue.push(o);
-    if (!this.working) this.working = this.run().finally(() => { this.working = null; });
+    this.kick();
+  }
+  // One worker at a time. It clears itself in the same step that finds the queue empty, so a
+  // part queued a moment later always starts a new one; a stopped turn ends it quietly.
+  private kick() {
+    if (this.working) return;
+    this.working = (async () => {
+      try {
+        await this.run();
+      } catch {
+        this.unchecked += this.queue.length;
+        this.queue.length = 0;
+      } finally {
+        this.working = null;
+      }
+    })();
   }
   private async run() {
     while (this.queue.length) {
@@ -297,11 +321,14 @@ export class Gate {
           else this.held++;
         } else {
           const ok = new Set<string>();
+          let missed = 0;
           for (const f of o.fields) {
             const v = verdicts?.get(`c${i}-${f.key}`);
-            if (!v) this.unchecked++;
+            if (!v) missed++;
             else { this.checked++; if (v.ok) ok.add(f.key); else this.edited++; }
           }
+          // A card the check couldn't read isn't shown at all
+          if (missed) { this.unchecked += missed; continue; }
           const card = o.build(ok);
           if (card) { this.cards++; this.emit('card', card); }
         }
@@ -487,7 +514,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         const sh = ctx.sheets.get(p.id);
         const key = sh?.status_us?.key ?? it.status ?? '';
         if (BLOCKED.has(key)) { dropped.push(`${it.name} (removed by the Safety agent: ${sh?.status_us?.label ?? 'restricted'})`); continue; }
-        if (pregnant && (UNAPPROVED.has(key) || key === 'compounded' || it.family === 'Hormones')) {
+        if (pregnant && (UNAPPROVED.has(key) || key === 'compounded' || it.family === 'Hormones' || (sh?.avoid_if ?? []).some((a) => /pregnan|breast-?fe|conceiv/i.test(a)))) {
           dropped.push(`${it.name} (removed by the Safety agent: not for pregnancy, trying to conceive or breastfeeding)`);
           continue;
         }
@@ -513,14 +540,17 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       step(ctx, { id: nextId(ctx, 'bld'), agent: 'builder', status: 'done', title: `Shortlist of ${items.length} to discuss`, chips: items.map((i) => chip(i.id, ctx)) });
       ctx.gate.card(
         [{ key: 'title', text: title }, ...items.map((i, n) => ({ key: `i${n}`, text: `${i.name}. Role: ${i.role}. Why: ${i.why}` }))],
-        (ok) => ({
-          type: 'shortlist', id: card,
-          title: ok.has('title') ? title : 'To discuss with your clinician',
-          note: allResearch ? 'Everything here is research-stage: not approved, with little evidence in people. A clinician may suggest proven options first.' : '',
-          items: items.map((i, n) => (ok.has(`i${n}`) ? i : { ...i, role: i.role === 'Research stage' ? i.role : i.family, why: '' })),
-        }),
+        (ok) => {
+          const shown = items.map((i, n) => (ok.has(`i${n}`) ? i : { ...i, role: i.role === 'Research stage' ? i.role : i.family, why: '' }));
+          const shownTitle = ok.has('title') ? title : 'To discuss with your clinician';
+          ctx.memo.push(`shortlist "${shownTitle}": ${shown.map((i) => `${i.name} [${i.id}] (${i.role})`).join(', ')}`);
+          return {
+            type: 'shortlist', id: card, title: shownTitle,
+            note: allResearch ? 'Everything here is research-stage: not approved, with little evidence in people. A clinician may suggest proven options first.' : '',
+            items: shown,
+          };
+        },
       );
-      ctx.memo.push(`shortlist "${title}": ${items.map((i) => `${i.name} [${i.id}] (${i.role})`).join(', ')}`);
       // The Synergy auditor checks every shortlist
       let auditLine = '';
       if (items.length > 1 || s.medications.length || s.conditions.length || pregnant) {
@@ -540,9 +570,9 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       ctx.questions++;
       ctx.gate.card(qs.map((q, i) => ({ key: `q${i}`, text: q })), (ok) => {
         const kept = qs.filter((_, i) => ok.has(`q${i}`));
+        if (kept.length) ctx.memo.push('questions for a clinician');
         return kept.length ? { type: 'questions', items: kept } : null;
       });
-      ctx.memo.push('questions for a clinician');
       return 'Shown.';
     }
   }
@@ -690,12 +720,18 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   if (!wrote.trim()) gate.trusted('I couldn’t put an answer together just now. Could you ask that again, maybe in other words?');
   if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'done', title: 'Answer written' });
   await gate.drain();
-  if (!gate.released.trim() && !gate.cards) {
-    gate.trusted(gate.unchecked
-      ? 'The Safety agent couldn’t check this answer just now, so it isn’t shown. Please try again in a moment.'
-      : 'The Safety agent held this answer back because it broke Miracle Health’s rules. Try asking in a different way, for example about the evidence, the risks or what to ask a clinician.');
-    await gate.drain();
+  if (screen.red_flag === 'self_harm' && !gate.released.trim()) {
+    gate.trusted('I’m really sorry you’re going through this, and I’m glad you said something. Please call or text 988 now to talk with someone at the Suicide & Crisis Lifeline, or call 911 if you’re in danger right now. You don’t have to face this alone.');
+  } else if (screen.red_flag === 'emergency' && !gate.released.trim()) {
+    gate.trusted('If this is happening now, please call 911 or go to the nearest emergency room. If you took too much of something, Poison Control is at 1-800-222-1222.');
+  } else if (gate.unchecked) {
+    gate.trusted(gate.released.trim() || gate.cards
+      ? 'Part of this answer couldn’t be checked by the Safety agent just now, so it isn’t shown. Ask again in a moment to see the rest.'
+      : 'The Safety agent couldn’t check this answer just now, so it isn’t shown. Please try again in a moment.');
+  } else if (!gate.released.trim() && !gate.cards) {
+    gate.trusted('The Safety agent held this answer back because it broke Miracle Health’s rules. Try asking in a different way, for example about the evidence, the risks or what to ask a clinician.');
   }
+  await gate.drain();
 
   // 5. The Safety agent's tally
   const notShown = gate.held + gate.unchecked;
@@ -712,9 +748,9 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     pregnant ? SAFETY_MARK.pregnant : '',
     screen.red_flag === 'self_harm' || st.crisis ? SAFETY_MARK.crisis : '',
   ].filter(Boolean);
-  const memo = (gate.released
-    + (ctx.memo.length ? `\n\n[Shown to the member: ${ctx.memo.join('; ')}]` : '')
-    + (marks.length ? `\n${marks.join(' ')}` : '')).slice(0, 6000);
+  const memo = ((marks.length ? `${marks.join(' ')}\n` : '')
+    + (ctx.memo.length ? `[Shown to the member: ${ctx.memo.join('; ')}]\n\n` : '')
+    + gate.released).slice(0, 6000);
   deps.log?.({
     ask: {
       ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, shortlists: ctx.shortlists,

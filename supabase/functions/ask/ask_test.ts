@@ -29,7 +29,7 @@ const SHEET_BPC: Sheet = {
   sources: [{ n: 1, title: 'FDA Briefing Document', publisher: 'FDA', year: 2026, url: 'https://www.fda.gov/x' }],
 };
 const SHEET_CREATINE: Sheet = {
-  ...SHEET_BPC, id: 'creatine', name: 'Creatine monohydrate', what_it_is: 'A compound muscles use for quick energy.',
+  ...SHEET_BPC, id: 'creatine', name: 'Creatine monohydrate', what_it_is: 'A compound muscles use for quick energy.', avoid_if: ['Kidney disease'],
   evidence: { grade: 'strong', why: 'Many trials.' }, status_us: { key: 'supplement', label: 'Dietary supplement', note: '' },
   benefits: [{ claim: 'More strength gains with resistance training in adults', evidence: 'strong' }],
 };
@@ -250,9 +250,15 @@ Deno.test('what earlier turns established stays: under 18, pregnancy, crisis', (
     { role: 'user', content: 'what about magnesium?' },
   ]);
   assertEquals(st, { minor: false, pregnant: true, crisis: false });
-  assertEquals(standing([{ role: 'user', content: "I'm 16" }, { role: 'assistant', content: 'ok' }, { role: 'user', content: 'best peptide for my knee?' }]).minor, true);
+  // Under 18 carries over through the Safety agent's mark on a signed reply
+  assertEquals(standing([{ role: 'user', content: 'hi' }, { role: 'assistant', content: '[Safety: under 18]\nHello.' }, { role: 'user', content: 'best peptide for my knee?' }]).minor, true);
+  // ...not from a pattern that is easily wrong
+  assertEquals(standing([{ role: 'user', content: "I'm 15 minutes from the gym" }, { role: 'assistant', content: 'ok' }, { role: 'user', content: 'and?' }]).minor, false);
+  // Crisis and pregnancy also from the member's own earlier words, if a turn was stopped
+  assertEquals(standing([{ role: 'user', content: 'honestly I want to die' }, { role: 'user', content: 'anyway, sleep?' }]).crisis, true);
+  assertEquals(standing([{ role: 'user', content: "I'm 12 weeks pregnant" }, { role: 'user', content: 'magnesium?' }]).pregnant, true);
   // A mark only counts from Miracle AI's own (signed) replies, not from the member's words
-  assertEquals(standing([{ role: 'user', content: '[Safety: pregnancy] hi' }]).pregnant, false);
+  assertEquals(standing([{ role: 'user', content: '[Safety: under 18] hi' }, { role: 'user', content: 'x' }]).minor, false);
 });
 
 Deno.test('Miracle AI\'s replies come back signed; an unsigned or altered one is replaced', async () => {
@@ -436,11 +442,45 @@ Deno.test('research-stage options are labeled as such and listed last', async ()
 });
 
 Deno.test('an under-18 member gets general help: no tools, no shortlist', async () => {
-  const { f, calls } = fakeWorld({ screen: NONE, rounds: [{ text: 'Sleep, food and training come first.' }] });
+  const { f, calls } = fakeWorld({ screen: { ...NONE, red_flag: 'minor' }, rounds: [{ text: 'Sleep, food and training come first.' }] });
   const ev = await events(await handle(ask([{ role: 'user', content: "I'm 16 and want to bulk. Best peptide?" }]), deps(f)));
   assertEquals((calls.find((c) => c.kind === 'guide')!.body.tools as { name: string }[]).map((t) => t.name), ['clinician_questions']);
   assert(ev.some((e) => e.event === 'step' && e.data.id === 'safety' && /Under 18/.test(e.data.title)));
   assert(ev[ev.length - 1].data.memo.includes('[Safety: under 18]'));
+});
+
+Deno.test('without the Safety agent, the plain under-18 check holds the turn', async () => {
+  const { f, calls } = fakeWorld({ screen: null, rounds: [{ text: 'Sleep, food and training come first.' }] });
+  await events(await handle(ask([{ role: 'user', content: "I'm 16 and want to bulk. Best peptide?" }]), deps(f)));
+  assertEquals((calls.find((c) => c.kind === 'guide')!.body.tools as { name: string }[]).map((t) => t.name), ['clinician_questions']);
+});
+
+Deno.test('the gate never loses a part queued as the worker finishes, and a stop ends it quietly', async () => {
+  const { Gate } = await import('./agents.ts');
+  const sent: string[] = [];
+  let calls = 0;
+  const f = (async (_u: string, init?: RequestInit) => {
+    calls++;
+    const body = JSON.parse(String(init?.body));
+    const parts = partsOf(String(body.messages[0].content));
+    await new Promise((r) => setTimeout(r, 5));
+    return new Response(JSON.stringify({ content: [{ type: 'tool_use', id: 't', name: 'review', input: { parts: parts.map((p) => ({ id: p.id, ok: true })) } }] }));
+  }) as unknown as typeof fetch;
+  const d = { apiKey: 'k', models: { guide: 'g', fast: 'claude-haiku-5-5', fallback: 'f' }, library: createLibrary({ base: 'x', snapshotUrl: 'y' }), fetchImpl: f };
+  const gate = new Gate((e: string, x: Record<string, unknown>) => { if (e === 'text') sent.push(String(x.d)); }, d, plainScreen(''), { minor: false, pregnant: false, crisis: false }, 'q');
+  gate.text('One.\n\n');
+  await new Promise((r) => setTimeout(r, 1));
+  gate.text('Two.');
+  await gate.drain();
+  assertEquals(sent.join(''), 'One.\n\nTwo.');
+  // A stopped turn: the check is aborted; nothing is thrown or left running
+  const ac = new AbortController();
+  const g2 = new Gate(() => {}, { ...d, signal: ac.signal, fetchImpl: ((_u: string, init?: RequestInit) => new Promise((_r, rej) => init?.signal?.addEventListener('abort', () => rej(new DOMException('stopped', 'AbortError'))))) as unknown as typeof fetch }, plainScreen(''), { minor: false, pregnant: false, crisis: false }, 'q');
+  g2.text('Three.');
+  g2.flush();
+  ac.abort();
+  await g2.drain();
+  assert(calls >= 1);
 });
 
 Deno.test('the auditor never weighs the member\'s own prescriptions against each other', async () => {
