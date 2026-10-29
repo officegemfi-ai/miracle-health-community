@@ -53,12 +53,17 @@ through five agents, and the page shows each step as it happens:
 3. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
    conditions: overlapping mechanisms, additive risks, interactions.
 4. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
-   safety-risk list is never on it, and the auditor checks every shortlist.
+   safety-risk list is never on it, and the auditor checks every shortlist. When someone names
+   compounds they take or weigh together, it also lays out "Your stack", with the auditor's check
+   on it (shown as it is, safety-risk items plainly marked rather than hidden).
 5. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
    its cards, is read by Claude (Haiku) against the rules and released only once it's cleared,
    rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
    dosing units, supplement-extract brands and outside links are always taken out as well.
-   Clinician review is always pending: nothing here is a plan until a clinician reviews it.
+   Clinician review is always pending: nothing here is a plan until a clinician reviews it. The
+   page builds a review packet the visitor takes to their own clinician (print or PDF, or a QR
+   code and link that carry the packet in the URL fragment to `miraclehealth.us/ai/packet/`, so
+   no server ever receives it); after the visit they mark it reviewed, in their own browser.
 
 No doses, no sellers, no diagnosis, ever. Flags that matter for the rest of a chat (under 18,
 pregnancy, an earlier crisis) carry over through Miracle AI's own replies, which the page sends
@@ -70,7 +75,7 @@ deleted after two days; never the address) and for the whole site: 8 per ten min
 1,000 a day in all (`private.settings`, keys `ask_*`; set `ask_enabled` to `off` to pause it).
 Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAST_MODEL`,
 `ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
-project six real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
+project seven real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
 ## Run it on your machine (no Docker needed)
 ```

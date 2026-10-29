@@ -2,7 +2,7 @@ import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/stric
 import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet } from './library.ts';
 import { cleanField, CRISIS, redact, scan } from './guard.ts';
-import { plainScreen, screenTitle, standing, tagFor, cautionFor } from './agents.ts';
+import { benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor } from './agents.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
 
@@ -217,6 +217,25 @@ Deno.test('crisis words are caught; a gym injury is not', () => {
   assertEquals(plainScreen('my chest pain started an hour ago').red_flag, 'emergency');
 });
 
+Deno.test('benefits on a card: the best evidence in people first, two at most, no amounts', () => {
+  const sheet = { ...SHEET_BPC, benefits: [
+    { claim: 'Healed tendons in rats', evidence: 'preclinical' },
+    { claim: 'Lowered a disease score in 53 people at 10 mg', evidence: 'limited' },
+    { claim: 'People report less pain', evidence: 'anecdotal' },
+  ] };
+  assertEquals(benefitsOf(sheet).map((b) => b.evidence), ['limited', 'preclinical']);
+  assert(!/mg/.test(benefitsOf(sheet)[0].claim));
+  assertEquals(benefitsOf(null), []);
+  // With a goal, the findings about it come first
+  const collagen = { ...SHEET_BPC, benefits: [
+    { claim: 'Better skin hydration and elasticity in 23 trials', evidence: 'limited' },
+    { claim: 'Better skin brightness in 19 trials', evidence: 'limited' },
+    { claim: 'Lower osteoarthritis symptom scores than placebo', evidence: 'limited' },
+  ] };
+  assertEquals(benefitsOf(collagen, 'recovery')[0].claim, 'Lower osteoarthritis symptom scores than placebo');
+  assertEquals(benefitsOf(collagen, 'skin')[0].claim, 'Better skin hydration and elasticity in 23 trials');
+});
+
 Deno.test('card tags and cautions follow US status and family', () => {
   assertEquals(tagFor(ITEMS[1], SHEET_BPC).tag, 'Not approved');
   assertEquals(tagFor(ITEMS[0], SHEET_CREATINE), { tag: 'Supplement', tone: 'ok' });
@@ -333,13 +352,22 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   for (const s of ['safety:run', 'safety:done', 'recommender:done', 'synergy:run', 'synergy:done', 'builder:done', 'review:done', 'clinician:pending']) assert(steps.includes(s), s);
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
   assert(text.startsWith('Here is what the Library says') && text.includes('\n\nThe auditor flagged'));
-  const short = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data;
+  // The Stack builder lays out what the member named, after the opening words, with the audit
+  const lists = ev.filter((e) => e.event === 'card' && e.data.type === 'shortlist').map((e) => e.data);
+  const stack = lists.find((c) => c.kind === 'yours')!;
+  assertEquals(stack.items.map((i: { id: string }) => i.id), ['bpc157', 'creatine']);
+  assertEquals(stack.items[0].role, 'Research stage');
+  assert(ev.findIndex((e) => e.event === 'card' && e.data.id === stack.id) > ev.findIndex((e) => e.event === 'text'));
+  const short = lists.find((c) => c.kind !== 'yours')!;
   assertEquals(short.items.map((i: { id: string }) => i.id), ['creatine', 'bpc157']);           // MK-677 removed, unknown dropped
   assertEquals(short.items[0].why, 'Strong evidence for strength; take daily');                   // the amount is gone
   assertEquals(short.items[1].tag, 'Not approved');
+  // What the studies found comes from the fact sheet, on every option
+  assertEquals(short.items[0].benefits, [{ claim: 'More strength gains with resistance training in adults', evidence: 'strong' }]);
+  assertEquals(stack.items[0].benefits, [{ claim: 'Faster tendon healing in rodents', evidence: 'preclinical' }]);
   assert(short.items[1].signal.score === 71.2);
   const audits = ev.filter((e) => e.event === 'card' && e.data.type === 'audit');
-  assert(audits.length >= 1 && audits.some((a) => a.data.for === short.id));
+  assert(audits.some((a) => a.data.for === short.id) && audits.some((a) => a.data.for === stack.id));
   const qs = ev.find((e) => e.event === 'card' && e.data.type === 'questions')!.data.items;
   assertEquals(qs, ['Is BPC-157 worth the unknowns for my tendon?']);                             // no sourcing questions
   assertEquals(ev.find((e) => e.event === 'review')!.data.ok, true);
@@ -348,7 +376,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   const firstReview = calls.findIndex((c) => c.kind === 'review');
   assert(firstText > 0 && firstReview >= 0);
   const done = ev[ev.length - 1].data;
-  assert(done.memo.includes('[Shown to the member: shortlist "For tendon recovery": Creatine monohydrate [creatine]'));
+  assert(done.memo.includes('[Shown to the member: their stack: BPC-157 [bpc157], Creatine monohydrate [creatine]; shortlist "For tendon recovery": Creatine monohydrate [creatine]'));
   // The guide had the rules cached, the turn's notes, the sheets and the tools; history ends with the member
   const g = calls.filter((c) => c.kind === 'guide');
   assertEquals(g.length, 3);
@@ -364,6 +392,26 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   // The cards' labels went through the check too
   const checked = calls.filter((c) => c.kind === 'review').flatMap((c) => partsOf(String((c.body.messages as { content: string }[])[0].content)).map((p) => p.text));
   assert(checked.some((t) => t.includes('Role: Best-studied supplement')) && checked.some((t) => t.includes('worth the unknowns')));
+});
+
+Deno.test('the Stack builder lays out the member\'s own stack, marked plainly, never hidden', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['MK-677', 'testosterone', 'creatine'], medications: ['testosterone'] },
+    audit: { findings: [], summary: 'Nothing known.' },
+    rounds: [{ text: WORDS }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I run MK-677 and creatine, and I am on testosterone. Is my stack OK?' }]), deps(f)));
+  const stack = ev.find((e) => e.event === 'card' && e.data.kind === 'yours')!.data;
+  assertEquals(stack.items.map((i: { role: string }) => i.role), ['On FDA’s safety-risk list', 'Your prescription', 'Supplement']);
+  assert(ev.some((e) => e.event === 'card' && e.data.type === 'audit' && e.data.for === stack.id));
+  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'builder' && /your stack of 3/.test(e.data.title)));
+  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'clinician' && e.data.status === 'pending'));
+  // After a crisis earlier in the chat: no stack card
+  const crisis = fakeWorld({ screen: { ...NONE, compounds: ['creatine', 'bpc157'] }, rounds: [{ text: WORDS }] });
+  const ev2 = await events(await handle(ask([
+    { role: 'user', content: 'I want to die' }, { role: 'assistant', content: '[Safety: crisis]\nPlease call 988.' }, { role: 'user', content: 'creatine and bpc157 together?' },
+  ]), deps(crisis.f)));
+  assert(!ev2.some((e) => e.event === 'card' && e.data.kind === 'yours'));
 });
 
 Deno.test('a crisis: the 988 card, no tools, no lookups', async () => {

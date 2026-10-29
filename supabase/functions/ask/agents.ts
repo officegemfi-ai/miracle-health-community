@@ -418,7 +418,44 @@ export type CardItem = {
   id: string; name: string; family: string; role: string; why: string; url: string;
   status: { key: string; label: string } | null; grade: string | null;
   signal: { score: number; level: string } | null; tag: string; tone: 'ok' | 'warn' | 'none'; caution: string;
+  benefits: { claim: string; evidence: string }[];
 };
+
+// What the studies found, from the fact sheet: the two findings with the best evidence in people
+// first, so a card shows what something may do, not only what isn't known
+const EVIDENCE_RANK: Record<string, number> = { strong: 0, moderate: 1, limited: 2, preclinical: 3, anecdotal: 4 };
+// A long finding keeps its first clause, the finding itself; the evidence tag beside it says how
+// strong it is
+const lead = (claim: string) => {
+  const t = String(claim ?? '').trim();
+  const i = t.indexOf(';');
+  return t.length > 180 && i >= 60 ? t.slice(0, i) : t;
+};
+// Words that tie a finding to the member's goal, so a card for a tendon shows the joint study,
+// not the skin one
+const GOAL_WORDS: Record<string, RegExp> = {
+  weight: /weight|fat\b|obes|\bbmi\b|waist|appetite|metabolic|insulin|blood sugar|glucose|diabet/i,
+  muscle: /muscle|strength|lean mass|power|sprint|weightlift|body composition|sarcopen/i,
+  recovery: /tendon|ligament|joint|osteoarth|arthrit|injur|heal|recover|sore|pain|cartilage|bone|fractur|stiff/i,
+  energy: /fatigue|energy|tired|vitality|endurance|exhaust/i,
+  sleep: /sleep|insomnia|jet lag|circadian/i,
+  cognition: /memory|attention|focus|cognit|mood|anxiety|stress|depress|learning|brain|bdnf|mental/i,
+  skin: /skin|wrinkle|hair|elastic|hydration|acne|pigment|tan\b/i,
+  sexual: /sexual|libido|erectile|desire|arousal|fertility/i,
+  longevity: /aging|ageing|lifespan|mortality|longevity|heart|cardio|frailty|cognitive decline/i,
+  gut: /\bgut\b|bowel|colitis|crohn|\bibs\b|intestin|stomach|digest|ulcer|liver|inflamm/i,
+  immune: /immun|infection|\bcolds?\b|\bflu\b|respiratory/i,
+  hormonal: /testosterone|estrogen|hormone|menopaus|thyroid|cortisol|pcos/i,
+};
+export function benefitsOf(sheet: Sheet | null | undefined, goal?: string, n = 2): CardItem['benefits'] {
+  const fits = goal ? GOAL_WORDS[goal] : undefined;
+  return (sheet?.benefits ?? [])
+    .map((b, i) => ({ b, i, r: EVIDENCE_RANK[b.evidence] ?? 5, off: fits && !fits.test(b.claim) ? 1 : 0 }))
+    .sort((x, y) => x.off - y.off || x.r - y.r || x.i - y.i)
+    .slice(0, n)
+    .map(({ b }) => ({ claim: cleanField(strict(lead(b.claim)), 220), evidence: String(b.evidence || '') }))
+    .filter((b) => b.claim);
+}
 
 export function tagFor(item: Item, sheet: Sheet | null | undefined): { tag: string; tone: CardItem['tone'] } {
   const key = sheet?.status_us?.key ?? item.status;
@@ -455,7 +492,7 @@ const proven = (key: string) => (['approved', 'otc', 'supplement'].includes(key)
 type Ctx = {
   items: Item[]; byId: Map<string, Item>; snap: Snapshot; screen: Screen; st: Standing; ownMeds: Set<string>;
   sheets: Map<string, Sheet | null>; emit: Emit; deps: TurnDeps; gate: Gate; shortlistsOn: boolean;
-  opened: Set<string>; stepN: number; memo: string[]; shortlists: number; questions: number; asked: number; uses: Record<string, number>;
+  opened: Set<string>; stepN: number; memo: string[]; shortlists: number; stacks: number; questions: number; asked: number; uses: Record<string, number>;
 };
 
 async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | null>> {
@@ -484,6 +521,44 @@ function auditCard(a: Audit, ctx: Ctx, forCard?: string) {
     type: 'audit', ...(forCard ? { for: forCard } : {}), ok: a.ok, summary: '',
     findings: findings.map((f, i) => (ok.has(`f${i}`) ? f : { ...f, note: f.ids.length > 1 ? 'A possible clash. Ask your clinician about this combination.' : 'Worth raising with your clinician before you start it.' })),
   }));
+}
+
+// The Stack builder's card for the compounds the member takes or named together, with the
+// Synergy auditor's check attached. It shows what they have, it doesn't suggest anything: items
+// on FDA's safety-risk list stay on it, plainly marked.
+function stackCard(ids: string[], a: Audit, ctx: Ctx): string | null {
+  const pregnant = ctx.screen.pregnant || ctx.st.pregnant;
+  const items: CardItem[] = ids.filter((id) => ctx.byId.has(id)).slice(0, 6).map((id) => {
+    const it = ctx.byId.get(id)!;
+    const sh = ctx.sheets.get(id);
+    const key = sh?.status_us?.key ?? it.status ?? '';
+    const sig = ctx.snap.signals[id] as Signal | undefined;
+    const { tag, tone } = tagFor(it, sh);
+    return {
+      id: it.id, name: sh?.name ?? it.name, family: familyOne(it.family),
+      role: BLOCKED.has(key) ? 'On FDA’s safety-risk list'
+        : UNAPPROVED.has(key) || key === 'investigational' ? 'Research stage'
+        : ctx.ownMeds.has(id) ? 'Your prescription' : familyOne(it.family),
+      why: cleanField(sh?.summary ?? it.summary ?? '', 180), url: `/library/${it.id}/`,
+      status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null, grade: sh?.evidence?.grade ?? it.grade ?? null,
+      signal: sig && typeof sig.score === 'number' ? { score: Number(sig.score), level: LEVEL_SHORT[sig.certification ?? 'forum'] ?? 'Forum data' } : null,
+      tag, tone, caution: cautionFor(it, sh, pregnant), benefits: benefitsOf(sh, ctx.screen.goals[0]),
+    };
+  });
+  if (!items.length) return null;
+  const card = `card${++ctx.stepN}`;
+  ctx.stacks++;
+  step(ctx, { id: nextId(ctx, 'bld'), agent: 'builder', status: 'done', title: `Laid out your stack of ${items.length}`, chips: items.map((i) => chip(i.id, ctx)) });
+  ctx.gate.card(
+    items.map((i, n) => ({ key: `i${n}`, text: `${i.name}. Role: ${i.role}. About it: ${i.why}` })),
+    (ok) => {
+      const shown = items.map((i, n) => (ok.has(`i${n}`) ? i : { ...i, why: '' }));
+      ctx.memo.push(`their stack: ${shown.map((i) => `${i.name} [${i.id}]`).join(', ')}`);
+      return { type: 'shortlist', kind: 'yours', id: card, title: 'Your stack: to discuss with your clinician', note: '', goal: ctx.screen.goals[0] ?? '', items: shown };
+    },
+  );
+  auditCard(a, ctx, card);
+  return card;
 }
 
 async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): Promise<string> {
@@ -563,7 +638,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
           why: cleanField(p.why, 180), url: `/library/${it.id}/`,
           status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null, grade: sh?.evidence?.grade ?? it.grade ?? null,
           signal: sig && typeof sig.score === 'number' ? { score: Number(sig.score), level: LEVEL_SHORT[sig.certification ?? 'forum'] ?? 'Forum data' } : null,
-          tag, tone, caution: cautionFor(it, sh, pregnant),
+          tag, tone, caution: cautionFor(it, sh, pregnant), benefits: benefitsOf(sh, s.goals[0]),
         });
       }
       if (!items.length) return `Nothing could be shown. ${dropped.join('; ')}`;
@@ -581,7 +656,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
           const shownTitle = ok.has('title') ? title : 'To discuss with your clinician';
           ctx.memo.push(`shortlist "${shownTitle}": ${shown.map((i) => `${i.name} [${i.id}] (${i.role})`).join(', ')}`);
           return {
-            type: 'shortlist', id: card, title: shownTitle,
+            type: 'shortlist', id: card, title: shownTitle, goal: s.goals[0] ?? '',
             note: allResearch ? 'Everything here is research-stage: not approved, with little evidence in people. A clinician may suggest proven options first.' : '',
             items: shown,
           };
@@ -667,7 +742,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
     sheets: new Map(), emit, deps, gate, shortlistsOn: !held && !st.crisis && screen.ok,
-    opened: new Set(), stepN: 0, memo: [], shortlists: 0, questions: 0, asked: 0, uses: {},
+    opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, asked: 0, uses: {},
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
@@ -701,14 +776,18 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
 
   // 3. The Synergy auditor, when the member's own compounds and medicines meet
   let synNote = '';
+  let upfront: Audit | null = null;
   const pregnant = screen.pregnant || st.pregnant;
   if (named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant))) {
     emit('step', { id: 'synergy', agent: 'synergy', status: 'run', title: `Checking ${named.length > 1 ? `${named.length} together` : ctx.byId.get(named[0])?.name ?? 'it'}${screen.medications.length ? ' with your medicines' : ''}` });
     await openSheets(named, ctx);
     const a = await auditSet(named, screen.medications, screen.conditions, pregnant, ctx, deps);
     emit('step', { id: 'synergy', agent: 'synergy', status: 'done', title: auditTitle(a, named.length) });
-    if (a.ok && a.findings.length) auditCard(a, ctx);
+    upfront = a;
     synNote = auditText(a, ctx.byId);
+    if (ctx.shortlistsOn) {
+      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with its evidence, US status and cautions, and the auditor's findings beneath. Explain their stack in words; don't present these same compounds again with present_shortlist (use it only for other options worth discussing), and don't list them as the card does.`;
+    }
   }
 
   // 4. The guide writes, with the Library tools; every part goes through the gate
@@ -725,6 +804,9 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   if (!tools.length) system[1].text += '\nNo tools this turn: answer in words only, and don\'t write tool names or card lists.';
   if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'run', title: 'Writing your answer' });
   gate.wordsFirst = true;
+  // The Stack builder lays out what the member named, after the guide's opening words
+  if (upfront && ctx.shortlistsOn) stackCard(named, upfront, ctx);
+  else if (upfront && upfront.ok && upfront.findings.length) auditCard(upfront, ctx);
   let wrote = '';
   let model = deps.models.guide;
   let rounds = 0;
@@ -804,7 +886,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     : 'Every part checked before you saw it: no doses, no sellers';
   emit('step', { id: 'review', agent: 'review', status: 'done', title, fixed: !!(gate.edited || notShown) });
   emit('review', { ok: !(gate.edited || notShown), edited: gate.edited, held: notShown });
-  if (ctx.shortlists || ctx.questions) {
+  if (ctx.shortlists || ctx.stacks || ctx.questions) {
     emit('step', { id: 'clinician', agent: 'clinician', status: 'pending', title: 'Pending: take this to a licensed clinician who knows you' });
   }
   const marks = [
@@ -817,7 +899,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     + gate.released).slice(0, 6000);
   deps.log?.({
     ask: {
-      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, shortlists: ctx.shortlists, asked: ctx.asked,
+      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, shortlists: ctx.shortlists, stacks: ctx.stacks, asked: ctx.asked,
       parts: { checked: gate.checked, edited: gate.edited, held: gate.held, unchecked: gate.unchecked }, tokens: usage,
     },
   });
