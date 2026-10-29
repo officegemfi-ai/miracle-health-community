@@ -247,27 +247,47 @@ type Out =
   | { type: 'text'; text: string; trusted?: boolean }
   | { type: 'card'; fields: Field[]; build: (ok: Set<string>) => Record<string, unknown> | null };
 
+// Words first: once the guide starts writing, a card it asks for before it has explained its
+// answer in this many characters waits, and goes out right after the words
+const WORDS_FIRST = 200;
+
 export class Gate {
   released = '';
   cards = 0;
   checked = 0; edited = 0; held = 0; unchecked = 0;
+  wordsFirst = false;
+  private words = 0;
+  private later: Out[] = [];
   private pending = '';
   private queue: Out[] = [];
   private working: Promise<void> | null = null;
   private started = false;
   constructor(private emit: Emit, private deps: TurnDeps, private screen: Screen, private st: Standing, private last: string) {}
 
-  text(t: string) { this.pending += t; this.cut(false); }
-  flush() { this.cut(true); }
+  get waiting() { return this.later.length; }
+  text(t: string) { this.words += t.length; this.pending += t; this.cut(false); }
+  flush() { this.cut(true); this.catchUp(false); }
   trusted(text: string) { this.flush(); this.push({ type: 'text', text, trusted: true }); }
-  card(fields: Field[], build: (ok: Set<string>) => Record<string, unknown> | null) { this.flush(); this.push({ type: 'card', fields, build }); }
+  card(fields: Field[], build: (ok: Set<string>) => Record<string, unknown> | null) {
+    this.flush();
+    const o: Out = { type: 'card', fields, build };
+    if (this.wordsFirst && this.words < WORDS_FIRST) this.later.push(o);
+    else this.push(o);
+  }
   // Wait until everything queued has been checked and sent (or the turn was stopped)
   async drain() {
-    this.flush();
+    this.cut(true);
+    this.catchUp(true);
     while (this.working || this.queue.length) {
       if (!this.working) this.kick();
       await this.working;
     }
+  }
+  // Cards that were waiting for words go out, in the order they came, once there are words
+  // before them (or at the end of the turn, whatever there is)
+  private catchUp(force: boolean) {
+    if (!this.later.length || (!force && this.words < WORDS_FIRST)) return;
+    for (const o of this.later.splice(0)) this.push(o);
   }
 
   private cut(final: boolean) {
@@ -425,7 +445,6 @@ type Ctx = {
   items: Item[]; byId: Map<string, Item>; snap: Snapshot; screen: Screen; st: Standing; ownMeds: Set<string>;
   sheets: Map<string, Sheet | null>; emit: Emit; deps: TurnDeps; gate: Gate; shortlistsOn: boolean;
   opened: Set<string>; stepN: number; memo: string[]; shortlists: number; questions: number; uses: Record<string, number>;
-  wrote: string;   // what the guide has written so far this turn
 };
 
 async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | null>> {
@@ -502,11 +521,6 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
     }
     case 'present_shortlist': {
       if (!ctx.shortlistsOn) return 'Not shown: shortlists are off for this turn (the Safety agent\'s flags). Don\'t suggest compounds; answer generally.';
-      // Words first: a shortlist adds to an explanation, it never stands in for one
-      if (ctx.wrote.trim().length < 200) {
-        ctx.uses[name]--;
-        return 'Not shown yet: first explain your answer in words in your reply (what the evidence shows, the US status, the risks, what matters for this member), then call present_shortlist again.';
-      }
       const pregnant = s.pregnant || ctx.st.pregnant;
       const raw = (Array.isArray(input.items) ? input.items : []) as Record<string, unknown>[];
       const seen = new Set<string>();
@@ -572,7 +586,11 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         auditCard(a, ctx, card);
         auditLine = `\nSynergy auditor on this shortlist:\n${auditText(a, ctx.byId)}`;
       }
-      return `Shown to the member, in this order: ${items.map((i) => `${i.name} (${i.tag})`).join(', ')}.${dropped.length ? ` Left out: ${dropped.join('; ')}.` : ''}${auditLine}\nNow mention briefly anything the auditor found, then call clinician_questions.`;
+      const order = `in this order: ${items.map((i) => `${i.name} (${i.tag})`).join(', ')}.${dropped.length ? ` Left out: ${dropped.join('; ')}.` : ''}${auditLine}`;
+      // Asked for before the answer was explained: the card follows the words instead
+      return ctx.gate.waiting
+        ? `The card will be shown right after your explanation, ${order}\nNow write your answer in words: what the evidence shows, the US status, the risks, what matters for this member. Don't mention when the card appears. Then call clinician_questions.`
+        : `Shown to the member, ${order}\nNow mention briefly anything the auditor found, then call clinician_questions.`;
     }
     case 'clinician_questions': {
       const qs = strs(input.questions, 4, 400).map((q) => cleanField(q, 160))
@@ -584,7 +602,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         if (kept.length) ctx.memo.push('questions for a clinician');
         return kept.length ? { type: 'questions', items: kept } : null;
       });
-      return 'Shown.';
+      return ctx.gate.waiting ? 'They\'ll be shown right after your answer in words. Write it now.' : 'Shown.';
     }
   }
   return 'Unknown tool.';
@@ -618,7 +636,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
     sheets: new Map(), emit, deps, gate, shortlistsOn: !held && !st.crisis && screen.ok,
-    opened: new Set(), stepN: 0, memo: [], shortlists: 0, questions: 0, uses: {}, wrote: '',
+    opened: new Set(), stepN: 0, memo: [], shortlists: 0, questions: 0, uses: {},
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
@@ -675,13 +693,14 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     : [];
   if (!tools.length) system[1].text += '\nNo tools this turn: answer in words only, and don\'t write tool names or card lists.';
   if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'run', title: 'Writing your answer' });
+  gate.wordsFirst = true;
   let wrote = '';
   let model = deps.models.guide;
   let rounds = 0;
   const usage = { in: 0, out: 0, cacheRead: 0, cacheWrite: 0 };
   for (; rounds < MAX_ROUNDS; rounds++) {
     let sawText = false;
-    const onText = (t: string) => { sawText = true; wrote += t; ctx.wrote += t; gate.text(t); };
+    const onText = (t: string) => { sawText = true; wrote += t; gate.text(t); };
     const req = {
       model, max_tokens: 3000, system, messages: withCacheMark(convo),
       ...(tools.length ? { tools } : {}),

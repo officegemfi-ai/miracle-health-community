@@ -515,19 +515,34 @@ Deno.test('the auditor\'s card says each thing once', async () => {
   assertEquals(audit.findings.map((x: { level: string }) => x.level), ['info', 'caution']);
 });
 
-Deno.test('a shortlist waits until the answer has been explained in words', async () => {
+Deno.test('cards asked for before the answer is explained wait, and follow the words', async () => {
   const { f, calls } = fakeWorld({
     screen: NONE,
     rounds: [
       { tool: { name: 'present_shortlist', input: { title: 't', items: [{ id: 'creatine', role: 'r', why: 'w' }] } } },
-      { text: WORDS, tool: { name: 'present_shortlist', input: { title: 't', items: [{ id: 'creatine', role: 'r', why: 'w' }] } } },
-      { text: 'Done.' },
+      { tool: { name: 'clinician_questions', input: { questions: ['Is creatine right for me?'] } } },
+      { text: WORDS + '\n\nOne more thing.' },
     ],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'what helps strength?' }]), deps(f)));
   const second = calls.filter((c) => c.kind === 'guide')[1].body.messages as { content: { type: string; content?: string }[] }[];
-  assert(String(second[second.length - 1].content[0].content).startsWith('Not shown yet: first explain'));
-  assertEquals(ev.filter((e) => e.event === 'card' && e.data.type === 'shortlist').length, 1);
+  assert(String(second[second.length - 1].content[0].content).startsWith('The card will be shown right after your explanation'));
+  const order = ev.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text'));
+  assertEquals(order, ['text', 'text', 'shortlist', 'questions']);
+});
+
+Deno.test('cards asked for after the words go out where they were asked for', async () => {
+  const { f } = fakeWorld({
+    screen: NONE,
+    rounds: [
+      { text: WORDS, tool: { name: 'present_shortlist', input: { title: 't', items: [{ id: 'creatine', role: 'r', why: 'w' }] } } },
+      { text: 'Ask about these.', tool: { name: 'clinician_questions', input: { questions: ['Is creatine right for me?'] } } },
+      { text: 'Done.' },
+    ],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'what helps strength?' }]), deps(f)));
+  const order = ev.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text'));
+  assertEquals(order, ['text', 'shortlist', 'text', 'questions', 'text']);
 });
 
 Deno.test('tools are capped per turn', async () => {

@@ -22,6 +22,10 @@ import urllib.request
 URL = sys.argv[1]
 ORIGIN = 'http://127.0.0.1:4173'
 DOSE = re.compile(r'(?<![\w.])\d+(?:[.,]\d+)?\s?(?:mcg|µg|ug|mg|g|iu|units?|ml|cc)\b', re.I)
+# The guide's tools are its business, not the reader's
+TOOL_TALK = re.compile(r'present_shortlist|clinician_questions|audit_combination|find_options|read_fact_sheets|search_library'
+                       r'|(?:couldn.t|can.t|unable to|failed to) (?:get|show|display|load)[^.\n]{0,40}\bcard'
+                       r'|\bcard (?:didn.t|wouldn.t|won.t|couldn.t|failed to) (?:show|display|load|appear)', re.I)
 
 
 def ask(text):
@@ -122,6 +126,12 @@ for n, (title, q) in enumerate(questions, 1):
         failures.append(f'{title}: the answer is too short ({len(text)} characters)')
     if n == 1 and not any(s.startswith('recommender:') for s in steps):
         failures.append(f'{title}: the Recommender never looked anything up')
+    # Words first: the explanation comes before any shortlist or questions card
+    first = next((i for i, (e, d) in enumerate(ev) if e == 'card' and d.get('type') in ('shortlist', 'questions')), None)
+    if first is not None and not any(e == 'text' for e, _ in ev[:first]):
+        failures.append(f'{title}: a card came before any words')
+    if TOOL_TALK.search(text):
+        failures.append(f'{title}: the answer talks about its own tools: {TOOL_TALK.search(text).group(0)}')
     if n in (2, 4) and DOSE.search(text):
         failures.append(f'{title}: an amount reached the reader: {DOSE.search(text).group(0)}')
     if n == 5 and 'shortlist' in cards:
