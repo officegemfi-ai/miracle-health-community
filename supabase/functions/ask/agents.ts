@@ -206,6 +206,11 @@ export async function auditSet(
       .map((f) => (f.ids.some((i) => own.has(i))
         ? { ...f, note: `${f.note.replace(/[.\s]+$/, '')}. Don’t stop or change your medicine on your own; ask your prescriber.` }
         : f))
+      // Each thing once: one "good to know" per compound or pair, one finding per kind otherwise
+      .filter((f, i, all) => {
+        const key = (g: typeof f) => `${[...g.ids].sort().join('+')}|${g.level}|${g.level === 'info' ? '' : g.kind}`;
+        return all.findIndex((g) => key(g) === key(f)) === i;
+      })
       .slice(0, 8);
     return { findings, summary: cleanField(raw?.summary, 240), ok: !!raw };
   } catch (e) {

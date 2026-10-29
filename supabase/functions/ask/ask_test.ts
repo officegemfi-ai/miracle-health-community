@@ -497,6 +497,24 @@ Deno.test('the auditor never weighs the member\'s own prescriptions against each
   assert(audit.findings[0].note.endsWith('ask your prescriber.'));
 });
 
+Deno.test('the auditor\'s card says each thing once', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['creatine'], medications: ['sertraline'] },
+    audit: {
+      findings: [
+        { ids: ['creatine'], kind: 'interaction', level: 'info', note: 'No documented interaction with sertraline.' },
+        { ids: ['creatine'], kind: 'member', level: 'info', note: 'Sertraline is not among its listed interactions.' },
+        { ids: ['creatine'], kind: 'member', level: 'caution', note: 'Check kidney function first.' },
+      ],
+      summary: '',
+    },
+    rounds: [{ text: 'Ok.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Creatine? I take sertraline' }]), deps(f)));
+  const audit = ev.find((e) => e.event === 'card' && e.data.type === 'audit')!.data;
+  assertEquals(audit.findings.map((x: { level: string }) => x.level), ['info', 'caution']);
+});
+
 Deno.test('a shortlist waits until the answer has been explained in words', async () => {
   const { f, calls } = fakeWorld({
     screen: NONE,
