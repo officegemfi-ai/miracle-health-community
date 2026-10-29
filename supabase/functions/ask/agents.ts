@@ -420,6 +420,7 @@ type Ctx = {
   items: Item[]; byId: Map<string, Item>; snap: Snapshot; screen: Screen; st: Standing; ownMeds: Set<string>;
   sheets: Map<string, Sheet | null>; emit: Emit; deps: TurnDeps; gate: Gate; shortlistsOn: boolean;
   opened: Set<string>; stepN: number; memo: string[]; shortlists: number; questions: number; uses: Record<string, number>;
+  wrote: string;   // what the guide has written so far this turn
 };
 
 async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | null>> {
@@ -496,6 +497,11 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
     }
     case 'present_shortlist': {
       if (!ctx.shortlistsOn) return 'Not shown: shortlists are off for this turn (the Safety agent\'s flags). Don\'t suggest compounds; answer generally.';
+      // Words first: a shortlist adds to an explanation, it never stands in for one
+      if (ctx.wrote.trim().length < 200) {
+        ctx.uses[name]--;
+        return 'Not shown yet: first explain your answer in words in your reply (what the evidence shows, the US status, the risks, what matters for this member), then call present_shortlist again.';
+      }
       const pregnant = s.pregnant || ctx.st.pregnant;
       const raw = (Array.isArray(input.items) ? input.items : []) as Record<string, unknown>[];
       const seen = new Set<string>();
@@ -607,7 +613,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
     sheets: new Map(), emit, deps, gate, shortlistsOn: !held && !st.crisis && screen.ok,
-    opened: new Set(), stepN: 0, memo: [], shortlists: 0, questions: 0, uses: {},
+    opened: new Set(), stepN: 0, memo: [], shortlists: 0, questions: 0, uses: {}, wrote: '',
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
@@ -670,7 +676,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const usage = { in: 0, out: 0, cacheRead: 0, cacheWrite: 0 };
   for (; rounds < MAX_ROUNDS; rounds++) {
     let sawText = false;
-    const onText = (t: string) => { sawText = true; wrote += t; gate.text(t); };
+    const onText = (t: string) => { sawText = true; wrote += t; ctx.wrote += t; gate.text(t); };
     const req = {
       model, max_tokens: 3000, system, messages: withCacheMark(convo),
       ...(tools.length ? { tools } : {}),

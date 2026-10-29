@@ -119,6 +119,8 @@ function fakeWorld(script: Script) {
   return { f, calls };
 }
 
+// An explanation long enough to come before a shortlist
+const WORDS = 'The evidence in people is limited, and the status and risks matter for you. '.repeat(3);
 const NONE = { red_flag: 'none', compounds: [], goals: [], medications: [], conditions: [], pregnant: false, tested_athlete: false, asks_dose: false, asks_source: false, note: '' };
 
 function deps(f: typeof fetch, over: Partial<HttpDeps> = {}): HttpDeps {
@@ -315,7 +317,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
     screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'], medications: ['sertraline'] },
     audit: { findings: [{ ids: ['bpc157', 'creatine'], kind: 'additive', level: 'caution', note: 'Little is known about them together.' }], summary: 'One caution.' },
     rounds: [
-      { text: 'Here is what the Library says about [BPC-157](lib:bpc157). ', tool: { name: 'present_shortlist', input: { title: 'For tendon recovery', items: [{ id: 'creatine', role: 'Best-studied supplement', why: 'Strong evidence for strength; take 5 g daily' }, { id: 'bpc157', role: 'Research stage', why: 'Rodent data only' }, { id: 'mk677', role: 'x', why: 'y' }, { id: 'nope', role: 'x', why: 'y' }] } } },
+      { text: 'Here is what the Library says about [BPC-157](lib:bpc157). ' + WORDS, tool: { name: 'present_shortlist', input: { title: 'For tendon recovery', items: [{ id: 'creatine', role: 'Best-studied supplement', why: 'Strong evidence for strength; take 5 g daily' }, { id: 'bpc157', role: 'Research stage', why: 'Rodent data only' }, { id: 'mk677', role: 'x', why: 'y' }, { id: 'nope', role: 'x', why: 'y' }] } } },
       { tool: { name: 'clinician_questions', input: { questions: ['Is BPC-157 worth the unknowns for my tendon?', 'Where can I buy it?'] } } },
       { text: 'The auditor flagged one caution.' },
     ],
@@ -409,7 +411,7 @@ Deno.test('a card label the check flags is replaced, and a flagged question is d
     screen: { ...NONE, goals: ['muscle'] },
     review: (p) => ({ ok: !/twice|supplier/.test(p.text) }),
     rounds: [
-      { tool: { name: 'present_shortlist', input: { title: 'For strength', items: [{ id: 'creatine', role: 'Best-studied', why: 'Strong evidence; forums take it twice daily' }] } } },
+      { text: WORDS, tool: { name: 'present_shortlist', input: { title: 'For strength', items: [{ id: 'creatine', role: 'Best-studied', why: 'Strong evidence; forums take it twice daily' }] } } },
       { tool: { name: 'clinician_questions', input: { questions: ['Is creatine fine with my kidneys?', 'Is a supplier safer than a store?'] } } },
       { text: 'That is the list.' },
     ],
@@ -423,7 +425,7 @@ Deno.test('a card label the check flags is replaced, and a flagged question is d
 Deno.test('pregnancy: research peptides and hormones come off a shortlist; proven options go first', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, pregnant: true },
-    rounds: [{ tool: { name: 'present_shortlist', input: { title: 'Options', items: [{ id: 'bpc157', role: 'x', why: 'y' }, { id: 'testosterone', role: 'x', why: 'y' }, { id: 'creatine', role: 'x', why: 'y' }] } } }, { text: 'Done.' }],
+    rounds: [{ text: WORDS, tool: { name: 'present_shortlist', input: { title: 'Options', items: [{ id: 'bpc157', role: 'x', why: 'y' }, { id: 'testosterone', role: 'x', why: 'y' }, { id: 'creatine', role: 'x', why: 'y' }] } } }, { text: 'Done.' }],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: "I'm pregnant, what helps recovery?" }]), deps(f)));
   const short = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data;
@@ -434,7 +436,7 @@ Deno.test('pregnancy: research peptides and hormones come off a shortlist; prove
 Deno.test('research-stage options are labeled as such and listed last', async () => {
   const { f } = fakeWorld({
     screen: NONE,
-    rounds: [{ tool: { name: 'present_shortlist', input: { title: 'Peptides only', items: [{ id: 'bpc157', role: 'Top pick', why: 'y' }, { id: 'creatine', role: 'Supports training', why: 'y' }] } } }, { text: 'Done.' }],
+    rounds: [{ text: WORDS, tool: { name: 'present_shortlist', input: { title: 'Peptides only', items: [{ id: 'bpc157', role: 'Top pick', why: 'y' }, { id: 'creatine', role: 'Supports training', why: 'y' }] } } }, { text: 'Done.' }],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'top peptides for tendons' }]), deps(f)));
   const short = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data;
@@ -493,6 +495,21 @@ Deno.test('the auditor never weighs the member\'s own prescriptions against each
   const audit = ev.find((e) => e.event === 'card' && e.data.type === 'audit')!.data;
   assertEquals(audit.findings.length, 1);
   assert(audit.findings[0].note.endsWith('ask your prescriber.'));
+});
+
+Deno.test('a shortlist waits until the answer has been explained in words', async () => {
+  const { f, calls } = fakeWorld({
+    screen: NONE,
+    rounds: [
+      { tool: { name: 'present_shortlist', input: { title: 't', items: [{ id: 'creatine', role: 'r', why: 'w' }] } } },
+      { text: WORDS, tool: { name: 'present_shortlist', input: { title: 't', items: [{ id: 'creatine', role: 'r', why: 'w' }] } } },
+      { text: 'Done.' },
+    ],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'what helps strength?' }]), deps(f)));
+  const second = calls.filter((c) => c.kind === 'guide')[1].body.messages as { content: { type: string; content?: string }[] }[];
+  assert(String(second[second.length - 1].content[0].content).startsWith('Not shown yet: first explain'));
+  assertEquals(ev.filter((e) => e.event === 'card' && e.data.type === 'shortlist').length, 1);
 });
 
 Deno.test('tools are capped per turn', async () => {
