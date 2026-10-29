@@ -99,7 +99,7 @@ select is(public.ask_count('198.51.100.7')->>'left', '39', 'A different address 
 select tests.as_owner();
 select is((select count(*)::integer from private.ask_secrets), 1, 'Only today''s secret is kept; older ones are gone');
 select is((select count(*)::integer from private.ask_usage where slot < now() - interval '2 days'), 0, 'Counts older than two days are gone');
-select is((select count(*)::integer from private.ask_usage where bucket ~ '203|198\.51'), 0, 'No address is stored');
+select is((select count(*)::integer from private.ask_usage where bucket ~ '203\.0\.113|198\.51\.100'), 0, 'No address is stored');
 
 select * from finish();
 rollback;
