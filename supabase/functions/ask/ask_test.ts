@@ -570,6 +570,26 @@ Deno.test('the guide asks the member questions they can answer by tapping, never
   assert(done.memo.includes('questions for the member: Roughly how old are you?'));
 });
 
+Deno.test('questions for the member end the reply; asked too early, they wait for the words', async () => {
+  const later = { text: 'Something written after the questions.' };
+  const { f, calls } = fakeWorld({
+    screen: NONE,
+    rounds: [{ text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'Roughly how old are you?' }] } } }, later],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(f)));
+  assertEquals(calls.filter((c) => c.kind === 'guide').length, 1);
+  const order = ev.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text'));
+  assertEquals(order, ['text', 'intake']);
+  // Asked before any words: the guide writes them, then the card follows
+  const early = fakeWorld({
+    screen: NONE,
+    rounds: [{ tool: { name: 'ask_member', input: { questions: [{ q: 'Roughly how old are you?' }] } } }, { text: WORDS }, later],
+  });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(early.f)));
+  assertEquals(early.calls.filter((c) => c.kind === 'guide').length, 2);
+  assertEquals(ev2.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text')), ['text', 'intake']);
+});
+
 Deno.test('a question the check flags is dropped from the card', async () => {
   const { f } = fakeWorld({
     screen: NONE,

@@ -133,6 +133,10 @@ for n, (title, q) in enumerate(questions, 1):
     first = next((i for i, (e, d) in enumerate(ev) if e == 'card' and d.get('type') in ('shortlist', 'questions')), None)
     if first is not None and not any(e == 'text' for e, _ in ev[:first]):
         failures.append(f'{title}: a card came before any words')
+    # Questions for the member end the reply
+    seq = [d.get('type') if e == 'card' else 'text' for e, d in ev if e in ('text', 'card')]
+    if 'intake' in seq and seq[-1] != 'intake':
+        failures.append(f'{title}: something came after the questions for the member')
     if TOOL_TALK.search(text):
         failures.append(f'{title}: the answer talks about its own tools: {TOOL_TALK.search(text).group(0)}')
     if n in (2, 4) and DOSE.search(text):

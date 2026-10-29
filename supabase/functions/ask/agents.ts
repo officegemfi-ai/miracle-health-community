@@ -39,7 +39,7 @@ export type Audit = { findings: Finding[]; summary: string; ok: boolean };
 const MAX_ROUNDS = 6;
 const MAX_TOOLS_PER_ROUND = 6;
 const TOOL_LIMITS: Record<string, number> = {
-  find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2, ask_member: 1,
+  find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2, ask_member: 2,
 };
 // What Miracle AI never asks a member: who they are or how to reach them, amounts they take,
 // or where they get things
@@ -625,7 +625,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       });
       return ctx.gate.waiting
         ? 'The questions will be shown right after your words. If you have said what you need to, end your reply here.'
-        : 'Shown. End your reply here; their answers come back as their next message.';
+        : 'Shown. Your reply ends here; their answers come back as their next message.';
     }
   }
   return 'Unknown tool.';
@@ -769,6 +769,9 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       results.push({ type: 'tool_result', tool_use_id: String(u.id), content: out });
     }
     convo.push({ role: 'user', content: results });
+    // Questions for the member end the reply (once there are words before them): the answers
+    // come back as their next message, so nothing more is written after the card
+    if (ctx.asked && !gate.waiting) break;
   }
   if (!wrote.trim()) gate.trusted('I couldn’t put an answer together just now. Could you ask that again, maybe in other words?');
   if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'done', title: 'Answer written' });
