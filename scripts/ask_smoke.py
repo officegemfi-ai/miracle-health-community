@@ -79,7 +79,7 @@ def report(n, title, r):
     elif review.get('ok'):
         check = 'all cleared'
     else:
-        check = f"edited {review.get('edited')}, held back {review.get('held')}"
+        check = f"edited {review.get('edited')}, held back {review.get('held')}" + (f" (rules {', '.join(map(str, review['rules']))})" if review.get('rules') else '')
     # The order things arrived in: text (with its length) and cards
     outline, run = [], 0
     for e, d in ev:

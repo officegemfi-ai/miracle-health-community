@@ -306,6 +306,8 @@ export class Gate {
   released = '';
   cards = 0;
   checked = 0; edited = 0; held = 0; unchecked = 0;
+  // Which rules the check found broken, by number (no text): for tuning the guide
+  rules: number[] = [];
   wordsFirst = false;
   offered = 0;
   private words = 0;
@@ -418,6 +420,7 @@ export class Gate {
           const v = verdicts?.get(`t${i}`);
           if (!v) { this.unchecked++; continue; }            // couldn't be checked: held back
           this.checked++;
+          if (!v.ok) this.rules.push(...(v.broken?.length ? v.broken : [0]));
           if (v.ok) this.release(o.text);
           else if (v.revised && v.revised.trim()) { this.edited++; this.release(v.revised.trim()); }
           else this.held++;
@@ -427,7 +430,7 @@ export class Gate {
           for (const f of o.fields) {
             const v = verdicts?.get(`c${i}-${f.key}`);
             if (!v) missed++;
-            else { this.checked++; if (v.ok) ok.add(f.key); else this.edited++; }
+            else { this.checked++; if (v.ok) ok.add(f.key); else { this.edited++; this.rules.push(...(v.broken?.length ? v.broken : [0])); } }
           }
           // A card the check couldn't read isn't shown at all
           if (missed) { this.unchecked += missed; continue; }
@@ -466,7 +469,7 @@ export class Gate {
         out.set(v.id, {
           ok: v.ok === true,
           revised: typeof v.revised === 'string' ? v.revised.slice(0, 4000) : undefined,
-          broken: (Array.isArray(v.broken) ? v.broken : []).map(Number).filter((n) => n >= 1 && n <= 6),
+          broken: (Array.isArray(v.broken) ? v.broken : []).map(Number).filter((n) => n >= 1 && n <= 7),
         });
       }
       return out;
@@ -1049,7 +1052,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     ? `Every part checked before you saw it · ${[gate.edited ? `edited ${gate.edited}` : '', notShown ? `held back ${notShown}` : ''].filter(Boolean).join(' · ')}`
     : 'Every part checked before you saw it: no doses, no sellers';
   emit('step', { id: 'review', agent: 'review', status: 'done', title, fixed: !!(gate.edited || notShown) });
-  emit('review', { ok: !(gate.edited || notShown), edited: gate.edited, held: notShown });
+  emit('review', { ok: !(gate.edited || notShown), edited: gate.edited, held: notShown, rules: gate.rules.slice(0, 20) });
   if (ctx.shortlists || ctx.stacks || ctx.questions) {
     emit('step', { id: 'clinician', agent: 'clinician', status: 'pending', title: 'Not yet: take your packet to a clinician who knows you' });
   }

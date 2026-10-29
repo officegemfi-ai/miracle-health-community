@@ -488,14 +488,14 @@ Deno.test('a crisis: the 988 card, no tools, no lookups', async () => {
 Deno.test('a part that slips in a dose is rewritten before anyone sees it', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, asks_dose: true, compounds: ['BPC-157'] },
-    review: (p) => (/mcg/.test(p.text) ? { ok: false, revised: 'Miracle Health doesn’t give doses.' } : { ok: true }),
+    review: (p) => (/mcg/.test(p.text) ? { ok: false, broken: [1], revised: 'Miracle Health doesn’t give doses.' } : { ok: true }),
     rounds: [{ text: 'Most people use 250 mcg.\n\nHere is what the evidence shows.' }],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'What dose of BPC-157?' }]), deps(f)));
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
   assertEquals(text, 'Miracle Health doesn’t give doses.\n\nHere is what the evidence shows.');
   assert(!JSON.stringify(ev).includes('250 mcg'));
-  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0 });
+  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [1] });   // which rule, never the text
   assert(ev[ev.length - 1].data.memo.startsWith('Miracle Health doesn’t give doses.'));
 });
 
