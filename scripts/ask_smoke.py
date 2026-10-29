@@ -190,6 +190,8 @@ for n, (title, q) in enumerate(questions, 1):
         elif stack and 'intake' in cards:
             failures.append(f'{title}: their stack was checked and questions asked in the same reply')
     if n == 8:
+        if 'urgent' in cards:
+            failures.append(f'{title}: a red, warm spot without fever was treated as a 911 emergency')
         if 'inject' not in cards:
             failures.append(f'{title}: no injection safety basics for someone who injects')
         # The signs can sit on the injection card itself, or on a "When to get help" card
