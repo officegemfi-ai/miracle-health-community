@@ -7,7 +7,7 @@
 # It stays quiet until the test project is connected: deploy/test.env names the
 # project (SUPABASE_PROJECT_REF) and the repository has these secrets:
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY
-# The ask function (Miracle AI's chat on the website) is asked three real questions when it
+# The ask function (Miracle AI's chat on the website) is asked five real questions when it
 # changes (scripts/ask_smoke.py); its answers show on the run's summary page.
 # Optional: REVIEW_SECRET (otherwise one is made and kept in the project's Vault),
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (texts to real phones;
@@ -149,7 +149,7 @@ jobs:
         with:
           ref: ${{ needs.check.outputs.sha }}
           fetch-depth: 2
-      - name: Ask three questions (only when the chat changed, or when run by hand)
+      - name: Ask five questions (only when the chat changed, or when run by hand)
         env:
           URL: https://${{ needs.check.outputs.ref }}.supabase.co/functions/v1/ask
           BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}

@@ -76,5 +76,30 @@ update private.settings set value = 'off' where key = 'ask_enabled';
 select tests.as_role('service_role');
 select is(public.ask_take(tests.key('d')), '{"ok": false, "reason": "off"}'::jsonb, 'It can be paused');
 
+-- ---------------------------------------------------------------------------
+-- Keys made in the database, with a secret that changes every day
+-- ---------------------------------------------------------------------------
+select tests.as_owner();
+update private.settings set value = 'on' where key = 'ask_enabled';
+update private.settings set value = '100' where key = 'ask_per_visitor_10min';
+update private.settings set value = '40' where key = 'ask_per_visitor_day';
+update private.settings set value = '1000' where key = 'ask_per_day';
+-- An old day's secret and count, for today's first message to clear away
+delete from private.ask_secrets;
+insert into private.ask_secrets (day, secret) values ((now() at time zone 'utc')::date - 5, '\x00');
+insert into private.ask_usage (bucket, slot, n) values ('vd:' || tests.key('old'), now() - interval '5 days', 3);
+select tests.as_role('anon');
+select throws_ok($$ select public.ask_count('203.0.113.9') $$, '42501', null, 'Visitors can''t call the address counter');
+select tests.as_role('authenticated');
+select throws_ok($$ select public.ask_count('203.0.113.9') $$, '42501', null, 'and neither can members');
+select tests.as_role('service_role');
+select is(public.ask_count('203.0.113.9')->>'left', '39', 'The ask function counts by address');
+select is(public.ask_count('203.0.113.9')->>'left', '38', 'The same address is the same visitor today');
+select is(public.ask_count('198.51.100.7')->>'left', '39', 'A different address is a different visitor');
+select tests.as_owner();
+select is((select count(*)::integer from private.ask_secrets), 1, 'Only today''s secret is kept; older ones are gone');
+select is((select count(*)::integer from private.ask_usage where slot < now() - interval '2 days'), 0, 'Counts older than two days are gone');
+select is((select count(*)::integer from private.ask_usage where bucket ~ '203|198\.51'), 0, 'No address is stored');
+
 select * from finish();
 rollback;

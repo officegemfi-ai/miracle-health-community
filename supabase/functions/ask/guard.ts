@@ -1,19 +1,27 @@
-// Plain checks on what Miracle AI writes, before and alongside the Safety agent's final read:
-// amounts with units (a dose by another name), links that aren't ours and sales talk.
-// They never decide alone whether a reply is fine; they tell the final check where to look,
-// and if that check can't run, they cut the matching words out.
+// Plain checks on what Miracle AI writes. The Safety agent reads every part of a reply before
+// it's shown (agents.ts, the gate); these run as well, on everything that goes out:
+//   - amounts in dosing units are always taken out, whatever the agent said, since Miracle
+//     Health gives no doses (body-weight changes like "lost 8.4 kg" and lab units like
+//     mg/dL stay);
+//   - supplement-extract brand names, outside links and sales talk are taken out.
+// They also give the Safety agent hints, and catch signs of crisis or of a minor in the
+// member's words in case the Safety agent's first read can't run.
 
-const UNIT = String.raw`(?:mcg|µg|μg|ug|mg|g|grams?|milligrams?|micrograms?|kg|iu|i\.u\.|units?|ml|mL|cc|ccs|drops?|capsules?|caps|tablets?|pills?|scoops?|sprays?|clicks?|pumps?)`;
-const NUM = String.raw`\d+(?:[.,]\d+)?(?:\s?(?:-|–|to)\s?\d+(?:[.,]\d+)?)?`;
-// "250 mcg", "2.5mg", "1,000 IU", "5-10 g", "0.25 mg/kg"
-export const DOSE = new RegExp(String.raw`(?<![\w.])${NUM}\s?${UNIT}(?:\s?\/\s?(?:kg|day|d|week|wk|dose))?(?![\w])`, 'gi');
-// "twice a day", "once weekly", "every other day", "5 days on, 2 off"
-export const SCHEDULE = new RegExp(String.raw`\b(?:once|twice|three times|\d+\s?x)\s+(?:a|per|each)\s+(?:day|week|night|morning)\b|\bevery\s+(?:other\s+)?(?:day|night|morning|\d+\s+(?:hours|days))\b|\b\d+\s+(?:days?|weeks?)\s+on\b`, 'gi');
+const DOSE_UNIT = String.raw`(?:mcg|µg|μg|ug|mg|g|grams?|milligrams?|micrograms?|microgramos?|miligramos?|gramos?|iu|ui|i\.u\.|units?|unidades|ml|mL|cc|ccs|milliliters?|millilitres?|drops?|capsules?|caps|tablets?|pills?|scoops?|sprays?|clicks?|ticks?|pumps?|vials?)`;
+const NUM = String.raw`\d+(?:[.,]\d+)*(?:\s?(?:-|–|to|a)\s?\d+(?:[.,]\d+)*)?`;
+// "250 mcg", "2.5mg", "1,000 IU", "5-10 g", "0.25 mg/kg", "1.6 g per kg"; not "160 mg/dL"
+export const DOSE = new RegExp(String.raw`(?<![\w.])${NUM}\s?${DOSE_UNIT}(?:\s?(?:\/|per)\s?(?:kg|lb|pound|day|d|week|wk|dose|injection))?(?!\s*\/\s*d?l\b)(?![\w])`, 'gi');
+// "two hundred fifty micrograms", "half a milligram"
+export const DOSE_WORDS = /\b(?:(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|sixty|hundred|thousand|half|quarter|couple of|few)[\s-]+)+(?:an?\s+|of\s+an?\s+)?(?:micrograms?|milligrams?|mcg|mg|units?|milliliters?|ml|cc|iu|capsules?|tablets?|drops?|scoops?|clicks?|ticks?)\b/gi;
+// "twice a day", "once weekly", "2x/day", "every other day", "5 days on, 2 off"
+export const SCHEDULE = new RegExp(String.raw`\b(?:once|twice|three times|\d+\s?x)\s+(?:a|per|each)\s+(?:day|week|night|morning)\b|\b\d+\s?x\s?\/\s?(?:day|d|week|wk)\b|\bevery\s+(?:other\s+)?(?:day|night|morning|\d+\s+(?:hours|days))\b|\b\d+\s+(?:days?|weeks?)\s+on\b`, 'gi');
 // Links to anywhere but our own sites
 export const LINK = /\bhttps?:\/\/(?!(?:www\.)?miraclehealth\.us\b|community\.miraclehealth\.us\b)[^\s)\]]+/gi;
 export const SALES = /\b(?:discount|coupon|promo|affiliate)\s+codes?\b|\buse\s+code\b|\b(?:buy|order|get)\s+(?:it|them|some)\s+(?:from|at|on)\b|\bresearch[- ]chemical\s+(?:sites?|vendors?|shops?|stores?|suppliers?)\b/gi;
+// Supplement-extract brands the Library never prints (the same list as the site's library build)
+export const BRANDS = /\b(?:KSM-?66|Sensoril|Bacognize|Synapsa|GlucoVantage|CarnoSyn|5-?Loxin|Rejuvant|Cognizin|Meriva|Longvida|BCM-?95|LMNT|Liquid\s?I\.?V\.?|Testofen|PharmaGABA|Iodoral|Suntheanine|Magtein|Relora|Ovasitol|Tru\s?Niagen|Niagen|Levagen|Florastor|Affron|PrimaVie|SpermidineLIFE|Avmacol|TeaCrine|LJ100|Mitopure|Pepzingi)\b/gi;
 
-export type Hit = { kind: 'dose' | 'schedule' | 'link' | 'sales'; text: string };
+export type Hit = { kind: 'dose' | 'schedule' | 'link' | 'sales' | 'brand'; text: string };
 
 export function scan(text: string): Hit[] {
   const hits: Hit[] = [];
@@ -21,19 +29,26 @@ export function scan(text: string): Hit[] {
     for (const m of String(text ?? '').matchAll(re)) hits.push({ kind, text: m[0] });
   };
   add('dose', DOSE);
+  add('dose', DOSE_WORDS);
   add('schedule', SCHEDULE);
   add('link', LINK);
   add('sales', SALES);
+  add('brand', BRANDS);
   return hits;
 }
 
-// Last resort when the final check can't run: take out what the plain checks found
-export function redact(text: string): string {
+// Always, on everything that goes out: amounts, brands, outside links and sales talk go
+export function strict(text: string): string {
   return String(text ?? '')
     .replace(DOSE, '[amount removed]')
-    .replace(SCHEDULE, '[schedule removed]')
+    .replace(DOSE_WORDS, '[amount removed]')
     .replace(LINK, '[link removed]')
-    .replace(SALES, '[removed]');
+    .replace(SALES, '[removed]')
+    .replace(BRANDS, 'a branded extract');
+}
+// And schedules too, where there is no Safety agent to judge them
+export function redact(text: string): string {
+  return strict(text).replace(SCHEDULE, '[schedule removed]');
 }
 
 // Words for a card field: no amounts, no schedules, no outside links, no markup, kept short
@@ -43,6 +58,9 @@ export function cleanField(s: unknown, max: number): string {
   return r.length > max ? r.slice(0, max - 1).replace(/\s+\S*$/, '') + '…' : r;
 }
 
-// Signs that someone may be in crisis, as a backstop to the Safety agent
-export const CRISIS = /\b(?:kill(?:ing)?\s+my\s?self|suicid\w*|end(?:ing)?\s+my\s+(?:own\s+)?life|end(?:ing)?\s+it\s+all|want(?:ing)?\s+to\s+die|don'?t\s+want\s+to\s+(?:live|be\s+alive|wake\s+up)|self[- ]?harm\w*|cut(?:ting)?\s+myself|overdos(?:e|ing)\s+on\s+purpose)\b/i;
-export const URGENT = /\b(?:chest pain|can'?t breathe|cannot breathe|trouble breathing|short(?:ness)? of breath|face (?:is )?drooping|slurred speech|passed out|fainted|seizure|anaphyla\w*|throat (?:is )?(?:closing|swelling)|overdos(?:e|ed))\b/i;
+// Signs that someone may be in crisis, as a backstop to the Safety agent (which reads slang,
+// indirect wording and other languages too)
+export const CRISIS = /\b(?:kill(?:ing)?\s+my\s?self|kms|suicid\w*|end(?:ing)?\s+my\s+(?:own\s+)?life|end(?:ing)?\s+it\s+all|want(?:ing)?\s+to\s+die|wish\s+i\s+(?:was|were)\s+dead|better\s+off\s+dead|no\s+reason\s+to\s+live|don'?t\s+want\s+to\s+(?:live|be\s+alive|wake\s+up|be\s+here)|(?:never|not)\s+wake\s+up|self[- ]?harm\w*|cut(?:ting)?\s+myself|overdos(?:e|ing)\s+on\s+purpose|(?:me\s+)?quiero\s+morir|suicidarme|matarme)\b/i;
+export const URGENT = /\b(?:chest pain|can'?t breathe|cannot breathe|trouble breathing|short(?:ness)? of breath|face (?:is )?drooping|slurred speech|passed out|fainted|seizure|anaphyla\w*|throat (?:is )?(?:closing|swelling)|overdos(?:e|ed)|took (?:way )?too much|can'?t stop (?:vomiting|throwing up))\b/i;
+// "I'm 16", "15 years old", "in high school" (not "I'm 15 years into lifting" or "I'm 12% body fat")
+export const MINOR = /\b(?:i'?m|i\s+am|im)\s+(?:only\s+|just\s+)?(?:1[0-7])\b(?!\s*(?:%|percent|kg|kilos?|lbs?|pounds?|weeks?|days?|months?|years?(?!\s*old)|hours?|cm|inches|in\b|ft|feet|mg|mcg|g\b|stone|reps?|sets?))|\b(?:1[0-7])\s*(?:yo|y\/o|years?\s*old|yrs?\s*old)\b|\b(?:in|at)\s+(?:middle|high)\s+school\b|\b(?:9th|10th|11th|12th)\s+grade\b|\bmy\s+(?:mom|dad|parents?)\s+(?:won'?t|don'?t|wont|dont)\s+let\s+me\b/i;

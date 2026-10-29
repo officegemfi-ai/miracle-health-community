@@ -50,18 +50,23 @@ through five agents, and the page shows each step as it happens:
    conditions: overlapping mechanisms, additive risks, interactions.
 4. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
    safety-risk list is never on it, and the auditor checks every shortlist.
-5. **Safety agent, final check**: plain checks for amounts, schedules and outside links, then
-   Claude reads the reply against the rules and rewrites it before it stands if needed.
+5. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
+   its cards, is read by Claude (Haiku) against the rules and released only once it's cleared,
+   rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
+   dosing units, supplement-extract brands and outside links are always taken out as well.
    Clinician review is always pending: nothing here is a plan until a clinician reviews it.
 
-No doses, no sellers, no diagnosis, ever. The page keeps the conversation in the visitor's
-own browser tab; this function stores no messages and logs only timings and token counts.
-To keep the free chat from being run up, the database counts messages per visitor (a daily
-HMAC of their address, never the address) and for the whole site: 8 per ten minutes, 40 a day,
-1,500 a day in all (`private.settings`, keys `ask_*`; set `ask_enabled` to `off` to pause it).
+No doses, no sellers, no diagnosis, ever. Flags that matter for the rest of a chat (under 18,
+pregnancy, an earlier crisis) carry over through Miracle AI's own replies, which the page sends
+back signed, so nobody can put words in its mouth. The page keeps the conversation in the
+visitor's own browser tab; this function stores no messages and logs only timings and token
+counts. To keep the free chat from being run up, the database counts messages per visitor
+(an HMAC of their address, or its /64 for IPv6, with a random secret that changes daily and is
+deleted after two days; never the address) and for the whole site: 8 per ten minutes, 40 a day,
+1,000 a day in all (`private.settings`, keys `ask_*`; set `ask_enabled` to `off` to pause it).
 Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAST_MODEL`,
 `ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
-project three real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
+project five real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
 ## Run it on your machine (no Docker needed)
 ```

@@ -2,15 +2,17 @@
 // The page sends the conversation it keeps in the visitor's own browser; this function runs
 // the agents (see agents.ts) and streams their steps and the answer back as server-sent
 // events. Nothing the visitor writes is stored or logged here. The only thing kept is a
-// count per visitor per day, under a key made from their network address with a secret
-// that changes daily, so the free chat can't be run up (see migration 20261030000100).
+// count per visitor per day, under a key the database makes from their network address with
+// a random secret that changes daily and is thrown away after two days, so the free chat
+// can't be run up (migrations 20261030000100 and 20261030000300).
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 import { type ChatMessage, type Models, runTurn } from './agents.ts';
 import { createLibrary, type Library } from './library.ts';
 
-export const LIMITS = { messages: 24, userChars: 2000, assistantChars: 6000, totalChars: 60000, bodyBytes: 200_000 };
+export const LIMITS = { messages: 24, userChars: 2000, assistantChars: 6000, totalChars: 24000, bodyBytes: 200_000 };
 
 export type Quota = { ok: boolean; reason?: string; left?: number };
+export type InMessage = ChatMessage & { sig?: string };
 export type HttpDeps = {
   origins: string[];
   apiKey: string;
@@ -18,10 +20,9 @@ export type HttpDeps = {
   effort?: string;
   library: Library;
   salt: string;
-  quota: (visitor: string) => Promise<Quota>;
+  quota: (address: string) => Promise<Quota>;
   fetchImpl?: typeof fetch;
   log?: (line: Record<string, unknown>) => void;
-  now?: () => Date;
 };
 
 export function corsHeaders(req: Request, origins: string[]): Record<string, string> {
@@ -46,27 +47,35 @@ const MESSAGES: Record<string, [number, string]> = {
   unavailable: [503, 'Miracle AI is resting for a moment. Please try again shortly.'],
 };
 
+export const cleanText = (s: string) => s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\r\n?/g, '\n').trim();
+
 // The conversation as the page sent it, tidied: roles alternate, it starts and ends with the
 // member, no control characters, nothing too long
-export function readConversation(body: unknown): { messages: ChatMessage[] } | { error: string; status: number } {
+export function readConversation(body: unknown): { messages: InMessage[] } | { error: string; status: number } {
   const raw = (body as { messages?: unknown })?.messages;
   if (!Array.isArray(raw) || !raw.length) return { error: 'Send the conversation as messages.', status: 400 };
-  const clean = (s: string) => s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\r\n?/g, '\n').trim();
-  const out: ChatMessage[] = [];
+  // The newest message, as it was sent, is the one that has to fit
+  const newest = [...raw].reverse().find((m) => (m as { role?: unknown })?.role === 'user' && typeof (m as { content?: unknown })?.content === 'string') as { content: string } | undefined;
+  if (newest && cleanText(newest.content).length > LIMITS.userChars) {
+    return { error: `Keep a message under ${LIMITS.userChars.toLocaleString('en-US')} characters.`, status: 413 };
+  }
+  const out: InMessage[] = [];
   for (const m of raw.slice(-60)) {
     const role = (m as { role?: unknown })?.role;
     const content = (m as { content?: unknown })?.content;
+    const sig = (m as { sig?: unknown })?.sig;
     if ((role !== 'user' && role !== 'assistant') || typeof content !== 'string') continue;
-    const text = clean(content).slice(0, role === 'user' ? LIMITS.userChars * 2 : LIMITS.assistantChars);
+    const text = cleanText(content).slice(0, role === 'user' ? LIMITS.userChars * 2 : LIMITS.assistantChars);
     if (!text) continue;
     const prev = out[out.length - 1];
-    if (prev && prev.role === role) prev.content = `${prev.content}\n\n${text}`.slice(0, role === 'user' ? LIMITS.userChars * 2 : LIMITS.assistantChars);
-    else out.push({ role, content: text });
+    if (prev && prev.role === role) {
+      // A question that went unanswered (an error, a limit) is kept short ahead of the next one
+      prev.content = role === 'user' ? `${prev.content.slice(0, 600)}\n\n${text}`.slice(0, 3000) : `${prev.content}\n\n${text}`.slice(0, LIMITS.assistantChars);
+      delete prev.sig;   // two replies run together are no longer the reply that was signed
+    } else out.push(role === 'assistant' && typeof sig === 'string' ? { role, content: text, sig: sig.slice(0, 80) } : { role, content: text });
   }
   while (out.length && out[0].role !== 'user') out.shift();
   if (!out.length || out[out.length - 1].role !== 'user') return { error: 'The last message should be yours.', status: 400 };
-  const last = out[out.length - 1];
-  if (last.content.length > LIMITS.userChars) return { error: `Keep a message under ${LIMITS.userChars.toLocaleString('en-US')} characters.`, status: 413 };
   let kept = out.slice(-LIMITS.messages);
   while (kept[0]?.role !== 'user') kept = kept.slice(1);
   let total = kept.reduce((n, m) => n + m.content.length, 0);
@@ -77,15 +86,43 @@ export function readConversation(body: unknown): { messages: ChatMessage[] } | {
   return { messages: kept };
 }
 
-// A visitor's key for today: their address, signed with a secret and the date, so it can't
-// be turned back into the address or matched across days
-export async function visitorKey(req: Request, salt: string, day: string): Promise<string> {
-  const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-real-ip') ??
-    (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim();
+// Miracle AI's own replies come back from the page with a signature, so a page (or anyone
+// calling directly) can't put words in its mouth: an unsigned or altered reply is replaced
+const hmac = async (key: string, data: string) => {
   const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', enc.encode(`ask-v1:${salt}`), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${day}|${ip || 'unknown'}`));
-  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return [...new Uint8Array(await crypto.subtle.sign('HMAC', k, enc.encode(data)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+};
+export const signReply = async (salt: string, text: string) => (await hmac(`ask-reply-v1:${salt}`, text)).slice(0, 40);
+export const NOT_SHOWN = '[An earlier reply from Miracle AI that can’t be shown here.]';
+export async function checkReplies(messages: InMessage[], salt: string): Promise<ChatMessage[]> {
+  const out: ChatMessage[] = [];
+  for (const m of messages) {
+    if (m.role === 'assistant' && (!m.sig || m.sig !== await signReply(salt, m.content))) out.push({ role: 'assistant', content: NOT_SHOWN });
+    else out.push({ role: m.role, content: m.content });
+  }
+  return out;
+}
+
+// Who's asking, for the counts: the address Cloudflare (in front of Supabase) saw, which
+// visitors can't change; failing that, the last address the proxies added to
+// x-forwarded-for, after anything a visitor wrote in themselves. An IPv6 address counts as its
+// /64 network, since one household gets a whole /64 to choose from.
+export function clientAddress(req: Request): string {
+  const ip = (req.headers.get('cf-connecting-ip') ??
+    (req.headers.get('x-forwarded-for') ?? '').split(',').map((x) => x.trim()).filter(Boolean).pop() ??
+    req.headers.get('x-real-ip') ?? '').trim().slice(0, 80);
+  return ip.includes(':') ? v6net(ip) : ip;
+}
+export function v6net(ip: string): string {
+  const a = ip.replace(/^\[|\]$/g, '').split('%')[0].toLowerCase();
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(a);
+  if (mapped) return mapped[1];
+  const [head, tail] = a.split('::');
+  const h = head ? head.split(':') : [];
+  const t = tail === undefined ? [] : tail ? tail.split(':') : [];
+  const groups = tail === undefined ? h : [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill('0'), ...t];
+  return `${groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '') || '0').join(':')}::/64`;
 }
 
 export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
@@ -101,12 +138,11 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
   try { body = JSON.parse(raw); } catch { return json({ error: 'Bad request.' }, 400, cors); }
   const conv = readConversation(body);
   if ('error' in conv) return json({ error: conv.error }, conv.status, cors);
+  const messages = await checkReplies(conv.messages, deps.salt);
 
-  const now = deps.now ? deps.now() : new Date();
-  const day = now.toISOString().slice(0, 10);
   let q: Quota;
   try {
-    q = await deps.quota(await visitorKey(req, deps.salt, day));
+    q = await deps.quota(clientAddress(req));
   } catch {
     q = { ok: false, reason: 'unavailable' };
   }
@@ -133,11 +169,12 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
       const t0 = Date.now();
       send('meta', { v: 1, left: q.left ?? null });
       try {
-        const { memo } = await runTurn(conv.messages, {
+        const { memo } = await runTurn(messages, {
           apiKey: deps.apiKey, models: deps.models, effort: deps.effort, library: deps.library,
           fetchImpl: deps.fetchImpl, signal: abort.signal, log: deps.log,
         }, send);
-        send('done', { memo, left: q.left ?? null, ms: Date.now() - t0 });
+        const reply = cleanText(memo).slice(0, LIMITS.assistantChars);
+        send('done', { memo: reply, sig: await signReply(deps.salt, reply), left: q.left ?? null, ms: Date.now() - t0 });
       } catch (e) {
         if (!cancelled) {
           const busy = (e as { retryable?: boolean })?.retryable;
@@ -190,8 +227,8 @@ if (import.meta.main) {
       snapshotUrl: Deno.env.get('SNAPSHOT_URL') || 'https://community.miraclehealth.us/snapshot.json',
     }),
     salt: service,
-    quota: async (visitor) => {
-      const { data, error } = await db.rpc('ask_take', { visitor });
+    quota: async (address) => {
+      const { data, error } = await db.rpc('ask_count', { address });
       if (error || !data) return { ok: false, reason: 'unavailable' };
       return data as Quota;
     },
