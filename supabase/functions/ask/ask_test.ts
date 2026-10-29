@@ -1,7 +1,8 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet } from './library.ts';
-import { cleanField, CRISIS, redact, scan } from './guard.ts';
+import { cleanField, CRISIS, MINOR, redact, scan } from './guard.ts';
+import { warningCard } from './urgency.ts';
 import { benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor, useOf } from './agents.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
@@ -56,7 +57,7 @@ function libFetch(): typeof fetch {
 // ---------------------------------------------------------------------------
 // A pretend Claude: forms answer with a tool call, the guide streams scripted rounds
 // ---------------------------------------------------------------------------
-type Round = { text?: string; tool?: { name: string; input: unknown }; stop?: string };
+type Round = { text?: string; tool?: { name: string; input: unknown }; tools?: { name: string; input: unknown }[]; stop?: string };
 function sseBody(round: Round): string {
   const ev = (o: unknown) => `event: x\ndata: ${JSON.stringify(o)}\n\n`;
   let s = ev({ type: 'message_start', message: { usage: { input_tokens: 10, cache_read_input_tokens: 5 } } });
@@ -71,14 +72,15 @@ function sseBody(round: Round): string {
     s += ev({ type: 'content_block_stop', index: i });
     i++;
   }
-  if (round.tool) {
-    const js = JSON.stringify(round.tool.input);
-    s += ev({ type: 'content_block_start', index: i, content_block: { type: 'tool_use', id: `tu${i}`, name: round.tool.name, input: {} } });
+  for (const tool of [...(round.tool ? [round.tool] : []), ...(round.tools ?? [])]) {
+    const js = JSON.stringify(tool.input);
+    s += ev({ type: 'content_block_start', index: i, content_block: { type: 'tool_use', id: `tu${i}`, name: tool.name, input: {} } });
     s += ev({ type: 'content_block_delta', index: i, delta: { type: 'input_json_delta', partial_json: js.slice(0, 9) } });
     s += ev({ type: 'content_block_delta', index: i, delta: { type: 'input_json_delta', partial_json: js.slice(9) } });
     s += ev({ type: 'content_block_stop', index: i });
+    i++;
   }
-  s += ev({ type: 'message_delta', delta: { stop_reason: round.stop ?? (round.tool ? 'tool_use' : 'end_turn') }, usage: { output_tokens: 42 } });
+  s += ev({ type: 'message_delta', delta: { stop_reason: round.stop ?? (round.tool || round.tools?.length ? 'tool_use' : 'end_turn') }, usage: { output_tokens: 42 } });
   s += ev({ type: 'message_stop' });
   return s;
 }
@@ -287,7 +289,7 @@ Deno.test('what earlier turns established stays: under 18, pregnancy, crisis', (
     { role: 'user', content: 'hi' }, { role: 'assistant', content: 'Hello.\n[Safety: pregnancy]' },
     { role: 'user', content: 'what about magnesium?' },
   ]);
-  assertEquals(st, { minor: false, pregnant: true, crisis: false });
+  assertEquals(st, { minor: false, pregnant: true, crisis: false, injectShown: false });
   // Under 18 carries over through the Safety agent's mark on a signed reply
   assertEquals(standing([{ role: 'user', content: 'hi' }, { role: 'assistant', content: '[Safety: under 18]\nHello.' }, { role: 'user', content: 'best peptide for my knee?' }]).minor, true);
   // ...not from a pattern that is easily wrong
@@ -441,7 +443,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   assertEquals(g.length, 3);
   const sys = g[0].body.system as { text: string; cache_control?: unknown }[];
   assert(sys[0].cache_control && sys[1].text.includes('medicines they take, in their words: "sertraline"') && sys[1].text.includes('### BPC-157 (id bpc157)'));
-  assertEquals((g[0].body.tools as unknown[]).length, 7);
+  assertEquals((g[0].body.tools as unknown[]).length, 8);
   assertEquals(g[0].body.output_config, { effort: 'low' });
   const round2 = g[1].body.messages as { role: string; content: { type: string; signature?: string; cache_control?: unknown }[] }[];
   assertEquals(round2[1].content[0], { type: 'thinking', thinking: '', signature: 'sig123' });        // sent back unchanged
@@ -553,7 +555,7 @@ Deno.test('research-stage options are labeled as such and listed last', async ()
 Deno.test('an under-18 member gets general help: no tools, no shortlist', async () => {
   const { f, calls } = fakeWorld({ screen: { ...NONE, red_flag: 'minor' }, rounds: [{ text: 'Sleep, food and training come first.' }] });
   const ev = await events(await handle(ask([{ role: 'user', content: "I'm 16 and want to bulk. Best peptide?" }]), deps(f)));
-  assertEquals((calls.find((c) => c.kind === 'guide')!.body.tools as { name: string }[]).map((t) => t.name), ['clinician_questions']);
+  assertEquals((calls.find((c) => c.kind === 'guide')!.body.tools as { name: string }[]).map((t) => t.name), ['clinician_questions', 'warning_signs']);
   assert(ev.some((e) => e.event === 'step' && e.data.id === 'safety' && /Under 18/.test(e.data.title)));
   assert(ev[ev.length - 1].data.memo.includes('[Safety: under 18]'));
 });
@@ -561,7 +563,130 @@ Deno.test('an under-18 member gets general help: no tools, no shortlist', async 
 Deno.test('without the Safety agent, the plain under-18 check holds the turn', async () => {
   const { f, calls } = fakeWorld({ screen: null, rounds: [{ text: 'Sleep, food and training come first.' }] });
   await events(await handle(ask([{ role: 'user', content: "I'm 16 and want to bulk. Best peptide?" }]), deps(f)));
-  assertEquals((calls.find((c) => c.kind === 'guide')!.body.tools as { name: string }[]).map((t) => t.name), ['clinician_questions']);
+  assertEquals((calls.find((c) => c.kind === 'guide')!.body.tools as { name: string }[]).map((t) => t.name), ['clinician_questions', 'warning_signs']);
+  // "Under 18" tapped as an age answer counts too; talk about children doesn't
+  assert(MINOR.test('Roughly how old are you? Under 18'));
+  assert(!MINOR.test('Is creatine safe for kids under 18?'));
+});
+
+// ---------------------------------------------------------------------------
+// When to get help, injection basics, never studied together, ask or answer
+// ---------------------------------------------------------------------------
+Deno.test('warning signs come from the table, at its levels, most urgent first, ahead of the other cards', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'] },
+    rounds: [
+      { text: 'Short version: rest it and get it checked. ' + WORDS, tools: [
+        { name: 'present_shortlist', input: { items: [{ id: 'creatine', role: 'Supports training', why: 'Strength' }] } },
+        { name: 'warning_signs', input: { ids: ['injury_swelling', 'nope', 'chest_pain', 'joint_pain', 'tendon_rupture'] } },
+      ] },
+      { text: 'Ask your clinician about a loading program.' },
+    ],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'My Achilles hurts. I take BPC-157 and creatine.' }]), deps(f)));
+  const cards = ev.filter((e) => e.event === 'card').map((e) => e.data);
+  const warn = cards.find((c) => c.type === 'warn')!;
+  assertEquals(warn.groups.map((g: { level: string; signs: string[] }) => `${g.level}:${g.signs.length}`), ['now:1', 'today:2', 'week:1']);   // unknown ids dropped
+  assertEquals(warn.groups[0].label, 'Call 911 now');
+  assert(/not yet reviewed by a clinician/.test(warn.note));
+  // Ahead of the stack card and the shortlist, though it was asked for last
+  const at = (t: string, k?: string) => ev.findIndex((e) => e.event === 'card' && e.data.type === t && (!k || e.data.kind === k));
+  const atShort = ev.findIndex((e) => e.event === 'card' && e.data.type === 'shortlist' && e.data.kind !== 'yours');
+  assert(at('warn') >= 0 && at('warn') < at('shortlist', 'yours') && at('warn') < atShort);
+  assert(ev.findIndex((e) => e.event === 'text') < at('warn'));        // words first
+  assert(ev[ev.length - 1].data.memo.includes('when to get help: Call 911 now:'));
+  assertEquals(warningCard(['nope']), null);
+});
+
+Deno.test('someone who injects gets the safety basics once in a chat; not someone under 18', async () => {
+  const { f } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'], injects: true }, rounds: [{ text: 'Short version. ' + WORDS }] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I inject BPC-157 for my knee. Is it safe?' }]), deps(f)));
+  const inject = ev.filter((e) => e.event === 'card' && e.data.type === 'inject');
+  assertEquals(inject.length, 1);
+  assert(inject[0].data.points.some((p: string) => /never share/.test(p)));
+  assertEquals(inject[0].data.groups.map((g: { level: string }) => g.level), ['now', 'today']);
+  assert(ev.findIndex((e) => e.event === 'text') < ev.findIndex((e) => e.event === 'card' && e.data.type === 'inject'));
+  const done = ev[ev.length - 1].data;
+  assert(done.memo.startsWith('[Safety: injection basics shown]'));
+  // Later in the same chat: not again
+  const ev2 = await events(await handle(ask([
+    { role: 'user', content: 'I inject BPC-157 for my knee. Is it safe?' }, { role: 'assistant', content: done.memo, sig: done.sig },
+    { role: 'user', content: 'And TB-500, which I also inject?' },
+  ]), deps(f)));
+  assert(!ev2.some((e) => e.event === 'card' && e.data.type === 'inject'));
+  assert(ev2[ev2.length - 1].data.memo.includes('[Safety: injection basics shown]'));
+  // Under 18: no injection card (they're told to talk to a parent and a doctor)
+  const minor = fakeWorld({ screen: { ...NONE, red_flag: 'minor', injects: true }, rounds: [{ text: 'Please talk to a parent and a doctor.' }] });
+  const ev3 = await events(await handle(ask([{ role: 'user', content: "I'm 16 and I inject TB-500" }]), deps(minor.f)));
+  assert(!ev3.some((e) => e.event === 'card' && e.data.type === 'inject'));
+  // With warning signs in the same turn: the basics first, and no sign twice
+  const both = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'], injects: true }, rounds: [
+    { text: 'Short version: get that spot seen today. ' + WORDS, tool: { name: 'warning_signs', input: { ids: ['injection_site', 'fever', 'breathing'] } } },
+    { text: 'Keep the vial to show them.' },
+  ] });
+  const ev4 = await events(await handle(ask([{ role: 'user', content: 'I inject BPC-157 and the spot is red and warm' }]), deps(both.f)));
+  const safety = ev4.filter((e) => e.event === 'card' && (e.data.type === 'inject' || e.data.type === 'warn')).map((e) => e.data);
+  assertEquals(safety.map((c) => c.type), ['inject', 'warn']);
+  assertEquals(safety[1].groups.flatMap((g: { signs: string[] }) => g.signs).length, 1);          // only the sign not already shown
+  const only = fakeWorld({ screen: { ...NONE, injects: true }, rounds: [{ text: 'Short version. ' + WORDS, tool: { name: 'warning_signs', input: { ids: ['injection_site'] } } }, { text: 'More.' }] });
+  const ev5 = await events(await handle(ask([{ role: 'user', content: 'I inject TB-500; the spot is red' }]), deps(only.f)));
+  assert(!ev5.some((e) => e.event === 'card' && e.data.type === 'warn'));
+  // The plain check, when the Safety agent can't read the message
+  assertEquals(plainScreen('been pinning tb500 sub-q').injects, true);
+  assertEquals(plainScreen('my knee hurts').injects, false);
+});
+
+Deno.test('ask or answer, not both: no card of questions after a full answer', async () => {
+  const long = 'This is the full answer. '.repeat(40);
+  const { f } = fakeWorld({ screen: NONE, rounds: [
+    { text: long, tool: { name: 'ask_member', input: { questions: [{ q: 'How old are you?', options: ['18–29', '30–49'] }] } } },
+    { text: 'What have you tried so far?' },
+  ] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'What helps sleep?' }]), deps(f)));
+  assert(!ev.some((e) => e.event === 'card' && e.data.type === 'intake'));
+  assert(ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('').endsWith('What have you tried so far?'));
+  // A short opening, then questions: shown
+  const short = fakeWorld({ screen: NONE, rounds: [{ text: 'Sleep trouble wears you down. A few questions first, so this fits you. '.repeat(3), tool: { name: 'ask_member', input: { questions: [{ q: 'How old are you?', options: ['Under 18', '18–29'] }] } } }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'What helps sleep?' }]), deps(short.f)));
+  assert(ev2.some((e) => e.event === 'card' && e.data.type === 'intake'));
+});
+
+Deno.test('asking about their medicines first holds their stack until they have answered', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157', 'TB-500', 'creatine'] },
+    rounds: [{ text: 'Creatine is well studied; the two peptides are not, in people. Before I check them together, a few questions about you. '.repeat(2), tool: { name: 'ask_member', input: { questions: [{ q: 'Which medicines do you take?' }] } } }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(f)));
+  assert(ev.some((e) => e.event === 'card' && e.data.type === 'intake'));
+  assert(!ev.some((e) => e.event === 'card' && (e.data.kind === 'yours' || e.data.type === 'audit')));
+  assert(!ev.some((e) => e.event === 'step' && e.data.agent === 'builder'));
+  assertEquals(ev.filter((e) => e.event === 'step' && e.data.id === 'synergy').pop()!.data.title, 'Will check your stack with your answers');
+  assert(!ev[ev.length - 1].data.memo.includes('their stack'));
+  // When it answers without asking, the stack is laid out as before
+  const full = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157', 'TB-500', 'creatine'] }, rounds: [{ text: 'Short version. ' + WORDS }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(full.f)));
+  assert(ev2.some((e) => e.event === 'card' && e.data.kind === 'yours'));
+  assert(ev2.some((e) => e.event === 'step' && e.data.agent === 'builder' && /Laid out your stack of 3/.test(e.data.title)));
+});
+
+Deno.test('pairs never studied together are said once, as unknown, not as good to know', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157', 'TB-500', 'creatine'] },
+    audit: { findings: [
+      { ids: ['bpc157', 'tb500'], kind: 'additive', level: 'unknown', note: 'Never studied together.' },
+      { ids: ['bpc157', 'creatine'], kind: 'additive', level: 'unknown', note: 'Never studied together either.' },
+      { ids: ['tb500'], kind: 'member', level: 'caution', note: 'Little human data.' },
+    ], summary: 'Mostly unknown.' },
+    rounds: [{ text: 'Short version. ' + WORDS }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(f)));
+  const audit = ev.find((e) => e.event === 'card' && e.data.type === 'audit')!.data;
+  assertEquals(audit.findings.map((x: { level: string }) => x.level), ['unknown', 'caution']);
+  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'synergy' && e.data.status === 'done' && /never studied together/.test(e.data.title)));
+  // The stack card carries the medicines they mentioned, in their words
+  const meds = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157', 'creatine'], medications: ['sertraline'] }, rounds: [{ text: 'Short version. ' + WORDS }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'I take sertraline. BPC-157 with creatine?' }]), deps(meds.f)));
+  assertEquals(ev2.find((e) => e.event === 'card' && e.data.kind === 'yours')!.data.meds, ['sertraline']);
 });
 
 Deno.test('the gate never loses a part queued as the worker finishes, and a stop ends it quietly', async () => {

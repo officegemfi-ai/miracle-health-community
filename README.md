@@ -39,29 +39,39 @@ so the public library on miraclehealth.us can use the same drawings.
 ## Miracle AI's chat (`supabase/functions/ask`)
 Anyone can talk with Miracle AI on miraclehealth.us/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Each message goes
-through five agents, and the page shows each step as it happens:
+through four agents, and the page shows each step as it happens:
 
 1. **Safety agent** (Claude Haiku) reads the message first: emergencies (911), signs of crisis
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
 2. **Recommender** (Claude Sonnet, the voice of the chat) works from the public Library
    (`miraclehealth.us/library/data/index.json` and each fact sheet) and the Community Signal
    (`snapshot.json`), with tools to rank options for a goal, open fact sheets and search. It
-   talks like a caring clinician: when it doesn't yet know what would change its answer, it
-   first asks 2 to 4 questions, the way a clinician takes a history (age range, sex, medicines,
-   conditions, what they've tried), on a card the visitor answers by tapping or typing. It
-   never asks for names, contact details, birthdays, amounts taken or where things come from.
+   talks like a caring clinician, briefly: it asks or answers, never both. When it doesn't yet
+   know what would change its answer, it first asks 2 to 4 questions, the way a clinician takes
+   a history (age range, sex, medicines, conditions, what they've tried), on a card the visitor
+   answers by tapping or typing; past a full answer, it can only end with one question in prose.
+   It never asks for names, contact details, birthdays, amounts taken or where things come from.
+   Warning signs are never worded by the model: it picks them from a fixed table
+   (`urgency.ts`, drafted from public medical guidance, not yet reviewed by a clinician), and
+   the page shows each under its level: call 911 now, same day, or this week. Someone who
+   says they inject gets the safety basics once in a chat (adults only); questions about a
+   product's quality point to the Library's guide to reading a lab report.
 3. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
    conditions: overlapping mechanisms, additive risks, interactions.
 4. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
    safety-risk list is never on it, and the auditor checks every shortlist. When someone names
    compounds they take or weigh together, it also lays out "Your stack", with the auditor's check
-   on it (shown as it is, safety-risk items plainly marked rather than hidden).
+   on it (shown as it is, safety-risk items plainly marked rather than hidden). If the
+   Recommender asks about their medicines first, the stack waits for their answers. Pairs never
+   studied together are marked "unknown", not "good to know". The visitor can keep their stack
+   on their own device (never sent anywhere).
 5. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
    its cards, is read by Claude (Haiku) against the rules and released only once it's cleared,
    rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
    dosing units, supplement-extract brands and outside links are always taken out as well.
-   Clinician review is always pending: nothing here is a plan until a clinician reviews it. The
-   page builds a review packet the visitor takes to their own clinician (print or PDF, or a QR
+   Nothing here is a plan until the visitor's own clinician, outside Miracle Health, has
+   reviewed it (no one at Miracle Health reviews chats). The page builds a review packet the
+   visitor takes to their own clinician (print or PDF, or a QR
    code and link that carry the packet in the URL fragment to `miraclehealth.us/ai/packet/`, so
    no server ever receives it); after the visit they mark it reviewed, in their own browser.
 
@@ -73,9 +83,11 @@ counts. To keep the free chat from being run up, the database counts messages pe
 (an HMAC of their address, or its /64 for IPv6, with a random secret that changes daily and is
 deleted after two days; never the address) and for the whole site: 8 per ten minutes, 40 a day,
 1,000 a day in all (`private.settings`, keys `ask_*`; set `ask_enabled` to `off` to pause it).
+A limit or a pause never turns away someone in crisis or describing an emergency: they get a
+reply written in advance (988, or 911) with no AI call, and the message is still counted.
 Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAST_MODEL`,
 `ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
-project seven real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
+project eight real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
 ## Run it on your machine (no Docker needed)
 ```
