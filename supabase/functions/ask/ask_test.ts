@@ -590,6 +590,14 @@ Deno.test('questions for the member end the reply; asked too early, they wait fo
   assertEquals(ev2.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text')), ['text', 'intake']);
 });
 
+Deno.test('a long question ends at its question mark, not mid-sentence', async () => {
+  const long = 'Do you take any medicines or supplements, or have any health conditions (heart, thyroid, kidney, mental health, anemia, bleeding)? Also, are you pregnant, trying to conceive or breastfeeding right now?';
+  const { f } = fakeWorld({ screen: NONE, rounds: [{ text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: long }] } } }] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'more energy?' }]), deps(f)));
+  const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
+  assertEquals(card.questions[0].q, 'Do you take any medicines or supplements, or have any health conditions (heart, thyroid, kidney, mental health, anemia, bleeding)?');
+});
+
 Deno.test('a question the check flags is dropped from the card', async () => {
   const { f } = fakeWorld({
     screen: NONE,

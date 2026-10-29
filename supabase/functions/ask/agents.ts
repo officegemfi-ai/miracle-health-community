@@ -41,6 +41,14 @@ const MAX_TOOLS_PER_ROUND = 6;
 const TOOL_LIMITS: Record<string, number> = {
   find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2, ask_member: 2,
 };
+// A question as the member sees it: if it runs long, it ends at its last question mark rather
+// than mid-sentence
+function question(raw: unknown): string {
+  const t = cleanField(raw, 400);
+  if (t.length <= 160) return t;
+  const cut = t.lastIndexOf('?', 160);
+  return cut >= 40 ? t.slice(0, cut + 1) : cleanField(t, 160);
+}
 // What Miracle AI never asks a member: who they are or how to reach them, amounts they take,
 // or where they get things
 const NOT_TO_ASK = /\byour\s+(?:full\s+|first\s+|last\s+)?name\b|\be-?mail\b|\b(?:phone|cell)\s+number\b|\b(?:home|street|mailing)\s+address\b|\byour\s+address\b|\bzip\s*code\b|\bpostal\s+code\b|\bdate\s+of\s+birth\b|\bbirth\s?day\b|\bsocial\s+security\b|\binsurance\s+(?:id|number)\b|\bhow\s+(?:much|many)\b[^?]*\b(?:take|taking|use|using|inject|injecting|run|running)\b|\bdos(?:e|es|age|ing)\b|\bwhere\s+(?:do|did|would|will|can|could)\s+you\s+(?:get|buy|order|source)\b|\b(?:buy|purchase|vendor|seller|supplier|pharmac(?:y|ies))\b/i;
@@ -474,7 +482,7 @@ function auditCard(a: Audit, ctx: Ctx, forCard?: string) {
   const findings = a.findings.map((f) => ({ ...f, names: f.ids.map((i) => ctx.byId.get(i)?.name ?? i) }));
   ctx.gate.card(findings.map((f, i) => ({ key: `f${i}`, text: f.note })), (ok) => ({
     type: 'audit', ...(forCard ? { for: forCard } : {}), ok: a.ok, summary: '',
-    findings: findings.map((f, i) => (ok.has(`f${i}`) ? f : { ...f, note: 'A possible clash. Ask your clinician about this combination.' })),
+    findings: findings.map((f, i) => (ok.has(`f${i}`) ? f : { ...f, note: f.ids.length > 1 ? 'A possible clash. Ask your clinician about this combination.' : 'Worth raising with your clinician before you start it.' })),
   }));
 }
 
@@ -610,7 +618,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
     case 'ask_member': {
       const raw = (Array.isArray(input.questions) ? input.questions : []) as Record<string, unknown>[];
       const qs = raw.slice(0, 4).map((r) => ({
-        q: cleanField(r?.q, 140),
+        q: question(r?.q),
         options: [...new Set(strs(r?.options, 6, 80).map((o) => cleanField(o, 40)).filter(Boolean))],
         multi: r?.multi === true,
       })).filter((x) => x.q && !NOT_TO_ASK.test(x.q) && !x.options.some((o) => NOT_TO_ASK.test(o)));

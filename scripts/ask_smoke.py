@@ -88,7 +88,9 @@ def report(n, title, r):
     head = (f"{r['secs']:.1f}s · steps {', '.join(dict.fromkeys(steps))} · check {check}"
             f" · order: {', '.join(outline) or 'nothing'}")
     print(f'[{n}] {title}: {head}')
-    print(f'::notice title=Miracle AI {n}. {title}::{esc(head + chr(10) + chr(10) + final_text(ev)[:3500])}')
+    asked = [f"{q.get('q')} [{' | '.join(q.get('options') or [])}]" for e, d in ev if e == 'card' and d.get('type') == 'intake' for q in d.get('questions', [])]
+    tail = (chr(10) + chr(10) + 'Questions for the member: ' + ' / '.join(asked)) if asked else ''
+    print(f'::notice title=Miracle AI {n}. {title}::{esc(head + chr(10) + chr(10) + final_text(ev)[:3200] + tail)}')
     return steps, cards, review
 
 
