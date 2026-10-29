@@ -679,7 +679,7 @@ Deno.test('asking about their medicines first holds their stack until they have 
   assert(ev2.some((e) => e.event === 'step' && e.data.agent === 'builder' && /Laid out your stack of 3/.test(e.data.title)));
 });
 
-Deno.test('pairs never studied together are said once, as unknown, not as good to know', async () => {
+Deno.test('"never studied together" is no finding: the card says no known clashes instead', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, compounds: ['BPC-157', 'TB-500', 'creatine'] },
     audit: { findings: [
@@ -691,8 +691,8 @@ Deno.test('pairs never studied together are said once, as unknown, not as good t
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(f)));
   const audit = ev.find((e) => e.event === 'card' && e.data.type === 'audit')!.data;
-  assertEquals(audit.findings.map((x: { level: string }) => x.level), ['unknown', 'caution']);
-  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'synergy' && e.data.status === 'done' && /never studied together/.test(e.data.title)));
+  assertEquals(audit.findings.map((x: { level: string }) => x.level), ['caution']);
+  assert(!ev.some((e) => e.event === 'step' && /never studied/.test(String(e.data.title))));
   // The stack card carries the medicines they mentioned, in their words
   const meds = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157', 'creatine'], medications: ['sertraline'] }, rounds: [{ text: 'Short version. ' + WORDS }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'I take sertraline. BPC-157 with creatine?' }]), deps(meds.f)));

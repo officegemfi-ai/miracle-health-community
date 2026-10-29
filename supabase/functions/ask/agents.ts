@@ -35,7 +35,7 @@ export type Screen = {
   injects: boolean; // they inject something themselves, or are about to
   ok: boolean;     // false: the Safety agent couldn't run, so only the plain checks did
 };
-export type Finding = { ids: string[]; kind: string; level: 'avoid' | 'caution' | 'info' | 'unknown'; note: string };
+export type Finding = { ids: string[]; kind: string; level: 'avoid' | 'caution' | 'info'; note: string };
 export type Audit = { findings: Finding[]; summary: string; ok: boolean };
 
 const MAX_ROUNDS = 6;
@@ -237,10 +237,13 @@ export async function auditSet(
     const known = new Set(ids);
     const own = ctx.ownMeds ?? new Set<string>();
     const findings = (Array.isArray(raw?.findings) ? raw!.findings as Record<string, unknown>[] : [])
+      // "Never studied together" says nothing found: the card already says that when there's
+      // nothing to report, so it isn't a finding
+      .filter((f) => String(f.level) !== 'unknown')
       .map((f) => ({
         ids: strs(f.ids, 2, 40).filter((i) => known.has(i)),
         kind: ['overlap', 'additive', 'interaction', 'member'].includes(String(f.kind)) ? String(f.kind) : 'info',
-        level: (['avoid', 'caution', 'info', 'unknown'].includes(String(f.level)) ? f.level : 'info') as Finding['level'],
+        level: (['avoid', 'caution', 'info'].includes(String(f.level)) ? f.level : 'info') as Finding['level'],
         note: cleanField(f.note, 180),
       }))
       .filter((f) => f.ids.length && f.note)
@@ -254,8 +257,6 @@ export async function auditSet(
         const key = (g: typeof f) => `${[...g.ids].sort().join('+')}|${g.level}|${g.level === 'info' ? '' : g.kind}`;
         return all.findIndex((g) => key(g) === key(f)) === i;
       })
-      // "Never studied together" is said once for the set, not pair by pair
-      .filter((f, i, all) => f.level !== 'unknown' || all.findIndex((g) => g.level === 'unknown') === i)
       .slice(0, 8);
     return { findings, summary: cleanField(raw?.summary, 240), ok: !!raw };
   } catch (e) {
@@ -269,9 +270,8 @@ export function auditTitle(a: Audit, n: number): string {
   const pairs = (n * (n - 1)) / 2;
   const avoid = a.findings.filter((f) => f.level === 'avoid').length;
   const caution = a.findings.filter((f) => f.level === 'caution').length;
-  const unknown = a.findings.some((f) => f.level === 'unknown');
   const head = n > 1 ? `${pairs} pair${pairs === 1 ? '' : 's'} checked` : 'Checked against your medicines and conditions';
-  const tail = [avoid ? `${avoid} to avoid` : '', caution ? `${caution} caution${caution === 1 ? '' : 's'}` : '', unknown ? 'never studied together' : ''].filter(Boolean);
+  const tail = [avoid ? `${avoid} to avoid` : '', caution ? `${caution} caution${caution === 1 ? '' : 's'}` : ''].filter(Boolean);
   return tail.length ? `${head} · ${tail.join(' · ')}` : `${head} · no known clashes (absence of data, not a green light)`;
 }
 
@@ -584,7 +584,7 @@ export function cautionFor(item: Item, sheet: Sheet | null | undefined, pregnant
   else if (key === 'approved' && item.family !== 'Supplements') lines.push('A prescription medicine: whether it fits is your clinician’s call.');
   else if (key === 'investigational') lines.push('Not for use outside a clinical trial.');
   else if (key === 'compounded') lines.push('Not an FDA-approved product; only compounded under a prescription.');
-  else if (UNAPPROVED.has(key)) lines.push('Not an approved medicine: unregulated products vary in contents, purity and sterility.');
+  else if (UNAPPROVED.has(key)) lines.push('Not approved by FDA; products sold outside approved medicines vary in contents, purity and sterility.');
   else if (!sheet) lines.push('No fact sheet yet: the Library is still researching it.');
   if (pregnant) lines.push('Pregnant, trying or breastfeeding: check with your obstetric clinician first.');
   return lines.join(' ');
@@ -917,7 +917,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     upfront = a;
     synNote = auditText(a, ctx.byId);
     if (ctx.shortlistsOn) {
-      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with its evidence, US status and cautions, and the auditor's findings beneath. Explain their stack in words; don't present these same compounds again with present_shortlist (use it only for other options worth discussing), and don't list them as the card does.${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
+      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with its evidence, US status and cautions, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what people report, how they fit together. Don't repeat the card's status and cautions, and don't present these same compounds again with present_shortlist (use it only for other options worth discussing).${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
     }
   }
 

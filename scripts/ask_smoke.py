@@ -167,6 +167,16 @@ for n, (title, q) in enumerate(questions, 1):
             failures.append(f'{title}: no questions were asked before answering')
         if 'shortlist' in cards:
             failures.append(f'{title}: a shortlist came before the questions were answered')
+    if n == 7 and 'intake' not in cards:
+        # Benefits first: how each part works and what people report, with the cautions kept tight
+        low = text.lower()
+        if not re.search(r'thought to|works by|pathway|blood[- ]vessel|blood flow|repair|signal(?:ing)?|energy', low):
+            warnings.append(f'{title}: no sign of how the compounds work (pathways)')
+        if not re.search(r'report|forum|people (?:say|describe|often)', low):
+            warnings.append(f'{title}: nothing on what people report')
+        hedges = len(re.findall(r'no (?:good |real )?(?:human|clinical) (?:data|evidence|studies)|little (?:human )?data|not (?:fda[- ])?approved|never (?:been )?studied together|haven.t been studied together', low))
+        if hedges > 3:
+            warnings.append(f'{title}: {hedges} caution phrases; keep it to one tight line')
     if n == 7:
         stack = next((d for e, d in ev if e == 'card' and d.get('kind') == 'yours'), None)
         held = 'intake' in cards and titles.get('synergy') == 'Will check your stack with your answers'
