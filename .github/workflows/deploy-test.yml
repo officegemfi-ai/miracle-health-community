@@ -7,10 +7,13 @@
 # It stays quiet until the test project is connected: deploy/test.env names the
 # project (SUPABASE_PROJECT_REF) and the repository has these secrets:
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY
+# The ask function (Miracle AI's chat on the website) is asked three real questions when it
+# changes (scripts/ask_smoke.py); its answers show on the run's summary page.
 # Optional: REVIEW_SECRET (otherwise one is made and kept in the project's Vault),
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (texts to real phones;
 #   without them only the test numbers sign in), TURNSTILE_SECRET_KEY,
-#   variables MODERATION_MODEL and APP_ORIGINS.
+#   variables MODERATION_MODEL, APP_ORIGINS, ASK_ORIGINS, ASK_MODEL, ASK_FAST_MODEL,
+#   ASK_FALLBACK_MODEL and ASK_EFFORT.
 # Each failing step leaves a readable note on the run's summary page.
 name: Deploy to test
 on:
@@ -107,6 +110,11 @@ jobs:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           MODERATION_MODEL: ${{ vars.MODERATION_MODEL }}
           APP_ORIGINS: ${{ vars.APP_ORIGINS }}
+          ASK_ORIGINS: ${{ vars.ASK_ORIGINS }}
+          ASK_MODEL: ${{ vars.ASK_MODEL }}
+          ASK_FAST_MODEL: ${{ vars.ASK_FAST_MODEL }}
+          ASK_FALLBACK_MODEL: ${{ vars.ASK_FALLBACK_MODEL }}
+          ASK_EFFORT: ${{ vars.ASK_EFFORT }}
         run: |
           set -o pipefail
           scripts/supabase_project.sh test setup 2>&1 | tee "$RUNNER_TEMP/setup.log" \
@@ -115,7 +123,8 @@ jobs:
         run: |
           set -o pipefail
           { supabase functions deploy review-content --no-verify-jwt --project-ref "$REF" \
-            && supabase functions deploy delete-account --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
+            && supabase functions deploy delete-account --project-ref "$REF" \
+            && supabase functions deploy ask --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
             || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
       - name: Supabase's security advisor
         run: scripts/supabase_project.sh test advisors
@@ -129,6 +138,29 @@ jobs:
       contents: read
       pages: write
       id-token: write
+
+  ask:
+    name: Miracle AI answers real questions (test project)
+    needs: [check, backend]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+          fetch-depth: 2
+      - name: Ask three questions (only when the chat changed, or when run by hand)
+        env:
+          URL: https://${{ needs.check.outputs.ref }}.supabase.co/functions/v1/ask
+          BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ "$BY_HAND" != true ] && git diff --quiet HEAD~1 HEAD -- supabase/functions/ask scripts/ask_smoke.py supabase/migrations 2>/dev/null; then
+            echo "The chat didn't change in this commit; skipping (each check costs a few cents of Claude)."
+            exit 0
+          fi
+          set -o pipefail
+          python3 scripts/ask_smoke.py "$URL" 2>&1 | tee "$RUNNER_TEMP/ask.log" \
+            || { scripts/ci_annotate.sh "Miracle AI" "$RUNNER_TEMP/ask.log"; exit 1; }
 
   smoke:
     name: The test app, end to end

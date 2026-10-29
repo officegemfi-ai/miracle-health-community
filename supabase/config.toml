@@ -58,3 +58,8 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = true
+
+# Miracle AI's chat on the public website: anyone may call it (it checks the page's address
+# and counts messages per visitor; see supabase/functions/ask)
+[functions.ask]
+verify_jwt = false

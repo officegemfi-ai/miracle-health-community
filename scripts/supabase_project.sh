@@ -19,7 +19,8 @@
 #             aggregate totals only, no posts or names), for the site's snapshot.json
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
-#   ANTHROPIC_API_KEY, REVIEW_SECRET, MODERATION_MODEL, APP_ORIGINS, SITE_URL,
+#   ANTHROPIC_API_KEY, REVIEW_SECRET, MODERATION_MODEL, APP_ORIGINS, SITE_URL, ASK_ORIGINS,
+#   ASK_MODEL, ASK_FAST_MODEL, ASK_FALLBACK_MODEL, ASK_EFFORT,
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID,
 #   TURNSTILE_SECRET_KEY
 # Secret values are masked in the GitHub log and never printed.
@@ -238,6 +239,17 @@ setup)
     case ",$origins," in *,http://127.0.0.1:4173,*) ;; *) origins="$origins,http://127.0.0.1:4173" ;; esac
   fi
   args=("REVIEW_SECRET=$secret" "MODERATION_MODEL=${MODERATION_MODEL:-claude-haiku-5-5}" "APP_ORIGINS=$origins")
+  # Miracle AI's chat (the ask function) answers the public website; the test project also
+  # answers the deploy's own check, which calls it from the runner
+  ask_origins="${ASK_ORIGINS:-https://miraclehealth.us,https://www.miraclehealth.us}"
+  if [ "$ENV_NAME" = test ]; then
+    case ",$ask_origins," in *,http://127.0.0.1:4173,*) ;; *) ask_origins="$ask_origins,http://127.0.0.1:4173" ;; esac
+  fi
+  args+=("ASK_ORIGINS=$ask_origins")
+  # Optional: other models or effort for the chat (GitHub variables of the same names)
+  for v in ASK_MODEL ASK_FAST_MODEL ASK_FALLBACK_MODEL ASK_EFFORT; do
+    if [ -n "${!v:-}" ]; then args+=("$v=${!v}"); fi
+  done
   if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     mask "$ANTHROPIC_API_KEY"
     args+=("ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")

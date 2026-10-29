@@ -3,7 +3,8 @@
 #
 # The first run creates the live Supabase project (miracle-health-live, next to the test
 # one); every run brings it up to date: database changes (never the test data), sign-in by
-# text through Twilio Verify, and Miracle AI's settings and functions. Then the commit is
+# text through Twilio Verify, and Miracle AI's settings and functions (including the ask
+# function behind the chat at miraclehealth.us/ai). Then the commit is
 # tagged "live" and the site is rebuilt with the live app at the root; from then on the
 # test app and the preview with sample posts stay off the site.
 # To make someone an admin, run it with their handle (they sign up first).
@@ -91,6 +92,11 @@ jobs:
           TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           MODERATION_MODEL: ${{ vars.MODERATION_MODEL }}
+          ASK_ORIGINS: ${{ vars.ASK_ORIGINS }}
+          ASK_MODEL: ${{ vars.ASK_MODEL }}
+          ASK_FAST_MODEL: ${{ vars.ASK_FAST_MODEL }}
+          ASK_FALLBACK_MODEL: ${{ vars.ASK_FALLBACK_MODEL }}
+          ASK_EFFORT: ${{ vars.ASK_EFFORT }}
         run: |
           set -o pipefail
           # The review secret lives only in the live project's Vault (made on the first run)
@@ -102,7 +108,8 @@ jobs:
         run: |
           set -o pipefail
           { supabase functions deploy review-content --no-verify-jwt --project-ref "$REF" \
-            && supabase functions deploy delete-account --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
+            && supabase functions deploy delete-account --project-ref "$REF" \
+            && supabase functions deploy ask --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
             || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
       - name: Make a member an admin
         if: inputs.admin != ''
