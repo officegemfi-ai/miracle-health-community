@@ -2,7 +2,7 @@ import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/stric
 import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet } from './library.ts';
 import { cleanField, CRISIS, MINOR, redact, scan } from './guard.ts';
-import { warningCard } from './urgency.ts';
+import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor, useOf } from './agents.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
@@ -572,6 +572,16 @@ Deno.test('without the Safety agent, the plain under-18 check holds the turn', a
 // ---------------------------------------------------------------------------
 // When to get help, injection basics, never studied together, ask or answer
 // ---------------------------------------------------------------------------
+Deno.test('the warning-sign table: unique ids, short plain signs, no amounts of any drug', () => {
+  const ids = URGENCY.map((u) => u.id);
+  assertEquals(new Set(ids).size, ids.length);
+  for (const u of URGENCY) {
+    assert(u.sign.length <= 125, u.id);
+    assert(!scan(u.sign).some((h) => h.kind === 'dose'), u.id);
+  }
+  for (const id of INJECT_SIGNS) assert(ids.includes(id), id);
+});
+
 Deno.test('warning signs come from the table, at its levels, most urgent first, ahead of the other cards', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'] },
@@ -586,15 +596,15 @@ Deno.test('warning signs come from the table, at its levels, most urgent first, 
   const ev = await events(await handle(ask([{ role: 'user', content: 'My Achilles hurts. I take BPC-157 and creatine.' }]), deps(f)));
   const cards = ev.filter((e) => e.event === 'card').map((e) => e.data);
   const warn = cards.find((c) => c.type === 'warn')!;
-  assertEquals(warn.groups.map((g: { level: string; signs: string[] }) => `${g.level}:${g.signs.length}`), ['now:1', 'today:2', 'week:1']);   // unknown ids dropped
-  assertEquals(warn.groups[0].label, 'Call 911 now');
+  assertEquals(warn.groups.map((g: { level: string; signs: string[] }) => `${g.level}:${g.signs.length}`), ['now:2', 'today:1', 'week:1']);   // unknown ids dropped
+  assertEquals(warn.groups[0].label, 'Call 911 or go to the ER now');
   assert(/not yet reviewed by a clinician/.test(warn.note));
   // Ahead of the stack card and the shortlist, though it was asked for last
   const at = (t: string, k?: string) => ev.findIndex((e) => e.event === 'card' && e.data.type === t && (!k || e.data.kind === k));
   const atShort = ev.findIndex((e) => e.event === 'card' && e.data.type === 'shortlist' && e.data.kind !== 'yours');
   assert(at('warn') >= 0 && at('warn') < at('shortlist', 'yours') && at('warn') < atShort);
   assert(ev.findIndex((e) => e.event === 'text') < at('warn'));        // words first
-  assert(ev[ev.length - 1].data.memo.includes('when to get help: Call 911 now:'));
+  assert(ev[ev.length - 1].data.memo.includes('when to get help: Call 911 or go to the ER now:'));
   assertEquals(warningCard(['nope']), null);
 });
 
