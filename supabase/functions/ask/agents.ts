@@ -548,13 +548,14 @@ function stackCard(ids: string[], a: Audit, ctx: Ctx): string | null {
   if (!items.length) return null;
   const card = `card${++ctx.stepN}`;
   ctx.stacks++;
-  step(ctx, { id: nextId(ctx, 'bld'), agent: 'builder', status: 'done', title: `Laid out your stack of ${items.length}`, chips: items.map((i) => chip(i.id, ctx)) });
+  const one = items.length === 1;
+  step(ctx, { id: nextId(ctx, 'bld'), agent: 'builder', status: 'done', title: one ? `Laid out ${items[0].name}, checked with your details` : `Laid out your stack of ${items.length}`, chips: items.map((i) => chip(i.id, ctx)) });
   ctx.gate.card(
     items.map((i, n) => ({ key: `i${n}`, text: `${i.name}. Role: ${i.role}. About it: ${i.why}` })),
     (ok) => {
       const shown = items.map((i, n) => (ok.has(`i${n}`) ? i : { ...i, why: '' }));
       ctx.memo.push(`their stack: ${shown.map((i) => `${i.name} [${i.id}]`).join(', ')}`);
-      return { type: 'shortlist', kind: 'yours', id: card, title: 'Your stack: to discuss with your clinician', note: '', goal: ctx.screen.goals[0] ?? '', items: shown };
+      return { type: 'shortlist', kind: 'yours', id: card, title: one ? `${shown[0].name}: to discuss with your clinician` : 'Your stack: to discuss with your clinician', note: '', goal: ctx.screen.goals[0] ?? '', items: shown };
     },
   );
   auditCard(a, ctx, card);
