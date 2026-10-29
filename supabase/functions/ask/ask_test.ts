@@ -438,7 +438,7 @@ Deno.test('research-stage options are labeled as such and listed last', async ()
 Deno.test('an under-18 member gets general help: no tools, no shortlist', async () => {
   const { f, calls } = fakeWorld({ screen: NONE, rounds: [{ text: 'Sleep, food and training come first.' }] });
   const ev = await events(await handle(ask([{ role: 'user', content: "I'm 16 and want to bulk. Best peptide?" }]), deps(f)));
-  assertEquals(calls.find((c) => c.kind === 'guide')!.body.tools, undefined);
+  assertEquals((calls.find((c) => c.kind === 'guide')!.body.tools as { name: string }[]).map((t) => t.name), ['clinician_questions']);
   assert(ev.some((e) => e.event === 'step' && e.data.id === 'safety' && /Under 18/.test(e.data.title)));
   assert(ev[ev.length - 1].data.memo.includes('[Safety: under 18]'));
 });

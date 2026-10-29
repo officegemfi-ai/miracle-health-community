@@ -627,6 +627,12 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, synergy: synNote, sheets: sheetsForTurn }) },
   ];
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
+  // Held turns: someone under 18 can still get questions to take to their doctor; a crisis or
+  // an emergency gets words only
+  const tools = !held ? GUIDE_TOOLS
+    : minor && screen.red_flag !== 'self_harm' && screen.red_flag !== 'emergency' ? GUIDE_TOOLS.filter((t) => t.name === 'clinician_questions')
+    : [];
+  if (!tools.length) system[1].text += '\nNo tools this turn: answer in words only, and don\'t write tool names or card lists.';
   if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'run', title: 'Writing your answer' });
   let wrote = '';
   let model = deps.models.guide;
@@ -637,7 +643,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     const onText = (t: string) => { sawText = true; wrote += t; gate.text(t); };
     const req = {
       model, max_tokens: 3000, system, messages: withCacheMark(convo),
-      ...(held ? {} : { tools: GUIDE_TOOLS }),
+      ...(tools.length ? { tools } : {}),
       ...tuning(model, { effort: deps.effort }),
     };
     let r;
