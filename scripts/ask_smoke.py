@@ -120,6 +120,9 @@ def report(n, title, r):
         layers += [f"peptides and medicines: {', '.join(i.get('name', '') for i in plan.get('peptides', []))}",
                    f"supplements: {', '.join(i.get('name', '') + ' (' + i.get('role', '') + ')' for i in plan.get('supplements', []))}",
                    f"wellbeing: {' / '.join(plan.get('wellbeing', []))}"]
+        first = plan.get('first') or {}
+        layers.insert(0, f"first step ({first.get('pillar', '-')}): {first.get('step', '-')}")
+        layers.append(f"community: {(plan.get('community') or {}).get('name', '-')}")
         tail += chr(10) + chr(10) + f'Plan card: {plan.get("title", "")}' + chr(10) + chr(10).join(layers)
     print(f'::notice title=Miracle AI {n}. {title}::{esc(head + chr(10) + chr(10) + final_text(ev)[:3000] + tail)}')
     return steps, cards, review
@@ -278,12 +281,20 @@ for n, (title, q) in enumerate(questions, 1):
         # A foundation step that lost its words to the amount check
         if any(re.search(r'\babout\s+(?:of|per)\b', f.get('step', '')) for f in plan.get('foundations', [])):
             failures.append(f'{title}: a foundation step on the plan lost its target: {[f.get("step") for f in plan.get("foundations", [])]}')
+        # One place to start, and a first step for it
+        starts = [f for f in plan.get('foundations', []) if f.get('state') == 'start']
+        if len(starts) > 1:
+            failures.append(f'{title}: the plan has {len(starts)} pillars marked start')
+        if starts and not (plan.get('first') or {}).get('step'):
+            failures.append(f'{title}: the plan has no first step')
+        if any(re.search(r'share (?:your )?(?:wins|progress)|stay positive|miracle health community', w, re.I) for w in plan.get('wellbeing', [])):
+            warnings.append(f'{title}: a generic wellbeing line reached the plan')
     if n == 10:
         if not plan:
             failures.append(f'{title}: no Miracle Plan once they had answered')
         else:
-            if pillars.get('nutrition', {}).get('state') != 'focus':
-                warnings.append(f'{title}: nutrition isn\'t the focus pillar for someone short on protein')
+            if pillars.get('nutrition', {}).get('state') != 'start':
+                warnings.append(f'{title}: nutrition isn\'t where someone short on protein starts')
             if not any(i.get('id') == 'creatine' for i in plan.get('supplements', [])):
                 warnings.append(f'{title}: no creatine in the supplements for someone losing muscle')
             if any(DOSE.search(i.get('role', '')) for i in plan.get('supplements', []) + plan.get('peptides', [])):

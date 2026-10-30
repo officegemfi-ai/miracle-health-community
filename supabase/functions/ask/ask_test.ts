@@ -731,6 +731,7 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
     rounds: [
       { text: '**Protein is your biggest lever right now.** ' + WORDS, tool: { name: 'present_plan', input: {
         title: 'Keep your muscle',
+        first_step: 'Protein first at breakfast',
         foundations: [
           { pillar: 'nutrition', state: 'focus', step: 'Protein first at every meal: about 0.7 to 1 g of protein per pound of lean body mass' },
           { pillar: 'exercise', state: 'unknown', step: 'Strength train 3 times a week' },
@@ -746,19 +747,21 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
   const ev = await events(await handle(ask([{ role: 'user', content: 'I take testosterone and I want to keep my muscle' }]), deps(f)));
   const plan = ev.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
   assertEquals(plan.title, 'Keep your muscle');
-  assertEquals(plan.foundations.map((x: { pillar: string; state: string }) => `${x.pillar}:${x.state}`), ['nutrition:focus', 'sleep:strong', 'exercise:unknown']);
+  assertEquals(plan.foundations.map((x: { pillar: string; state: string }) => `${x.pillar}:${x.state}`), ['nutrition:start', 'sleep:strong', 'exercise:unknown']);   // "focus" from an older guide reads as start
+  assertEquals(plan.first, { pillar: 'nutrition', step: 'Protein first at breakfast' });
+  assertEquals(plan.community, { id: 'testosterone', name: 'Testosterone' });
   assert(plan.foundations[0].step.includes('0.7 to 1 g of protein per pound'));               // a foundation target, not a dose
   assertEquals(plan.foundations[2].step, 'Strength train 3 times a week');
   assertEquals(plan.peptides.map((i: { id: string; yours: boolean }) => `${i.id}:${i.yours}`), ['testosterone:true']);   // BPC-157 isn't theirs
   // MK-677 isn't a supplement they take; SAMe has no fact sheet yet; EAAs are food-like, so they can come in
   assertEquals(plan.supplements.map((i: { id: string; tag: string }) => `${i.id}:${i.tag}`), ['creatine:Supplement', 'eaa:Supplement']);
-  assertEquals(plan.wellbeing.length, 2);
+  assertEquals(plan.wellbeing, ['Check your labs with your prescriber']);                       // the generic line is dropped
   assert(ev.findIndex((e) => e.event === 'text') < ev.findIndex((e) => e.event === 'card' && e.data.type === 'plan'));
   // Checked together, and the guide is told what was left out
   assert(ev.some((e) => e.event === 'card' && e.data.type === 'audit' && e.data.for === plan.id));
   const toolResult = JSON.stringify(calls.filter((c) => c.kind === 'guide')[1].body.messages);
   assert(toolResult.includes('BPC-157 (not something they take') && toolResult.includes('MK-677 (not something they take'));
-  assert(ev[ev.length - 1].data.memo.includes('Miracle Plan "Keep your muscle": nutrition focus'));
+  assert(ev[ev.length - 1].data.memo.includes('Miracle Plan "Keep your muscle", first step: Protein first at breakfast: nutrition start'));
   // Not for someone under 18
   const minor = fakeWorld({ screen: { ...NONE, red_flag: 'minor' }, rounds: [{ text: 'Food, sleep and training. ' + WORDS, tool: { name: 'present_plan', input: { title: 'x', foundations: [] } } }, { text: 'Talk to a parent.' }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: "I'm 16, how do I get bigger?" }]), deps(minor.f)));
@@ -768,7 +771,7 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
 Deno.test('a pillar step the check won\'t pass, or that\'s missing, gets plain advice instead of a blank', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, goals: ['muscle'] },
-    review: (p) => (/^Nutrition \(focus\)/.test(p.text) ? { ok: false, broken: [1] } : { ok: true }),
+    review: (p) => (/^Nutrition \(start\)/.test(p.text) ? { ok: false, broken: [1] } : { ok: true }),
     rounds: [{ text: 'Protein is your biggest lever. ' + WORDS, tool: { name: 'present_plan', input: {
       title: 'Keep your muscle', foundations: [{ pillar: 'nutrition', state: 'focus', step: 'Eat 300 g of steak' }, { pillar: 'sleep', state: 'unknown', step: '' }],
     } } }, { text: 'Start at breakfast.' }],
@@ -776,6 +779,24 @@ Deno.test('a pillar step the check won\'t pass, or that\'s missing, gets plain a
   const ev = await events(await handle(ask([{ role: 'user', content: 'How do I keep muscle?' }]), deps(f)));
   const plan = ev.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
   assertEquals(plan.foundations.map((x: { step: string }) => x.step), ['Protein at every meal, plus plenty of plants and water', 'Aim for 7 or more hours a night', 'Strength train and move most days']);
+});
+
+Deno.test('a plan starts with exactly one pillar', async () => {
+  const plan = async (foundations: unknown[]) => {
+    const { f } = fakeWorld({ screen: NONE, rounds: [{ text: WORDS, tool: { name: 'present_plan', input: { title: 'x', first_step: 'Walk after dinner', foundations } } }, { text: 'Ok.' }] });
+    const ev = await events(await handle(ask([{ role: 'user', content: 'How do I sleep better?' }]), deps(f)));
+    return ev.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
+  };
+  // Two starts: the first one given leads, the other is next
+  const two = await plan([{ pillar: 'exercise', state: 'start', step: 'Walk daily' }, { pillar: 'sleep', state: 'start', step: 'Same bedtime' }]);
+  assertEquals(two.foundations.map((x: { state: string }) => x.state), ['unknown', 'next', 'start']);
+  assertEquals(two.first, { pillar: 'exercise', step: 'Walk after dinner' });
+  // No start, but some next: the first next leads
+  const none = await plan([{ pillar: 'sleep', state: 'next', step: 'Same bedtime' }, { pillar: 'nutrition', state: 'strong', step: 'Keep it up' }]);
+  assertEquals(none.foundations.map((x: { state: string }) => x.state), ['strong', 'start', 'unknown']);
+  // All strong: nothing to start, so no first step
+  const strong = await plan([{ pillar: 'sleep', state: 'strong', step: 'a' }, { pillar: 'nutrition', state: 'strong', step: 'b' }, { pillar: 'exercise', state: 'strong', step: 'c' }]);
+  assertEquals(strong.first, null);
 });
 
 Deno.test('Miracle AI never asks someone\'s age or sex', async () => {

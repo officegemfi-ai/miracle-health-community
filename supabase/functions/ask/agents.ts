@@ -533,8 +533,11 @@ export type StudyFinding = { claim: string; evidence: string; source?: { title: 
 // The Miracle Plan: three pillars at the base, then their peptides and medicines, supplements,
 // and wellbeing and community on top
 export const PILLARS = ['nutrition', 'sleep', 'exercise'] as const;
-export const PILLAR_STATES = ['strong', 'focus', 'unknown'] as const;
+// start: their weakest pillar, where they begin (exactly one); next: also needs work
+export const PILLAR_STATES = ['start', 'next', 'strong', 'unknown'] as const;
 type PillarState = typeof PILLAR_STATES[number];
+// Wellbeing lines that would fit anyone: the card links to the community space itself
+const GENERIC_WELLBEING = /\b(?:share|post)\b[^.]*\b(?:wins?|progress|journey|updates?|story)\b|\bstay\s+(?:positive|motivated|consistent|on track)\b|\bcelebrate\b|\bmiracle\s+health\s+community\b|\b(?:join|find)\s+(?:the\s+)?community\b|\bbe\s+patient\b|\blisten\s+to\s+your\s+body\b/i;
 const PILLAR_NAME: Record<typeof PILLARS[number], string> = { nutrition: 'Nutrition', sleep: 'Sleep', exercise: 'Exercise' };
 // A pillar's step when the guide gave none, or the check couldn't let its words through
 const PILLAR_STEP: Record<typeof PILLARS[number], string> = {
@@ -869,11 +872,21 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       if (!ctx.shortlistsOn) return 'Not shown: plans are off for this turn (the Safety agent\'s flags). Answer generally, without a plan.';
       const pregnant = s.pregnant || ctx.st.pregnant;
       const rawF = (Array.isArray(input.foundations) ? input.foundations : []) as Record<string, unknown>[];
+      // Exactly one pillar to start with: the first one marked start (or focus, or next, in the
+      // order they were given); any other start is next
+      const order = rawF.map((x) => String(x?.pillar ?? '').toLowerCase());
+      const stateOf = (pillar: string) => String(rawF.find((x) => String(x?.pillar ?? '').toLowerCase() === pillar)?.state ?? '');
+      const lead = order.find((p) => ['start', 'focus'].includes(stateOf(p))) ?? order.find((p) => stateOf(p) === 'next') ?? '';
       const foundations = PILLARS.map((pillar) => {
         const f = rawF.find((x) => String(x?.pillar ?? '').toLowerCase() === pillar);
-        const state = (PILLAR_STATES as readonly string[]).includes(String(f?.state)) ? String(f!.state) as PillarState : 'unknown';
+        const said = String(f?.state ?? '');
+        const state: PillarState = pillar === lead ? 'start'
+          : ['start', 'focus', 'next'].includes(said) ? 'next'
+          : (PILLAR_STATES as readonly string[]).includes(said) ? said as PillarState : 'unknown';
         return { pillar, state, step: cleanField(f?.step ?? f?.note, 90, true) || PILLAR_STEP[pillar] };
       });
+      const startPillar = foundations.find((f) => f.state === 'start');
+      const firstStep = startPillar ? cleanField(input.first_step, 80, true) : '';
       const dropped: string[] = [];
       const seen = new Set<string>();
       const asked = [...(Array.isArray(input.peptides) ? input.peptides : []), ...(Array.isArray(input.supplements) ? input.supplements : [])] as Record<string, unknown>[];
@@ -911,16 +924,19 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       const byProof = (a: PlanItem, b: PlanItem) => proven(ctx.sheets.get(a.id)?.status_us?.key ?? ctx.byId.get(a.id)?.status ?? '') - proven(ctx.sheets.get(b.id)?.status_us?.key ?? ctx.byId.get(b.id)?.status ?? '');
       peptides.sort(byProof).splice(4);
       supplements.sort(byProof).splice(4);
-      const wellbeing = strs(input.wellbeing, 3, 160).map((w) => cleanField(w, 80, true)).filter(Boolean);
+      const wellbeing = strs(input.wellbeing, 3, 160).map((w) => cleanField(w, 80, true)).filter((w) => w && !GENERIC_WELLBEING.test(w)).slice(0, 2);
       const title = cleanField(input.title, 60) || 'Your Miracle Plan';
-      const focus = foundations.filter((f) => f.state === 'focus').map((f) => PILLAR_NAME[f.pillar].toLowerCase());
       const card = `card${++ctx.stepN}`;
       ctx.plans++;
-      step(ctx, { id: nextId(ctx, 'plan'), agent: 'builder', status: 'done', title: `Built your plan${focus.length ? `, around ${focus.join(' and ')}` : ''}`, chips: [...peptides, ...supplements].map((i) => chip(i.id, ctx)) });
+      // Their people: the community space for what they take (or the plan's first supplement)
+      const hub = peptides[0] ?? supplements[0];
+      const community = hub ? { id: hub.id, name: hub.name } : null;
+      step(ctx, { id: nextId(ctx, 'plan'), agent: 'builder', status: 'done', title: `Built your plan${startPillar ? `, starting with ${PILLAR_NAME[startPillar.pillar].toLowerCase()}` : ''}`, chips: [...peptides, ...supplements].map((i) => chip(i.id, ctx)) });
       const listed = [...peptides, ...supplements];
       ctx.gate.card(
         [
           { key: 'title', text: title },
+          ...(firstStep ? [{ key: 'first', text: `First step this week: ${firstStep}` }] : []),
           ...foundations.map((f, n) => ({ key: `f${n}`, text: `${PILLAR_NAME[f.pillar]} (${f.state}): ${f.step}` })),
           ...listed.map((i, n) => ({ key: `i${n}`, text: `${i.name}: ${i.role}` })),
           ...wellbeing.map((w, n) => ({ key: `w${n}`, text: w })),
@@ -932,11 +948,13 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
           const ss = supplements.map(keep);
           const ws = wellbeing.filter((_, n) => ok.has(`w${n}`));
           const t = ok.has('title') ? title : 'Your Miracle Plan';
-          ctx.memo.push(`Miracle Plan "${t}": ${fs.map((f) => `${f.pillar} ${f.state}${f.step ? ` (${f.step})` : ''}`).join('; ')}`
+          const lead = fs.find((f) => f.state === 'start');
+          const first = lead ? { pillar: lead.pillar, step: (firstStep && ok.has('first') ? firstStep : '') || lead.step } : null;
+          ctx.memo.push(`Miracle Plan "${t}"${first ? `, first step: ${first.step}` : ''}: ${fs.map((f) => `${f.pillar} ${f.state}${f.step ? ` (${f.step})` : ''}`).join('; ')}`
             + (ps.length ? `; peptides and medicines: ${ps.map((i) => `${i.name} [${i.id}]`).join(', ')}` : '')
             + (ss.length ? `; supplements: ${ss.map((i) => `${i.name} [${i.id}]`).join(', ')}` : '')
             + (ws.length ? `; wellbeing: ${ws.join(' / ')}` : ''));
-          return { type: 'plan', id: card, title: t, foundations: fs, peptides: ps, supplements: ss, wellbeing: ws };
+          return { type: 'plan', id: card, title: t, first, foundations: fs, peptides: ps, supplements: ss, wellbeing: ws, community };
         },
       );
       // The Synergy auditor checks what the plan adds (their own stack was checked upfront)
@@ -953,13 +971,13 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         added.forEach((id) => ctx.audited.add(id));
         auditLine = `\nSynergy auditor on the plan:\n${auditText(shown, ctx.byId)}`;
       }
-      const summary = `${foundations.map((f) => `${PILLAR_NAME[f.pillar].toLowerCase()} (${f.state})`).join(', ')}`
+      const summary = `${firstStep ? `first step: ${firstStep}; ` : ''}${foundations.map((f) => `${PILLAR_NAME[f.pillar].toLowerCase()} (${f.state})`).join(', ')}`
         + (peptides.length ? `; peptides and medicines: ${peptides.map((i) => `${i.name} (${i.tag})`).join(', ')}` : '')
         + (supplements.length ? `; supplements: ${supplements.map((i) => i.name).join(', ')}` : '')
         + (dropped.length ? `. Left out: ${dropped.join('; ')}` : '');
       return ctx.gate.waiting
-        ? `Their plan will be shown right after your words: ${summary}.${auditLine}\nNow walk them through it in words: their focus pillar first and why it matters most, then what the layers above add. Don't mention when the card appears. Then call clinician_questions.`
-        : `Shown to the member as their Miracle Plan: ${summary}.${auditLine}\nIn a line or two, point them to their focus pillar if you haven't yet, then call clinician_questions.`;
+        ? `Their plan will be shown right after your words: ${summary}.${auditLine}\nNow, in words: why the start pillar matters most for them and the first step, and for the compounds, their benefits and how they work. The card lists the steps and roles, so don't repeat them as a list. Don't mention when the card appears. Then call clinician_questions.`
+        : `Shown to the member as their Miracle Plan: ${summary}.${auditLine}\nIn a line or two, point them to where they start and the first step if you haven't yet (the card lists the rest), then call clinician_questions.`;
     }
     case 'clinician_questions': {
       const qs = strs(input.questions, 4, 400).map((q) => cleanField(q, 160))

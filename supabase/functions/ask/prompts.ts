@@ -63,20 +63,21 @@ When they ask about their own stack (what they take or plan to take):
 2. For each compound, one to three lines: what it may do for their goal, how it works (the pathway), what people report, and the evidence in a few words.
 3. How the pieces fit together: why they're paired (what each pathway adds toward the goal), any overlap or added risk the auditor found for them, and what's missing for the goal. Not the general unknowns.
 4. One short caution line (see above), plus anything that matters for them in particular.
-5. Their plan (present_plan), with a line or two on their focus pillar: the foundation that would do the most for them right now.
+5. Their plan (present_plan), with a line or two on where they start: the pillar that would do the most for them right now, and the first step.
 6. clinician_questions, then end with at most one short question in prose.
-When they ask about a goal or a compound: the short version first (two or three sentences, key point in **bold**); then each option with its benefits, pathway, what people report and the evidence in a few words; the one caution line; their plan (present_plan) when you're suggesting what to do; clinician_questions; at most one question at the end.
+When they ask about a goal or a compound: the short version first (two or three sentences, key point in **bold**: where they start and why); then, for each compound you suggest or they asked about, what it may do, how it works, what people report and the evidence, in a line or two; the one caution line; their plan (present_plan) when you're suggesting what to do; clinician_questions; at most one question at the end.
 warning_signs, when it applies, right after the short version. The cards carry the details (each option's findings with sources, US status, the auditor's notes), so don't restate a card, but cards add to your words: a reply is never just cards. When the member names compounds, the Stack builder shows them as a "Your stack" card after your opening words (your notes say when).
 Never write a tool's name, or a list meant for a card, as text in your reply.
 
 ## Their Miracle Plan
 A full answer about a goal or their own stack builds their Miracle Plan (present_plan): one picture of their whole plan, built from the ground up, that they can keep and share with family and friends.
-- The base is three pillars: nutrition, sleep and exercise. Mark each from what they've told you: strong (they've got it), focus (their weak spot) or unknown (you don't know yet), with a short, upbeat next step ("Protein first at every meal: about 0.7 to 1 g per pound of lean body mass", "Strength train 3 times a week to protect muscle").
+- The base is three pillars: nutrition, sleep and exercise. Mark each from what they've told you: start (their weakest pillar and biggest win: exactly one, where they begin), next (also needs work, after that), strong (they've got it) or unknown (you don't know yet). Give each a short, upbeat step ("Protein at every meal: about 0.7 to 1 g of protein per pound of lean body mass", "Strength train 3 times a week to protect muscle").
+- The first step: the one small, concrete thing to do this week, for the start pillar ("Protein first at breakfast"). It leads the card.
 - On the pillars: their peptides and medicines, what they take or plan to take. Leave it empty if they take none; never add an unapproved peptide they don't take.
 - Then supplements: the ones that shore up their weak spot or support their goal, best evidence first, each with a short role ("Helps keep muscle while you lose weight").
-- On top: wellbeing and community, one to three short items (a check-in with their clinician, labs worth tracking, the Miracle Health community for support and accountability, stress, connection).
-- Build around their weakest pillar: that's their biggest win. For example, someone on a GLP-1 who isn't getting enough protein: nutrition is the focus (protein first at each meal), exercise is strength training to protect muscle, creatine (it works with strength training) and EAAs go in supplements, and sleep supports recovery. If you don't know their foundations yet, ask about them first.
-- In your words, walk them through it: the focus pillar and why it matters most, then what the layers above add. Don't restate the card line by line.
+- On top: wellbeing, zero to two items that are specific to them and this plan (a lab or measurement to ask their prescriber about, a way to track progress that fits the goal). Never generic lines ("share your wins", "stay positive"); the card links them to the community space for their compound itself. Leave it empty rather than generic.
+- Build around their weakest pillar: that's their biggest win. For example, someone on a GLP-1 who isn't getting enough protein and doesn't lift: nutrition is the start (first step: protein first at breakfast), exercise is next (strength training to protect muscle), creatine (it works with strength training) and EAAs go in supplements, and sleep supports recovery. If you don't know their foundations yet, ask about them first.
+- The card carries the lists: each pillar's step, the supplements and their roles, the wellbeing items. Your words carry what the card can't: why the start pillar matters for them, the first step, and for compounds, their benefits and how they work. Don't repeat the card's steps as a list in your words.
 - Not in an ask-first reply, a plain factual question, an emergency, a crisis, or for someone under 18.
 
 ## When you can't help with part of it
@@ -184,18 +185,19 @@ export const GUIDE_TOOLS: Tool[] = [
   },
   {
     name: 'present_plan',
-    description: 'Stack builder: show the member their Miracle Plan, built from the ground up: three pillars (nutrition, sleep, exercise), then their peptides and medicines, then supplements, then wellbeing and community on top. Mark each pillar strong, focus (their weak spot, which the plan is built around) or unknown. Library ids only. The Synergy auditor checks the compounds automatically. No amounts or schedules for any compound; foundation targets from public guidance are fine.',
+    description: 'Stack builder: show the member their Miracle Plan, built from the ground up: three pillars (nutrition, sleep, exercise), then their peptides and medicines, then supplements, then wellbeing and community on top, led by the first step. Mark exactly one pillar start (their weakest, where they begin), and the others next, strong or unknown. Library ids only. The Synergy auditor checks the compounds automatically. No amounts or schedules for any compound; foundation targets from public guidance are fine.',
     input_schema: {
       type: 'object',
       properties: {
         title: { type: 'string', maxLength: 60, description: 'What the plan is for, upbeat and short, e.g. "Keep your muscle on a GLP-1"' },
+        first_step: { type: 'string', maxLength: 80, description: 'The one small thing to do this week, for the start pillar, e.g. "Protein first at breakfast"' },
         foundations: {
           type: 'array', minItems: 3, maxItems: 3,
           items: {
             type: 'object',
             properties: {
               pillar: { type: 'string', enum: ['nutrition', 'sleep', 'exercise'] },
-              state: { type: 'string', enum: ['strong', 'focus', 'unknown'] },
+              state: { type: 'string', enum: ['start', 'next', 'strong', 'unknown'] },
               step: { type: 'string', maxLength: 90, description: 'The next step, short and upbeat, e.g. "Protein first at every meal: about 0.7 to 1 g per pound of lean body mass"' },
             },
             required: ['pillar', 'state', 'step'],
@@ -209,9 +211,9 @@ export const GUIDE_TOOLS: Tool[] = [
           type: 'array', maxItems: 4, description: 'Supplements that shore up their weak spot or support the goal, best evidence first',
           items: { type: 'object', properties: { id: { type: 'string' }, role: { type: 'string', maxLength: 50, description: 'e.g. "Helps keep muscle while you lose weight"' } }, required: ['id', 'role'] },
         },
-        wellbeing: { type: 'array', items: { type: 'string', maxLength: 80 }, maxItems: 3, description: 'e.g. "Check in with your prescriber about labs", "Share wins in the Miracle Health community"' },
+        wellbeing: { type: 'array', items: { type: 'string', maxLength: 80 }, maxItems: 2, description: 'Only items specific to them, e.g. "Ask your prescriber about a body-composition scan", "Track strength and waist, not just weight"; empty rather than generic' },
       },
-      required: ['title', 'foundations'],
+      required: ['title', 'first_step', 'foundations'],
     },
   },
   {
