@@ -27,6 +27,13 @@ so the public library on miraclehealth.us can use the same drawings.
 - `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
 - `shared/rules.json`, `shared/uses.json`: the community rules and the list of uses, copied to the app and
   the AI reviewer by `scripts/sync_rules.sh`
+- `shared/kit/`: Miracle Health's design kit, the pieces the app and the website (miraclehealth.us) share
+  so they look like one product and can't drift apart: the bar of the four places (Library, Miracle AI,
+  Community, My Miracle), the evidence meter, the Community Signal number, compound tiles and chips, Sig,
+  the Signal drawings (`signalviz.js`) and the links between places (a question for Miracle AI, a check-in
+  from a member's Miracle Plan drafted as a post). `scripts/sync_kit.sh [path/to/miraclehealth-site]`
+  copies it to `web/kit`, `web/lib/signalviz.js` and the website; CI checks every copy matches
+  (`scripts/check_kit_sync.sh`), the website's on its main branch included
 - `shared/signal_baseline.json`: the Community Signal's public-forum starting point, loaded by a migration
   that `scripts/build_signal_baseline_sql.mjs` generates (CI checks they match)
 - `web/preview/`, `scripts/build_preview.mjs`: the preview: the same migrations running in the browser

@@ -187,7 +187,7 @@ function renderCode(phone) {
         await loadMe();
         track('signed_in');
         if (!S.me) return renderSignup();
-        location.hash = '#/home'; route();
+        location.hash = takeNext() || '#/home'; route();
       },
     }, h('label', { class: 'f', for: 'code' }, h('span', {}, 'Code'), code), go, msg),
     h('p', { class: 'small mt16' }, h('button', { class: 'lnk', type: 'button', onclick: () => renderSignIn() }, 'Use a different number')));
@@ -223,7 +223,7 @@ function renderSignup() {
         if (error) return say(msg, friendly(error));
         try { sessionStorage.removeItem('mh_invite'); } catch (_) { /* private mode */ }
         await loadMe(); track('signed_up');
-        location.hash = '#/home';
+        location.hash = takeNext() || '#/home';
         await route();
         onboarding();
       },
@@ -285,6 +285,20 @@ function tipFor() {
 // ---------------------------------------------------------------------------
 // Routing
 // ---------------------------------------------------------------------------
+// Where someone was going when they had to sign in first (a space from the Library, a draft from
+// their Miracle Plan): they land there once they're in, not on Home
+const NEXT = 'mh_next';
+function rememberNext() {
+  const want = location.hash;
+  if (!want || /^#\/?(?:home|rules|join(?:\/.*)?)?$/.test(want)) return;
+  try { sessionStorage.setItem(NEXT, want); } catch (_) { /* private mode */ }
+}
+function takeNext() {
+  let want = '';
+  try { want = sessionStorage.getItem(NEXT) || ''; sessionStorage.removeItem(NEXT); } catch (_) { /* private mode */ }
+  return /^#\/[a-z]/.test(want) ? want : '';
+}
+
 function parseHash() {
   const raw = location.hash.replace(/^#\/?/, '');
   const [path, qs] = raw.split('?');
@@ -302,6 +316,7 @@ async function route() {
     try { sessionStorage.setItem('mh_invite', r.arg.toUpperCase()); } catch (_) { /* private mode */ }
   }
   if (r.name === 'rules' && !S.me) { document.body.classList.add('auth'); return renderRules(true); }
+  if (!S.session || !S.me) rememberNext();
   if (!S.session) return renderSignIn();
   if (!S.me) return renderSignup();
   document.body.classList.remove('auth');
@@ -320,7 +335,8 @@ async function route() {
     builders: () => renderBuilders(),
     quests: () => renderQuests(),
     notifications: () => renderNotifications(),
-    new: () => renderNew(r.q.get('c') || ''),
+    new: () => renderNew(r.q.get('c') || '', r.q.get('d') || ''),
+    me: () => { location.replace(`#/u/${encodeURIComponent(S.me.handle)}`); },
     s: () => { current.name = 'space'; navKey = ''; return renderSpace(r.arg, sort, r.q.get('only') || 'all'); },
     post: () => { navKey = ''; return renderPost(r.arg, { edit: r.q.get('edit') === '1', focus: r.q.get('c') }); },
     u: () => { navKey = r.arg === S.me.handle ? 'me' : ''; return renderProfile(r.arg, r.q.get('t') || 'posts'); },

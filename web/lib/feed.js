@@ -3,7 +3,8 @@
 import { h, icon, fmtN, fmt1, ago, toast, friendly, msgBox, say, copy, bar, plural } from './ui.js';
 import { sig, sticker, STICKERS, emblem, spaceTile } from './art.js';
 import { S, sb, on, spaceOf, signalOf, nameOf, loadSpaces, track } from './state.js';
-import { render, setRail, railCards, renderNav, sigSay } from './shell.js';
+import { render, setRail, railCards, renderNav, sigSay, LIBRARY, askAbout, evidenceTag } from './shell.js';
+import { askLink, draftFrom } from '../kit/kit.js';
 import { signalCard, sigNum, outcomeChip, readMini, refreshSignal, movement } from './signal.js';
 import { afterEarn } from './game.js';
 import { openReport } from './post.js';
@@ -288,6 +289,17 @@ export async function renderPopular(sort = 'hot') {
   await reload();
 }
 
+// Where this space leads in the rest of Miracle Health: how strong the evidence is (the Library's
+// grade), its fact sheet, and Miracle AI with a question about it typed in
+function spaceLinks(sp) {
+  const slot = h('span', { class: 'ev-slot' });
+  if (sp.kind !== 'stack') evidenceTag(sp.compound_id).then((el) => { if (el) slot.replaceWith(el); else slot.remove(); });
+  return h('div', { class: 'space-links' },
+    sp.kind === 'stack' ? null : slot,
+    sp.kind === 'stack' ? null : h('a', { href: `${LIBRARY}${encodeURIComponent(sp.compound_id)}/` }, icon('flask', 16), 'Fact sheet'),
+    h('a', { href: askLink(askAbout(sp)) }, icon('sparkle', 16), 'Ask Miracle AI'));
+}
+
 export async function renderSpace(cid, sort = 'hot', only = 'all') {
   const sp = spaceOf(cid);
   if (!sp) { render(h('div', { class: 'empty card' }, sig(72, 'curious'), h('p', {}, 'That space doesn’t exist.'), h('a', { class: 'btn sm', href: '#/explore' }, 'Explore spaces'))); return; }
@@ -312,7 +324,8 @@ export async function renderSpace(cid, sort = 'hot', only = 'all') {
           h('p', { class: 'lede' }, `${fmtN(sp.members_count)} member${sp.members_count === 1 ? '' : 's'} · ${fmtN(sp.posts_week)} post${sp.posts_week === 1 ? '' : 's'} this week · ${fmtN(sp.reports)} first-hand report${sp.reports === 1 ? '' : 's'}`)),
         h('div', { class: 'join' }, joinButton(sp))),
       stack ? partChips(sp, 'In this stack') : sp.kind === 'blend' ? partChips(sp, 'In the vial') : null,
-      sp.aliases?.length ? h('p', { class: 'xs muted mt8 aka' }, `Also called ${sp.aliases.slice(0, 8).join(', ')}`) : null),
+      sp.aliases?.length ? h('p', { class: 'xs muted mt8 aka' }, `Also called ${sp.aliases.slice(0, 8).join(', ')}`) : null,
+      spaceLinks(sp)),
     stack ? h('p', { class: 'msg note' }, 'This stack’s Signal comes only from reports of exactly this stack. Each compound’s own number counts only reports of it alone.') : null,
     signalCard(cid),
     x && x.themes && x.themes.length ? h('div', { class: 'post-chips mt12' }, h('span', { class: 'kick' }, 'What people mention'), x.themes.map((t) => h('span', { class: 'chip' }, `${t.theme} · ${t.label}`))) : null,
@@ -375,16 +388,19 @@ export async function renderExplore(family = '') {
 // ---------------------------------------------------------------------------
 // New post
 // ---------------------------------------------------------------------------
-export function renderNew(param = '') {
+// d: a draft from their Miracle Plan check-in on miraclehealth.us (kit.js draftLink), to edit
+export function renderNew(param = '', d = '') {
   if (S.me.status === 'suspended') { render(h('div', { class: 'msg note' }, 'Your account is paused, so you can’t post right now.')); return; }
+  const draft = draftFrom(d);
   const msg = msgBox();
   const note = h('p', { class: 'cpick-note', 'aria-live': 'polite' });
   const pick = compoundPicker({ selected: idsFrom(param), onChange: (ids) => note.replaceChildren(...picksNote(ids)) });
   note.replaceChildren(...picksNote(pick.value));
   const kindExp = h('input', { type: 'radio', name: 'kind', value: 'experience', checked: true });
   const kindQ = h('input', { type: 'radio', name: 'kind', value: 'question' });
-  const title = h('input', { class: 'input', id: 'title', maxlength: 140, required: true, placeholder: 'e.g. Week 6 on BPC-157 + TB-500 for a knee injury' });
+  const title = h('input', { class: 'input', id: 'title', maxlength: 140, required: true, placeholder: 'e.g. Week 6 on BPC-157 + TB-500 for a knee injury', value: draft?.title || null });
   const body = h('textarea', { class: 'input', id: 'body', maxlength: 10000, required: true, placeholder: 'What you took it for, how long, and how it compares to before you started: better, about the same, or worse. Side effects too.' });
+  if (draft?.body) body.value = draft.body;
   const go = h('button', { class: 'btn lime', type: 'submit' }, 'Post');
   const hint = h('div', { class: 'rules-note' }, sig(40, 'think'), h('div', {},
     h('b', {}, 'Miracle AI reads every report into the Signal. '),
@@ -393,6 +409,8 @@ export function renderNew(param = '') {
   kindExp.addEventListener('change', updateHint); kindQ.addEventListener('change', updateHint);
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// New post'), h('h1', {}, 'Share how it went.'))),
+    draft ? h('div', { class: 'msg note from-plan' }, sig(32, 'happy'),
+      h('span', {}, h('b', {}, 'Drafted from your Miracle Plan check-in. '), 'It’s yours to change: add side effects or anything else, check what you took, and nothing is posted until you press Post.')) : null,
     h('form', {
       class: 'card',
       onsubmit: async (e) => {

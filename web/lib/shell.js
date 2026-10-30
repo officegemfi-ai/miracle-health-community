@@ -6,6 +6,7 @@ import { S, sb, isMod, levelOf } from './state.js';
 import { signalCard, movesCard } from './signal.js';
 import { meCard, questsCard, buildersCard, goalsCard, seasonCard, bellButton, claimable } from './game.js';
 import { searchLibrary, familyLabel } from './library.js';
+import { SITE, placeHref, askLink, askAboutCompound, meterHtml, node } from '../kit/kit.js';
 
 const app = document.getElementById('app');
 const rail = document.getElementById('rail');
@@ -51,8 +52,29 @@ async function aboutSpace(cid) {
       h('div', { class: 'stat card' }, h('b', { class: 'num' }, fmtN(sp.reports)), h('span', {}, 'Reports'))),
     h('div', { class: 'mt12' }, joinButton(sp, 'block')),
     h('a', { class: 'btn ghost block mt8', href: `#/new?c=${encodeURIComponent(cid)}` }, icon('plus', 16), 'Share how it went'),
-    sp.kind === 'stack' ? null : h('a', { class: 'lib-link mt12', href: `${LIBRARY}${encodeURIComponent(cid)}/`, target: '_blank', rel: 'noopener' },
-      icon('flask', 18), h('span', { class: 'grow' }, h('b', {}, 'Fact sheet'), h('span', { class: 'xs muted' }, 'Evidence, risks and blood markers, with sources')), icon('chevron', 16)));
+    sp.kind === 'stack' ? null : h('a', { class: 'lib-link mt12', href: `${LIBRARY}${encodeURIComponent(cid)}/` },
+      icon('flask', 18), h('span', { class: 'grow' }, h('b', {}, 'Fact sheet'), h('span', { class: 'xs muted' }, 'Evidence, risks and blood markers, with sources')), icon('chevron', 16)),
+    h('a', { class: 'lib-link mt8', href: askLink(askAbout(sp)) },
+      icon('sparkle', 18), h('span', { class: 'grow' }, h('b', {}, 'Ask Miracle AI'), h('span', { class: 'xs muted' }, `What ${sp.name} may do for you, and how it fits what you take`)), icon('chevron', 16)));
+}
+// The question a space starts Miracle AI with (typed in for them, never sent)
+export const askAbout = (sp) => (sp.kind === 'stack'
+  ? `I'm thinking about this stack: ${(sp.part_ids || []).map((id) => S.spaces.find((s) => s.compound_id === id)?.name || id).join(', ')}. What may it do for me, and how do they fit together?`
+  : askAboutCompound(sp.name));
+
+// How strong the evidence is for a compound, from the Library's grades (one file for every
+// compound, fetched once; nothing says which space you're on)
+let gradesP = null;
+export function gradeOf(cid) {
+  gradesP ||= fetch(`${SITE}/library/data/index.json`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((x) => new Map((x?.items || []).filter((it) => it.grade).map((it) => [it.id, it.grade])))
+    .catch(() => new Map());
+  return gradesP.then((m) => m.get(cid) || '');
+}
+export async function evidenceTag(cid) {
+  const grade = await gradeOf(cid);
+  return grade ? node(meterHtml(grade, { words: true })) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -82,8 +104,12 @@ export function renderNav(current = '', cid = '') {
       ? joined.map((s) => h('a', { class: 'nav-space', href: `#/s/${encodeURIComponent(s.compound_id)}`, 'aria-current': cid === s.compound_id ? 'page' : null },
         spaceTile(s, 24), h('span', { class: 'grow' }, s.name), h('span', { class: 's', 'data-sig-of': s.compound_id }, s.score != null ? fmt1(s.score) : '')))
       : [h('p', { class: 'nav-empty' }, 'You haven’t joined any yet. ', h('a', { href: '#/explore' }, 'Explore spaces'))]),
+    // The rest of Miracle Health, the same places as the bar at the top of every page
+    h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Miracle Health')),
+    h('a', { class: 'nav-i', href: placeHref('library') }, icon('flask', 20), 'The Library'),
+    h('a', { class: 'nav-i', href: placeHref('ai') }, icon('sparkle', 20), 'Miracle AI'),
+    h('a', { class: 'nav-i', href: placeHref('my') }, icon('layers', 20), 'My Miracle'),
     h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Resources')),
-    h('a', { class: 'nav-i', href: LIBRARY, target: '_blank', rel: 'noopener' }, icon('flask', 20), 'The Library'),
     h('a', { class: 'nav-i', href: '#/how', 'aria-current': current === 'how' ? 'page' : null }, icon('info', 20), 'How it works'),
     h('a', { class: 'nav-i', href: '#/rules', 'data-nav': 'rules', 'aria-current': current === 'rules' ? 'page' : null }, icon('book', 20), 'Community rules'),
     h('a', { class: 'nav-i', href: '#/account', 'data-nav': 'account', 'aria-current': current === 'account' ? 'page' : null }, icon('gear', 20), 'Account'),

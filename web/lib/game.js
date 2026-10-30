@@ -324,8 +324,10 @@ export function onboarding() {
     const at = location.hash;
     await loadSpaces();
     await refreshQuests();
-    // Someone who has already moved on (opened a post, started one) stays where they are
+    // Someone who has already moved on (opened a post, started one) stays where they are, and so
+    // does someone who came for a page (a space from the Library, a draft from their plan)
     if (location.hash !== at) return;
+    if (at && !/^#\/?(?:home)?$/.test(at)) return;
     if (at === '#/home') window.dispatchEvent(new HashChangeEvent('hashchange'));
     else location.hash = '#/home';
   };

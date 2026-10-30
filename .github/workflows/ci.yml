@@ -21,6 +21,13 @@ jobs:
           set -o pipefail
           scripts/check_rules_sync.sh 2>&1 | tee "$RUNNER_TEMP/rules.log" \
             || { scripts/ci_annotate.sh "Rules copies" "$RUNNER_TEMP/rules.log"; exit 1; }
+      - name: Design kit copies match (the app's and the website's)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          scripts/check_kit_sync.sh 2>&1 | tee "$RUNNER_TEMP/kit.log" \
+            || { scripts/ci_annotate.sh "Design kit copies" "$RUNNER_TEMP/kit.log"; exit 1; }
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.5.6
