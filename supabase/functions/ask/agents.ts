@@ -536,6 +536,12 @@ export const PILLARS = ['nutrition', 'sleep', 'exercise'] as const;
 export const PILLAR_STATES = ['strong', 'focus', 'unknown'] as const;
 type PillarState = typeof PILLAR_STATES[number];
 const PILLAR_NAME: Record<typeof PILLARS[number], string> = { nutrition: 'Nutrition', sleep: 'Sleep', exercise: 'Exercise' };
+// A pillar's step when the guide gave none, or the check couldn't let its words through
+const PILLAR_STEP: Record<typeof PILLARS[number], string> = {
+  nutrition: 'Protein at every meal, plus plenty of plants and water',
+  sleep: 'Aim for 7 or more hours a night',
+  exercise: 'Strength train and move most days',
+};
 type PlanItem = {
   id: string; name: string; url: string; family: string; tag: string; tone: 'ok' | 'warn' | 'none';
   grade: string | null; use: { grade: string | null; fits: boolean }; role: string; yours: boolean;
@@ -866,7 +872,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       const foundations = PILLARS.map((pillar) => {
         const f = rawF.find((x) => String(x?.pillar ?? '').toLowerCase() === pillar);
         const state = (PILLAR_STATES as readonly string[]).includes(String(f?.state)) ? String(f!.state) as PillarState : 'unknown';
-        return { pillar, state, step: cleanField(f?.step ?? f?.note, 90, true) };
+        return { pillar, state, step: cleanField(f?.step ?? f?.note, 90, true) || PILLAR_STEP[pillar] };
       });
       const dropped: string[] = [];
       const seen = new Set<string>();
@@ -920,7 +926,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
           ...wellbeing.map((w, n) => ({ key: `w${n}`, text: w })),
         ],
         (ok) => {
-          const fs = foundations.map((f, n) => (ok.has(`f${n}`) ? f : { ...f, step: '' }));
+          const fs = foundations.map((f, n) => (ok.has(`f${n}`) ? f : { ...f, step: PILLAR_STEP[f.pillar] }));
           const keep = (i: PlanItem) => (ok.has(`i${listed.indexOf(i)}`) ? i : { ...i, role: i.family });
           const ps = peptides.map(keep);
           const ss = supplements.map(keep);

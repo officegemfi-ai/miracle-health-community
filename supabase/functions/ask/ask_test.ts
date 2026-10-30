@@ -765,6 +765,19 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
   assert(!ev2.some((e) => e.event === 'card' && e.data.type === 'plan'));
 });
 
+Deno.test('a pillar step the check won\'t pass, or that\'s missing, gets plain advice instead of a blank', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, goals: ['muscle'] },
+    review: (p) => (/^Nutrition \(focus\)/.test(p.text) ? { ok: false, broken: [1] } : { ok: true }),
+    rounds: [{ text: 'Protein is your biggest lever. ' + WORDS, tool: { name: 'present_plan', input: {
+      title: 'Keep your muscle', foundations: [{ pillar: 'nutrition', state: 'focus', step: 'Eat 300 g of steak' }, { pillar: 'sleep', state: 'unknown', step: '' }],
+    } } }, { text: 'Start at breakfast.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'How do I keep muscle?' }]), deps(f)));
+  const plan = ev.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
+  assertEquals(plan.foundations.map((x: { step: string }) => x.step), ['Protein at every meal, plus plenty of plants and water', 'Aim for 7 or more hours a night', 'Strength train and move most days']);
+});
+
 Deno.test('Miracle AI never asks someone\'s age or sex', async () => {
   const { f } = fakeWorld({ screen: NONE, rounds: [{ text: 'A few quick questions so this fits you. '.repeat(2), tool: { name: 'ask_member', input: { questions: [
     { q: 'Roughly how old are you?', options: ['18–29', '30–49', '50–64', '65 or older'] },
