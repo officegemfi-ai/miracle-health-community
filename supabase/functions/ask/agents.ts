@@ -552,6 +552,9 @@ const PILLAR_STEP: Record<typeof PILLARS[number], string> = {
   sleep: 'Aim for 7 or more hours a night',
   exercise: 'Strength train and move most days',
 };
+// The nutrition step when the guide gave a protein target the check wouldn't pass: the target from
+// public guidance, in the words the guide is given (a foundation target, never a dose)
+const PROTEIN_STEP = 'Protein at every meal: about 0.7 to 1 g of protein per pound of lean body mass';
 type PlanItem = {
   id: string; name: string; url: string; family: string; tag: string; tone: 'ok' | 'warn' | 'none';
   grade: string | null; use: { grade: string | null; fits: boolean }; role: string; yours: boolean;
@@ -949,7 +952,8 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
           ...wellbeing.map((w, n) => ({ key: `w${n}`, text: w })),
         ],
         (ok) => {
-          const fs = foundations.map((f, n) => (ok.has(`f${n}`) ? f : { ...f, step: PILLAR_STEP[f.pillar] }));
+          const fs = foundations.map((f, n) => (ok.has(`f${n}`) ? f
+            : { ...f, step: f.pillar === 'nutrition' && maskTargets(f.step).targets.length ? PROTEIN_STEP : PILLAR_STEP[f.pillar] }));
           const keep = (i: PlanItem) => (ok.has(`i${listed.indexOf(i)}`) ? i : { ...i, role: i.family });
           const ps = peptides.map(keep);
           const ss = supplements.map(keep);

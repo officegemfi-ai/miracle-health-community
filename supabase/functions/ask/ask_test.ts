@@ -806,6 +806,18 @@ Deno.test('protein targets reach the check as markers, so it can\'t take them fo
   // The check saw markers, never the numbers
   const seen = calls.filter((c) => c.kind === 'review').map((c) => String((c.body.messages as { content: string }[])[0].content)).join('\n');
   assert(seen.includes('about ⟨protein target A⟩ of protein per pound of lean body mass') && !seen.includes('0.7 to 1 g'), seen);
+  // A nutrition step with a protein target that the check still won't pass keeps a target: the one from public guidance
+  const strict = fakeWorld({
+    screen: { ...NONE, goals: ['muscle'] },
+    review: (p) => (/^Nutrition/.test(p.text) ? { ok: false, broken: [1] } : { ok: true }),
+    rounds: [{ text: 'Protein is your biggest lever. ' + WORDS, tool: { name: 'present_plan', input: {
+      title: 'Keep your muscle', foundations: [{ pillar: 'nutrition', state: 'start', step: 'About 1 g of protein per pound of lean body mass, 30 g at breakfast' }],
+    } } }, { text: 'Start at breakfast.' }],
+  });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'How do I keep muscle on a GLP-1?' }]), deps(strict.f)));
+  const plan2 = ev2.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
+  assertEquals(plan2.foundations[0].step, 'Protein at every meal: about 0.7 to 1 g of protein per pound of lean body mass');
+  assertEquals(plan2.first, { pillar: 'nutrition', step: 'Protein at every meal: about 0.7 to 1 g of protein per pound of lean body mass' });
 });
 
 Deno.test('a plan starts with exactly one pillar', async () => {
