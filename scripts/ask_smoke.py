@@ -157,9 +157,12 @@ for n, (title, q) in enumerate(questions, 1):
             continue
         q = q(results[n - 1])
     r = ask(q)
-    # Ten questions in a row can trip the per-minute limit a real visitor would never reach
+    # Ten questions in a row can trip the ten-minute limit a real visitor rarely reaches. It counts
+    # in fixed ten-minute windows, turned-away messages included, so wait for the next window
     if r['status'] == 429 and '"burst"' in r.get('error', ''):
-        time.sleep(65)
+        wait = 600 - time.time() % 600 + 5
+        print(f'The ten-minute limit was reached; waiting {wait:.0f}s for the next window', flush=True)
+        time.sleep(wait)
         r = ask(q)
     if r['status'] != 200:
         failures.append(f'{title}: answered {r["status"]} {r.get("error", "")}')

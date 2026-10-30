@@ -23,7 +23,7 @@ case "${1:-}" in
     psql "postgresql://postgres@127.0.0.1:$PORT/postgres" -q -c "drop database if exists $DB with (force)" -c "create database $DB"
     psql "$URL" -q -v ON_ERROR_STOP=1 -f scripts/local_db/supabase_shim.sql
     for f in supabase/migrations/*.sql; do psql "$URL" -q -v ON_ERROR_STOP=1 -f "$f"; done
-    psql "$URL" -q -v ON_ERROR_STOP=1 -f supabase/seed.sql
+    for f in supabase/seed.sql supabase/seed_ask.sql; do psql "$URL" -q -v ON_ERROR_STOP=1 -f "$f"; done
     echo "database $DB rebuilt from the migrations" ;;
   test)
     status=0
