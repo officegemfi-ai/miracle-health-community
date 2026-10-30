@@ -6,3 +6,4 @@ tests/e2e/out/
 .pgdata.api.pid
 _site_gate/
 _site_preview/
+__pycache__/

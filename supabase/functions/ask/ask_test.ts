@@ -457,7 +457,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   assertEquals(g.length, 3);
   const sys = g[0].body.system as { text: string; cache_control?: unknown }[];
   assert(sys[0].cache_control && sys[1].text.includes('medicines they take, in their words: "sertraline"') && sys[1].text.includes('### BPC-157 (id bpc157)'));
-  assertEquals((g[0].body.tools as unknown[]).length, 8);
+  assertEquals((g[0].body.tools as unknown[]).length, 9);
   assertEquals(g[0].body.output_config, { effort: 'low' });
   const round2 = g[1].body.messages as { role: string; content: { type: string; signature?: string; cache_control?: unknown }[] }[];
   assertEquals(round2[1].content[0], { type: 'thinking', thinking: '', signature: 'sig123' });        // sent back unchanged
@@ -708,17 +708,68 @@ Deno.test('a reply that came out as cards and a line is written again, once, in 
   assertEquals(plain.calls.filter((c) => c.kind === 'guide').length, 1);
 });
 
+Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplements for the weak spot, checked', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['testosterone'], goals: ['muscle'] },
+    rounds: [
+      { text: '**Protein is your biggest lever right now.** ' + WORDS, tool: { name: 'present_plan', input: {
+        title: 'Keep your muscle',
+        foundations: [
+          { pillar: 'nutrition', state: 'focus', step: 'Protein first at every meal: about 0.7 to 1 g of protein per pound of lean body mass' },
+          { pillar: 'exercise', state: 'unknown', step: 'Strength train 3 times a week' },
+          { pillar: 'sleep', state: 'strong', step: 'Keep your 7+ hours going' },
+        ],
+        peptides: [{ id: 'testosterone', role: 'Hormone therapy' }, { id: 'bpc157', role: 'Recovery' }],
+        supplements: [{ id: 'creatine', role: 'Works with strength training' }, { id: 'hmb', role: 'May help keep muscle' }, { id: 'mk677', role: 'GH' }, { id: 'nope', role: 'x' }],
+        wellbeing: ['Check your labs with your prescriber', 'Share wins in the Miracle Health community'],
+      } } },
+      { text: 'Start with protein at breakfast.' },
+    ],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I take testosterone and I want to keep my muscle' }]), deps(f)));
+  const plan = ev.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
+  assertEquals(plan.title, 'Keep your muscle');
+  assertEquals(plan.foundations.map((x: { pillar: string; state: string }) => `${x.pillar}:${x.state}`), ['nutrition:focus', 'sleep:strong', 'exercise:unknown']);
+  assert(plan.foundations[0].step.includes('0.7 to 1 g of protein per pound'));               // a foundation target, not a dose
+  assertEquals(plan.foundations[2].step, 'Strength train 3 times a week');
+  assertEquals(plan.peptides.map((i: { id: string; yours: boolean }) => `${i.id}:${i.yours}`), ['testosterone:true']);   // BPC-157 isn't theirs
+  assertEquals(plan.supplements.map((i: { id: string }) => i.id), ['creatine', 'hmb']);        // MK-677 isn't a supplement they take
+  assertEquals(plan.wellbeing.length, 2);
+  assert(ev.findIndex((e) => e.event === 'text') < ev.findIndex((e) => e.event === 'card' && e.data.type === 'plan'));
+  // Checked together, and the guide is told what was left out
+  assert(ev.some((e) => e.event === 'card' && e.data.type === 'audit' && e.data.for === plan.id));
+  const toolResult = JSON.stringify(calls.filter((c) => c.kind === 'guide')[1].body.messages);
+  assert(toolResult.includes('BPC-157 (not something they take') && toolResult.includes('MK-677 (not something they take'));
+  assert(ev[ev.length - 1].data.memo.includes('Miracle Plan "Keep your muscle": nutrition focus'));
+  // Not for someone under 18
+  const minor = fakeWorld({ screen: { ...NONE, red_flag: 'minor' }, rounds: [{ text: 'Food, sleep and training. ' + WORDS, tool: { name: 'present_plan', input: { title: 'x', foundations: [] } } }, { text: 'Talk to a parent.' }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: "I'm 16, how do I get bigger?" }]), deps(minor.f)));
+  assert(!ev2.some((e) => e.event === 'card' && e.data.type === 'plan'));
+});
+
+Deno.test('Miracle AI never asks someone\'s age or sex', async () => {
+  const { f } = fakeWorld({ screen: NONE, rounds: [{ text: 'A few quick questions so this fits you. '.repeat(2), tool: { name: 'ask_member', input: { questions: [
+    { q: 'Roughly how old are you?', options: ['18–29', '30–49', '50–64', '65 or older'] },
+    { q: 'Which best describes you?', options: ['Female', 'Male'] },
+    { q: 'Do you strength train?', options: ['3+ times a week', '1 to 2 times a week', 'Not yet'] },
+    { q: 'What is your sex?' },
+  ] } } }] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'How do I keep muscle on Ozempic?' }]), deps(f)));
+  const intake = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
+  assertEquals(intake.questions.map((q: { q: string }) => q.q), ['Do you strength train?']);
+});
+
 Deno.test('ask or answer, not both: no card of questions after a full answer', async () => {
   const long = 'This is the full answer. '.repeat(40);
   const { f } = fakeWorld({ screen: NONE, rounds: [
-    { text: long, tool: { name: 'ask_member', input: { questions: [{ q: 'How old are you?', options: ['18–29', '30–49'] }] } } },
+    { text: long, tool: { name: 'ask_member', input: { questions: [{ q: 'How is your sleep most nights?', options: ['7+ hours, solid', 'Short or broken'] }] } } },
     { text: 'What have you tried so far?' },
   ] });
   const ev = await events(await handle(ask([{ role: 'user', content: 'What helps sleep?' }]), deps(f)));
   assert(!ev.some((e) => e.event === 'card' && e.data.type === 'intake'));
   assert(ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('').endsWith('What have you tried so far?'));
   // A short opening, then questions: shown
-  const short = fakeWorld({ screen: NONE, rounds: [{ text: 'Sleep trouble wears you down. A few questions first, so this fits you. '.repeat(3), tool: { name: 'ask_member', input: { questions: [{ q: 'How old are you?', options: ['Under 18', '18–29'] }] } } }] });
+  const short = fakeWorld({ screen: NONE, rounds: [{ text: 'Sleep trouble wears you down. A few questions first, so this fits you. '.repeat(3), tool: { name: 'ask_member', input: { questions: [{ q: 'How is your sleep most nights?', options: ['7+ hours, solid', 'Short or broken'] }] } } }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'What helps sleep?' }]), deps(short.f)));
   assert(ev2.some((e) => e.event === 'card' && e.data.type === 'intake'));
 });
@@ -854,7 +905,7 @@ Deno.test('the guide asks the member questions they can answer by tapping, never
     screen: NONE,
     rounds: [
       { text: 'Poor sleep wears you down. ' + WORDS, tool: { name: 'ask_member', input: { questions: [
-        { q: 'Roughly how old are you?', options: ['18–29', '30–49', '50–64', '65 or older', '30–49'] },
+        { q: 'What keeps you up?', options: ['Falling asleep', 'Waking in the night', 'Waking too early', 'Not sure', 'Waking in the night'] },
         { q: 'Which medicines do you take?' },
         { q: 'What is your email, so I can follow up?' },
         { q: 'Which of these apply to you?', options: ['Heart condition', 'Kidney problems', 'None', 'Take 5 mg nightly'], multi: true },
@@ -865,20 +916,20 @@ Deno.test('the guide asks the member questions they can answer by tapping, never
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'What should I take to sleep better?' }]), deps(f)));
   const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
-  assertEquals(card.questions.map((q: { q: string }) => q.q), ['Roughly how old are you?', 'Which medicines do you take?', 'Which of these apply to you?']);
-  assertEquals(card.questions[0].options, ['18–29', '30–49', '50–64', '65 or older']);
+  assertEquals(card.questions.map((q: { q: string }) => q.q), ['What keeps you up?', 'Which medicines do you take?', 'Which of these apply to you?']);
+  assertEquals(card.questions[0].options, ['Falling asleep', 'Waking in the night', 'Waking too early', 'Not sure']);
   assertEquals(card.questions[2].multi, true);
   assert(!card.questions[2].options.some((o: string) => /\bmg\b|\d/.test(o)));
   assert(ev.some((e) => e.event === 'step' && /Asked 3 questions/.test(e.data.title ?? '')));
   const done = ev.find((e) => e.event === 'done')!.data;
-  assert(done.memo.includes('questions for the member: Roughly how old are you?'));
+  assert(done.memo.includes('questions for the member: What keeps you up?'));
 });
 
 Deno.test('questions for the member end the reply; asked too early, they wait for the words', async () => {
   const later = { text: 'Something written after the questions.' };
   const { f, calls } = fakeWorld({
     screen: NONE,
-    rounds: [{ text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'Roughly how old are you?' }] } } }, later],
+    rounds: [{ text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'What have you tried so far?' }] } } }, later],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(f)));
   assertEquals(calls.filter((c) => c.kind === 'guide').length, 1);
@@ -887,7 +938,7 @@ Deno.test('questions for the member end the reply; asked too early, they wait fo
   // Asked before any words: the guide writes them, then the card follows
   const early = fakeWorld({
     screen: NONE,
-    rounds: [{ tool: { name: 'ask_member', input: { questions: [{ q: 'Roughly how old are you?' }] } } }, { text: WORDS }, later],
+    rounds: [{ tool: { name: 'ask_member', input: { questions: [{ q: 'What have you tried so far?' }] } } }, { text: WORDS }, later],
   });
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(early.f)));
   assertEquals(early.calls.filter((c) => c.kind === 'guide').length, 2);
@@ -906,14 +957,14 @@ Deno.test('a question the check flags is dropped from the card', async () => {
   const { f } = fakeWorld({
     screen: NONE,
     rounds: [
-      { text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'Roughly how old are you?', options: ['18–29', '30–49'] }, { q: 'Which pharmacy-grade product?' }, { q: 'Anything you have tried already?' }] } } },
+      { text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'Do you strength train?', options: ['3+ times a week', 'Not yet'] }, { q: 'Which pharmacy-grade product?' }, { q: 'Anything you have tried already?' }] } } },
       { text: '' },
     ],
     review: (p) => ({ ok: !/tried already/.test(p.text) }),
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(f)));
   const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
-  assertEquals(card.questions.map((q: { q: string }) => q.q), ['Roughly how old are you?']);
+  assertEquals(card.questions.map((q: { q: string }) => q.q), ['Do you strength train?']);
 });
 
 Deno.test('tools are capped per turn', async () => {

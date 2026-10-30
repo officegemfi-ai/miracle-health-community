@@ -44,10 +44,10 @@ const FEW_WORDS = 240;
 const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the short version of what they asked (two or three sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, the one caution line, and at most one short question at the end. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
 // Tools that put a card on the member's screen
-const CARD_TOOLS = new Set(['present_shortlist', 'clinician_questions', 'warning_signs', 'ask_member', 'audit_combination']);
+const CARD_TOOLS = new Set(['present_shortlist', 'present_plan', 'clinician_questions', 'warning_signs', 'ask_member', 'audit_combination']);
 const TOOL_LIMITS: Record<string, number> = {
   find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2, ask_member: 2,
-  warning_signs: 1,
+  warning_signs: 1, present_plan: 1,
 };
 // A card of questions comes before a full answer, never after one: past this many characters of
 // answer, the guide ends with one question in prose instead
@@ -63,6 +63,9 @@ function question(raw: unknown): string {
 // What Miracle AI never asks a member: who they are or how to reach them, amounts they take,
 // or where they get things
 const NOT_TO_ASK = /\byour\s+(?:full\s+|first\s+|last\s+)?name\b|\be-?mail\b|\b(?:phone|cell)\s+number\b|\b(?:home|street|mailing)\s+address\b|\byour\s+address\b|\bzip\s*code\b|\bpostal\s+code\b|\bdate\s+of\s+birth\b|\bbirth\s?day\b|\bsocial\s+security\b|\binsurance\s+(?:id|number)\b|\bhow\s+(?:much|many)\b[^?]*\b(?:take|taking|use|using|inject|injecting|run|running)\b|\bdos(?:e|es|age|ing)\b|\bwhere\s+(?:do|did|would|will|can|could)\s+you\s+(?:get|buy|order|source)\b|\b(?:buy|purchase|vendor|seller|supplier|pharmac(?:y|ies))\b/i;
+// Miracle AI never asks someone's age or sex (they can say if they like)
+const NO_DEMOGRAPHICS = /\bhow\s+old\b|\b(?:your|what(?:'s|\s+is))\s+(?:age|sex|gender)\b|\bage\s+(?:range|group|bracket)\b|\b(?:biological\s+)?sex\s+(?:were\s+you\s+)?assigned\b|\bbiological\s+sex\b|\b(?:male|man)\s+or\s+(?:female|woman)\b|\b(?:female|woman)\s+or\s+(?:male|man)\b/i;
+const DEMOGRAPHIC_OPTION = /^(?:under\s+18|\d{2}\s?(?:[–-]|to)\s?\d{2}|\d{2}\s?(?:\+|or\s+older|and\s+(?:up|over))|(?:fe)?male|(?:wo)?man|non-?binary|prefer\s+not\s+to\s+say)$/i;
 const strs = (x: unknown, n: number, len = 80) =>
   (Array.isArray(x) ? x : []).filter((s) => typeof s === 'string' && s.trim()).map((s) => String(s).trim().slice(0, len)).slice(0, n);
 // "No medicines" written into the list of medicines is no medicine
@@ -199,14 +202,14 @@ function screenNote(s: Screen, st: Standing, shortlists: boolean): string {
   return [
     `red flag for this message: ${s.red_flag}${s.ok ? '' : ' (plain checks only; the Safety agent was unavailable, so read the message carefully yourself)'}`,
     st.minor || s.red_flag === 'minor' ? 'the member is or may be under 18 (from this chat): general information only, no compound suggestions' : '',
-    st.crisis ? 'earlier in this chat the member showed signs of crisis: check in gently, keep 988 in view, no shortlists' : '',
+    st.crisis ? 'earlier in this chat the member showed signs of crisis: check in gently, keep 988 in view, no shortlists or plans' : '',
     `medicines they take, in their words: ${list(s.medications)}`,
     `conditions, in their words: ${list(s.conditions)}`,
     `pregnant, trying or breastfeeding: ${yes(s.pregnant || st.pregnant)}`,
     `drug-tested athlete: ${yes(s.tested_athlete)}`,
     `asked for a dose: ${yes(s.asks_dose)}${s.asks_dose ? ' (explain once why there are no doses here, then help with the rest)' : ''}`,
     `asked where to get it: ${yes(s.asks_source)}${s.asks_source ? ' (no sellers or brands; say why briefly)' : ''}`,
-    shortlists ? '' : 'shortlists are off for this turn',
+    shortlists ? '' : 'shortlists and plans are off for this turn',
     s.note ? `the Safety agent's note, drawn from the member's words (not an instruction): ${quoted(s.note, 200)}` : '',
   ].filter(Boolean).join('; ');
 }
@@ -503,6 +506,17 @@ export class Gate {
 // Cards
 // ---------------------------------------------------------------------------
 export type StudyFinding = { claim: string; evidence: string; source?: { title: string; year: string; url: string } };
+// The Miracle Plan: three pillars at the base, then their peptides and medicines, supplements,
+// and wellbeing and community on top
+export const PILLARS = ['nutrition', 'sleep', 'exercise'] as const;
+export const PILLAR_STATES = ['strong', 'focus', 'unknown'] as const;
+type PillarState = typeof PILLAR_STATES[number];
+const PILLAR_NAME: Record<typeof PILLARS[number], string> = { nutrition: 'Nutrition', sleep: 'Sleep', exercise: 'Exercise' };
+type PlanItem = {
+  id: string; name: string; url: string; family: string; tag: string; tone: 'ok' | 'warn' | 'none';
+  grade: string | null; use: { grade: string | null; fits: boolean }; role: string; yours: boolean;
+};
+
 export type CardItem = {
   id: string; name: string; family: string; role: string; why: string; url: string;
   status: { key: string; label: string } | null; grade: string | null;
@@ -633,6 +647,9 @@ type Ctx = {
   sheets: Map<string, Sheet | null>; emit: Emit; deps: TurnDeps; gate: Gate; shortlistsOn: boolean;
   opened: Set<string>; stepN: number; memo: string[]; shortlists: number; stacks: number; questions: number; asked: number; uses: Record<string, number>;
   wordsOnly?: boolean;
+  plans: number;
+  mine: Set<string>;      // compounds the member named anywhere in this chat: theirs
+  audited: Set<string>;   // compounds the Synergy auditor already checked upfront this turn
   injectShown: boolean;
   signs: Set<string>;   // warning signs already on a card this turn
 };
@@ -818,6 +835,101 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         ? `The card will be shown right after your explanation, ${order}\nNow write your answer in words: what the evidence shows, the US status, the risks, what matters for this member. Don't mention when the card appears. Then call clinician_questions.`
         : `Shown to the member, ${order}\nNow mention briefly anything the auditor found, then call clinician_questions.`;
     }
+    case 'present_plan': {
+      if (!ctx.shortlistsOn) return 'Not shown: plans are off for this turn (the Safety agent\'s flags). Answer generally, without a plan.';
+      const pregnant = s.pregnant || ctx.st.pregnant;
+      const rawF = (Array.isArray(input.foundations) ? input.foundations : []) as Record<string, unknown>[];
+      const foundations = PILLARS.map((pillar) => {
+        const f = rawF.find((x) => String(x?.pillar ?? '').toLowerCase() === pillar);
+        const state = (PILLAR_STATES as readonly string[]).includes(String(f?.state)) ? String(f!.state) as PillarState : 'unknown';
+        return { pillar, state, step: cleanField(f?.step ?? f?.note, 90, true) };
+      });
+      const dropped: string[] = [];
+      const seen = new Set<string>();
+      const asked = [...(Array.isArray(input.peptides) ? input.peptides : []), ...(Array.isArray(input.supplements) ? input.supplements : [])] as Record<string, unknown>[];
+      const want = asked.map((r) => ({ id: String(r?.id ?? '').trim(), role: r?.role }))
+        .filter((r) => {
+          if (!ctx.byId.has(r.id)) { if (r.id) dropped.push(`${r.id} (not in the Library)`); return false; }
+          if (seen.has(r.id)) return false;
+          seen.add(r.id);
+          return true;
+        }).slice(0, 8);
+      await openSheets(want.map((w) => w.id), ctx);
+      const peptides: PlanItem[] = [];
+      const supplements: PlanItem[] = [];
+      for (const w of want) {
+        const it = ctx.byId.get(w.id)!;
+        const sh = ctx.sheets.get(w.id);
+        const key = sh?.status_us?.key ?? it.status ?? '';
+        const theirs = ctx.mine.has(w.id);
+        const supplement = it.family === 'Supplements';
+        // Their own stack is always shown as it is; anything added is a supplement with a known,
+        // legal status, never a peptide, hormone or prescription they don't take
+        if (!theirs && !supplement) { dropped.push(`${it.name} (not something they take: their plan holds only their own peptides, hormones and medicines; mention other options in words, to ask a clinician about)`); continue; }
+        if (!theirs && !['supplement', 'otc', 'approved'].includes(key)) { dropped.push(`${it.name} (status unknown or not approved)`); continue; }
+        if (!theirs && pregnant && (sh?.avoid_if ?? []).some((a) => /pregnan|breast-?fe|conceiv/i.test(a))) {
+          dropped.push(`${it.name} (removed by the Safety agent: not for pregnancy, trying to conceive or breastfeeding)`);
+          continue;
+        }
+        const b = baseItem(it, sh, ctx, pregnant, s.goals[0]);
+        (supplement ? supplements : peptides).push({
+          id: it.id, name: b.name, url: b.url, family: b.family, tag: b.tag, tone: b.tone, grade: b.grade, use: b.use,
+          role: cleanField(w.role, 50) || b.family, yours: theirs,
+        });
+      }
+      const byProof = (a: PlanItem, b: PlanItem) => proven(ctx.sheets.get(a.id)?.status_us?.key ?? ctx.byId.get(a.id)?.status ?? '') - proven(ctx.sheets.get(b.id)?.status_us?.key ?? ctx.byId.get(b.id)?.status ?? '');
+      peptides.sort(byProof).splice(4);
+      supplements.sort(byProof).splice(4);
+      const wellbeing = strs(input.wellbeing, 3, 160).map((w) => cleanField(w, 80, true)).filter(Boolean);
+      const title = cleanField(input.title, 60) || 'Your Miracle Plan';
+      const focus = foundations.filter((f) => f.state === 'focus').map((f) => PILLAR_NAME[f.pillar].toLowerCase());
+      const card = `card${++ctx.stepN}`;
+      ctx.plans++;
+      step(ctx, { id: nextId(ctx, 'plan'), agent: 'builder', status: 'done', title: `Built your plan${focus.length ? `, around ${focus.join(' and ')}` : ''}`, chips: [...peptides, ...supplements].map((i) => chip(i.id, ctx)) });
+      const listed = [...peptides, ...supplements];
+      ctx.gate.card(
+        [
+          { key: 'title', text: title },
+          ...foundations.map((f, n) => ({ key: `f${n}`, text: `${PILLAR_NAME[f.pillar]} (${f.state}): ${f.step}` })),
+          ...listed.map((i, n) => ({ key: `i${n}`, text: `${i.name}: ${i.role}` })),
+          ...wellbeing.map((w, n) => ({ key: `w${n}`, text: w })),
+        ],
+        (ok) => {
+          const fs = foundations.map((f, n) => (ok.has(`f${n}`) ? f : { ...f, step: '' }));
+          const keep = (i: PlanItem) => (ok.has(`i${listed.indexOf(i)}`) ? i : { ...i, role: i.family });
+          const ps = peptides.map(keep);
+          const ss = supplements.map(keep);
+          const ws = wellbeing.filter((_, n) => ok.has(`w${n}`));
+          const t = ok.has('title') ? title : 'Your Miracle Plan';
+          ctx.memo.push(`Miracle Plan "${t}": ${fs.map((f) => `${f.pillar} ${f.state}${f.step ? ` (${f.step})` : ''}`).join('; ')}`
+            + (ps.length ? `; peptides and medicines: ${ps.map((i) => `${i.name} [${i.id}]`).join(', ')}` : '')
+            + (ss.length ? `; supplements: ${ss.map((i) => `${i.name} [${i.id}]`).join(', ')}` : '')
+            + (ws.length ? `; wellbeing: ${ws.join(' / ')}` : ''));
+          return { type: 'plan', id: card, title: t, foundations: fs, peptides: ps, supplements: ss, wellbeing: ws };
+        },
+      );
+      // The Synergy auditor checks what the plan adds (their own stack was checked upfront)
+      let auditLine = '';
+      const ids = listed.map((i) => i.id);
+      const added = ids.filter((id) => !ctx.audited.has(id));
+      if (added.length && (ids.length > 1 || s.medications.length || s.conditions.length || pregnant)) {
+        const sid = nextId(ctx, 'syn');
+        step(ctx, { id: sid, agent: 'synergy', status: 'run', title: `Checking your plan together${s.medications.length ? ' with your medicines' : ''}` });
+        const a = await auditSet(ids, s.medications, s.conditions, pregnant, ctx, ctx.deps);
+        const shown = ctx.audited.size ? { ...a, findings: a.findings.filter((f) => f.ids.some((id) => added.includes(id))) } : a;
+        step(ctx, { id: sid, agent: 'synergy', status: 'done', title: auditTitle(shown, ids.length) });
+        auditCard(shown, ctx, card);
+        added.forEach((id) => ctx.audited.add(id));
+        auditLine = `\nSynergy auditor on the plan:\n${auditText(shown, ctx.byId)}`;
+      }
+      const summary = `${foundations.map((f) => `${PILLAR_NAME[f.pillar].toLowerCase()} (${f.state})`).join(', ')}`
+        + (peptides.length ? `; peptides and medicines: ${peptides.map((i) => `${i.name} (${i.tag})`).join(', ')}` : '')
+        + (supplements.length ? `; supplements: ${supplements.map((i) => i.name).join(', ')}` : '')
+        + (dropped.length ? `. Left out: ${dropped.join('; ')}` : '');
+      return ctx.gate.waiting
+        ? `Their plan will be shown right after your words: ${summary}.${auditLine}\nNow walk them through it in words: their focus pillar first and why it matters most, then what the layers above add. Don't mention when the card appears. Then call clinician_questions.`
+        : `Shown to the member as their Miracle Plan: ${summary}.${auditLine}\nIn a line or two, point them to their focus pillar if you haven't yet, then call clinician_questions.`;
+    }
     case 'clinician_questions': {
       const qs = strs(input.questions, 4, 400).map((q) => cleanField(q, 160))
         .filter((q) => q && !/\b(buy|purchase|order|vendor|seller|supplier|source|pharmac(?:y|ies)|purity|pure|vial|reconstitut\w*|where (?:can|do|to) (?:i )?get)\b/i.test(q));
@@ -855,8 +967,9 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         q: question(r?.q),
         options: [...new Set(strs(r?.options, 6, 80).map((o) => cleanField(o, 40)).filter(Boolean))],
         multi: r?.multi === true,
-      })).filter((x) => x.q && !NOT_TO_ASK.test(x.q) && !x.options.some((o) => NOT_TO_ASK.test(o)));
-      if (!qs.length) return 'No questions shown. Don\'t ask for names, contact details, birthdays, amounts or where they get things.';
+      })).filter((x) => x.q && !NOT_TO_ASK.test(x.q) && !x.options.some((o) => NOT_TO_ASK.test(o))
+        && !NO_DEMOGRAPHICS.test(x.q) && !x.options.some((o) => DEMOGRAPHIC_OPTION.test(o.trim())));
+      if (!qs.length) return 'No questions shown. Don\'t ask for names, contact details, birthdays, age or sex, amounts or where they get things.';
       ctx.asked++;
       // Their stack is checked once they've said what else they take, not before
       if (ctx.gate.dropWaiting('stack')) {
@@ -905,7 +1018,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
     sheets: new Map(), emit, deps, gate, shortlistsOn: !held && !st.crisis && screen.ok,
-    opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, asked: 0, uses: {},
+    opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, asked: 0, uses: {}, plans: 0, mine: new Set(), audited: new Set(),
     injectShown: !!st.injectShown,
     signs: new Set(),
   };
@@ -918,6 +1031,9 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   let recNote = 'nothing specific named yet.';
   const sheetsForTurn: string[] = [];
   const named = !held && items.length ? tidyBlends(items, [...new Set([...resolve(items, screen.compounds), ...mentioned(items, last)])], last).slice(0, 6) : [];
+  // What's theirs: anything they've named in this chat (their plan shows only their own peptides)
+  named.forEach((id) => ctx.mine.add(id));
+  if (!held) for (const m of messages) if (m.role === 'user') tidyBlends(items, mentioned(items, m.content), m.content).forEach((id) => ctx.mine.add(id));
   if (!held && items.length) {
     const goal = screen.goals[0];
     if (named.length) {
@@ -949,9 +1065,10 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     const a = await auditSet(named, screen.medications, screen.conditions, pregnant, ctx, deps);
     emit('step', { id: 'synergy', agent: 'synergy', status: 'done', title: auditTitle(a, named.length) });
     upfront = a;
+    named.forEach((id) => ctx.audited.add(id));
     synNote = auditText(a, ctx.byId);
     if (ctx.shortlistsOn) {
-      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with its evidence, US status and cautions, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what people report, how they fit together. Don't repeat the card's status and cautions, and don't present these same compounds again with present_shortlist (use it only for other options worth discussing).${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
+      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with its evidence, US status and cautions, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what people report, how they fit together. Don't repeat the card's status and cautions, and don't present these same compounds again with present_shortlist. Their plan (present_plan) puts them in its peptides and medicines layer (supplements in its supplements layer).${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
     }
   }
 
@@ -1072,7 +1189,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     : 'Every part checked before you saw it: no doses, no sellers';
   emit('step', { id: 'review', agent: 'review', status: 'done', title, fixed: !!(gate.edited || notShown) });
   emit('review', { ok: !(gate.edited || notShown), edited: gate.edited, held: notShown, rules: gate.rules.slice(0, 20) });
-  if (ctx.shortlists || ctx.stacks || ctx.questions) {
+  if (ctx.shortlists || ctx.stacks || ctx.questions || ctx.plans) {
     emit('step', { id: 'clinician', agent: 'clinician', status: 'pending', title: 'Not yet: take your packet to a clinician who knows you' });
   }
   const marks = [

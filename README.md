@@ -87,7 +87,7 @@ A limit or a pause never turns away someone in crisis or describing an emergency
 reply written in advance (988, or 911) with no AI call, and the message is still counted.
 Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAST_MODEL`,
 `ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
-project eight real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
+project ten real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
 ## Run it on your machine (no Docker needed)
 ```
