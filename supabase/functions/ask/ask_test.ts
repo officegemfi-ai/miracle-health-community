@@ -816,7 +816,7 @@ Deno.test('the auditor\'s card says each thing once', async () => {
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'Creatine? I take sertraline' }]), deps(f)));
   const audit = ev.find((e) => e.event === 'card' && e.data.type === 'audit')!.data;
-  assertEquals(audit.findings.map((x: { level: string }) => x.level), ['info', 'caution']);
+  assertEquals(audit.findings.map((x: { level: string }) => x.level), ['caution']);          // the most serious, once
 });
 
 Deno.test('cards asked for before the answer is explained wait, and follow the words', async () => {

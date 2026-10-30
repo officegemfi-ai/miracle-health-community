@@ -40,7 +40,7 @@ export type Audit = { findings: Finding[]; summary: string; ok: boolean };
 
 const MAX_ROUNDS = 6;
 // A reply with cards but fewer characters of words than this gets written again, once
-const FEW_WORDS = 160;
+const FEW_WORDS = 240;
 const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the short version of what they asked (two or three sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, the one caution line, and at most one short question at the end. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
 // Tools that put a card on the member's screen
@@ -257,10 +257,12 @@ export async function auditSet(
       .map((f) => (f.ids.some((i) => own.has(i))
         ? { ...f, note: `${f.note.replace(/[.\s]+$/, '')}. Don’t stop or change your medicine on your own; ask your prescriber.` }
         : f))
-      // Each thing once: one "good to know" per compound or pair, one finding per kind otherwise
+      // Each thing once: one finding per compound or pair, the most serious (the first of equals)
       .filter((f, i, all) => {
-        const key = (g: typeof f) => `${[...g.ids].sort().join('+')}|${g.level}|${g.level === 'info' ? '' : g.kind}`;
-        return all.findIndex((g) => key(g) === key(f)) === i;
+        const key = (g: typeof f) => [...g.ids].sort().join('+');
+        const rank = (g: typeof f) => ['info', 'caution', 'avoid'].indexOf(g.level);
+        const top = Math.max(...all.filter((g) => key(g) === key(f)).map(rank));
+        return rank(f) === top && all.findIndex((g) => key(g) === key(f) && rank(g) === top) === i;
       })
       .slice(0, 8);
     return { findings, summary: cleanField(raw?.summary, 240), ok: !!raw };
