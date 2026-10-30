@@ -78,6 +78,11 @@ const CATEGORY_GOAL: Record<string, Goal> = {
 
 export const fold = (s: string) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '');
 const spaced = (s: string) => ' ' + String(s ?? '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+// A name that joins compounds ("BPC-157/TB-500", "CJC-1295 + Ipamorelin") only counts when they
+// are written joined the same way, not when someone lists them one by one
+const COMBO = /[\/+&]/;
+const joined = (s: string) => ' ' + String(s ?? '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9\/+&]+/g, ' ').replace(/\s*([\/+&])\s*/g, '$1').trim() + ' ';
 // Short aliases that are also everyday words: never matched in free text
 const AMBIGUOUS = new Set(['ai', 'same', 'salt', 'test', 'glow', 'dim', 'mag', 'ps', 'nr', 'gh', 'mb', 'ha', 'pea', 'nasa',
   'mic', 'vita', 'ipa', 'kelp', 't 1', 't 4', 'cs 4', 'iron man', 'lira', 'reta', 'tesa', 'sema', 'ala', 'mt i']);
@@ -183,6 +188,7 @@ export function resolve(items: Item[], names: string[]): string[] {
 // Compounds named anywhere in a message, as a backstop to the Safety agent's list
 export function mentioned(items: Item[], text: string): string[] {
   const t = spaced(text);
+  const j = joined(text);
   const squashed = fold(text);
   const out: string[] = [];
   for (const it of items) {
@@ -190,10 +196,29 @@ export function mentioned(items: Item[], text: string): string[] {
       const ks = spaced(k);
       const core = ks.trim();
       if (core.length < 2 || AMBIGUOUS.has(core)) continue;
-      const hit = t.includes(ks) || (fold(k).length >= 6 && squashed.includes(fold(k)));
+      const hit = COMBO.test(k) ? j.includes(joined(k)) : t.includes(ks) || (fold(k).length >= 6 && squashed.includes(fold(k)));
       if (hit) { if (!out.includes(it.id)) out.push(it.id); break; }
     }
     if (out.length >= 8) break;
+  }
+  return out;
+}
+
+// A blend named along with every one of its parts: either they're listing the parts (keep the
+// parts) or describing the blend they take, by its own name (keep the blend), never both
+export function tidyBlends(items: Item[], ids: string[], text: string): string[] {
+  const byId = new Map(items.map((it) => [it.id, it]));
+  const t = spaced(text);
+  let out = [...ids];
+  for (const id of ids) {
+    const it = byId.get(id);
+    if (!it || !it.parts.length || !out.includes(id) || !it.parts.every((p) => out.includes(p))) continue;
+    const own = [it.id, it.name.replace(/\([^)]*\)/g, ' '), ...it.aliases].filter((k) => !COMBO.test(k)).some((k) => {
+      const ks = spaced(k);
+      const core = ks.trim();
+      return core.length >= 3 && !AMBIGUOUS.has(core) && t.includes(ks);
+    });
+    out = own ? out.filter((x) => !it.parts.includes(x)) : out.filter((x) => x !== id);
   }
   return out;
 }

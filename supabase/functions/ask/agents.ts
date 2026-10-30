@@ -7,7 +7,7 @@
 import { ApiError, form, type Block, type Message, retry, stream, tuning } from './claude.ts';
 import {
   BLOCKED, condense, familyOne, GOAL_LABEL, GOALS, type Goal, indexText, type Item, LEVEL_SHORT, type Library, mentioned,
-  optionLine, rank, resolve, search, type Sheet, type Signal, type Snapshot, stub, UNAPPROVED,
+  optionLine, rank, resolve, search, type Sheet, type Signal, type Snapshot, stub, tidyBlends, UNAPPROVED,
 } from './library.ts';
 import {
   AUDIT_SYSTEM, AUDIT_TOOL, GUIDE_TOOLS, guideSystem, REVIEW_SYSTEM, REVIEW_TOOL, SCREEN_SYSTEM, SCREEN_TOOL, turnNotes,
@@ -915,7 +915,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // 2. The Recommender's lookup: the compounds the member named, and options for their goal
   let recNote = 'nothing specific named yet.';
   const sheetsForTurn: string[] = [];
-  const named = !held && items.length ? [...new Set([...resolve(items, screen.compounds), ...mentioned(items, last)])].slice(0, 6) : [];
+  const named = !held && items.length ? tidyBlends(items, [...new Set([...resolve(items, screen.compounds), ...mentioned(items, last)])], last).slice(0, 6) : [];
   if (!held && items.length) {
     const goal = screen.goals[0];
     if (named.length) {

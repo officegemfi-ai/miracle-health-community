@@ -1,6 +1,6 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { sse, stream, tuning, canForceTool } from './claude.ts';
-import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet } from './library.ts';
+import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
 import { cleanField, CRISIS, MINOR, redact, scan } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor, useOf } from './agents.ts';
@@ -176,6 +176,20 @@ Deno.test('names resolve to Library ids, everyday words never do', () => {
   assertEquals(mentioned(ITEMS, 'Is BPC-157 ok with creatine? Same as before, just a test.'), ['creatine', 'bpc157']);
   assertEquals(mentioned(ITEMS, 'I was on TRT for a year'), ['testosterone']);
   assertEquals(search(ITEMS, 'thymosin')[0].id, 'tb500');
+});
+
+Deno.test('a blend counts only when it is named, never because its parts are listed', () => {
+  const items: Item[] = [...ITEMS, { id: 'wolverine', name: 'Wolverine blend (BPC-157 + TB-500)', family: 'Blends', category: 'Healing & recovery', aliases: ['Wolverine', 'Wolverine stack', 'BPC/TB', 'BPC-157/TB-500'], kind: 'blend', parts: ['bpc157', 'tb500'], sheet: false }];
+  const listed = 'I take BPC-157, TB-500 and creatine for a shoulder injury.';
+  assert(!mentioned(items, listed).includes('wolverine'));
+  assert(!mentioned(items, 'I take BPC 157 tb500 and creatine').includes('wolverine'));
+  assert(mentioned(items, 'I run BPC-157/TB-500 from one vial').includes('wolverine'));
+  assert(mentioned(items, 'I take the Wolverine stack').includes('wolverine'));
+  // Named with all its parts: their own list of parts, or the blend by its name
+  assertEquals(tidyBlends(items, ['bpc157', 'tb500', 'wolverine', 'creatine'], listed), ['bpc157', 'tb500', 'creatine']);
+  assertEquals(tidyBlends(items, ['wolverine', 'bpc157', 'tb500'], 'I take Wolverine (BPC-157 + TB-500)'), ['wolverine']);
+  // The blend and only some of its parts: both stay, so the auditor can say it doubles up
+  assertEquals(tidyBlends(items, ['wolverine', 'bpc157'], 'I take Wolverine and extra BPC-157'), ['wolverine', 'bpc157']);
 });
 
 Deno.test('the ranking puts proven options first and marks the ones never to shortlist', () => {

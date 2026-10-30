@@ -189,6 +189,17 @@ for n, (title, q) in enumerate(questions, 1):
             failures.append(f'{title}: their stack came without the auditor\'s check')
         elif stack and 'intake' in cards:
             failures.append(f'{title}: their stack was checked and questions asked in the same reply')
+        if stack:
+            # The card holds what they named, and the auditor's notes are findings, not disclaimers
+            ids = [it.get('id') for it in stack.get('items', [])]
+            if any(i not in ('bpc157', 'tb500', 'creatine') for i in ids):
+                failures.append(f'{title}: the stack card has something they didn\'t name ({", ".join(ids)})')
+            audit = next((d for e, d in ev if e == 'card' and d.get('type') == 'audit' and d.get('for') == stack.get('id')), {})
+            notes = [f"{f.get('level')}: {' + '.join(f.get('names') or [])}: {f.get('note')}" for f in audit.get('findings', [])]
+            print(f'::notice title=Miracle AI {n}. The stack card::{esc("Items: " + ", ".join(ids) + chr(10) + chr(10).join(notes or ["No findings"]))}')
+            restated = [x for x in notes if re.search(r'not (?:fda[- ])?approved|human safety|no human|safety (?:is )?unknown|little (?:human )?data', x.lower())]
+            if restated:
+                warnings.append(f'{title}: {len(restated)} auditor note(s) only restate status or unknowns')
     if n == 8:
         if 'urgent' in cards:
             failures.append(f'{title}: a red, warm spot without fever was treated as a 911 emergency')
