@@ -139,6 +139,10 @@ for n, (title, q) in enumerate(questions, 1):
             continue
         q = q(results[n - 1])
     r = ask(q)
+    # Ten questions in a row can trip the per-minute limit a real visitor would never reach
+    if r['status'] == 429 and '"burst"' in r.get('error', ''):
+        time.sleep(65)
+        r = ask(q)
     if r['status'] != 200:
         failures.append(f'{title}: answered {r["status"]} {r.get("error", "")}')
         continue
@@ -254,17 +258,18 @@ for n, (title, q) in enumerate(questions, 1):
         warnings.append(f'{title}: the questions don\'t ask about their foundations (protein, training, sleep)')
     if n in (9, 10) and DOSE.search(text):
         failures.append(f'{title}: an amount reached the reader: {DOSE.search(text).group(0)}')
+    plan = next((d for e, d in ev if e == 'card' and d.get('type') == 'plan'), None)
+    if plan:
+        pillars = {f.get('pillar'): f for f in plan.get('foundations', [])}
+        layers = [f"{p}: {pillars.get(p, {}).get('state')}: {pillars.get(p, {}).get('step')}" for p in ('nutrition', 'sleep', 'exercise')]
+        layers += [f"peptides and medicines: {', '.join(i.get('name', '') for i in plan.get('peptides', []))}",
+                   f"supplements: {', '.join(i.get('name', '') + ' (' + i.get('role', '') + ')' for i in plan.get('supplements', []))}",
+                   f"wellbeing: {' / '.join(plan.get('wellbeing', []))}"]
+        print(f'::notice title=Miracle AI {n}. The plan card::{esc(plan.get("title", "") + chr(10) + chr(10).join(layers))}')
     if n == 10:
-        plan = next((d for e, d in ev if e == 'card' and d.get('type') == 'plan'), None)
         if not plan:
             failures.append(f'{title}: no Miracle Plan once they had answered')
         else:
-            pillars = {f.get('pillar'): f for f in plan.get('foundations', [])}
-            layers = [f"{p}: {pillars.get(p, {}).get('state')}: {pillars.get(p, {}).get('step')}" for p in ('nutrition', 'sleep', 'exercise')]
-            layers += [f"peptides and medicines: {', '.join(i.get('name', '') for i in plan.get('peptides', []))}",
-                       f"supplements: {', '.join(i.get('name', '') + ' (' + i.get('role', '') + ')' for i in plan.get('supplements', []))}",
-                       f"wellbeing: {' / '.join(plan.get('wellbeing', []))}"]
-            print(f'::notice title=Miracle AI {n}. The plan card::{esc(plan.get("title", "") + chr(10) + chr(10).join(layers))}')
             if pillars.get('nutrition', {}).get('state') != 'focus':
                 warnings.append(f'{title}: nutrition isn\'t the focus pillar for someone short on protein')
             if not any(i.get('id') == 'creatine' for i in plan.get('supplements', [])):
