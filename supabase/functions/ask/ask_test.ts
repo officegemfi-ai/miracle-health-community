@@ -3,7 +3,7 @@ import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
 import { cleanField, CRISIS, MINOR, redact, scan } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
-import { applyFixes, benefitsOf, plainScreen, screenTitle, standing, tagFor, cautionFor, useOf } from './agents.ts';
+import { applyFixes, benefitsOf, plainScreen, screenTitle, settle, standing, tagFor, cautionFor, useOf } from './agents.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
 
@@ -18,6 +18,7 @@ const ITEMS: Item[] = [
   { id: 'mk677', name: 'MK-677', family: 'Peptides', category: 'Growth-hormone axis', aliases: ['Ibutamoren'], kind: 'compound', parts: [], sheet: true, status: 'category2', status_label: 'On FDA’s safety-risk list', grade: 'limited', goals: { muscle: 0.75 }, summary: 'An oral GH secretagogue.' },
   { id: 'testosterone', name: 'Testosterone', family: 'Hormones', category: 'Hormone balance', aliases: ['TRT', 'Test'], kind: 'compound', parts: [], sheet: true, status: 'approved', status_label: 'FDA-approved (Schedule III)', grade: 'strong', goals: { hormonal: 1, muscle: 0.75 }, summary: 'The main male sex hormone.' },
   { id: 'same', name: 'SAMe', family: 'Supplements', category: 'Mood & stress', aliases: ['S-adenosylmethionine'], kind: 'compound', parts: [], sheet: false },
+  { id: 'eaa', name: 'EAAs', family: 'Supplements', category: 'Muscle & performance', aliases: ['Essential amino acids'], kind: 'compound', parts: [], sheet: false },
 ];
 const SHEET_BPC: Sheet = {
   id: 'bpc157', name: 'BPC-157', summary: 'A peptide.', what_it_is: 'A 15-amino-acid peptide studied in rodents.',
@@ -194,7 +195,7 @@ Deno.test('a blend counts only when it is named, never because its parts are lis
 
 Deno.test('the ranking puts proven options first and marks the ones never to shortlist', () => {
   const r = rank(ITEMS, SNAPSHOT.signals as never, 'muscle');
-  assertEquals(r.map((o) => o.id), ['creatine', 'testosterone', 'hmb', 'mk677']);
+  assertEquals(r.map((o) => o.id), ['creatine', 'testosterone', 'hmb', 'mk677', 'eaa']);
   assert(r.find((o) => o.id === 'mk677')!.gate!.includes('Never on a shortlist'));
   assert(r.find((o) => o.id === 'testosterone')!.gate!.includes('prescription hormone'));
 });
@@ -531,6 +532,22 @@ Deno.test('the check changes only the words that break a rule: a claim softened,
   assertEquals(applyFixes('Only this.', [{ find: 'Only this.', replace: '' }]), null);
 });
 
+Deno.test('the check never adds a disclaimer to a line about benefits; it still softens a claim that goes too far', () => {
+  const part = 'BPC-157 is thought to encourage new blood vessels, which bring repair to injured tendon.';
+  // Only a disclaimer added: the part stands as written
+  assertEquals(settle(part, { ok: false, broken: [4], fixes: [{ find: 'injured tendon.', replace: 'injured tendon, though human evidence is lacking and it is not approved.' }] }), { out: part, edited: false });
+  assertEquals(settle(part, { ok: false, broken: [4], revised: 'BPC-157 is not FDA-approved and its safety is not established.' }), { out: part, edited: false });
+  // A real softening goes through, and a disclaimer next to it doesn't
+  assertEquals(settle(part, { ok: false, broken: [4], fixes: [{ find: 'which bring repair', replace: 'which may bring repair' }, { find: 'tendon.', replace: 'tendon; it is unproven.' }] }),
+    { out: 'BPC-157 is thought to encourage new blood vessels, which may bring repair to injured tendon.', edited: true });
+  // A strong claim keeps whatever the check does to it
+  assertEquals(settle('BPC-157 cures ulcers.', { ok: false, broken: [4], fixes: [{ find: 'cures ulcers', replace: 'has not been proven to cure ulcers' }] }), { out: 'BPC-157 has not been proven to cure ulcers.', edited: true });
+  // Other rules: the check's change stands, whatever it adds
+  assertEquals(settle('Most people use 250 mcg. It may help.', { ok: false, broken: [1], fixes: [{ find: 'Most people use 250 mcg.', replace: 'No safe human dose has been established.' }] }).out, 'No safe human dose has been established. It may help.');
+  assertEquals(settle('Fine.', { ok: true }), { out: 'Fine.', edited: false });
+  assertEquals(settle('Gone.', { ok: false, broken: [2] }), { out: null, edited: false });
+});
+
 Deno.test('amounts in dosing units never go out, even if the check misses them', async () => {
   const { f } = fakeWorld({ screen: NONE, rounds: [{ text: 'Forums mention 250 mcg and KSM-66. Trials saw people lose 8.4 kg.' }] });
   const ev = await events(await handle(ask([{ role: 'user', content: 'tell me' }]), deps(f)));
@@ -720,7 +737,7 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
           { pillar: 'sleep', state: 'strong', step: 'Keep your 7+ hours going' },
         ],
         peptides: [{ id: 'testosterone', role: 'Hormone therapy' }, { id: 'bpc157', role: 'Recovery' }],
-        supplements: [{ id: 'creatine', role: 'Works with strength training' }, { id: 'hmb', role: 'May help keep muscle' }, { id: 'mk677', role: 'GH' }, { id: 'nope', role: 'x' }],
+        supplements: [{ id: 'creatine', role: 'Works with strength training' }, { id: 'eaa', role: 'Fills protein gaps' }, { id: 'same', role: 'Mood' }, { id: 'mk677', role: 'GH' }, { id: 'nope', role: 'x' }],
         wellbeing: ['Check your labs with your prescriber', 'Share wins in the Miracle Health community'],
       } } },
       { text: 'Start with protein at breakfast.' },
@@ -733,7 +750,8 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
   assert(plan.foundations[0].step.includes('0.7 to 1 g of protein per pound'));               // a foundation target, not a dose
   assertEquals(plan.foundations[2].step, 'Strength train 3 times a week');
   assertEquals(plan.peptides.map((i: { id: string; yours: boolean }) => `${i.id}:${i.yours}`), ['testosterone:true']);   // BPC-157 isn't theirs
-  assertEquals(plan.supplements.map((i: { id: string }) => i.id), ['creatine', 'hmb']);        // MK-677 isn't a supplement they take
+  // MK-677 isn't a supplement they take; SAMe has no fact sheet yet; EAAs are food-like, so they can come in
+  assertEquals(plan.supplements.map((i: { id: string; tag: string }) => `${i.id}:${i.tag}`), ['creatine:Supplement', 'eaa:Supplement']);
   assertEquals(plan.wellbeing.length, 2);
   assert(ev.findIndex((e) => e.event === 'text') < ev.findIndex((e) => e.event === 'card' && e.data.type === 'plan'));
   // Checked together, and the guide is told what was left out

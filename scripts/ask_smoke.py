@@ -37,7 +37,8 @@ ORIGIN = 'http://127.0.0.1:4173'
 # Amounts in dosing units; food protein ("about 1 g of protein per pound of lean mass") is a
 # foundation target, not a dose
 DOSE = re.compile(r'(?<![\w.])\d+(?:[.,]\d+)?\s?(?:mcg|µg|ug|mg|g|iu|units?|ml|cc)\b'
-                  r'(?!\s*(?:/\s*(?:kg|lb)\s*)?(?:per\s+(?:kg|lb|pound|day)\s+)?(?:of\s+)?(?:[a-z-]+\s+){0,2}protein)', re.I)
+                  r'(?!\s*(?:/\s*(?:kg|lb)\s*)?(?:per\s+(?:kg|lb|pound|day)\s+)?(?:of\s+)?(?:[a-z-]+\s+){0,2}protein)'
+                  r'(?!\s*(?:/|per|a|an)\s*(?:pound|lb|kg)s?\s+(?:of\s+)?(?:your\s+)?(?:lean|goal|ideal|target)\b)', re.I)
 DEMOGRAPHICS = re.compile(r'how old|your age|age range|\bsex\b|gender|\bfemale\b|\bmale\b|18.29|65 or older', re.I)
 # The guide's tools are its business, not the reader's
 TOOL_TALK = re.compile(r'present_shortlist|clinician_questions|ask_member|audit_combination|find_options|read_fact_sheets|search_library'
@@ -106,7 +107,21 @@ def report(n, title, r):
     print(f'[{n}] {title}: {head}')
     asked = [f"{q.get('q')} [{' | '.join(q.get('options') or [])}]" for e, d in ev if e == 'card' and d.get('type') == 'intake' for q in d.get('questions', [])]
     tail = (chr(10) + chr(10) + 'Questions for the member: ' + ' / '.join(asked)) if asked else ''
-    print(f'::notice title=Miracle AI {n}. {title}::{esc(head + chr(10) + chr(10) + final_text(ev)[:3200] + tail)}')
+    # What the cards hold, in the same notice (a step shows only ten notices)
+    stack = next((d for e, d in ev if e == 'card' and d.get('kind') == 'yours'), None)
+    if stack:
+        audit = next((d for e, d in ev if e == 'card' and d.get('type') == 'audit' and d.get('for') == stack.get('id')), {})
+        notes = [f"{f.get('level')}: {' + '.join(f.get('names') or [])}: {f.get('note')}" for f in audit.get('findings', [])]
+        tail += chr(10) + chr(10) + 'Stack card: ' + ', '.join(it.get('id', '') for it in stack.get('items', [])) + chr(10) + chr(10).join(notes or ['No findings'])
+    plan = next((d for e, d in ev if e == 'card' and d.get('type') == 'plan'), None)
+    if plan:
+        pillars = {f.get('pillar'): f for f in plan.get('foundations', [])}
+        layers = [f"{p}: {pillars.get(p, {}).get('state')}: {pillars.get(p, {}).get('step')}" for p in ('nutrition', 'sleep', 'exercise')]
+        layers += [f"peptides and medicines: {', '.join(i.get('name', '') for i in plan.get('peptides', []))}",
+                   f"supplements: {', '.join(i.get('name', '') + ' (' + i.get('role', '') + ')' for i in plan.get('supplements', []))}",
+                   f"wellbeing: {' / '.join(plan.get('wellbeing', []))}"]
+        tail += chr(10) + chr(10) + f'Plan card: {plan.get("title", "")}' + chr(10) + chr(10).join(layers)
+    print(f'::notice title=Miracle AI {n}. {title}::{esc(head + chr(10) + chr(10) + final_text(ev)[:3000] + tail)}')
     return steps, cards, review
 
 
@@ -228,7 +243,6 @@ for n, (title, q) in enumerate(questions, 1):
                 failures.append(f'{title}: the stack card has something they didn\'t name ({", ".join(ids)})')
             audit = next((d for e, d in ev if e == 'card' and d.get('type') == 'audit' and d.get('for') == stack.get('id')), {})
             notes = [f"{f.get('level')}: {' + '.join(f.get('names') or [])}: {f.get('note')}" for f in audit.get('findings', [])]
-            print(f'::notice title=Miracle AI {n}. The stack card::{esc("Items: " + ", ".join(ids) + chr(10) + chr(10).join(notes or ["No findings"]))}')
             restated = [x for x in notes if re.search(r'not (?:fda[- ])?approved|human safety|no human|safety (?:is )?unknown|little (?:human )?data', x.lower())]
             if restated:
                 warnings.append(f'{title}: {len(restated)} auditor note(s) only restate status or unknowns')
@@ -261,11 +275,9 @@ for n, (title, q) in enumerate(questions, 1):
     plan = next((d for e, d in ev if e == 'card' and d.get('type') == 'plan'), None)
     if plan:
         pillars = {f.get('pillar'): f for f in plan.get('foundations', [])}
-        layers = [f"{p}: {pillars.get(p, {}).get('state')}: {pillars.get(p, {}).get('step')}" for p in ('nutrition', 'sleep', 'exercise')]
-        layers += [f"peptides and medicines: {', '.join(i.get('name', '') for i in plan.get('peptides', []))}",
-                   f"supplements: {', '.join(i.get('name', '') + ' (' + i.get('role', '') + ')' for i in plan.get('supplements', []))}",
-                   f"wellbeing: {' / '.join(plan.get('wellbeing', []))}"]
-        print(f'::notice title=Miracle AI {n}. The plan card::{esc(plan.get("title", "") + chr(10) + chr(10).join(layers))}')
+        # A foundation step that lost its words to the amount check
+        if any(re.search(r'\babout\s+(?:of|per)\b', f.get('step', '')) for f in plan.get('foundations', [])):
+            failures.append(f'{title}: a foundation step on the plan lost its target: {[f.get("step") for f in plan.get("foundations", [])]}')
     if n == 10:
         if not plan:
             failures.append(f'{title}: no Miracle Plan once they had answered')

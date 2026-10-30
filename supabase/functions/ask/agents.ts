@@ -43,6 +43,11 @@ const MAX_ROUNDS = 6;
 const FEW_WORDS = 240;
 const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the short version of what they asked (two or three sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, the one caution line, and at most one short question at the end. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
+// Food-like, low-risk supplements a plan may add before the Library has a fact sheet for them
+// (protein, amino acids, fiber, electrolytes, basic vitamins and minerals); any other
+// supplement needs a fact sheet first
+const FOOD_LIKE = new Set(['whey', 'eaa', 'bcaa', 'hmb', 'electrolytes', 'psyllium', 'prebiotic', 'multivitamin', 'vitc', 'calcium', 'magcitrate',
+  'magmalate', 'magtaurate', 'betaalanine', 'lcitrulline', 'tartcherry', 'bcomplex', 'chondroitin', 'hyaluronic', 'msm', 'uc2']);
 // Tools that put a card on the member's screen
 const CARD_TOOLS = new Set(['present_shortlist', 'present_plan', 'clinician_questions', 'warning_signs', 'ask_member', 'audit_combination']);
 const TOOL_LIMITS: Record<string, number> = {
@@ -299,6 +304,26 @@ function auditText(a: Audit, byId: Map<string, Item>): string {
 // ---------------------------------------------------------------------------
 type Fix = { find: string; replace: string };
 type Verdict = { ok: boolean; revised?: string; broken?: number[]; fixes?: Fix[] };
+// Disclaimers belong in the reply's one caution line. A change that only adds one to a part that
+// describes benefits (and makes no strong claim) isn't made; a claim that goes too far is softened.
+const CAVEAT = /\bnot\s+(?:been\s+)?(?:fda[- ])?(?:approved|established|proven)\b|\bunproven\b|\black(?:s|ing)?\b|\blittle\s+(?:or\s+no\s+)?(?:human\s+)?(?:data|evidence)\b|\bno\s+(?:good\s+|real\s+)?human\b|\bsafety\s+(?:is|are)\s+(?:unknown|not)\b|\bresearch[- ]stage\b|\b(?:isn|aren)'?t\s+approved\b|\b(?:talk|speak|check)\s+(?:to|with)\s+(?:your|a)\s+(?:clinician|doctor|prescriber)\b|\bnot\s+medical\s+advice\b/i;
+const STRONG = /\b(?:cures?|cured|prevents?|reverses?|safe(?:ly)?|proven|guarantee\w*|definitely|will\s+(?:heal|fix|cure|build|burn|work|repair))\b/i;
+export const addsCaveat = (before: string, after: string) => CAVEAT.test(after) && !CAVEAT.test(before) && !STRONG.test(before);
+// What the check's verdict on a part comes to: the part as written, a fixed version, or nothing
+export function settle(text: string, v: Verdict): { out: string | null; edited: boolean } {
+  if (v.ok) return { out: text, edited: false };
+  const onlyClaims = (v.broken ?? []).length > 0 && (v.broken ?? []).every((n) => n === 4);
+  const fixes = (v.fixes ?? []).filter((f) => !(onlyClaims && addsCaveat(f.find, f.replace)));
+  const fixed = applyFixes(text, fixes);
+  if (fixed) return { out: fixed, edited: true };
+  const revised = v.revised?.trim() || '';
+  // About claims only, and all the check would do is add a disclaimer: the part stands as written
+  if (onlyClaims && !STRONG.test(text) && (v.fixes ?? []).length + (revised ? 1 : 0) > 0
+    && (v.fixes ?? []).every((f) => addsCaveat(f.find, f.replace)) && (!revised || addsCaveat(text, revised))) {
+    return { out: text, edited: false };
+  }
+  return revised ? { out: revised, edited: true } : { out: null, edited: false };
+}
 // The check's smallest changes, applied to the part as written; null if any of them doesn't fit
 export function applyFixes(text: string, fixes?: Fix[]): string | null {
   if (!fixes?.length) return null;
@@ -438,10 +463,9 @@ export class Gate {
           if (!v) { this.unchecked++; continue; }            // couldn't be checked: held back
           this.checked++;
           if (!v.ok) this.rules.push(...(v.broken?.length ? v.broken : [0]));
-          const fixed = v.ok ? null : applyFixes(o.text, v.fixes) ?? (v.revised?.trim() || null);
-          if (v.ok) this.release(o.text);
-          else if (fixed) { this.edited++; this.release(fixed); }
-          else this.held++;
+          const { out, edited } = settle(o.text, v);
+          if (out == null) this.held++;
+          else { if (edited) this.edited++; this.release(out); }
         } else {
           const ok = new Set<string>();
           let missed = 0;
@@ -866,14 +890,15 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         // Their own stack is always shown as it is; anything added is a supplement with a known,
         // legal status, never a peptide, hormone or prescription they don't take
         if (!theirs && !supplement) { dropped.push(`${it.name} (not something they take: their plan holds only their own peptides, hormones and medicines; mention other options in words, to ask a clinician about)`); continue; }
-        if (!theirs && !['supplement', 'otc', 'approved'].includes(key)) { dropped.push(`${it.name} (status unknown or not approved)`); continue; }
+        const foodLike = !sh && FOOD_LIKE.has(it.id);
+        if (!theirs && !foodLike && !['supplement', 'otc', 'approved'].includes(key)) { dropped.push(`${it.name} (no fact sheet yet, or not a plain supplement: mention it in words if it matters)`); continue; }
         if (!theirs && pregnant && (sh?.avoid_if ?? []).some((a) => /pregnan|breast-?fe|conceiv/i.test(a))) {
           dropped.push(`${it.name} (removed by the Safety agent: not for pregnancy, trying to conceive or breastfeeding)`);
           continue;
         }
         const b = baseItem(it, sh, ctx, pregnant, s.goals[0]);
         (supplement ? supplements : peptides).push({
-          id: it.id, name: b.name, url: b.url, family: b.family, tag: b.tag, tone: b.tone, grade: b.grade, use: b.use,
+          id: it.id, name: b.name, url: b.url, family: b.family, tag: foodLike ? 'Supplement' : b.tag, tone: foodLike ? 'none' : b.tone, grade: b.grade, use: b.use,
           role: cleanField(w.role, 50) || b.family, yours: theirs,
         });
       }

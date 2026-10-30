@@ -7,14 +7,18 @@
 // They also give the Safety agent hints, and catch signs of crisis or of a minor in the
 // member's words in case the Safety agent's first read can't run.
 
-const DOSE_UNIT = String.raw`(?:mcg|µg|μg|ug|mg|g|grams?|milligrams?|micrograms?|microgramos?|miligramos?|gramos?|iu|ui|i\.u\.|units?|unidades|ml|mL|cc|ccs|milliliters?|millilitres?|drops?|capsules?|caps|tablets?|pills?|scoops?|sprays?|clicks?|ticks?|pumps?|vials?)`;
+// Dosing units, grams aside (grams are also how food protein is counted, so they're matched
+// on their own below)
+const OTHER_UNIT = String.raw`(?:mcg|µg|μg|ug|mg|milligrams?|micrograms?|microgramos?|miligramos?|iu|ui|i\.u\.|units?|unidades|ml|mL|cc|ccs|milliliters?|millilitres?|drops?|capsules?|caps|tablets?|pills?|scoops?|sprays?|clicks?|ticks?|pumps?|vials?)`;
 const NUM = String.raw`\d+(?:[.,]\d+)*(?:\s?(?:-|–|to|a)\s?\d+(?:[.,]\d+)*)?`;
 // Food protein is a foundation target, not a dose: "about 1 g of protein per pound of lean body
 // mass", "80 to 120 grams of protein a day", "1.2 g/kg of protein"
-const PROTEIN = String.raw`(?:\s?(?:\/|per)\s?(?:kg|lb|pound|day|d))?\s*(?:of\s+)?(?:[a-z-]+\s+){0,2}protein\b(?!\s*(?:fragments?|kinases?|chains?|sequences?|peptides?|analogs?))`;
+// ("g per pound of lean body mass" is only ever a protein target)
+const PROTEIN = String.raw`(?:(?:\s?(?:\/|per)\s?(?:kg|lb|pound|day|d))?\s*(?:of\s+)?(?:[a-z-]+\s+){0,2}protein\b(?!\s*(?:fragments?|kinases?|chains?|sequences?|peptides?|analogs?))`
+  + String.raw`|\s*(?:\/|per|a|an)\s*(?:pound|lb|kg|kilogram)s?\s+(?:of\s+)?(?:your\s+)?(?:lean|goal|ideal|target)\b)`;
 // "250 mcg", "2.5mg", "1,000 IU", "5-10 g", "0.25 mg/kg", "1.6 g per kg"; not "160 mg/dL" or
 // "30 g of protein"
-export const DOSE = new RegExp(String.raw`(?<![\w.])${NUM}\s?${DOSE_UNIT}(?!${PROTEIN})(?:\s?(?:\/|per)\s?(?:kg|lb|pound|day|d|week|wk|dose|injection))?(?!\s*\/\s*d?l\b)(?![\w])`, 'gi');
+export const DOSE = new RegExp(String.raw`(?<![\w.])${NUM}\s?(?:(?:grams?|gramos?|g)(?![a-z])(?!${PROTEIN})|${OTHER_UNIT})(?:\s?(?:\/|per)\s?(?:kg|lb|pound|day|d|week|wk|dose|injection))?(?!\s*\/\s*d?l\b)(?![\w])`, 'gi');
 // "two hundred fifty micrograms", "half a milligram"
 export const DOSE_WORDS = /\b(?:(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|sixty|hundred|thousand|half|quarter|couple of|few)[\s-]+)+(?:an?\s+|of\s+an?\s+)?(?:micrograms?|milligrams?|mcg|mg|units?|milliliters?|ml|cc|iu|capsules?|tablets?|drops?|scoops?|clicks?|ticks?)\b/gi;
 // "twice a day", "once weekly", "2x/day", "every other day", "5 days on, 2 off"
