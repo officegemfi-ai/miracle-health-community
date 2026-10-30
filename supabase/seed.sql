@@ -23,3 +23,7 @@ on conflict (provider_id, provider) do nothing;
 insert into public.profiles (id, handle, role, trusted, adult_confirmed_at, rules_version, health_data_consent_at)
 values ('00000000-0000-4000-8000-000000000101', 'mod_maya', 'moderator', true, now(), '2026-10-21', now())
 on conflict (id) do nothing;
+
+-- The test project's real-question check (scripts/ask_smoke.py) asks ten questions in a row,
+-- more than one visitor may send Miracle AI in ten minutes on the live site
+update private.settings set value = '30' where key = 'ask_per_visitor_10min';
