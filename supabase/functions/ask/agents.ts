@@ -12,7 +12,7 @@ import {
 import {
   AUDIT_SYSTEM, AUDIT_TOOL, GUIDE_TOOLS, guideSystem, REVIEW_SYSTEM, REVIEW_TOOL, SCREEN_SYSTEM, SCREEN_TOOL, turnNotes,
 } from './prompts.ts';
-import { cleanField, CRISIS, INJECTS, MINOR, PREGNANT, scan, strict, URGENT } from './guard.ts';
+import { cleanField, CRISIS, INJECTS, maskTargets, MINOR, PREGNANT, scan, strict, unmaskTargets, URGENT } from './guard.ts';
 import { INJECT_CARD, INJECT_SIGNS, warningCard } from './urgency.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
@@ -451,9 +451,15 @@ export class Gate {
     while (this.queue.length) {
       const batch = this.queue.splice(0, 6);
       const parts: { id: string; kind: 'text' | 'label'; text: string }[] = [];
+      // Food-protein targets go to the check as markers, and back into the words it passes
+      const masked = new Map<number, { text: string; targets: string[] }>();
       batch.forEach((o, i) => {
-        if (o.type === 'text' && !o.trusted) parts.push({ id: `t${i}`, kind: 'text', text: o.text });
-        if (o.type === 'card') o.fields.forEach((f) => parts.push({ id: `c${i}-${f.key}`, kind: 'label', text: f.text }));
+        if (o.type === 'text' && !o.trusted) {
+          const m = maskTargets(o.text);
+          masked.set(i, m);
+          parts.push({ id: `t${i}`, kind: 'text', text: m.text });
+        }
+        if (o.type === 'card') o.fields.forEach((f) => parts.push({ id: `c${i}-${f.key}`, kind: 'label', text: maskTargets(f.text).text }));
       });
       const verdicts = parts.length ? await this.check(parts) : new Map<string, Verdict>();
       for (const [i, o] of batch.entries()) {
@@ -463,9 +469,10 @@ export class Gate {
           if (!v) { this.unchecked++; continue; }            // couldn't be checked: held back
           this.checked++;
           if (!v.ok) this.rules.push(...(v.broken?.length ? v.broken : [0]));
-          const { out, edited } = settle(o.text, v);
+          const m = masked.get(i)!;
+          const { out, edited } = settle(m.text, v);
           if (out == null) this.held++;
-          else { if (edited) this.edited++; this.release(out); }
+          else { if (edited) this.edited++; this.release(unmaskTargets(out, m.targets)); }
         } else {
           const ok = new Set<string>();
           let missed = 0;
@@ -497,7 +504,7 @@ export class Gate {
       `Flags for this turn: red flag ${s.red_flag}${this.st.minor ? '; under 18 (from this chat)' : ''}${this.st.crisis ? '; signs of crisis earlier in this chat' : ''}; asked for a dose: ${s.asks_dose ? 'yes' : 'no'}; asked where to get it: ${s.asks_source ? 'yes' : 'no'}.`,
       hits.length ? `Plain checks flagged these words to look at: ${hits.join(', ')}.` : 'Plain checks flagged nothing.',
       wrap(code, 'the member\'s latest message', this.last.slice(0, 2000)),
-      this.released ? wrap(code, 'already shown to the member, for context only', this.released.slice(-2500)) : '',
+      this.released ? wrap(code, 'already shown to the member, for context only', maskTargets(this.released.slice(-2500)).text) : '',
       ...parts.map((p) => wrap(code, `part ${p.id} (${p.kind === 'text' ? 'reply text' : 'card label'})`, p.text)),
     ].filter(Boolean).join('\n\n');
     try {

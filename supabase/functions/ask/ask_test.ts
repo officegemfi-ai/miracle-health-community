@@ -1,7 +1,7 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
-import { cleanField, CRISIS, MINOR, redact, scan } from './guard.ts';
+import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, benefitsOf, plainScreen, screenTitle, settle, standing, tagFor, cautionFor, useOf } from './agents.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
@@ -779,6 +779,33 @@ Deno.test('a pillar step the check won\'t pass, or that\'s missing, gets plain a
   const ev = await events(await handle(ask([{ role: 'user', content: 'How do I keep muscle?' }]), deps(f)));
   const plan = ev.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
   assertEquals(plan.foundations.map((x: { step: string }) => x.step), ['Protein at every meal, plus plenty of plants and water', 'Aim for 7 or more hours a night', 'Strength train and move most days']);
+});
+
+Deno.test('protein targets reach the check as markers, so it can\'t take them for doses; they come back in what it passes', async () => {
+  // The round trip, even when the check cuts one of two; a real amount is never a marker
+  const m = maskTargets('Aim for about 80 to 120 g of protein a day (roughly 0.7 to 1 g per pound of lean body mass). Creatine 5 g daily.');
+  assertEquals(m.targets, ['80 to 120 g', '0.7 to 1 g']);
+  assertEquals(m.text, 'Aim for about ⟨protein target A⟩ of protein a day (roughly ⟨protein target B⟩ per pound of lean body mass). Creatine 5 g daily.');
+  assertEquals(unmaskTargets(m.text.replace('about ⟨protein target A⟩ of protein a day ', ''), m.targets), 'Aim for (roughly 0.7 to 1 g per pound of lean body mass). Creatine 5 g daily.');
+  // A check that would take any grams for a dose
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, goals: ['muscle'] },
+    review: (p) => (/\d\s?g\b/.test(p.text) ? { ok: false, broken: [1], fixes: [{ find: p.text, replace: 'Ask a dietitian.' }] }
+      : /will keep/.test(p.text) ? { ok: false, broken: [4], fixes: [{ find: 'will keep', replace: 'may help keep' }] } : { ok: true }),
+    rounds: [{ text: 'Aim for about 0.7 to 1 g of protein per pound of lean body mass. Strength work will keep your muscle.\n\n' + WORDS, tool: { name: 'present_plan', input: {
+      title: 'Keep your muscle', first_step: 'Protein first at breakfast: about 30 g of protein',
+      foundations: [{ pillar: 'nutrition', state: 'start', step: 'Protein at every meal: about 0.7 to 1 g of protein per pound of lean body mass' }],
+    } } }, { text: 'Start at breakfast.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I am on semaglutide and losing muscle' }]), deps(f)));
+  const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
+  assert(text.startsWith('Aim for about 0.7 to 1 g of protein per pound of lean body mass. Strength work may help keep your muscle.'), text);
+  const plan = ev.find((e) => e.event === 'card' && e.data.type === 'plan')!.data;
+  assertEquals(plan.foundations[0].step, 'Protein at every meal: about 0.7 to 1 g of protein per pound of lean body mass');
+  assertEquals(plan.first.step, 'Protein first at breakfast: about 30 g of protein');
+  // The check saw markers, never the numbers
+  const seen = calls.filter((c) => c.kind === 'review').map((c) => String((c.body.messages as { content: string }[])[0].content)).join('\n');
+  assert(seen.includes('about ⟨protein target A⟩ of protein per pound of lean body mass') && !seen.includes('0.7 to 1 g'), seen);
 });
 
 Deno.test('a plan starts with exactly one pillar', async () => {

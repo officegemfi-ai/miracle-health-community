@@ -148,6 +148,8 @@ questions = [
     ('On a GLP-1: their plan', lambda prev: [{'role': 'user', 'content': GLP1}, {'role': 'assistant', 'content': prev['memo'], 'sig': prev['sig']},
                                              {'role': 'user', 'content': GLP1_ANSWERS}]),
 ]
+# The plain advice agents.ts gives a pillar (PILLAR_STEP) when the check won't pass the guide's step
+PLAIN_STEPS = {'Protein at every meal, plus plenty of plants and water', 'Aim for 7 or more hours a night', 'Strength train and move most days'}
 warnings = []
 results = {}
 for n, (title, q) in enumerate(questions, 1):
@@ -292,6 +294,10 @@ for n, (title, q) in enumerate(questions, 1):
             failures.append(f'{title}: the plan has no first step')
         if any(re.search(r'share (?:your )?(?:wins|progress)|stay positive|miracle health community', w, re.I) for w in plan.get('wellbeing', [])):
             warnings.append(f'{title}: a generic wellbeing line reached the plan')
+        # The plain advice a pillar gets when the check didn't pass the guide's step (or there was none)
+        fell = [f.get('pillar') for f in plan.get('foundations', []) if f.get('step') in PLAIN_STEPS]
+        if fell:
+            warnings.append(f'{title}: plain advice instead of the guide\'s step for {", ".join(fell)}')
     if n == 10:
         if not plan:
             failures.append(f'{title}: no Miracle Plan once they had answered')
@@ -304,6 +310,10 @@ for n, (title, q) in enumerate(questions, 1):
                 failures.append(f'{title}: an amount on the plan card')
         if 'protein' not in text.lower():
             warnings.append(f'{title}: the words don\'t mention protein')
+        # Someone short on protein hears their target: about 0.7 to 1 g of protein per pound of lean body mass
+        said = text + ' ' + ' '.join(f.get('step', '') for f in (plan or {}).get('foundations', [])) + ' ' + ((plan or {}).get('first') or {}).get('step', '')
+        if not re.search(r'\d\s?(?:g|grams?)\s+(?:of\s+protein|per\s+pound)', said, re.I):
+            warnings.append(f'{title}: no protein target (grams of protein per pound of lean body mass) in the words or the plan')
 
 for w in warnings:
     print(f'::warning title=Miracle AI::{esc(w)}')

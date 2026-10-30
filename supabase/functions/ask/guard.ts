@@ -19,6 +19,23 @@ const PROTEIN = String.raw`(?:(?:\s?(?:\/|per)\s?(?:kg|lb|pound|day|d))?\s*(?:of
 // "250 mcg", "2.5mg", "1,000 IU", "5-10 g", "0.25 mg/kg", "1.6 g per kg"; not "160 mg/dL" or
 // "30 g of protein"
 export const DOSE = new RegExp(String.raw`(?<![\w.])${NUM}\s?(?:(?:grams?|gramos?|g)(?![a-z])(?!${PROTEIN})|${OTHER_UNIT})(?:\s?(?:\/|per)\s?(?:kg|lb|pound|day|d|week|wk|dose|injection))?(?!\s*\/\s*d?l\b)(?![\w])`, 'gi');
+// The amount in a food-protein target, which DOSE leaves alone: "0.7 to 1 g" of protein per pound
+// of lean body mass, "80 to 120 g" of protein a day
+export const FOOD_PROTEIN = new RegExp(String.raw`(?<![\w.])${NUM}\s?(?:grams?|gramos?|g)(?![a-z])(?=${PROTEIN})`, 'gi');
+// The Safety agent's check sees those amounts as markers (⟨protein target A⟩), so it can't take a
+// foundation target for a dose and judges the rest of the part as usual; they go back after
+export function maskTargets(text: string): { text: string; targets: string[] } {
+  const targets: string[] = [];
+  const out = String(text ?? '').replace(FOOD_PROTEIN, (m) => {
+    if (targets.length >= 26) return m;
+    targets.push(m);
+    return `⟨protein target ${String.fromCharCode(64 + targets.length)}⟩`;
+  });
+  return { text: out, targets };
+}
+export function unmaskTargets(text: string, targets: string[]): string {
+  return String(text ?? '').replace(/⟨protein target ([A-Z])⟩/g, (_, k: string) => targets[k.charCodeAt(0) - 65] ?? '');
+}
 // "two hundred fifty micrograms", "half a milligram"
 export const DOSE_WORDS = /\b(?:(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|sixty|hundred|thousand|half|quarter|couple of|few)[\s-]+)+(?:an?\s+|of\s+an?\s+)?(?:micrograms?|milligrams?|mcg|mg|units?|milliliters?|ml|cc|iu|capsules?|tablets?|drops?|scoops?|clicks?|ticks?)\b/gi;
 // "twice a day", "once weekly", "2x/day", "every other day", "5 days on, 2 off"
