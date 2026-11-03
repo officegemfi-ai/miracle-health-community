@@ -1395,3 +1395,11 @@ Deno.test('asked what the community reports for something other than the goal th
   assert(notes.includes('What the community reports most for injury healing'));
   assert(ev.some((e) => e.event === 'card' && e.data.type === 'community'));
 });
+
+Deno.test('the check never hangs a caveat on a number already framed as what people report', () => {
+  const text = 'On the forums, TB-500 is mentioned very often for injury healing (Signal 86.9).';
+  const v = { ok: false, broken: [4], fixes: [{ find: 'mentioned very often for injury healing', replace: 'mentioned very often for injury healing (a forum measure, not a measure of how well it works)' }] };
+  assertEquals(settle(text, v), { out: text, edited: false });
+  // A real overclaim is still softened
+  assertEquals(settle('Members say TB-500 heals hamstrings.', { ok: false, broken: [4], fixes: [{ find: 'heals', replace: 'may help' }] }), { out: 'Members say TB-500 may help hamstrings.', edited: true });
+});

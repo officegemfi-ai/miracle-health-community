@@ -318,7 +318,7 @@ type Fix = { find: string; replace: string };
 type Verdict = { ok: boolean; revised?: string; broken?: number[]; fixes?: Fix[] };
 // Disclaimers belong in the reply's one caution line. A change that only adds one to a part that
 // describes benefits (and makes no strong claim) isn't made; a claim that goes too far is softened.
-const CAVEAT = /\bnot\s+(?:been\s+)?(?:fda[- ])?(?:approved|established|proven)\b|\bunproven\b|\black(?:s|ing)?\b|\blittle\s+(?:or\s+no\s+)?(?:human\s+)?(?:data|evidence)\b|\bno\s+(?:good\s+|real\s+)?human\b|\bsafety\s+(?:is|are)\s+(?:unknown|not)\b|\bresearch[- ]stage\b|\b(?:isn|aren)'?t\s+approved\b|\b(?:talk|speak|check)\s+(?:to|with)\s+(?:your|a)\s+(?:clinician|doctor|prescriber)\b|\bnot\s+medical\s+advice\b/i;
+const CAVEAT = /\bnot\s+(?:been\s+)?(?:fda[- ])?(?:approved|established|proven)\b|\bunproven\b|\black(?:s|ing)?\b|\blittle\s+(?:or\s+no\s+)?(?:human\s+)?(?:data|evidence)\b|\bno\s+(?:good\s+|real\s+)?human\b|\bsafety\s+(?:is|are)\s+(?:unknown|not)\b|\bresearch[- ]stage\b|\b(?:isn|aren)'?t\s+approved\b|\b(?:talk|speak|check)\s+(?:to|with)\s+(?:your|a)\s+(?:clinician|doctor|prescriber)\b|\bnot\s+medical\s+advice\b|\bnot\s+a\s+measure\b|\bunverified\b|\b(?:isn|aren)'?t\s+(?:evidence|proof)\b|\bnot\s+(?:evidence|proof)\b/i;
 const STRONG = /\b(?:cures?|cured|prevents?|reverses?|safe(?:ly)?|proven|guarantee\w*|definitely|will\s+(?:heal|fix|cure|build|burn|work|repair))\b/i;
 export const addsCaveat = (before: string, after: string) => CAVEAT.test(after) && !CAVEAT.test(before) && !STRONG.test(before);
 // What the check's verdict on a part comes to: the part as written, a fixed version, or nothing
