@@ -177,7 +177,9 @@ export function pulseLine(p: Pulse | undefined): string {
   const reports = n0(p?.reports);
   const signals = n0(p?.signals);
   if (!members && !reports && !signals) return '';
-  return `The community so far: ${plural(members, 'member')}, ${plural(reports, 'first-hand report')} and ${plural(signals, 'Community Signal')}; most Signals still rest mostly on public forum data, which counts until members' reports take over.`;
+  // Before members' reports start, the Signals are what the public forums say
+  if (!reports) return `The community so far: ${plural(signals, 'Community Signal')}, all from public forum data; no members' first-hand reports yet (each one counts as it comes in). Say "on the forums" for what they show.`;
+  return `The community so far: ${plural(members, 'member')}, ${plural(reports, 'first-hand report')} and ${plural(signals, 'Community Signal')}; on average ${Math.min(100, n0(p?.community_share))}% of a Signal comes from members' reports, the rest from public forum data.`;
 }
 export function topText(top: TopRow[], use: Use | null): string {
   if (!use) return '';

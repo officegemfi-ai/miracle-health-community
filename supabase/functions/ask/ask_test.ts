@@ -1123,6 +1123,9 @@ Deno.test('which voice leads: studies in people when there are some for what was
   assertEquals(communityTitle([voiceOf({ id: 'tb500', name: 'TB-500' }, null, tb)], injury, []), 'Read the forum data on TB-500: no member reports yet');
   assertEquals(communityTitle([voiceOf({ id: 'bpc157', name: 'BPC-157' }, null, bpc), voiceOf({ id: 'tb500', name: 'TB-500' }, null, tb)], injury, []), 'Read 14 member reports and the forum data on BPC-157 and TB-500');
   assert(pulseLine(SNAPSHOT.community).startsWith('The community so far: 120 members, 340 first-hand reports and 40 Community Signals'));
+  // Before members' reports start: the forums, said as such
+  assertEquals(pulseLine({ members: 1, reports: 0, signals: 51 }), 'The community so far: 51 Community Signals, all from public forum data; no members\' first-hand reports yet (each one counts as it comes in). Say "on the forums" for what they show.');
+  assertEquals(pulseLine({}), '');
 });
 
 Deno.test('what the community rates highest: members\' ratings first, then the forums; never the safety-risk list, never a stack', () => {
