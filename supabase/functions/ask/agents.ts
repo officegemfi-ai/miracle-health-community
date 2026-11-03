@@ -1,6 +1,7 @@
 // One turn of a conversation with Miracle AI, agent by agent:
-//   Safety agent (first read) -> Recommender's lookup -> Synergy auditor (when compounds meet)
-//   -> the guide writes, using the Library tools; Stack builder cards along the way
+//   Safety agent (first read) -> Recommender's lookup (the studies) -> the community (what members
+//   and the public forums report, and which of the two leads) -> Synergy auditor (when compounds
+//   meet) -> the guide writes, using the Library tools; Stack builder cards along the way
 //   -> the gate: the Safety agent checks every part of the reply, text and cards alike,
 //      before the member sees it.
 // Every step is announced to the page as it happens. Nothing the member writes is stored.
@@ -13,6 +14,10 @@ import {
   AUDIT_SYSTEM, AUDIT_TOOL, GUIDE_TOOLS, guideSystem, REVIEW_SYSTEM, REVIEW_TOOL, SCREEN_SYSTEM, SCREEN_TOOL, turnNotes,
 } from './prompts.ts';
 import { cleanField, CRISIS, INJECTS, maskTargets, MINOR, PREGNANT, scan, strict, unmaskTargets, URGENT } from './guard.ts';
+import {
+  type Community, communityOf, communityTitle, communityTop, type Lead, pulseLine, type Studies, topText, type TopRow, type Use, useById, USE_IDS,
+  type Voice, voiceLine, voiceOf,
+} from './community.ts';
 import { INJECT_CARD, INJECT_SIGNS, warningCard } from './urgency.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
@@ -33,6 +38,8 @@ export type Screen = {
   compounds: string[]; goals: Goal[]; medications: string[]; conditions: string[];
   pregnant: boolean; tested_athlete: boolean; asks_dose: boolean; asks_source: boolean; note: string;
   injects: boolean; // they inject something themselves, or are about to
+  uses: string[];   // what they want it for, as the Signal rates it (shared/uses.json), most important first
+  asks_community: boolean; // they ask what other people, members or the forums report, use or rate
   ok: boolean;     // false: the Safety agent couldn't run, so only the plain checks did
 };
 export type Finding = { ids: string[]; kind: string; level: 'avoid' | 'caution' | 'info'; note: string };
@@ -120,7 +127,7 @@ export function plainScreen(text: string): Screen {
   return {
     red_flag: CRISIS.test(text) ? 'self_harm' : URGENT.test(text) ? 'emergency' : MINOR.test(text) ? 'minor' : 'none',
     compounds: [], goals: [], medications: [], conditions: [], pregnant: PREGNANT.test(text), tested_athlete: false,
-    asks_dose: false, asks_source: false, note: '', injects: INJECTS.test(text), ok: false,
+    asks_dose: false, asks_source: false, note: '', injects: INJECTS.test(text), uses: [], asks_community: false, ok: false,
   };
 }
 
@@ -149,6 +156,8 @@ export async function screenMessage(messages: ChatMessage[], deps: TurnDeps): Pr
     asks_source: raw.asks_source === true,
     note: typeof raw.note === 'string' ? raw.note.slice(0, 200) : '',
     injects: raw.injects === true,
+    uses: [...new Set(strs(raw.uses, 3, 30).filter((u) => USE_IDS.includes(u)))],
+    asks_community: raw.asks_community === true,
     ok: true,
   };
   // The plain checks still apply: a sign of crisis or an emergency is never left to one reader
@@ -370,10 +379,12 @@ export class Gate {
   dropPending() { this.words -= this.pending.length; this.pending = ''; }
   flush() { this.cut(true); this.catchUp(false); }
   trusted(text: string) { this.flush(); this.push({ type: 'text', text, trusted: true }); }
-  // A safety card (when to get help, injection basics) goes ahead of any card still waiting
-  card(fields: Field[], build: (ok: Set<string>) => Record<string, unknown> | null, opts: { first?: boolean; tag?: string } = {}) {
+  // A safety card (when to get help, injection basics) goes ahead of any card still waiting.
+  // count false: a card that comes with every such answer (the studies and the community side by
+  // side), which doesn't make a short answer "almost only cards"
+  card(fields: Field[], build: (ok: Set<string>) => Record<string, unknown> | null, opts: { first?: boolean; tag?: string; count?: boolean } = {}) {
     this.cut(true);
-    this.offered++;
+    if (opts.count !== false) this.offered++;
     const o: Out = { type: 'card', fields, build, first: opts.first, tag: opts.tag };
     if (this.wordsFirst && this.words < WORDS_FIRST) {
       if (o.first) this.later.splice(this.later.filter((x) => x.type === 'card' && x.first).length, 0, o);
@@ -567,6 +578,9 @@ export type CardItem = {
   // "none" when nothing in the fact sheet studies it
   use: { grade: string | null; fits: boolean };
   signal: { score: number; level: string; reports: number | null; effects: string[] } | null;
+  // What the community reports (members' first-hand reports and public forum data), and which of
+  // the two voices leads for what they asked
+  community: Community | null; lead: Lead;
   tag: string; tone: 'ok' | 'warn' | 'none'; caution: string;
   benefits: StudyFinding[];
   labs: string[];
@@ -632,14 +646,23 @@ export function useOf(sheet: Sheet | null | undefined, goal?: string): CardItem[
   if (Number(sheet.goals?.[goal!] ?? 0) >= 0.75) return { grade: sheet.evidence?.grade ?? null, fits: true };
   return { grade: 'none', fits: false };
 }
+// The studies' side of a compound, for what the member asked: how strong the evidence is for it,
+// the sheet's grade for its main use, and its best finding (null: no fact sheet yet)
+export function studiesOf(sheet: Sheet | null | undefined, goal?: string): Studies | null {
+  if (!sheet) return null;
+  const u = useOf(sheet, goal);
+  return { grade: u.grade, forUse: u.fits, main: sheet.evidence?.grade ?? null, finding: benefitsOf(sheet, goal, 1)[0] ?? null };
+}
 // Labs the fact sheet lists, before and during, for the packet a member takes to a clinician
 const labsOf = (sheet: Sheet | null | undefined) =>
   [...(sheet?.labs?.before ?? []), ...(sheet?.labs?.during ?? [])].map((l) => cleanField(l, 160)).filter(Boolean).slice(0, 4);
 
 // What every card item shares, whoever laid it out
-function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot }, pregnant: boolean, goal?: string) {
+function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot; use?: Use | null }, pregnant: boolean, goal?: string) {
   const sig = ctx.snap.signals[it.id] as Signal | undefined;
   const { tag, tone } = tagFor(it, sh);
+  const community = communityOf(sig, ctx.use ?? null, ctx.snap.uses);
+  const studies = studiesOf(sh, goal);
   return {
     id: it.id, name: sh?.name ?? it.name, family: familyOne(it.family), url: `/library/${it.id}/`,
     status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null, grade: sh?.evidence?.grade ?? it.grade ?? null,
@@ -649,6 +672,7 @@ function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot 
       reports: typeof sig.first_hand === 'number' && sig.first_hand > 0 ? sig.first_hand : null,
       effects: (sig.side_effects ?? []).slice(0, 2).map((e) => cleanField(e.effect, 40)).filter(Boolean),
     } : null,
+    community, lead: voiceOf(it, studies, community).lead,
     tag, tone, caution: cautionFor(it, sh, pregnant), benefits: benefitsOf(sh, goal), labs: labsOf(sh),
   };
 }
@@ -695,6 +719,9 @@ type Ctx = {
   audited: Set<string>;   // compounds the Synergy auditor already checked upfront this turn
   injectShown: boolean;
   signs: Set<string>;   // warning signs already on a card this turn
+  goal?: Goal;          // what they want help with, for the studies' side
+  use: Use | null;      // what they want it for, as the community rates it
+  heard: Map<string, Community | null>;   // compounds whose community numbers the guide or a card used
 };
 
 async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | null>> {
@@ -704,12 +731,23 @@ async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | 
   return ctx.sheets;
 }
 
+// Both voices on one compound, for what the member asked: what the studies show and what the
+// community reports, and which leads
+function voiceFor(id: string, ctx: Ctx): Voice | null {
+  const it = ctx.byId.get(id);
+  if (!it) return null;
+  const sh = ctx.sheets.get(id);
+  const community = communityOf(ctx.snap.signals[id] as Signal | undefined, ctx.use, ctx.snap.uses);
+  ctx.heard.set(id, community);
+  return voiceOf({ id, name: sh?.name ?? it.name }, studiesOf(sh, ctx.goal), community);
+}
+// A fact sheet as the guide reads it, with the community's numbers and which voice leads
 function sheetText(id: string, ctx: Ctx): string {
   const it = ctx.byId.get(id);
   const sh = ctx.sheets.get(id);
-  const sig = ctx.snap.signals[id] as Signal | undefined;
   if (!it) return `No compound with the id "${id}" in the Library.`;
-  return strict(sh ? condense(sh, it, sig, ctx.snap.uses) : stub(it, sig, ctx.snap.uses));
+  const v = voiceFor(id, ctx)!;
+  return strict(`${sh ? condense(sh, it, null, ctx.snap.uses, false) : stub(it, null, ctx.snap.uses, false)}\n${voiceLine(v)}`);
 }
 
 const chip = (id: string, ctx: Ctx) => ({ id, name: ctx.byId.get(id)?.name ?? id });
@@ -743,6 +781,7 @@ function stackCard(ids: string[], a: Audit, ctx: Ctx): string | null {
     };
   });
   if (!items.length) return null;
+  items.forEach((i) => ctx.heard.set(i.id, i.community));
   const card = `card${++ctx.stepN}`;
   const one = items.length === 1;
   const stepId = nextId(ctx, 'bld');
@@ -762,6 +801,53 @@ function stackCard(ids: string[], a: Audit, ctx: Ctx): string | null {
     { tag: 'stack' },
   );
   auditCard(a, ctx, card, 'stack');
+  return card;
+}
+
+// The studies and the community on what the member named, side by side, when no stack card lays
+// them out: what each says about what they asked, and which leads. All of it comes from the
+// Library and the community's public totals; nothing the guide wrote.
+function voicesCard(ids: string[], ctx: Ctx): string | null {
+  const items = ids.filter((id) => ctx.byId.has(id)).slice(0, 4).map((id) => {
+    const it = ctx.byId.get(id)!;
+    const sh = ctx.sheets.get(id);
+    const v = voiceFor(id, ctx)!;
+    const { tag, tone } = tagFor(it, sh);
+    return {
+      id, name: v.name, url: `/library/${id}/`, family: familyOne(it.family), tag, tone,
+      status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null,
+      studies: v.studies, community: v.community, lead: v.lead,
+    };
+  });
+  if (!items.length) return null;
+  const card = `card${++ctx.stepN}`;
+  ctx.gate.card([], () => {
+    ctx.memo.push(`the studies and the community on ${items.map((i) => `${i.name} [${i.id}]`).join(', ')}`);
+    return { type: 'voices', id: card, use: ctx.use ? { id: ctx.use.id, label: ctx.use.label } : null, items };
+  }, { tag: 'stack', count: false });
+  return card;
+}
+
+// What the community reports most for what they want it for, when they ask: members' ratings
+// first, then the public forums. What people report, never a recommendation: each shows its US
+// status, and nothing on FDA's safety-risk list is ever on it.
+function crowdCard(top: TopRow[], use: Use, ctx: Ctx): string | null {
+  const items = top.filter((r) => ctx.byId.has(r.id)).map((r) => {
+    const it = ctx.byId.get(r.id)!;
+    const { tag, tone } = tagFor(it, ctx.sheets.get(r.id));
+    if (!ctx.heard.has(r.id)) ctx.heard.set(r.id, communityOf(ctx.snap.signals[r.id] as Signal | undefined, use, ctx.snap.uses));
+    return { ...r, url: `/library/${r.id}/`, family: familyOne(it.family), tag, tone };
+  });
+  if (!items.length) return null;
+  const card = `card${++ctx.stepN}`;
+  const p = ctx.snap.community ?? {};
+  ctx.gate.card([], () => {
+    ctx.memo.push(`what the community reports most for ${use.label.toLowerCase()}: ${items.map((i) => `${i.name} [${i.id}]`).join(', ')}`);
+    return {
+      type: 'community', id: card, use: { id: use.id, label: use.label }, items,
+      crowd: { members: Math.max(0, Math.round(Number(p.members) || 0)), reports: Math.max(0, Math.round(Number(p.reports) || 0)) },
+    };
+  }, { count: false });
   return card;
 }
 
@@ -842,6 +928,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         });
       }
       if (!items.length) return `Nothing could be shown. ${dropped.join('; ')}`;
+      items.forEach((i) => ctx.heard.set(i.id, i.community));
       // Proven options first, research-stage ones last, whatever order they came in
       items.sort((a, b) => proven(a.status?.key ?? '') - proven(b.status?.key ?? ''));
       const title = cleanField(input.title, 60) || 'To discuss with your clinician';
@@ -1075,12 +1162,16 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const minor = screen.red_flag === 'minor' || st.minor;
   const held = screen.red_flag === 'self_harm' || screen.red_flag === 'emergency' || minor;
   const gate = new Gate(emit, deps, screen, { ...st, minor }, last);
+  // What they want it for, as the community rates it; its goal stands in when they named none
+  const use = held ? null : useById(screen.uses[0]);
+  if (use && !screen.goals.length) screen.goals = [use.goal];
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
     sheets: new Map(), emit, deps, gate, shortlistsOn: !held && !st.crisis && screen.ok,
     opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, asked: 0, uses: {}, plans: 0, mine: new Set(), audited: new Set(),
     injectShown: !!st.injectShown,
     signs: new Set(),
+    goal: screen.goals[0], use, heard: new Map(),
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
@@ -1115,10 +1206,30 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     recNote = 'the Library could not be reached just now; say so if it matters and stay general.';
   }
 
+  // 2b. The community: what members and the public forums report on what they named and on what
+  // they want it for, and which of the two voices leads, compound by compound
+  const pregnant = screen.pregnant || st.pregnant;
+  let communityNote = '';
+  let top: TopRow[] = [];
+  const voices: Voice[] = [];
+  if (!held && items.length && (named.length || use)) {
+    voices.push(...named.slice(0, 4).map((id) => voiceFor(id, ctx)).filter((v): v is Voice => !!v));
+    if (use && (screen.asks_community || !named.length)) top = communityTop(snap.signals, ctx.byId, use, 5);
+    emit('step', { id: 'community', agent: 'community', status: 'done', title: communityTitle(voices, use, top), chips: (voices.length ? voices.map((v) => v.id) : top.map((r) => r.id)).slice(0, 6).map((id) => chip(id, ctx)) });
+    const showVoices = voices.length > 0 && ctx.shortlistsOn && !(named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant)));
+    const showCrowd = top.length > 0 && !!use && screen.asks_community && ctx.shortlistsOn && !pregnant;
+    communityNote = [
+      pulseLine(snap.community),
+      topText(top, use),
+      voices.length ? 'What the studies show and what the community reports on each compound they named, and which leads for this question, come with its fact sheet below.' : '',
+      showVoices ? `After your opening words the member sees a card with the studies and the community side by side on ${voices.map((v) => v.name).join(', ')}. Don't read its numbers out one by one: say what they mean for their question, leading with the voice your notes say leads.` : '',
+      showCrowd ? `After your opening words the member sees a card of what the community reports most for ${use!.label.toLowerCase()}, each with its US status. Say what stands out and how the studies compare; don't list it again.` : '',
+    ].filter(Boolean).join('\n');
+  }
+
   // 3. The Synergy auditor, when the member's own compounds and medicines meet
   let synNote = '';
   let upfront: Audit | null = null;
-  const pregnant = screen.pregnant || st.pregnant;
   if (named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant))) {
     emit('step', { id: 'synergy', agent: 'synergy', status: 'run', title: `Checking ${named.length > 1 ? `${named.length} together` : ctx.byId.get(named[0])?.name ?? 'it'}${screen.medications.length ? ' with your medicines' : ''}` });
     await openSheets(named, ctx);
@@ -1128,14 +1239,14 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     named.forEach((id) => ctx.audited.add(id));
     synNote = auditText(a, ctx.byId);
     if (ctx.shortlistsOn) {
-      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with its evidence, US status and cautions, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what people report, how they fit together. Don't repeat the card's status and cautions, and don't present these same compounds again with present_shortlist. Their plan (present_plan) puts them in its peptides and medicines layer (supplements in its supplements layer).${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
+      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with what the studies show (evidence, US status, cautions) beside what the community reports, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what the community reports, how they fit together. Don't repeat the card's status and cautions, and don't present these same compounds again with present_shortlist. Their plan (present_plan) puts them in its peptides and medicines layer (supplements in its supplements layer).${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
     }
   }
 
   // 4. The guide writes, with the Library tools; every part goes through the gate
   const system = [
     { type: 'text', text: guideSystem(indexText(items)), cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, synergy: synNote, sheets: sheetsForTurn }) },
+    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, community: communityNote, synergy: synNote, sheets: sheetsForTurn }) },
   ];
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
   // Held turns: someone under 18 can still get questions to take to their doctor; a crisis or
@@ -1154,9 +1265,13 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     emit('step', { id: 'inject', agent: 'safety', status: 'done', title: 'Added the safety basics for injecting' });
     gate.card([], () => { ctx.memo.push('injection safety basics'); return INJECT_CARD; }, { first: true });
   }
-  // The Stack builder lays out what the member named, after the guide's opening words
+  // The Stack builder lays out what the member named, after the guide's opening words; one
+  // compound on its own gets the studies and the community side by side
   if (upfront && ctx.shortlistsOn) stackCard(named, upfront, ctx);
   else if (upfront && upfront.ok && upfront.findings.length) auditCard(upfront, ctx);
+  else if (!upfront && voices.length && ctx.shortlistsOn) voicesCard(voices.map((v) => v.id), ctx);
+  // What the community reports most for what they want it for, when they ask
+  if (top.length && use && screen.asks_community && ctx.shortlistsOn && !pregnant) crowdCard(top, use, ctx);
   let wrote = '';
   let model = deps.models.guide;
   let rounds = 0;
@@ -1242,7 +1357,26 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   }
   await gate.drain();
 
-  // 5. The Safety agent's tally
+  // 5. Where the answer came from: the fact sheets (the studies) and the Community Signals (the
+  // community) it drew on, in totals
+  const studied = [...ctx.opened].filter((id) => ctx.sheets.get(id));
+  const heard = [...ctx.heard.entries()].filter((e): e is [string, Community] => !!e[1]);
+  if (!held && (studied.length || heard.length)) {
+    const p = snap.community ?? {};
+    emit('sources', {
+      studies: {
+        sheets: studied.length, sources: studied.reduce((t, id) => t + (ctx.sheets.get(id)?.sources?.length ?? 0), 0),
+        names: studied.slice(0, 8).map((id) => ({ id, name: ctx.sheets.get(id)!.name })),
+      },
+      community: {
+        signals: heard.length, reports: heard.reduce((t, [, c]) => t + c.firstHand, 0), forum: heard.some(([, c]) => c.memberShare < 100),
+        names: heard.slice(0, 8).map(([id]) => ({ id, name: ctx.byId.get(id)?.name ?? id })),
+      },
+      crowd: { members: Math.max(0, Math.round(Number(p.members) || 0)), reports: Math.max(0, Math.round(Number(p.reports) || 0)) },
+    });
+  }
+
+  // 6. The Safety agent's tally
   const notShown = gate.held + gate.unchecked;
   const title = notShown || gate.edited
     ? `Every part checked before you saw it · ${[gate.edited ? `edited ${gate.edited}` : '', notShown ? `held back ${notShown}` : ''].filter(Boolean).join(' · ')}`
@@ -1263,7 +1397,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     + gate.released).slice(0, 6000);
   deps.log?.({
     ask: {
-      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, shortlists: ctx.shortlists, stacks: ctx.stacks, asked: ctx.asked,
+      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, signals: heard.length, use: use?.id ?? null, shortlists: ctx.shortlists, stacks: ctx.stacks, asked: ctx.asked,
       parts: { checked: gate.checked, edited: gate.edited, held: gate.held, unchecked: gate.unchecked }, tokens: usage,
     },
   });

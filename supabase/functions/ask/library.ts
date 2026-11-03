@@ -34,13 +34,16 @@ export type Sheet = {
   sources: { n: number; title: string; publisher: string; year: number | string; url: string }[];
 };
 export type Signal = {
-  name?: string; score: number; certification?: string; first_hand?: number; voices?: number;
+  name?: string; kind?: string; score: number; certification?: string; first_hand?: number; voices?: number;
+  internal_share?: number;   // how much of the Signal comes from members' own reports, 0 to 100
   summary_label?: string; confidence_label?: string; themes?: { theme: string; label: string }[];
-  outcomes?: { better: number; same: number; worse: number; better_pct?: number } | null;
+  outcomes?: { better: number; same: number; worse: number; better_pct?: number; better_low?: number; better_high?: number } | null;
   side_effects?: { effect: string; n: number }[];
   by_use?: { use: string; rating?: number | null; reports?: number; forum?: string | null }[];
 };
-export type Snapshot = { signals: Record<string, Signal>; uses: Record<string, [string, string]> };
+// The whole community, in totals
+export type Pulse = { members?: number; reports?: number; signals?: number; community_share?: number; external_weight?: number };
+export type Snapshot = { signals: Record<string, Signal>; uses: Record<string, [string, string]>; community?: Pulse };
 
 export const LEVEL: Record<string, string> = {
   forum: 'Forum data (mostly public forums so far)',
@@ -141,7 +144,8 @@ export function createLibrary(opts: LibraryOpts) {
     async snapshot(): Promise<Snapshot> {
       return await cached('snapshot', 10 * 60_000, now(), async () => {
         const s = await getJson(opts.snapshotUrl).catch(() => null);
-        return { signals: (s && typeof s.signals === 'object' && s.signals) || {}, uses: (s && s.uses) || {} } as Snapshot;
+        return { signals: (s && typeof s.signals === 'object' && s.signals) || {}, uses: (s && s.uses) || {},
+          community: (s && typeof s.community === 'object' && s.community) || {} } as Snapshot;
       });
     },
   };
@@ -311,7 +315,9 @@ export function signalLine(sig: Signal | null | undefined, uses: Record<string, 
 
 const list = (xs: string[] | undefined, n: number) => (xs ?? []).filter(Boolean).slice(0, n);
 
-export function condense(sheet: Sheet, item: Item | undefined, sig: Signal | null | undefined, uses: Record<string, [string, string]> = {}): string {
+// withSignal false: the Community Signal is written separately (community.ts voiceLine), with
+// which of the two voices leads for this question
+export function condense(sheet: Sheet, item: Item | undefined, sig: Signal | null | undefined, uses: Record<string, [string, string]> = {}, withSignal = true): string {
   const fam = item ? `${familyOne(item.family)} · ${item.category}` : '';
   const out = [
     `### ${sheet.name} (id ${sheet.id})${fam ? ` · ${fam}` : ''}`,
@@ -334,16 +340,16 @@ export function condense(sheet: Sheet, item: Item | undefined, sig: Signal | nul
   }
   const q = list(sheet.ask_your_clinician, 3);
   if (q.length) out.push('Questions the fact sheet suggests for a clinician: ' + q.join(' | '));
-  out.push(signalLine(sig, uses));
+  if (withSignal) out.push(signalLine(sig, uses));
   const src = list(sheet.sources?.map((s) => `${s.title} (${s.publisher}, ${s.year})`), 5);
   if (src.length) out.push('Sources on the fact sheet: ' + src.join('; '));
   return out.join('\n');
 }
 
 // One line per compound with no fact sheet: what little the catalog says
-export function stub(item: Item, sig: Signal | null | undefined, uses: Record<string, [string, string]> = {}): string {
+export function stub(item: Item, sig: Signal | null | undefined, uses: Record<string, [string, string]> = {}, withSignal = true): string {
   const parts = item.kind === 'blend' && item.parts.length ? ` · a blend of ${item.parts.join(', ')}` : '';
-  return `### ${item.name} (id ${item.id}) · ${familyOne(item.family)} · ${item.category}${parts}\nNo fact sheet yet: it's still being researched for the Library. Keep to what is well established and say the fact sheet isn't ready.\n${signalLine(sig, uses)}`;
+  return `### ${item.name} (id ${item.id}) · ${familyOne(item.family)} · ${item.category}${parts}\nNo fact sheet yet: it's still being researched for the Library. Keep to what is well established and say the fact sheet isn't ready.${withSignal ? `\n${signalLine(sig, uses)}` : ''}`;
 }
 
 export function optionLine(o: Option, i: number): string {

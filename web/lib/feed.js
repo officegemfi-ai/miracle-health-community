@@ -388,7 +388,8 @@ export async function renderExplore(family = '') {
 // ---------------------------------------------------------------------------
 // New post
 // ---------------------------------------------------------------------------
-// d: a draft from their Miracle Plan check-in on miraclehealth.us (kit.js draftLink), to edit
+// d: a draft from miraclehealth.us (a Miracle Plan check-in, or "add how it went" in Miracle AI;
+// kit.js draftLink), to edit
 export function renderNew(param = '', d = '') {
   if (S.me.status === 'suspended') { render(h('div', { class: 'msg note' }, 'Your account is paused, so you can’t post right now.')); return; }
   const draft = draftFrom(d);
@@ -410,7 +411,7 @@ export function renderNew(param = '', d = '') {
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// New post'), h('h1', {}, 'Share how it went.'))),
     draft ? h('div', { class: 'msg note from-plan' }, sig(32, 'happy'),
-      h('span', {}, h('b', {}, 'Drafted from your Miracle Plan check-in. '), 'It’s yours to change: add side effects or anything else, check what you took, and nothing is posted until you press Post.')) : null,
+      h('span', {}, h('b', {}, 'Drafted for you on miraclehealth.us. '), 'It’s yours to change: add side effects or anything else, check what you took, and nothing is posted until you press Post.')) : null,
     h('form', {
       class: 'card',
       onsubmit: async (e) => {

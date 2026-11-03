@@ -45,8 +45,10 @@ so the public library on miraclehealth.us can use the same drawings.
 
 ## Miracle AI's chat (`supabase/functions/ask`)
 Anyone can talk with Miracle AI on miraclehealth.us/ai about improving with peptides,
-supplements, hormones and the medicines taken with them; no account needed. Each message goes
-through four agents, and the page shows each step as it happens:
+supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
+for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
+community (the Community Signal: members' first-hand reports and public forum data). Each message
+goes through four agents and the community's numbers, and the page shows each step as it happens:
 
 1. **Safety agent** (Claude Haiku) reads the message first: emergencies (911), signs of crisis
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
@@ -55,7 +57,8 @@ through four agents, and the page shows each step as it happens:
    (`snapshot.json`), with tools to rank options for a goal, open fact sheets and search. It
    talks like a caring clinician, briefly: it asks or answers, never both. When it doesn't yet
    know what would change its answer, it first asks 2 to 4 questions, the way a clinician takes
-   a history (age range, sex, medicines, conditions, what they've tried), on a card the visitor
+   a history (what's going on, what they've tried, their foundations, medicines and conditions;
+   never their age or sex), on a card the visitor
    answers by tapping or typing; past a full answer, it can only end with one question in prose.
    It never asks for names, contact details, birthdays, amounts taken or where things come from.
    Warning signs are never worded by the model: it picks them from a fixed table
@@ -63,16 +66,29 @@ through four agents, and the page shows each step as it happens:
    the page shows each under its level: call 911 now, same day, or this week. Someone who
    says they inject gets the safety basics once in a chat (adults only); questions about a
    product's quality point to the Library's guide to reading a lab report.
-3. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
+3. **The community** (no model: the community's public totals in `snapshot.json`, read by
+   `community.ts`): for each compound named, and for what the visitor wants it for (one of the
+   uses in `shared/uses.json`, which the Safety agent picks out), what members' first-hand reports
+   and the public forums say: the Signal and its level, how members rate it for that use (or how
+   often the forums mention it), how reports went, side effects members mention. Compound by
+   compound it decides which voice leads: the studies when there are studies in people for what
+   was asked; the community's reports when there aren't (animal studies only, nothing on that use,
+   or no fact sheet yet), with their sample size and where they come from; plain words when
+   neither has anything. The page shows the two side by side, and when the visitor asks what the
+   community rates highest for something, the community's list (members' ratings first, then
+   forum mentions; never anything on FDA's safety-risk list), as reports, not recommendations.
+   Totals only: never a post or a name. Each answer ends with where it came from (fact sheets and
+   Signals, in totals).
+4. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
    conditions: overlapping mechanisms, additive risks, interactions.
-4. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
+5. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
    safety-risk list is never on it, and the auditor checks every shortlist. When someone names
    compounds they take or weigh together, it also lays out "Your stack", with the auditor's check
    on it (shown as it is, safety-risk items plainly marked rather than hidden). If the
    Recommender asks about their medicines first, the stack waits for their answers. Pairs never
    studied together are marked "unknown", not "good to know". The visitor can keep their stack
    on their own device (never sent anywhere).
-5. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
+6. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
    its cards, is read by Claude (Haiku) against the rules and released only once it's cleared,
    rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
    dosing units, supplement-extract brands and outside links are always taken out as well.
@@ -94,7 +110,7 @@ A limit or a pause never turns away someone in crisis or describing an emergency
 reply written in advance (988, or 911) with no AI call, and the message is still counted.
 Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAST_MODEL`,
 `ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
-project ten real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
+project eleven real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
 ## Run it on your machine (no Docker needed)
 ```
