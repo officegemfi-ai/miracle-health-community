@@ -39,11 +39,12 @@ export type Signal = {
   summary_label?: string; confidence_label?: string; themes?: { theme: string; label: string }[];
   outcomes?: { better: number; same: number; worse: number; better_pct?: number; better_low?: number; better_high?: number } | null;
   side_effects?: { effect: string; n: number }[];
-  by_use?: { use: string; rating?: number | null; reports?: number; forum?: string | null }[];
+  by_use?: { use: string; rating?: number | null; reports?: number; voices?: number; forum?: string | null }[];
 };
 // The whole community, in totals
 export type Pulse = { members?: number; reports?: number; signals?: number; community_share?: number; external_weight?: number };
-export type Snapshot = { signals: Record<string, Signal>; uses: Record<string, [string, string]>; community?: Pulse };
+// ok false: the snapshot couldn't be read, so nothing is known about what people report
+export type Snapshot = { signals: Record<string, Signal>; uses: Record<string, [string, string]>; community?: Pulse; ok?: boolean };
 
 export const LEVEL: Record<string, string> = {
   forum: 'Forum data (mostly public forums so far)',
@@ -141,11 +142,13 @@ export function createLibrary(opts: LibraryOpts) {
       if (!/^[a-z0-9]{1,40}$/.test(id)) return null;
       return await cached(`sheet:${id}`, 15 * 60_000, now(), async () => (await getJson(`${opts.base}/entries/${id}.json`)) as Sheet | null);
     },
+    // A snapshot that can't be read isn't kept as an empty one: the last good copy stands, and with
+    // none, the caller hears it failed (and says nothing about what people report)
     async snapshot(): Promise<Snapshot> {
       return await cached('snapshot', 10 * 60_000, now(), async () => {
-        const s = await getJson(opts.snapshotUrl).catch(() => null);
-        return { signals: (s && typeof s.signals === 'object' && s.signals) || {}, uses: (s && s.uses) || {},
-          community: (s && typeof s.community === 'object' && s.community) || {} } as Snapshot;
+        const s = await getJson(opts.snapshotUrl);
+        if (!s || typeof s.signals !== 'object' || !s.signals) throw new Error('The community snapshot is unavailable');
+        return { signals: s.signals, uses: s.uses || {}, community: (typeof s.community === 'object' && s.community) || {}, ok: true } as Snapshot;
       });
     },
   };

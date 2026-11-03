@@ -4,7 +4,7 @@ import { clearCache, condense, createLibrary, indexText, type Item, mentioned, r
 import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, benefitsOf, plainScreen, screenTitle, settle, standing, studiesOf, tagFor, cautionFor, useOf } from './agents.ts';
-import { communityOf, communityTitle, communityTop, leadOf, pulseLine, topText, useById, voiceLine, voiceOf } from './community.ts';
+import { blockedItem, communityOf, communityTitle, communityTop, leadOf, pulseLine, topText, useById, voiceLine, voiceOf } from './community.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
 
@@ -14,12 +14,14 @@ import { guideSystem } from './prompts.ts';
 const ITEMS: Item[] = [
   { id: 'creatine', name: 'Creatine monohydrate', family: 'Supplements', category: 'Muscle & performance', aliases: ['Creatine'], kind: 'compound', parts: [], sheet: true, status: 'supplement', status_label: 'Dietary supplement', grade: 'strong', goals: { muscle: 1, energy: 0.5 }, summary: 'The best-studied supplement for strength.' },
   { id: 'bpc157', name: 'BPC-157', family: 'Peptides', category: 'Healing & recovery', aliases: ['BPC'], kind: 'compound', parts: [], sheet: true, status: 'under_review', status_label: 'Not approved; compounding not yet allowed', grade: 'limited', goals: { recovery: 1, gut: 0.75 }, summary: 'A peptide fragment studied mostly in rodents.' },
-  { id: 'tb500', name: 'TB-500', family: 'Peptides', category: 'Healing & recovery', aliases: ['Thymosin beta-4 fragment'], kind: 'compound', parts: [], sheet: false },
+  { id: 'tb500', name: 'TB-500', family: 'Peptides', category: 'Healing & recovery', aliases: ['Thymosin beta-4 fragment'], kind: 'compound', parts: [], sheet: false, status: 'under_review', status_label: 'Not approved; compounding not yet allowed' },
   { id: 'hmb', name: 'HMB', family: 'Supplements', category: 'Muscle & performance', aliases: [], kind: 'compound', parts: [], sheet: true, status: 'supplement', status_label: 'Dietary supplement', grade: 'moderate', goals: { muscle: 0.75 }, summary: 'A leucine metabolite.' },
   { id: 'mk677', name: 'MK-677', family: 'Peptides', category: 'Growth-hormone axis', aliases: ['Ibutamoren'], kind: 'compound', parts: [], sheet: true, status: 'category2', status_label: 'On FDA’s safety-risk list', grade: 'limited', goals: { muscle: 0.75 }, summary: 'An oral GH secretagogue.' },
   { id: 'testosterone', name: 'Testosterone', family: 'Hormones', category: 'Hormone balance', aliases: ['TRT', 'Test'], kind: 'compound', parts: [], sheet: true, status: 'approved', status_label: 'FDA-approved (Schedule III)', grade: 'strong', goals: { hormonal: 1, muscle: 0.75 }, summary: 'The main male sex hormone.' },
   { id: 'same', name: 'SAMe', family: 'Supplements', category: 'Mood & stress', aliases: ['S-adenosylmethionine'], kind: 'compound', parts: [], sheet: false },
   { id: 'eaa', name: 'EAAs', family: 'Supplements', category: 'Muscle & performance', aliases: ['Essential amino acids'], kind: 'compound', parts: [], sheet: false },
+  // A blend with a part on FDA's safety-risk list
+  { id: 'riskmix', name: 'Riskmix', family: 'Blends', category: 'Healing & recovery', aliases: [], kind: 'blend', parts: ['mk677', 'bpc157'], sheet: false, status: 'not_approved' },
 ];
 const SHEET_BPC: Sheet = {
   id: 'bpc157', name: 'BPC-157', summary: 'A peptide.', what_it_is: 'A 15-amino-acid peptide studied in rodents.',
@@ -38,7 +40,10 @@ const SHEET_CREATINE: Sheet = {
 };
 const SNAPSHOT = {
   signals: {
-    bpc157: { score: 71.2, certification: 'backed', first_hand: 14, outcomes: { better: 10, same: 3, worse: 1, better_pct: 71 }, side_effects: [{ effect: 'Nausea', n: 3 }], by_use: [{ use: 'injury', rating: 78, reports: 9 }] },
+    bpc157: { score: 71.2, certification: 'backed', first_hand: 14, outcomes: { better: 10, same: 3, worse: 1, better_pct: 71 }, side_effects: [{ effect: 'Nausea', n: 3 }], by_use: [{ use: 'injury', rating: 78, reports: 12, voices: 8 }] },
+    // A rating from a handful of reports never tops the list
+    hmb: { score: 60, certification: 'early', first_hand: 3, by_use: [{ use: 'injury', rating: 100, reports: 3, voices: 3 }] },
+    riskmix: { score: 90, certification: 'forum', by_use: [{ use: 'injury', forum: 'Very common' }] },
     creatine: { score: 80, certification: 'forum' },
     // No fact sheet yet, and only forum data: the community carries any answer about it
     tb500: { score: 66.4, certification: 'forum', first_hand: 0, internal_share: 0, by_use: [{ use: 'injury', forum: 'Very common' }, { use: 'tendons', forum: 'Common' }], themes: [{ theme: 'Faster soft-tissue recovery', label: 'Very common' }] },
@@ -281,7 +286,8 @@ Deno.test('benefits on a card: the best evidence in people first, two at most, n
 Deno.test('card tags and cautions follow US status and family', () => {
   assertEquals(tagFor(ITEMS[1], SHEET_BPC).tag, 'Not approved');
   assertEquals(tagFor(ITEMS[0], SHEET_CREATINE), { tag: 'Supplement', tone: 'ok' });
-  assertEquals(tagFor(ITEMS[2], null), { tag: 'No fact sheet yet', tone: 'none' });
+  assertEquals(tagFor(ITEMS[6], null), { tag: 'No fact sheet yet', tone: 'none' });
+  assertEquals(tagFor(ITEMS[4], null), { tag: 'On FDA’s safety-risk list', tone: 'warn' });
   assert(cautionFor(ITEMS[5], null, true).startsWith('A prescription hormone: only after testing'));
   assert(cautionFor(ITEMS[1], SHEET_BPC, true).includes('obstetric'));
   assert(screenTitle({ ...plainScreen(''), ok: true, asks_dose: true }).includes('asked for a dose'));
@@ -1098,28 +1104,38 @@ Deno.test('when the Safety agent fails, the plain checks still screen and the tu
 // ---------------------------------------------------------------------------
 // The studies and the community
 // ---------------------------------------------------------------------------
-Deno.test('which voice leads: studies in people when there are some for what was asked, the community when there aren\'t', () => {
+Deno.test('which voice leads: studies in people when there are some, what people report when there aren\'t, safety before either', () => {
   const injury = useById('injury')!;
   const sig = SNAPSHOT.signals as never as Record<string, never>;
   const bpc = communityOf(sig.bpc157, injury, SNAPSHOT.uses as never)!;
-  assertEquals([bpc.score, bpc.level, bpc.firstHand, bpc.use], [71.2, 'backed', 14, { id: 'injury', label: 'Injury healing', rating: 78, reports: 9, forum: null }]);
-  assertEquals(bpc.outcomes, { better: 10, same: 3, worse: 1, pct: 71, low: null, high: null });
+  assertEquals([bpc.score, bpc.level, bpc.firstHand, bpc.use], [71.2, 'backed', 14, { id: 'injury', label: 'Injury healing', rating: 78, reports: 12, forum: null }]);
+  assertEquals(bpc.outcomes, { better: 10, same: 3, worse: 1, pct: 71 });
   const tb = communityOf(sig.tb500, injury)!;
   assertEquals([tb.firstHand, tb.use?.forum, tb.uses.map((u) => u.id)], [0, 'Very common', ['injury', 'tendons']]);
-  // Studies in people for this use lead; animal studies only, or no fact sheet, hand it to the community
+  // Studies in people for this use lead; animal studies only, or no fact sheet, hand it to what people report
   assertEquals(leadOf(studiesOf(SHEET_CREATINE, 'muscle'), communityOf(sig.creatine, useById('strength'))), 'studies');
   assertEquals(leadOf(studiesOf(SHEET_BPC, 'recovery'), bpc), 'community');                 // rodent studies only
   assertEquals(leadOf(null, tb), 'community');                                                 // no fact sheet yet
   assertEquals(leadOf(studiesOf(SHEET_CREATINE, 'sleep'), communityOf(sig.bpc157, useById('sleep'))), 'none');   // nothing on sleep from either
   assertEquals(leadOf(studiesOf(SHEET_BPC, 'recovery'), communityOf(sig.creatine, injury)), 'studies');        // animal data, and nobody reports on it
   assertEquals(leadOf(null, null), 'none');
-  // The guide gets the numbers as they are, with the sample size and where they come from
+  // Safety first: on FDA's safety-risk list, or in pregnancy, never what people report
+  assertEquals(leadOf(studiesOf(SHEET_BPC, 'recovery'), bpc, { blocked: true }), 'studies');
+  assertEquals(leadOf(null, tb, { pregnant: true }), 'studies');
+  assert(voiceLine(voiceOf({ id: 'mk677', name: 'MK-677' }, null, tb, { blocked: true })).includes('on FDA\'s list of substances with significant safety risks'));
+  assert(voiceLine(voiceOf({ id: 'tb500', name: 'TB-500' }, null, tb, { pregnant: true })).includes('Leave out what people report'));
+  // The guide gets the numbers as they are, with the sample size, where they come from, and that they aren't evidence
   const line = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, studiesOf(SHEET_BPC, 'recovery'), bpc));
-  for (const x of ['Studies: animal and lab studies only for this.', 'Signal 71.2/100 (Community-backed; 14 first-hand reports from members', 'members rate it 78/100 from 9 reports',
-    '10 better, 3 about the same, 1 worse (71% better)', '"nausea" (3 members)', '→ The studies don\'t answer this (animal and lab studies only): lead with what the community reports']) assert(line.includes(x), x);
+  for (const x of ['Studies: animal and lab studies only for this.', 'Signal 71.2/100 (Community-backed; 14 first-hand reports from members', 'members rate it 78/100 from 12 reports',
+    'Across all uses, 14 members\' first-hand reports so far: 10 better, 3 about the same, 1 worse.', '"nausea" (3 reports)',
+    '→ No studies in people answer this (animal and lab studies only): start with what people report', 'say in the same sentence that there are no studies in people for it. What people report isn\'t evidence.']) assert(line.includes(x), x);
+  assert(!line.includes('likely') && !line.includes('3 members'));
   const tbLine = voiceLine(voiceOf({ id: 'tb500', name: 'TB-500' }, null, tb));
-  for (const x of ['Studies: no fact sheet yet.', 'all from public forum data so far', 'the public forums mention it very common', 'Also used for: tendons & ligaments (forums: common)', 'What people describe most: "faster soft-tissue recovery" (very common)', 'lead with what the community reports']) assert(tbLine.includes(x), x);
-  assert(voiceLine(voiceOf({ id: 'x', name: 'X' }, null, null)).includes('Neither the studies nor the community have anything on this yet'));
+  for (const x of ['Studies: no fact sheet yet.', 'all from public forum data so far', 'For injury healing, the public forums mention it very often', 'Also reported for: tendons & ligaments (the public forums mention it often)',
+    'What people on the forums describe most: "faster soft-tissue recovery" (very common)', 'start with what people report']) assert(tbLine.includes(x), x);
+  assert(voiceLine(voiceOf({ id: 'x', name: 'X' }, null, null)).includes('Neither the studies nor the community have anything on this yet: say so plainly.'));
+  // User reports only is never called animal studies
+  assert(voiceLine(voiceOf({ id: 'x', name: 'X' }, { grade: 'anecdotal', forUse: true, main: 'anecdotal', finding: null }, null)).includes('only user reports, no studies'));
   assertEquals(communityTitle([voiceOf({ id: 'tb500', name: 'TB-500' }, null, tb)], injury, []), 'Read the forum data on TB-500: no member reports yet');
   assertEquals(communityTitle([voiceOf({ id: 'bpc157', name: 'BPC-157' }, null, bpc), voiceOf({ id: 'tb500', name: 'TB-500' }, null, tb)], injury, []), 'Read 14 member reports and the forum data on BPC-157 and TB-500');
   assert(pulseLine(SNAPSHOT.community).startsWith('The community so far: 120 members, 340 first-hand reports and 40 Community Signals'));
@@ -1131,22 +1147,27 @@ Deno.test('which voice leads: studies in people when there are some for what was
 Deno.test('nothing reported for exactly what was asked: the closest use for the same goal, said as such', () => {
   const sig = SNAPSHOT.signals as never as Record<string, never>;
   const c = communityOf(sig.bpc157, useById('tendons'), SNAPSHOT.uses as never)!;
-  assertEquals([c.use?.rating, c.use?.forum, c.near], [null, null, { id: 'injury', label: 'Injury healing', rating: 78, reports: 9, forum: null }]);
+  assertEquals([c.use?.rating, c.use?.forum, c.near], [null, null, { id: 'injury', label: 'Injury healing', rating: 78, reports: 12, forum: null }]);
   assertEquals(leadOf(studiesOf(SHEET_BPC, 'recovery'), c), 'community');
   const line = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, studiesOf(SHEET_BPC, 'recovery'), c));
-  assert(line.includes('Nothing reported on it for tendons & ligaments specifically yet; for injury healing, the closest use reported, members rate it 78/100 from 9 reports.'), line);
+  assert(line.includes('Nothing reported on it for tendons & ligaments specifically yet; for injury healing, the closest use reported, members rate it 78/100 from 12 reports.'), line);
   // Another goal's uses never stand in
-  const sleep = communityOf(sig.bpc157, useById('sleep'))!;
-  assertEquals(sleep.near, null);
+  assertEquals(communityOf(sig.bpc157, useById('sleep'))!.near, null);
 });
 
-Deno.test('what the community rates highest: members\' ratings first, then the forums; never the safety-risk list, never a stack', () => {
+Deno.test('what the community reports most: members\' ratings with enough reports first, then the forums; nothing risky, unknown or from a handful of accounts', () => {
   const byId = new Map(ITEMS.map((i) => [i.id, i]));
   const top = communityTop(SNAPSHOT.signals as never, byId, useById('injury')!);
+  // Not MK-677 (FDA's safety-risk list), not Riskmix (a blend with it), not a stack, not HMB's 100 from 3 reports
   assertEquals(top.map((r) => [r.id, r.rating, r.forum]), [['bpc157', 78, null], ['tb500', null, 'Very common']]);
-  const t = topText(top, useById('injury'));
-  assert(t.includes('not a recommendation') && t.includes('1. BPC-157 [bpc157]: members rate it 78/100 from 9 reports') && t.includes('2. TB-500 [tb500]: the public forums mention it very common'));
-  assert(topText([], useById('sleep')).startsWith('Nobody in the community has reported on anything for sleep yet'));
+  assert(blockedItem(byId.get('riskmix'), byId) && blockedItem(byId.get('mk677'), byId) && !blockedItem(byId.get('bpc157'), byId));
+  const t = topText(top, useById('injury'), (id) => byId.get(id)?.status_label ?? '');
+  for (const x of ['not a recommendation and never a reason to choose one', 'counted only with 10 or more reports from 5 or more members',
+    '1. BPC-157 [bpc157] (Not approved; compounding not yet allowed): members rate it 78/100 from 12 reports', '2. TB-500 [tb500] (Not approved; compounding not yet allowed): the public forums mention it very often; not rated by members']) assert(t.includes(x), x);
+  assert(topText([], useById('sleep')).startsWith('Nothing on the community\'s list for sleep yet'));
+  // Nothing whose US status isn't worked out yet
+  const noStatus = new Map(ITEMS.map((i) => [i.id, i.id === 'tb500' ? { ...i, status: undefined } : i]));
+  assertEquals(communityTop(SNAPSHOT.signals as never, noStatus, useById('injury')!).map((r) => r.id), ['bpc157']);
 });
 
 Deno.test('the Safety agent reads what they want it for, and whether they ask what the community reports', async () => {
@@ -1154,64 +1175,84 @@ Deno.test('the Safety agent reads what they want it for, and whether they ask wh
   await events(await handle(ask([{ role: 'user', content: 'what do people use for tendons?' }]), deps(f)));
   const screenTool = (calls.find((c) => c.kind === 'screen')!.body.tools as { input_schema: { properties: Record<string, { items?: { enum?: string[] } }> } }[])[0];
   assert(screenTool.input_schema.properties.uses.items!.enum!.includes('tendons'));
-  const g = calls.find((c) => c.kind === 'guide')!;
-  const notes = (g.body.system as { text: string }[])[1].text;
+  const notes = ((calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
   // The use's goal stands in for the goal they didn't name, so the studies' options come too
   assert(notes.includes('Options for injury recovery & joints'));
   assert(notes.includes('The community (members\' first-hand reports and public forum data, in totals):'));
-  assert(notes.includes('What the community rates highest for tendons & ligaments') && notes.includes('TB-500 [tb500]: the public forums mention it common'));
+  assert(notes.includes('What the community reports most for tendons & ligaments') && notes.includes('TB-500 [tb500] (Not approved; compounding not yet allowed): the public forums mention it often'));
   assertEquals(plainScreen('anything').uses, []);
+  // Not asked what the community reports: no list in the notes, and no list on the trace
+  const plain = fakeWorld({ screen: { ...NONE, uses: ['injury'] }, rounds: [{ text: 'Sure.' }] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'what helps an injury heal?' }]), deps(plain.f)));
+  const notes2 = ((plain.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(!notes2.includes('What the community reports most'));
+  assert(!ev.some((e) => e.event === 'step' && e.data.agent === 'community' && e.data.chips?.length));
 });
 
-Deno.test('no studies for the question: the community leads, on a card beside the studies, and in the guide\'s notes', async () => {
+Deno.test('no studies for the question: what people report comes first, on a card beside the studies, and in the guide\'s notes', async () => {
   const { f, calls } = fakeWorld({
     screen: { ...NONE, compounds: ['TB-500'], uses: ['injury'], goals: ['recovery'], asks_community: true },
-    rounds: [{ text: 'On the forums, TB-500 comes up very often for injury healing, though it has no fact sheet yet and no studies in people. ' + WORDS }],
+    rounds: [{ text: 'On the forums, TB-500 comes up very often for injury healing, though it has no studies in people. ' + WORDS }],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'What do people say about TB-500 for healing an injury?' }]), deps(f)));
   const step = ev.find((e) => e.event === 'step' && e.data.agent === 'community')!.data;
-  assertEquals(step.title, 'Read the forum data on TB-500: no member reports yet');
-  // The guide is told what the community reports, and that it leads here
+  assertEquals([step.title, step.chips.map((c: { id: string }) => c.id)], ['Read the forum data on TB-500: no member reports yet', ['tb500']]);
   const notes = ((calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
-  for (const x of ['TB-500 [tb500], the studies and the community. Studies: no fact sheet yet.', 'For injury healing, the public forums mention it very common',
-    '→ The studies don\'t answer this (no fact sheet yet): lead with what the community reports', 'The community so far: 120 members']) assert(notes.includes(x), x);
+  for (const x of ['TB-500 [tb500], the studies and the community. Studies: no fact sheet yet.', 'For injury healing, the public forums mention it very often',
+    '→ No studies in people answer this (no fact sheet yet): start with what people report', 'The community so far: 120 members']) assert(notes.includes(x), x);
   assert(!notes.includes('Community Signal: not available yet'));
   // Words first, then the two voices side by side, then what the community reports most for injuries
   const cards = ev.filter((e) => e.event === 'card').map((e) => e.data);
   const voices = cards.find((c) => c.type === 'voices')!;
   assertEquals(voices.use, { id: 'injury', label: 'Injury healing' });
-  assertEquals([voices.items[0].id, voices.items[0].lead, voices.items[0].studies, voices.items[0].community.use.forum, voices.items[0].tag], ['tb500', 'community', null, 'Very common', 'No fact sheet yet']);
+  assertEquals([voices.items[0].id, voices.items[0].lead, voices.items[0].studies, voices.items[0].community.use.forum, voices.items[0].tag], ['tb500', 'community', null, 'Very common', 'Not approved']);
   const crowd = cards.find((c) => c.type === 'community')!;
   assertEquals(crowd.items.map((i: { id: string }) => i.id), ['bpc157', 'tb500']);
-  assertEquals([crowd.items[0].tag, crowd.crowd], ['Not approved', { members: 120, reports: 340 }]);
+  assertEquals([crowd.items[0].tag, crowd.items[0].proven, crowd.crowd], ['Not approved', false, { members: 120, reports: 340 }]);
   assert(ev.findIndex((e) => e.event === 'text') < ev.findIndex((e) => e.event === 'card' && e.data.type === 'voices'));
   // Where the answer came from, in totals
   const src = ev.find((e) => e.event === 'sources')!.data;
   assertEquals([src.studies.sheets, src.community.signals, src.community.reports, src.community.forum], [0, 2, 14, true]);
   assert(ev.findIndex((e) => e.event === 'sources') < ev.findIndex((e) => e.event === 'done'));
   assert(ev[ev.length - 1].data.memo.includes('what the community reports most for injury healing: BPC-157 [bpc157], TB-500 [tb500]'));
+  // On FDA's safety-risk list: the status and the studies first, on the card too
+  const risky = fakeWorld({ screen: { ...NONE, compounds: ['MK-677'], uses: ['injury'] }, rounds: [{ text: WORDS }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'What about MK-677 for an injury?' }]), deps(risky.f)));
+  const mk = ev2.find((e) => e.event === 'card' && e.data.type === 'voices')!.data.items[0];
+  assertEquals([mk.lead, mk.tag], ['studies', 'On FDA’s safety-risk list']);
 });
 
-Deno.test('studies in people lead when there are some; the stack card carries both voices; no community list in pregnancy or a crisis', async () => {
+Deno.test('studies in people lead when there are some; in pregnancy studies first and no community list; nothing in a crisis', async () => {
   const one = fakeWorld({ screen: { ...NONE, compounds: ['creatine'], uses: ['strength'] }, rounds: [{ text: WORDS }] });
   const ev = await events(await handle(ask([{ role: 'user', content: 'Does creatine help strength?' }]), deps(one.f)));
   const v = ev.find((e) => e.event === 'card' && e.data.type === 'voices')!.data.items[0];
   assertEquals([v.lead, v.studies.grade, v.studies.forUse, v.studies.finding.claim, v.community.score], ['studies', 'strong', true, 'More strength gains with resistance training in adults', 80]);
   assert(!ev.some((e) => e.event === 'card' && e.data.type === 'community'));   // they didn't ask what the community reports
-  // Their stack: each compound with what the community reports, and which voice leads
+  // Pregnant: their stack shows the studies first for everything, and nothing on what the community reports most
   const stack = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157', 'creatine'], uses: ['injury'], asks_community: true, pregnant: true }, rounds: [{ text: WORDS }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157 and creatine for an injury. What do members say?' }]), deps(stack.f)));
   const items = ev2.find((e) => e.event === 'card' && e.data.kind === 'yours')!.data.items;
-  assertEquals(items.map((i: { id: string; lead: string }) => [i.id, i.lead]), [['bpc157', 'community'], ['creatine', 'studies']]);   // (the fixture's creatine sheet lists recovery as a main goal)
-  assertEquals(items[0].community.use, { id: 'injury', label: 'Injury healing', rating: 78, reports: 9, forum: null });
-  assert(!ev2.some((e) => e.event === 'card' && (e.data.type === 'voices' || e.data.type === 'community')));   // pregnant: no community list
+  assertEquals(items.map((i: { id: string; lead: string }) => [i.id, i.lead]), [['bpc157', 'studies'], ['creatine', 'studies']]);
+  assertEquals(items[0].community.use, { id: 'injury', label: 'Injury healing', rating: 78, reports: 12, forum: null });
+  assert(!ev2.some((e) => e.event === 'card' && (e.data.type === 'voices' || e.data.type === 'community')));
+  const pnotes = ((stack.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(!pnotes.includes('What the community reports most') && pnotes.includes('Leave out what people report'));
+  assert(!ev2.some((e) => e.event === 'step' && e.data.agent === 'community' && (e.data.chips ?? []).some((c: { id: string }) => !['bpc157', 'creatine'].includes(c.id))));
+  // The check knows about the pregnancy too
+  const review = stack.calls.find((c) => c.kind === 'review')!;
+  assert(String((review.body.messages as { content: string }[])[0].content).includes('pregnant, trying to conceive or breastfeeding'));
   // A crisis: no community, no cards, nothing about compounds
   const crisis = fakeWorld({ screen: { ...NONE, red_flag: 'self_harm', compounds: ['TB-500'], uses: ['injury'], asks_community: true }, rounds: [{ text: 'Please call 988.' }] });
   const ev3 = await events(await handle(ask([{ role: 'user', content: 'what do people use, I want to die' }]), deps(crisis.f)));
   assert(!ev3.some((e) => (e.event === 'step' && e.data.agent === 'community') || e.event === 'sources' || (e.event === 'card' && e.data.type !== 'crisis')));
+  // After a crisis earlier in the chat (shortlists off): no list either
+  const after = fakeWorld({ screen: { ...NONE, uses: ['injury'], asks_community: true }, rounds: [{ text: 'How are you doing today?' }] });
+  await events(await handle(ask([{ role: 'user', content: 'I want to die' }, { role: 'assistant', content: '[Safety: crisis]\nPlease call 988.' }, { role: 'user', content: 'what do people use for injuries?' }]), deps(after.f)));
+  const anotes = ((after.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(!anotes.includes('What the community reports most'));
 });
 
-Deno.test('something happening now: no studies-and-community card beside when to get help; a list of one is said in words', async () => {
+Deno.test('something happening now: no studies-and-community card or list beside when to get help; a list of one is said in words', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, compounds: ['BPC-157'], injects: true, uses: ['injury'], asks_community: true },
     rounds: [
@@ -1228,4 +1269,37 @@ Deno.test('something happening now: no studies-and-community card beside when to
   assert(!ev2.some((e) => e.event === 'card' && e.data.type === 'community'));
   const notes = ((one.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
   assert(notes.includes('1. TB-500 [tb500]') && !notes.includes('a card of what the community reports most'));
+  // Asking questions first holds the list for the full answer, and a card with a line is written again
+  const asked = fakeWorld({ screen: { ...NONE, uses: ['injury'], asks_community: true }, rounds: [
+    { text: 'A few questions first.', tool: { name: 'ask_member', input: { questions: [{ q: 'Which medicines do you take?' }] } } },
+  ] });
+  const ev3 = await events(await handle(ask([{ role: 'user', content: 'What do members use for injuries?' }]), deps(asked.f)));
+  assert(!ev3.some((e) => e.event === 'card' && e.data.type === 'community') && ev3.some((e) => e.event === 'card' && e.data.type === 'intake'));
+  const short = fakeWorld({ screen: { ...NONE, uses: ['injury'], asks_community: true }, rounds: [{ text: 'Sure.' }, { text: WORDS }] });
+  await events(await handle(ask([{ role: 'user', content: 'What do members use for injuries?' }]), deps(short.f)));
+  assertEquals(short.calls.filter((c) => c.kind === 'guide').length, 2);
+});
+
+Deno.test('a snapshot that can\'t be read: the last good one stands, and with none nothing is said about what people report', async () => {
+  let up = true;
+  const lib = libFetch();
+  const flaky = (async (url: string | URL, init?: RequestInit) => (String(url).endsWith('snapshot.json') && !up ? new Response('down', { status: 503 }) : lib(url, init))) as unknown as typeof fetch;
+  clearCache();
+  let t = 0;
+  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: flaky, now: () => t });
+  assertEquals((await library.snapshot()).ok, true);
+  up = false; t += 11 * 60_000;
+  assertEquals((await library.snapshot()).signals.bpc157 !== undefined, true);      // stale beats nothing
+  clearCache();
+  let failed = false;
+  try { await library.snapshot(); } catch { failed = true; }
+  assert(failed);
+  // The turn goes on, and says the numbers couldn't be loaded rather than that nobody reported
+  const world = fakeWorld({ screen: { ...NONE, compounds: ['TB-500'], uses: ['injury'], asks_community: true }, rounds: [{ text: WORDS }] });
+  const down = (async (url: string | URL, init?: RequestInit) => (String(url).endsWith('snapshot.json') ? new Response('down', { status: 503 }) : world.f(url, init))) as unknown as typeof fetch;
+  const ev = await events(await handle(ask([{ role: 'user', content: 'What do people say about TB-500?' }]), deps(down)));
+  const notes = ((world.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(notes.includes('its numbers couldn\'t be loaded just now') && !notes.includes('no Signal yet'));
+  assert(!ev.some((e) => e.event === 'card' && (e.data.type === 'voices' || e.data.type === 'community')));
+  assertEquals(ev.find((e) => e.event === 'step' && e.data.agent === 'community')!.data.title, 'Couldn’t read the community’s numbers just now');
 });
