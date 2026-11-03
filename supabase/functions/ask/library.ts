@@ -98,15 +98,22 @@ type Cached = { at: number; value: unknown };
 const memo = new Map<string, Cached>();
 export function clearCache() { memo.clear(); }
 
+// A failed load isn't tried again for a minute: the stale copy stands meanwhile (stale beats
+// nothing), or the failure does, so an outage doesn't hold up every turn
+const RETRY_AFTER = 60_000;
 async function cached<T>(key: string, ttl: number, now: number, load: () => Promise<T>): Promise<T> {
   const hit = memo.get(key);
   if (hit && now - hit.at < ttl) return hit.value as T;
+  const failed = memo.get(`failed:${key}`);
+  if (!hit && failed && now - failed.at < RETRY_AFTER) throw failed.value;
   try {
     const value = await load();
     memo.set(key, { at: now, value });
+    memo.delete(`failed:${key}`);
     return value;
   } catch (e) {
-    if (hit) return hit.value as T;   // stale beats nothing
+    if (hit) { memo.set(key, { at: now - ttl + RETRY_AFTER, value: hit.value }); return hit.value as T; }
+    memo.set(`failed:${key}`, { at: now, value: e });
     throw e;
   }
 }
@@ -257,6 +264,8 @@ export type Option = Item & { fit: number; score: number; signal?: Signal | null
 export function rank(items: Item[], signals: Record<string, Signal>, goal: Goal, opts: { families?: string[]; exclude?: string[]; limit?: number } = {}): Option[] {
   const fams = opts.families?.length ? new Set(opts.families) : null;
   const skip = new Set(opts.exclude ?? []);
+  const statusOf = new Map(items.map((it) => [it.id, it.status ?? '']));
+  const risky = (it: Item) => BLOCKED.has(it.status ?? '') || it.parts.some((p) => BLOCKED.has(statusOf.get(p) ?? ''));
   const pool = items.filter((it) => !skip.has(it.id) && (!fams || fams.has(it.family)));
   const withSheet: Option[] = [];
   const without: Option[] = [];
@@ -272,14 +281,14 @@ export function rank(items: Item[], signals: Record<string, Signal>, goal: Goal,
       const st = STATUS_W[it.status ?? ''] ?? 0.4;
       const lvl = sig?.certification;
       const bonus = sig && (lvl === 'backed' || lvl === 'verified' || lvl === 'certified') ? (Number(sig.score) / 100) * 0.08 : 0;
-      const gate = BLOCKED.has(it.status ?? '') ? 'Never on a shortlist (FDA safety-risk list or restricted)'
+      const gate = risky(it) ? 'Never on a shortlist (FDA safety-risk list or restricted, or contains such a compound)'
         : it.status === 'investigational' ? 'Not for use outside a clinical trial'
         : it.family === 'Hormones' ? (it.status === 'supplement' ? 'A hormone sold as a supplement: test levels with a clinician first'
           : 'A prescription hormone: only after testing, with a clinician monitoring')
         : undefined;
       withSheet.push({ ...it, fit, score: fit * g * st + bonus, signal: sig, gate });
     } else if (!it.sheet && CATEGORY_GOAL[it.category] === goal) {
-      without.push({ ...it, fit: 0.5, score: 0, signal: sig });
+      without.push({ ...it, fit: 0.5, score: 0, signal: sig, ...(risky(it) ? { gate: 'Never on a shortlist (contains a compound on FDA\'s safety-risk list)' } : {}) });
     }
   }
   withSheet.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));

@@ -40,6 +40,7 @@ export type Screen = {
   injects: boolean; // they inject something themselves, or are about to
   uses: string[];   // what they want it for, as the Signal rates it (shared/uses.json), most important first
   asks_community: boolean; // they ask what other people, members or the forums report, use or rate
+  reaction: boolean;       // something happening now that could be a reaction to what they take or inject
   ok: boolean;     // false: the Safety agent couldn't run, so only the plain checks did
 };
 export type Finding = { ids: string[]; kind: string; level: 'avoid' | 'caution' | 'info'; note: string };
@@ -127,7 +128,7 @@ export function plainScreen(text: string): Screen {
   return {
     red_flag: CRISIS.test(text) ? 'self_harm' : URGENT.test(text) ? 'emergency' : MINOR.test(text) ? 'minor' : 'none',
     compounds: [], goals: [], medications: [], conditions: [], pregnant: PREGNANT.test(text), tested_athlete: false,
-    asks_dose: false, asks_source: false, note: '', injects: INJECTS.test(text), uses: [], asks_community: false, ok: false,
+    asks_dose: false, asks_source: false, note: '', injects: INJECTS.test(text), uses: [], asks_community: false, reaction: false, ok: false,
   };
 }
 
@@ -158,6 +159,7 @@ export async function screenMessage(messages: ChatMessage[], deps: TurnDeps): Pr
     injects: raw.injects === true,
     uses: [...new Set(strs(raw.uses, 3, 30).filter((u) => USE_IDS.includes(u)))],
     asks_community: raw.asks_community === true,
+    reaction: raw.reaction === true,
     ok: true,
   };
   // The plain checks still apply: a sign of crisis or an emergency is never left to one reader
@@ -580,7 +582,7 @@ export type CardItem = {
   signal: { score: number; level: string; reports: number | null; effects: string[] } | null;
   // What the community reports (members' first-hand reports and public forum data), and which of
   // the two voices leads for what they asked
-  community: Community | null; lead: Lead;
+  community: Community | null; lead: Lead; communityNote?: 'pregnancy' | 'down';
   tag: string; tone: 'ok' | 'warn' | 'none'; caution: string;
   benefits: StudyFinding[];
   labs: string[];
@@ -660,8 +662,10 @@ const labsOf = (sheet: Sheet | null | undefined) =>
 // What every card item shares, whoever laid it out
 function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot; use?: Use | null; byId?: Map<string, Item> }, pregnant: boolean, goal?: string) {
   const sig = ctx.snap.signals[it.id] as Signal | undefined;
-  const { tag, tone } = tagFor(it, sh);
-  const community = communityOf(sig, ctx.use ?? null, ctx.snap.uses);
+  const { tag, tone } = tagFor(it, sh, ctx.byId);
+  // In pregnancy what people report is left out; when the numbers couldn't be read, the card says so
+  const communityNote: CardItem['communityNote'] | null = pregnant ? 'pregnancy' : ctx.snap.ok === false ? 'down' : null;
+  const community = communityNote ? null : communityOf(sig, ctx.use ?? null, ctx.snap.uses);
   const blocked = BLOCKED.has(sh?.status_us?.key ?? it.status ?? '') || blockedItem(it, ctx.byId ?? new Map());
   const studies = studiesOf(sh, goal);
   return {
@@ -673,13 +677,14 @@ function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot;
       reports: typeof sig.first_hand === 'number' && sig.first_hand > 0 ? sig.first_hand : null,
       effects: (sig.side_effects ?? []).slice(0, 2).map((e) => cleanField(e.effect, 40)).filter(Boolean),
     } : null,
-    community, lead: voiceOf(it, studies, community, { blocked, pregnant }).lead,
+    community, lead: voiceOf(it, studies, community, { blocked, pregnant }).lead, ...(communityNote ? { communityNote } : {}),
     tag, tone, caution: cautionFor(it, sh, pregnant), benefits: benefitsOf(sh, goal), labs: labsOf(sh),
   };
 }
 
-export function tagFor(item: Item, sheet: Sheet | null | undefined): { tag: string; tone: CardItem['tone'] } {
+export function tagFor(item: Item, sheet: Sheet | null | undefined, byId?: Map<string, Item>): { tag: string; tone: CardItem['tone'] } {
   const key = sheet?.status_us?.key ?? item.status;
+  if (!BLOCKED.has(key ?? '') && byId && (item.parts ?? []).some((p) => BLOCKED.has(byId.get(p)?.status ?? ''))) return { tag: 'Contains a compound on FDA’s safety-risk list', tone: 'warn' };
   if (!key) return { tag: 'No fact sheet yet', tone: 'none' };
   if (key === 'approved') return { tag: item.family === 'Supplements' ? 'FDA-approved' : 'Prescription medicine', tone: 'ok' };
   if (key === 'otc') return { tag: 'Over the counter', tone: 'ok' };
@@ -777,7 +782,7 @@ function stackCard(ids: string[], a: Audit, ctx: Ctx): string | null {
     const key = sh?.status_us?.key ?? it.status ?? '';
     return {
       ...baseItem(it, sh, ctx, pregnant, ctx.goal),
-      role: BLOCKED.has(key) ? 'On FDA’s safety-risk list'
+      role: BLOCKED.has(key) ? 'On FDA’s safety-risk list' : blockedItem(it, ctx.byId) ? 'Contains a safety-risk compound'
         : UNAPPROVED.has(key) || key === 'investigational' ? 'Research stage'
         : ctx.ownMeds.has(id) ? 'Your prescription' : familyOne(it.family),
       why: cleanField(sh?.summary ?? it.summary ?? '', 180),
@@ -815,7 +820,7 @@ function voicesCard(ids: string[], ctx: Ctx): string | null {
     const it = ctx.byId.get(id)!;
     const sh = ctx.sheets.get(id);
     const v = voiceFor(id, ctx)!;
-    const { tag, tone } = tagFor(it, sh);
+    const { tag, tone } = tagFor(it, sh, ctx.byId);
     return {
       id, name: v.name, url: `/library/${id}/`, family: familyOne(it.family), tag, tone,
       status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null,
@@ -837,7 +842,7 @@ function voicesCard(ids: string[], ctx: Ctx): string | null {
 function crowdCard(top: TopRow[], use: Use, ctx: Ctx): string | null {
   const items = top.filter((r) => ctx.byId.has(r.id)).map((r) => {
     const it = ctx.byId.get(r.id)!;
-    const { tag, tone } = tagFor(it, ctx.sheets.get(r.id));
+    const { tag, tone } = tagFor(it, ctx.sheets.get(r.id), ctx.byId);
     if (!ctx.heard.has(r.id)) ctx.heard.set(r.id, communityOf(ctx.snap.signals[r.id] as Signal | undefined, use, ctx.snap.uses));
     return { ...r, url: `/library/${r.id}/`, family: familyOne(it.family), tag, tone, proven: proven(r.status) === 0 };
   });
@@ -919,6 +924,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         const sh = ctx.sheets.get(p.id);
         const key = sh?.status_us?.key ?? it.status ?? '';
         if (BLOCKED.has(key)) { dropped.push(`${it.name} (removed by the Safety agent: ${sh?.status_us?.label ?? 'restricted'})`); continue; }
+        if (blockedItem(it, ctx.byId)) { dropped.push(`${it.name} (removed by the Safety agent: contains a compound on FDA's safety-risk list)`); continue; }
         if (pregnant && (UNAPPROVED.has(key) || key === 'compounded' || it.family === 'Hormones' || (sh?.avoid_if ?? []).some((a) => /pregnan|breast-?fe|conceiv/i.test(a)))) {
           dropped.push(`${it.name} (removed by the Safety agent: not for pregnancy, trying to conceive or breastfeeding)`);
           continue;
@@ -1093,10 +1099,6 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       return ctx.gate.waiting ? 'They\'ll be shown right after your answer in words. Write it now.' : 'Shown.';
     }
     case 'warning_signs': {
-      // Something happening now comes first: the studies and the community on a compound, or the
-      // community's list, aren't shown beside when to get help (unless they're already out)
-      ctx.gate.dropWaiting('voices');
-      ctx.gate.dropWaiting('crowd');
       const ids = strs(input.ids, 8, 40);
       const fresh = ids.filter((id) => !ctx.signs.has(id));
       if (ids.length && !fresh.length) return 'Those signs are already on the injection safety card shown this turn; don\'t repeat them.';
@@ -1172,8 +1174,11 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const minor = screen.red_flag === 'minor' || st.minor;
   const held = screen.red_flag === 'self_harm' || screen.red_flag === 'emergency' || minor;
   const gate = new Gate(emit, deps, screen, { ...st, minor }, last);
-  // What they want it for, as the community rates it; its goal stands in when they named none
-  const use = held ? null : useById(screen.uses[0]);
+  // What they want it for, as the community rates it: the use that belongs to the goal they want
+  // help with (both voices answer the same question); its goal stands in when they named none
+  const use = held ? null : screen.goals.length
+    ? screen.uses.map(useById).find((u) => u?.goal === screen.goals[0]) ?? null
+    : useById(screen.uses[0]);
   if (use && !screen.goals.length) screen.goals = [use.goal];
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
@@ -1181,7 +1186,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, asked: 0, uses: {}, plans: 0, mine: new Set(), audited: new Set(),
     injectShown: !!st.injectShown,
     signs: new Set(),
-    goal: use?.goal ?? screen.goals[0], use, heard: new Map(),
+    goal: screen.goals[0], use, heard: new Map(),
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
@@ -1226,13 +1231,17 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     voices.push(...named.slice(0, 4).map((id) => voiceFor(id, ctx)).filter((v): v is Voice => !!v));
     // What the community reports most for a use: only when they ask, never in pregnancy or when
     // shortlists are off for this turn
-    if (use && screen.asks_community && ctx.shortlistsOn && !pregnant && snap.ok !== false) top = communityTop(snap.signals, ctx.byId, use, 5);
-    emit('step', { id: 'community', agent: 'community', status: 'done', title: snap.ok === false ? 'Couldn’t read the community’s numbers just now' : communityTitle(voices, use, top), chips: voices.map((v) => chip(v.id, ctx)).slice(0, 6) });
-    const showVoices = voices.length > 0 && ctx.shortlistsOn && snap.ok !== false && !(named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant)));
+    if (use && screen.asks_community && ctx.shortlistsOn && !pregnant && !screen.reaction && snap.ok !== false) top = communityTop(snap.signals, ctx.byId, use, 5);
+    if (top.length < 2) top = [];   // a list of one isn't what the community reports most
+    const asksInPregnancy = pregnant && screen.asks_community;
+    emit('step', { id: 'community', agent: 'community', status: 'done', chips: voices.map((v) => chip(v.id, ctx)).slice(0, 6),
+      title: snap.ok === false ? 'Couldn’t read the community’s numbers just now' : asksInPregnancy ? 'Left out what others use: pregnancy comes first' : communityTitle(voices, use, top) });
+    const showVoices = voices.length > 0 && ctx.shortlistsOn && snap.ok !== false && !screen.reaction && !(named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant)));
     const showCrowd = top.filter((r) => ctx.byId.has(r.id)).length >= 2 && !!use && screen.asks_community && ctx.shortlistsOn && !pregnant;
     communityNote = snap.ok === false ? COMMUNITY_DOWN : [
       pulseLine(snap.community),
       top.length ? topText(top, use, (id) => ctx.byId.get(id)?.status_label ?? '') : '',
+      asksInPregnancy ? 'They asked what others use, and they\'re pregnant, trying to conceive or breastfeeding: don\'t list what others use or report; say in a few words that it\'s left out because most of these haven\'t been studied in pregnancy, and that their obstetric clinician is the one to ask.' : '',
       voices.length ? 'What the studies show and what the community reports on each compound they named, and which leads for this question, come with its fact sheet below.' : '',
       showVoices ? `After your opening words the member sees a card with the studies and the community side by side on ${voices.map((v) => v.name).join(', ')} (if you ask them questions first, it comes with your full answer instead). Don't read its numbers out one by one: say what they mean for their question, starting with the voice your notes say leads.` : '',
       showCrowd ? `After your opening words the member sees a card of what the community reports most for ${use!.label.toLowerCase()}, each with its US status. Say what stands out and how the studies compare; don't list it again.` : '',
@@ -1281,9 +1290,9 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // compound on its own gets the studies and the community side by side
   if (upfront && ctx.shortlistsOn) stackCard(named, upfront, ctx);
   else if (upfront && upfront.ok && upfront.findings.length) auditCard(upfront, ctx);
-  else if (!upfront && voices.length && ctx.shortlistsOn && snap.ok !== false) voicesCard(voices.map((v) => v.id), ctx);
+  else if (!upfront && voices.length && ctx.shortlistsOn && snap.ok !== false && !screen.reaction) voicesCard(voices.map((v) => v.id), ctx);
   // What the community reports most for what they want it for, when they ask
-  if (top.length && use && screen.asks_community && ctx.shortlistsOn && !pregnant) crowdCard(top, use, ctx);
+  if (top.length && use && screen.asks_community && ctx.shortlistsOn && !pregnant && !screen.reaction) crowdCard(top, use, ctx);
   let wrote = '';
   let model = deps.models.guide;
   let rounds = 0;

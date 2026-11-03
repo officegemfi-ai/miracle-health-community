@@ -17,7 +17,8 @@ export const USE_IDS = USES.map((u) => u.id);
 export const useById = (id: string | undefined | null) => USES.find((u) => u.id === id) ?? null;
 
 // A rating for a use counts in the community's list only with this many reports, from this many
-// different members: a handful of accounts can't put something at the top
+// different people (members who reported, or who tapped "same for me"): a handful of accounts
+// can't put something at the top
 export const RANK_MIN = { reports: 10, voices: 5 };
 
 // The studies' side, as the caller worked it out from the fact sheet (agents.ts studiesOf)
@@ -61,7 +62,7 @@ const said = (s: string) => `"${lower(s).replace(/["\[\]{}]/g, '')}"`;
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 // On FDA's safety-risk list or restricted, or a blend with such a part (communityTop also keeps
-// off anything whose US status the Library hasn't worked out yet)
+// off anything whose US status the Library hasn't worked out, or calls unclear)
 export function blockedItem(it: Item | undefined, byId: Map<string, Item>): boolean {
   if (!it) return true;
   if (BLOCKED.has(it.status ?? '')) return true;
@@ -132,7 +133,7 @@ export function communityTop(signals: Record<string, Signal>, byId: Map<string, 
   const rows: TopRow[] = [];
   for (const [id, sig] of Object.entries(signals ?? {})) {
     const it = byId.get(id);
-    if (!it || !it.status || blockedItem(it, byId) || typeof sig?.score !== 'number') continue;
+    if (!it || !it.status || it.status === 'unclear' || blockedItem(it, byId) || typeof sig?.score !== 'number') continue;
     const u = (Array.isArray(sig.by_use) ? sig.by_use : []).find((x) => x?.use === use.id);
     if (!u) continue;
     const rated = typeof u.rating === 'number' && Number.isFinite(u.rating) && n0(u.reports) >= RANK_MIN.reports && n0(u.voices) >= RANK_MIN.voices;
@@ -188,7 +189,7 @@ export function communityLine(c: Community | null): string {
 export function leadLine(v: Voice): string {
   const s = v.studies;
   if (v.why === 'blocked') return '→ It\'s on FDA\'s list of substances with significant safety risks (or contains one): lead with that and with what the studies show. What people report comes last, in a few words, and never as a reason to take it.';
-  if (v.why === 'pregnant') return '→ They\'re pregnant, trying to conceive or breastfeeding: lead with what\'s known about it then and with checking with their obstetric clinician first. Leave out what people report.';
+  if (v.why === 'pregnant') return '→ They\'re pregnant, trying to conceive or breastfeeding: lead with what\'s known about it then and with checking with their obstetric clinician first. What people report is left out.';
   if (v.lead === 'studies' && studiesCover(s)) return '→ Studies in people cover this: lead with them, then what the community reports.';
   if (v.lead === 'community') {
     const why = !s ? 'no fact sheet yet' : !s.forUse || s.grade === 'none' ? 'its studies aren\'t about this' : s.grade === 'preclinical' ? 'animal and lab studies only' : s.grade === 'anecdotal' ? 'user reports only' : 'no studies in people';
@@ -203,7 +204,8 @@ export function leadLine(v: Voice): string {
 }
 // One compound's two voices, for the guide's notes and the fact sheets it opens
 export function voiceLine(v: Voice): string {
-  return `${v.name} [${v.id}], the studies and the community. ${studiesLine(v.studies)} ${communityLine(v.community)}\n${leadLine(v)}`;
+  const community = v.why === 'pregnant' ? 'Community: left out in pregnancy.' : communityLine(v.community);
+  return `${v.name} [${v.id}], the studies and the community. ${studiesLine(v.studies)} ${community}\n${leadLine(v)}`;
 }
 export function pulseLine(p: Pulse | undefined): string {
   const members = n0(p?.members);
@@ -211,7 +213,7 @@ export function pulseLine(p: Pulse | undefined): string {
   const signals = n0(p?.signals);
   if (!members && !reports && !signals) return '';
   // Before members' reports start, the Signals are what the public forums say
-  if (!reports) return `The community so far: ${plural(signals, 'Community Signal')}, all from public forum data; no members' first-hand reports yet (each one counts as it comes in). Say "on the forums" for what they show.`;
+  if (!reports) return 'The community so far: no members\' first-hand reports yet, so every Community Signal is public forum data (each member\'s report counts as it comes in). Say "on the forums" for what they show.';
   return `The community so far: ${plural(members, 'member')}, ${plural(reports, 'first-hand report')} and ${plural(signals, 'Community Signal')}; on average ${Math.min(100, n0(p?.community_share))}% of a Signal comes from members' reports, the rest from public forum data.`;
 }
 // When the community's numbers couldn't be read: nothing is said about what people report
@@ -219,7 +221,7 @@ export const COMMUNITY_DOWN = 'Community: its numbers couldn\'t be loaded just n
 export function topText(top: TopRow[], use: Use | null, status: (id: string) => string = () => ''): string {
   if (!use) return '';
   if (!top.length) return `Nothing on the community's list for ${lower(use.label)} yet.`;
-  return [`What the community reports most for ${lower(use.label)} (members' ratings first, counted only with ${RANK_MIN.reports} or more reports from ${RANK_MIN.voices} or more members; then how often the public forums mention it). What people report, not a recommendation and never a reason to choose one; give each one's US status with it:`,
+  return [`What the community reports most for ${lower(use.label)} (members' ratings first, counted only with ${RANK_MIN.reports} or more reports from ${RANK_MIN.voices} or more people; then how often the public forums mention it). What people report, not a recommendation and never a reason to choose one; give each one's US status with it:`,
     ...top.map((r, i) => `${i + 1}. ${r.name} [${r.id}] (${status(r.id) || r.status}): ${r.rating != null ? `members rate it ${r.rating}/100 from ${plural(r.reports, 'report')}` : `${forumWords(r.forum ?? 'occasional')}; not rated by members`} · overall Signal ${r.score.toFixed(1)} (${LEVEL_SHORT[r.level] ?? LEVEL_SHORT.forum})`),
   ].join('\n');
 }
@@ -233,6 +235,6 @@ export function communityTitle(voices: Voice[], use: Use | null, top: TopRow[]):
     const names = heard.slice(0, 2).map((v) => v.name).join(' and ') + (heard.length > 2 ? ` and ${heard.length - 2} more` : '');
     return reports ? `Read ${plural(reports, 'member report')} and the forum data on ${names}` : `Read the forum data on ${names}: no member reports yet`;
   }
-  if (use) return top.length ? `Found what the community reports most for ${lower(use.label)}` : `Nothing on the community's list for ${lower(use.label)} yet`;
+  if (use && top.length) return `Found what the community reports most for ${lower(use.label)}`;
   return 'Listened for what the community reports';
 }
