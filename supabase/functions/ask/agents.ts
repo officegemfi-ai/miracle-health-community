@@ -824,7 +824,7 @@ function voicesCard(ids: string[], ctx: Ctx): string | null {
   ctx.gate.card([], () => {
     ctx.memo.push(`the studies and the community on ${items.map((i) => `${i.name} [${i.id}]`).join(', ')}`);
     return { type: 'voices', id: card, use: ctx.use ? { id: ctx.use.id, label: ctx.use.label } : null, items };
-  }, { tag: 'stack', count: false });
+  }, { tag: 'voices', count: false });
   return card;
 }
 
@@ -838,7 +838,7 @@ function crowdCard(top: TopRow[], use: Use, ctx: Ctx): string | null {
     if (!ctx.heard.has(r.id)) ctx.heard.set(r.id, communityOf(ctx.snap.signals[r.id] as Signal | undefined, use, ctx.snap.uses));
     return { ...r, url: `/library/${r.id}/`, family: familyOne(it.family), tag, tone };
   });
-  if (!items.length) return null;
+  if (items.length < 2) return null;   // a list of one isn't a list: the guide says it in words
   const card = `card${++ctx.stepN}`;
   const p = ctx.snap.community ?? {};
   ctx.gate.card([], () => {
@@ -847,7 +847,7 @@ function crowdCard(top: TopRow[], use: Use, ctx: Ctx): string | null {
       type: 'community', id: card, use: { id: use.id, label: use.label }, items,
       crowd: { members: Math.max(0, Math.round(Number(p.members) || 0)), reports: Math.max(0, Math.round(Number(p.reports) || 0)) },
     };
-  }, { count: false });
+  }, { tag: 'crowd', count: false });
   return card;
 }
 
@@ -1090,6 +1090,10 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       return ctx.gate.waiting ? 'They\'ll be shown right after your answer in words. Write it now.' : 'Shown.';
     }
     case 'warning_signs': {
+      // Something happening now comes first: the studies and the community on a compound, or the
+      // community's list, aren't shown beside when to get help (unless they're already out)
+      ctx.gate.dropWaiting('voices');
+      ctx.gate.dropWaiting('crowd');
       const ids = strs(input.ids, 8, 40);
       const fresh = ids.filter((id) => !ctx.signs.has(id));
       if (ids.length && !fresh.length) return 'Those signs are already on the injection safety card shown this turn; don\'t repeat them.';
@@ -1118,7 +1122,9 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
         && !NO_DEMOGRAPHICS.test(x.q) && !x.options.some((o) => DEMOGRAPHIC_OPTION.test(o.trim())));
       if (!qs.length) return 'No questions shown. Don\'t ask for names, contact details, birthdays, age or sex, amounts or where they get things.';
       ctx.asked++;
-      // Their stack is checked once they've said what else they take, not before
+      // Their stack is checked once they've said what else they take, not before; the studies and
+      // the community on what they named come with the full answer
+      ctx.gate.dropWaiting('voices');
       if (ctx.gate.dropWaiting('stack')) {
         step(ctx, { id: 'synergy', agent: 'synergy', status: 'done', title: 'Will check your stack with your answers' });
       }
@@ -1217,7 +1223,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     if (use && (screen.asks_community || !named.length)) top = communityTop(snap.signals, ctx.byId, use, 5);
     emit('step', { id: 'community', agent: 'community', status: 'done', title: communityTitle(voices, use, top), chips: (voices.length ? voices.map((v) => v.id) : top.map((r) => r.id)).slice(0, 6).map((id) => chip(id, ctx)) });
     const showVoices = voices.length > 0 && ctx.shortlistsOn && !(named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant)));
-    const showCrowd = top.length > 0 && !!use && screen.asks_community && ctx.shortlistsOn && !pregnant;
+    const showCrowd = top.filter((r) => ctx.byId.has(r.id)).length >= 2 && !!use && screen.asks_community && ctx.shortlistsOn && !pregnant;
     communityNote = [
       pulseLine(snap.community),
       topText(top, use),

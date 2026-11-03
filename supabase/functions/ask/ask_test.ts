@@ -1128,6 +1128,18 @@ Deno.test('which voice leads: studies in people when there are some for what was
   assertEquals(pulseLine({}), '');
 });
 
+Deno.test('nothing reported for exactly what was asked: the closest use for the same goal, said as such', () => {
+  const sig = SNAPSHOT.signals as never as Record<string, never>;
+  const c = communityOf(sig.bpc157, useById('tendons'), SNAPSHOT.uses as never)!;
+  assertEquals([c.use?.rating, c.use?.forum, c.near], [null, null, { id: 'injury', label: 'Injury healing', rating: 78, reports: 9, forum: null }]);
+  assertEquals(leadOf(studiesOf(SHEET_BPC, 'recovery'), c), 'community');
+  const line = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, studiesOf(SHEET_BPC, 'recovery'), c));
+  assert(line.includes('Nothing reported on it for tendons & ligaments specifically yet; for injury healing, the closest use reported, members rate it 78/100 from 9 reports.'), line);
+  // Another goal's uses never stand in
+  const sleep = communityOf(sig.bpc157, useById('sleep'))!;
+  assertEquals(sleep.near, null);
+});
+
 Deno.test('what the community rates highest: members\' ratings first, then the forums; never the safety-risk list, never a stack', () => {
   const byId = new Map(ITEMS.map((i) => [i.id, i]));
   const top = communityTop(SNAPSHOT.signals as never, byId, useById('injury')!);
@@ -1197,4 +1209,23 @@ Deno.test('studies in people lead when there are some; the stack card carries bo
   const crisis = fakeWorld({ screen: { ...NONE, red_flag: 'self_harm', compounds: ['TB-500'], uses: ['injury'], asks_community: true }, rounds: [{ text: 'Please call 988.' }] });
   const ev3 = await events(await handle(ask([{ role: 'user', content: 'what do people use, I want to die' }]), deps(crisis.f)));
   assert(!ev3.some((e) => (e.event === 'step' && e.data.agent === 'community') || e.event === 'sources' || (e.event === 'card' && e.data.type !== 'crisis')));
+});
+
+Deno.test('something happening now: no studies-and-community card beside when to get help; a list of one is said in words', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157'], injects: true, uses: ['injury'], asks_community: true },
+    rounds: [
+      { text: 'Get that spot seen today. ' + WORDS, tool: { name: 'warning_signs', input: { ids: ['injury_swelling'] } } },
+      { text: 'Has the redness grown since yesterday?' },
+    ],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I inject BPC-157 and the spot is red. What do people report?' }]), deps(f)));
+  const types = ev.filter((e) => e.event === 'card').map((e) => e.data.type);
+  assert(types.includes('warn') && !types.includes('voices') && !types.includes('community'), types.join(','));
+  // One compound for a use is no list: the guide hears it, the member reads it in words
+  const one = fakeWorld({ screen: { ...NONE, uses: ['tendons'], asks_community: true }, rounds: [{ text: WORDS }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'What does the community use for tendons?' }]), deps(one.f)));
+  assert(!ev2.some((e) => e.event === 'card' && e.data.type === 'community'));
+  const notes = ((one.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(notes.includes('1. TB-500 [tb500]') && !notes.includes('a card of what the community reports most'));
 });

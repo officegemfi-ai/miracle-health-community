@@ -30,6 +30,9 @@ export type Community = {
   // What was asked about: rated by members (once three first-hand reports name it), or how often
   // the public forums mention it
   use: { id: string; label: string; rating: number | null; reports: number; forum: string | null } | null;
+  // Nothing on that use yet: the closest use reported, for the same goal ("injury healing" for
+  // "tendons & ligaments"), said as such
+  near: { id: string; label: string; rating: number | null; reports: number; forum: string | null } | null;
   uses: { id: string; label: string; rating: number | null; reports: number; forum: string | null }[];
   sideEffects: { effect: string; n: number }[];
   themes: { theme: string; label: string }[];
@@ -60,6 +63,11 @@ export function communityOf(sig: Signal | null | undefined, use: Use | null, lab
   });
   const byUse = (Array.isArray(sig.by_use) ? sig.by_use : []).filter((u) => u && typeof u.use === 'string');
   const mine = use ? byUse.find((u) => u.use === use.id) : undefined;
+  const heard = (u: NonNullable<Signal['by_use']>[number]) => typeof u.rating === 'number' || !!u.forum;
+  const best = (a: NonNullable<Signal['by_use']>[number], b: NonNullable<Signal['by_use']>[number]) => Number(typeof b.rating === 'number') - Number(typeof a.rating === 'number')
+    || Number(b.rating ?? 0) - Number(a.rating ?? 0) || forumRank(b.forum) - forumRank(a.forum);
+  const near = use && !(mine && heard(mine))
+    ? byUse.filter((u) => u.use !== use.id && heard(u) && useById(u.use)?.goal === use.goal).sort(best)[0] : undefined;
   return {
     score: Math.round(Number(sig.score) * 10) / 10,
     level: LEVEL_SHORT[sig.certification ?? ''] ? sig.certification! : 'forum',
@@ -73,9 +81,9 @@ export function communityOf(sig: Signal | null | undefined, use: Use | null, lab
       high: typeof o!.better_high === 'number' ? Math.round(o!.better_high) : null,
     } : null,
     use: use ? (mine ? { ...row(mine), id: use.id, label: use.label } : { id: use.id, label: use.label, rating: null, reports: 0, forum: null }) : null,
+    near: near ? row(near) : null,
     // What it's used for: rated uses first, then what the forums mention most
-    uses: [...byUse].sort((a, b) => Number(typeof b.rating === 'number') - Number(typeof a.rating === 'number')
-      || Number(b.rating ?? 0) - Number(a.rating ?? 0) || forumRank(b.forum) - forumRank(a.forum)).slice(0, 3).map(row),
+    uses: [...byUse].filter(heard).sort(best).slice(0, 3).map(row),
     sideEffects: (Array.isArray(sig.side_effects) ? sig.side_effects : []).slice(0, 4).map((e) => ({ effect: words(e?.effect, 40), n: n0(e?.n) })).filter((e) => e.effect),
     themes: (Array.isArray(sig.themes) ? sig.themes : []).slice(0, 3).map((t) => ({ theme: words(t?.theme, 60), label: words(t?.label, 20) })).filter((t) => t.theme),
   };
@@ -86,7 +94,7 @@ const HUMAN = new Set(['strong', 'moderate', 'limited']);
 export const studiesCover = (s: Studies | null) => !!s && s.forUse && HUMAN.has(s.grade ?? '');
 // The community has something to say about what was asked: a rating or forum mentions for that
 // use, or (when no particular use was asked about) a Signal at all
-export const communityCovers = (c: Community | null) => !!c && (!c.use || c.use.rating != null || !!c.use.forum);
+export const communityCovers = (c: Community | null) => !!c && (!c.use || c.use.rating != null || !!c.use.forum || !!c.near);
 export function leadOf(studies: Studies | null, community: Community | null): Lead {
   if (studiesCover(studies)) return 'studies';
   if (communityCovers(community)) return 'community';
@@ -142,11 +150,13 @@ export function communityLine(c: Community | null): string {
   if (c.use) {
     const u = c.use;
     const what = lower(u.label);
+    const n = c.near;
     parts.push(u.rating != null ? `For ${what}, members rate it ${u.rating}/100 from ${plural(u.reports, 'report')}.`
       : u.forum ? `For ${what}, ${forumWords(u.forum)}; too few members' reports to rate it yet.`
+      : n ? `Nothing reported on it for ${what} specifically yet; for ${lower(n.label)}, the closest use reported, ${n.rating != null ? `members rate it ${n.rating}/100 from ${plural(n.reports, 'report')}` : forumWords(n.forum ?? 'occasional')}.`
       : `Nobody has reported on it for ${what} yet.`);
   }
-  const others = c.uses.filter((u) => u.id !== c.use?.id);
+  const others = c.uses.filter((u) => u.id !== c.use?.id && u.id !== c.near?.id);
   if (others.length) {
     parts.push(`${c.use ? 'Also used for' : 'Mostly used for'}: ${others.map((u) => (u.rating != null ? `${lower(u.label)} (members rate it ${u.rating}, ${plural(u.reports, 'report')})` : `${lower(u.label)} (forums: ${String(u.forum).toLowerCase()})`)).join(', ')}.`);
   }
