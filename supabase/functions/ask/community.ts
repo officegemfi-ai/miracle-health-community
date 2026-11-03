@@ -49,7 +49,8 @@ export type Community = {
 // Which source the answer starts with, for this compound and this question; why: when safety
 // decides it rather than the evidence
 export type Lead = 'studies' | 'community' | 'none';
-export type Voice = { id: string; name: string; studies: Studies | null; community: Community | null; lead: Lead; why?: 'blocked' | 'pregnant' };
+export type Voice = { id: string; name: string; studies: Studies | null; community: Community | null; lead: Lead; why?: 'blocked' | 'pregnant' | 'reaction' };
+export type Safety = { blocked?: boolean; pregnant?: boolean; reaction?: boolean };
 
 const n0 = (x: unknown) => (Number.isFinite(Number(x)) && Number(x) > 0 ? Math.round(Number(x)) : 0);
 // deno-lint-ignore no-control-regex
@@ -112,16 +113,17 @@ export const studiesCover = (s: Studies | null) => !!s && s.forUse && HUMAN.has(
 // The community has something on what was asked: a rating or forum mentions for that use (or the
 // closest use for the same goal), or, when no particular use was asked about, a Signal at all
 export const communityCovers = (c: Community | null) => !!c && (!c.use || c.use.rating != null || !!c.use.forum || !!c.near);
-export function leadOf(studies: Studies | null, community: Community | null, safety: { blocked?: boolean; pregnant?: boolean } = {}): Lead {
-  // Safety first: on FDA's safety-risk list, or in pregnancy, the status and the studies lead
-  if (safety.blocked || safety.pregnant) return 'studies';
+export function leadOf(studies: Studies | null, community: Community | null, safety: Safety = {}): Lead {
+  // Safety first: on FDA's safety-risk list, in pregnancy, or with a possible reaction happening
+  // now, the status and the studies lead
+  if (safety.blocked || safety.pregnant || safety.reaction) return 'studies';
   if (studiesCover(studies)) return 'studies';
   if (communityCovers(community)) return 'community';
   if (studies?.forUse && studies.grade && studies.grade !== 'none') return 'studies';
   return 'none';
 }
-export function voiceOf(item: Pick<Item, 'id' | 'name'>, studies: Studies | null, community: Community | null, safety: { blocked?: boolean; pregnant?: boolean } = {}): Voice {
-  const why = safety.blocked ? 'blocked' as const : safety.pregnant ? 'pregnant' as const : undefined;
+export function voiceOf(item: Pick<Item, 'id' | 'name'>, studies: Studies | null, community: Community | null, safety: Safety = {}): Voice {
+  const why = safety.reaction ? 'reaction' as const : safety.blocked ? 'blocked' as const : safety.pregnant ? 'pregnant' as const : undefined;
   return { id: item.id, name: item.name, studies, community, lead: leadOf(studies, community, safety), ...(why ? { why } : {}) };
 }
 
@@ -188,6 +190,7 @@ export function communityLine(c: Community | null): string {
 }
 export function leadLine(v: Voice): string {
   const s = v.studies;
+  if (v.why === 'reaction') return '→ They describe something happening now that could be a reaction: what to do about it comes first. Leave out ratings and how reports went; side effects mentioned in members\' reports may be given, framed as what people report.';
   if (v.why === 'blocked') return '→ It\'s on FDA\'s list of substances with significant safety risks (or contains one): lead with that and with what the studies show. What people report comes last, in a few words, and never as a reason to take it.';
   if (v.why === 'pregnant') return '→ They\'re pregnant, trying to conceive or breastfeeding: lead with what\'s known about it then and with checking with their obstetric clinician first. What people report is left out.';
   if (v.lead === 'studies' && studiesCover(s)) return '→ Studies in people cover this: lead with them, then what the community reports.';
@@ -204,7 +207,10 @@ export function leadLine(v: Voice): string {
 }
 // One compound's two voices, for the guide's notes and the fact sheets it opens
 export function voiceLine(v: Voice): string {
-  const community = v.why === 'pregnant' ? 'Community: left out in pregnancy.' : communityLine(v.community);
+  const fx = v.community?.sideEffects ?? [];
+  const community = v.why === 'pregnant' ? 'Community: left out in pregnancy.'
+    : v.why === 'reaction' ? (fx.length ? `Community: only the side effects mentioned in members' reports: ${fx.map((e) => `${said(e.effect)} (${plural(e.n, 'report')})`).join(', ')}.` : 'Community: left out while they describe a possible reaction.')
+    : communityLine(v.community);
   return `${v.name} [${v.id}], the studies and the community. ${studiesLine(v.studies)} ${community}\n${leadLine(v)}`;
 }
 export function pulseLine(p: Pulse | undefined): string {

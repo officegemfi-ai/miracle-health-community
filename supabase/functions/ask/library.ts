@@ -98,13 +98,15 @@ type Cached = { at: number; value: unknown };
 const memo = new Map<string, Cached>();
 export function clearCache() { memo.clear(); }
 
-// A failed load isn't tried again for a minute: the stale copy stands meanwhile (stale beats
-// nothing), or the failure does, so an outage doesn't hold up every turn
+// A failed load: the stale copy stands (stale beats nothing), kept for a minute before trying
+// again. hold: for loads every turn waits on (the index, the snapshot), a failure with no stale
+// copy is also kept for a minute, so an outage doesn't hold up every turn. Fact sheets aren't held:
+// one failed fetch never stands in for a sheet for a minute.
 const RETRY_AFTER = 60_000;
-async function cached<T>(key: string, ttl: number, now: number, load: () => Promise<T>): Promise<T> {
+async function cached<T>(key: string, ttl: number, now: number, load: () => Promise<T>, hold = false): Promise<T> {
   const hit = memo.get(key);
   if (hit && now - hit.at < ttl) return hit.value as T;
-  const failed = memo.get(`failed:${key}`);
+  const failed = hold ? memo.get(`failed:${key}`) : undefined;
   if (!hit && failed && now - failed.at < RETRY_AFTER) throw failed.value;
   try {
     const value = await load();
@@ -113,7 +115,7 @@ async function cached<T>(key: string, ttl: number, now: number, load: () => Prom
     return value;
   } catch (e) {
     if (hit) { memo.set(key, { at: now - ttl + RETRY_AFTER, value: hit.value }); return hit.value as T; }
-    memo.set(`failed:${key}`, { at: now, value: e });
+    if (hold) memo.set(`failed:${key}`, { at: now, value: e });
     throw e;
   }
 }
@@ -143,7 +145,7 @@ export function createLibrary(opts: LibraryOpts) {
         const cat = await getJson(`${opts.base}/catalog.json`);
         if (!Array.isArray(cat)) throw new Error('The library catalog is unavailable');
         return (cat as Item[]).map((c) => cleanItem({ ...c, sheet: null }));
-      });
+      }, true);
     },
     async sheet(id: string): Promise<Sheet | null> {
       if (!/^[a-z0-9]{1,40}$/.test(id)) return null;
@@ -156,7 +158,7 @@ export function createLibrary(opts: LibraryOpts) {
         const s = await getJson(opts.snapshotUrl);
         if (!s || typeof s.signals !== 'object' || !s.signals) throw new Error('The community snapshot is unavailable');
         return { signals: s.signals, uses: s.uses || {}, community: (typeof s.community === 'object' && s.community) || {}, ok: true } as Snapshot;
-      });
+      }, true);
     },
   };
 }
@@ -367,7 +369,7 @@ export function stub(item: Item, sig: Signal | null | undefined, uses: Record<st
 export function optionLine(o: Option, i: number): string {
   const sig = o.signal && typeof o.signal.score === 'number'
     ? ` · Signal ${Number(o.signal.score).toFixed(0)} (${LEVEL_SHORT[o.signal.certification ?? 'forum'] ?? 'Forum data'})` : '';
-  if (!o.sheet) return `${i + 1}. ${o.name} (${o.id}) · ${familyOne(o.family)} · no fact sheet yet${sig}`;
+  if (!o.sheet) return `${i + 1}. ${o.name} (${o.id}) · ${familyOne(o.family)} · no fact sheet yet${sig}${o.gate ? ` · ${o.gate}` : ''}`;
   const ev = o.fit >= 1 ? `evidence ${o.grade} (this is its main use)` : `evidence ${o.grade} for its main use, not this goal (check the fact sheet)`;
   return `${i + 1}. ${o.name} (${o.id}) · ${familyOne(o.family)} · ${ev} · ${o.status_label ?? o.status} · fit ${o.fit}${sig}${o.gate ? ` · ${o.gate}` : ''}`;
 }

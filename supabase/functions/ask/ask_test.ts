@@ -1,6 +1,6 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { sse, stream, tuning, canForceTool } from './claude.ts';
-import { clearCache, condense, createLibrary, indexText, type Item, mentioned, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
+import { clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
 import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, benefitsOf, plainScreen, screenTitle, settle, standing, studiesOf, tagFor, cautionFor, useOf } from './agents.ts';
@@ -1343,4 +1343,55 @@ Deno.test('a blend with a part on FDA\'s safety-risk list: tagged as such, never
   const ev = await events(await handle(ask([{ role: 'user', content: 'what helps recovery?' }]), deps(f)));
   const short = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data;
   assertEquals(short.items.map((i: { id: string }) => i.id), ['creatine']);
+});
+
+Deno.test('a fact sheet that fails once is fetched again at once; until it loads it is "couldn\'t be loaded", never "no fact sheet", and not cleared for pregnancy', async () => {
+  let fails = 1;
+  const lib = libFetch();
+  const flaky = (async (url: string | URL, init?: RequestInit) => (String(url).endsWith('/entries/creatine.json') && fails-- > 0 ? new Response('oops', { status: 500 }) : lib(url, init))) as unknown as typeof fetch;
+  clearCache();
+  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: flaky, now: () => 0 });
+  await library.sheet('creatine').catch(() => null);
+  assertEquals((await library.sheet('creatine'))?.id, 'creatine');
+  // In a turn: the guide hears it couldn't be loaded, never "no fact sheet yet"
+  const named = fakeWorld({ screen: { ...NONE, compounds: ['creatine'], goals: ['muscle'] }, rounds: [{ text: WORDS }] });
+  const down = (async (url: string | URL, init?: RequestInit) => (String(url).endsWith('/entries/creatine.json') ? new Response('oops', { status: 500 }) : named.f(url, init))) as unknown as typeof fetch;
+  await events(await handle(ask([{ role: 'user', content: 'Is creatine good for muscle?' }]), deps(down)));
+  const notes = ((named.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(notes.includes('Its fact sheet couldn\'t be loaded just now') && !notes.includes('No fact sheet yet: it\'s still being researched'), notes.slice(0, 600));
+  // In pregnancy, an option whose sheet couldn't be read isn't cleared for the shortlist
+  const world = fakeWorld({ screen: { ...NONE, goals: ['muscle'], pregnant: true }, rounds: [
+    { text: WORDS, tool: { name: 'present_shortlist', input: { title: 'Options', items: [{ id: 'creatine', role: 'Supplement', why: 'w' }, { id: 'hmb', role: 'Supplement', why: 'w' }] } } },
+    { text: 'ok' },
+  ] });
+  const down2 = (async (url: string | URL, init?: RequestInit) => (String(url).endsWith('/entries/creatine.json') ? new Response('oops', { status: 500 }) : world.f(url, init))) as unknown as typeof fetch;
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I\'m pregnant. What could help me keep muscle?' }]), deps(down2)));
+  const short = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist' && e.data.kind !== 'yours')!.data;
+  assertEquals(short.items.map((i: { id: string }) => i.id), ['hmb']);
+});
+
+Deno.test('a possible reaction: what to do comes first; the community\'s ratings are left out of the notes and the cards', async () => {
+  const sig = SNAPSHOT.signals as never as Record<string, never>;
+  const r = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, studiesOf(SHEET_BPC, 'recovery'), communityOf(sig.bpc157, useById('injury')), { reaction: true }));
+  assert(r.includes('what to do about it comes first') && r.includes('only the side effects mentioned in members\' reports: "nausea" (3 reports)') && !r.includes('78/100'), r);
+  const { f, calls } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157', 'creatine'], injects: true, reaction: true, uses: ['injury'], asks_community: true }, rounds: [{ text: 'Get that spot seen today. ' + WORDS }] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I inject BPC-157 and take creatine. The spot is red and warm since yesterday. What do members say?' }]), deps(f)));
+  const notes = ((calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(notes.includes('a possible reaction to something they take or inject, happening now: yes') && !notes.includes('What the community reports most'));
+  const stack = ev.find((e) => e.event === 'card' && e.data.kind === 'yours')?.data;
+  assert(stack && stack.items.every((i: { community: unknown; communityNote: string; lead: string }) => i.community === null && i.communityNote === 'reaction' && i.lead === 'studies'), JSON.stringify(stack?.items?.map((i: { id: string }) => i.id)));
+  assert(!ev.some((e) => e.event === 'card' && (e.data.type === 'voices' || e.data.type === 'community')));
+});
+
+Deno.test('the ranking tells the guide a risky blend is never shortlisted, with or without a fact sheet', () => {
+  const rm = rank(ITEMS, SNAPSHOT.signals as never, 'recovery').find((o) => o.id === 'riskmix')!;
+  assert(optionLine(rm, 0).includes('Never on a shortlist'), optionLine(rm, 0));
+});
+
+Deno.test('asked what the community reports for something other than the goal the studies answer: the list still answers what they asked', async () => {
+  const { f, calls } = fakeWorld({ screen: { ...NONE, goals: ['muscle'], uses: ['injury'], asks_community: true }, rounds: [{ text: WORDS }] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I lift. What do members use when they get injured?' }]), deps(f)));
+  const notes = ((calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
+  assert(notes.includes('What the community reports most for injury healing'));
+  assert(ev.some((e) => e.event === 'card' && e.data.type === 'community'));
 });
