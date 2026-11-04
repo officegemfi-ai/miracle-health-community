@@ -43,12 +43,15 @@ export function corsHeaders(req: Request, origins: string[]): Record<string, str
 const json = (body: unknown, status: number, headers: Record<string, string>) =>
   new Response(JSON.stringify(body), { status, headers: { ...headers, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
+// Every message that turns someone away still says where help is, in case what they wrote was a
+// crisis the plain check didn't recognize
+const HELP = ' If you’re thinking about hurting yourself, call or text 988 any time; in an emergency, call 911.';
 const MESSAGES: Record<string, [number, string]> = {
-  burst: [429, 'You’re sending messages quickly. Give it a minute, then try again.'],
-  visitor_day: [429, 'That’s today’s limit for this connection. Miracle AI will be ready for you again tomorrow.'],
-  site_day: [429, 'Miracle AI has answered as many messages as it can today. It’ll be back tomorrow; the Library is open in the meantime.'],
-  off: [503, 'Miracle AI is paused for maintenance. The Library is open in the meantime.'],
-  unavailable: [503, 'Miracle AI is resting for a moment. Please try again shortly.'],
+  burst: [429, `You’re sending messages quickly. Give it a minute, then try again.${HELP}`],
+  visitor_day: [429, `That’s today’s limit for this connection. Miracle AI will be ready for you again tomorrow.${HELP}`],
+  site_day: [429, `Miracle AI has answered as many messages as it can today. It’ll be back tomorrow; the Library is open in the meantime.${HELP}`],
+  off: [503, `Miracle AI is paused for maintenance. The Library is open in the meantime.${HELP}`],
+  unavailable: [503, `Miracle AI is resting for a moment. Please try again shortly.${HELP}`],
 };
 
 export const cleanText = (s: string) => s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\r\n?/g, '\n').trim();

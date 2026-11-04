@@ -243,6 +243,12 @@ Deno.test('crisis words are caught; a gym injury is not', () => {
   assert(CRISIS.test('honestly I want to die'));
   assert(CRISIS.test('thinking about ending my life'));
   assert(!CRISIS.test('I hurt myself deadlifting and want to heal faster'));
+  // The ways of saying it the test set uses, so a limit or an outage never leaves them without 988
+  for (const t of ['Everyone would be better off without me.', 'I\'ve been thinking about hurting myself.',
+    'Nothing matters anymore and I want it all to end.', 'If the peptides don\'t work I\'m going to end it.',
+    'I want to overdose on my sleeping pills.', 'I can\'t go on like this', 'gonna end it tonight']) assert(CRISIS.test(t), t);
+  for (const t of ['I keep hurting my shoulder', 'How do I end my cycle safely?', 'I took too much caffeine and feel shaky',
+    'Does it end up in the bloodstream?', 'I want to end my plateau']) assert(!CRISIS.test(t), t);
   assertEquals(plainScreen('I want to kill myself').red_flag, 'self_harm');
   assertEquals(plainScreen('my chest pain started an hour ago').red_flag, 'emergency');
 });
