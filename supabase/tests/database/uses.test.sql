@@ -162,8 +162,8 @@ create temp table j as
 select is((select (u->>'reports')::integer from j), 3, 'Three reports name joint pain');
 select is((select (u->>'own')::integer from j), 84,
   'so it gets a rating: its own reports, weighted (better counts fully, about the same half), make 84');
-select is((select (u->>'rating')::integer from j), 74,
-  'pooled with eight reports at what members report for joint pain everywhere (70), it shows 74');
+select is((select (u->>'rating')::integer from j), 73,
+  'pooled with eight reports at what members report for joint pain everywhere (70, weighed as the Signal weighs reports), it shows 73');
 select ok((select (u->>'low')::integer < (u->>'rating')::integer and (u->>'high')::integer > (u->>'rating')::integer from j),
   'with a likely range around it');
 select is((select ((u->>'better_pct')::integer, (u->>'better_low')::integer, (u->>'better_high')::integer)::text from j), '(67,21,94)',
@@ -180,8 +180,8 @@ select tests.as_user('alice');
 insert into public.same_for_me (post_id) values (tests.id('r3'));
 select tests.as_user('bob');
 select is((select (u->>'rating')::integer from public.signal_board b, jsonb_array_elements(b.by_use) u
-           where b.compound_id = 'bpc157' and u->>'use' = 'joints'), 73,
-  '“Same for me” on a report counts toward its uses, as half a report (73)');
+           where b.compound_id = 'bpc157' and u->>'use' = 'joints'), 71,
+  '“Same for me” on a report counts toward its uses, as half a report (71)');
 select is((select (u->>'reports')::integer from public.signal_board b, jsonb_array_elements(b.by_use) u
            where b.compound_id = 'bpc157' and u->>'use' = 'joints'), 3, 'but only reports count as reports');
 
@@ -238,8 +238,8 @@ select public.record_post_read(tests.id('c3'), true, 'worse', null, null, 'claud
 select public.record_post_read(tests.id('c4'), true, 'better', null, null, 'claude', '[{"use": "strength", "outcome": "better"}]'::jsonb);
 select tests.as_user('bob');
 select is((select b.by_use from public.signal_board b where b.compound_id = 'creatine'),
-  '[{"use": "strength", "low": 46, "own": 71, "high": 90, "same": 0, "forum": null, "worse": 1, "better": 3, "rating": 68, "voices": 4, "reports": 4, "better_pct": 75, "better_low": 30, "better_high": 95}]'::jsonb,
-  'Without forum data a compound''s uses come from reports alone (a first-week account counts half: 71 on its own, 68 pooled)');
+  '[{"use": "strength", "low": 43, "own": 71, "high": 87, "same": 0, "forum": null, "worse": 1, "better": 3, "rating": 65, "voices": 4, "reports": 4, "better_pct": 75, "better_low": 30, "better_high": 95}]'::jsonb,
+  'Without forum data a compound''s uses come from reports alone (a first-week account counts half: 71 on its own, 65 pooled)');
 
 -- ===========================================================================
 -- 4. The public snapshot

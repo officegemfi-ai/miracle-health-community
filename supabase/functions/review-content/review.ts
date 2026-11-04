@@ -28,7 +28,8 @@ export type SignalRead = {
   first_hand: boolean; outcome: Outcome | null; duration: string | null; side_effects: string[]; uses: UseRead[];
   serious: boolean;
 };
-export type Verdict = { verdict: 'ok' | 'hold'; categories: Category[]; explanation: string; signal?: SignalRead };
+// serious (comments): the comment describes the writer's own reaction that sounds serious
+export type Verdict = { verdict: 'ok' | 'hold'; categories: Category[]; explanation: string; signal?: SignalRead; serious?: boolean };
 
 export function systemPrompt(): string {
   const list = rules.rules.map((r: { n: number; title: string; text: string }) => `${r.n}. ${r.title}: ${r.text}`).join('\n');
@@ -62,7 +63,8 @@ export function systemPrompt(): string {
     '{"verdict":"ok"|"hold","categories":[...],"explanation":"one short sentence for the moderators",'
       + '"signal":{"first_hand":true|false,"outcome":"better"|"same"|"worse"|null,"duration":"..."|null,"side_effects":[...],'
       + '"uses":[{"use":"<id>","outcome":"better"|"same"|"worse"}],"serious":true|false}}',
-    'For comments, leave "signal" out.',
+    'For comments, leave "signal" out, and add "serious": true only if the writer describes a reaction of their own that sounds serious (by the same test as above), otherwise false:',
+    '{"verdict":"ok"|"hold","categories":[...],"explanation":"...","serious":true|false}',
     `Allowed categories: ${CATEGORIES.join(', ')}.`,
   ].join('\n');
 }
@@ -97,6 +99,7 @@ export function parseVerdict(raw: string): Verdict {
   const verdict: Verdict['verdict'] = d.verdict === 'hold' ? 'hold' : 'ok';
   const explanation = typeof d.explanation === 'string' ? d.explanation.slice(0, 300) : '';
   const out: Verdict = { verdict, categories: verdict === 'hold' ? cats : [], explanation };
+  if (d.serious === true) out.serious = true;
   const sg = d.signal;
   if (sg && typeof sg === 'object' && !Array.isArray(sg)) {
     const r = sg as Record<string, unknown>;

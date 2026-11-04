@@ -142,3 +142,19 @@ Deno.test('for a comment, nothing is recorded for the Signal', async () => {
   await handle(req({ kind: 'comment', id: '8' }), { secret: 's3cret', apiKey: 'k', db: db as never, fetchImpl: readFetch });
   assertEquals(calls.byName.record_post_read, undefined);
 });
+
+Deno.test('a comment that describes a serious reaction gets its writer the safety note', async () => {
+  assertEquals(parseVerdict('{"verdict":"ok","categories":[],"explanation":"x","serious":true}').serious, true);
+  assertEquals(parseVerdict('{"verdict":"ok","categories":[],"explanation":"x","serious":"yes"}').serious, undefined);
+  assert(systemPrompt().includes('For comments, leave "signal" out, and add "serious"'));
+  const commentFetch = (async () => new Response(JSON.stringify({ content: [{ type: 'text', text: '{"verdict":"ok","categories":[],"explanation":"Comment","serious":true}' }] }))) as unknown as typeof fetch;
+  const { db, calls } = fakeDb({ id: '11', body: 'My throat swelled up after mine, I went to the ER', status: 'visible' });
+  const res = await handle(req({ kind: 'comment', id: '11' }), { secret: 's3cret', apiKey: 'k', db: db as never, fetchImpl: commentFetch });
+  assertEquals(res.status, 200);
+  assertEquals(calls.byName.record_comment_serious, { comment_id: '11' });
+  assertEquals(calls.byName.record_post_read, undefined);
+  // A post never takes the comment path
+  const { db: db2, calls: calls2 } = fakeDb({ id: '12', title: 't', body: 'b', status: 'visible' });
+  await handle(req({ kind: 'post', id: '12' }), { secret: 's3cret', apiKey: 'k', db: db2 as never, fetchImpl: commentFetch });
+  assertEquals(calls2.byName.record_comment_serious, undefined);
+});

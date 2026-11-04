@@ -1125,7 +1125,7 @@ Deno.test('which voice leads: studies in people when there are some, what people
   assertEquals(leadOf(null, tb, { pregnant: true }), 'studies');
   assert(voiceLine(voiceOf({ id: 'mk677', name: 'MK-677' }, null, tb, { blocked: true })).includes('on FDA\'s list of substances with significant safety risks'));
   const preg = voiceLine(voiceOf({ id: 'tb500', name: 'TB-500' }, null, tb, { pregnant: true }));
-  assert(preg.includes('Community: left out in pregnancy.') && preg.includes('What people report is left out') && !preg.includes('86.9') && !preg.includes('Signal'), preg);
+  assert(preg.includes('Community: what people report is left out in pregnancy.') && preg.includes('What people report is left out') && !preg.includes('86.9') && !preg.includes('Signal'), preg);
   // The guide gets the numbers as they are, with the sample size, where they come from, and that they aren't evidence
   const line = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, studiesOf(SHEET_BPC, 'recovery'), bpc));
   for (const x of ['Studies: animal and lab studies only for this.', 'Signal 71.2/100 (Community-backed; 14 first-hand reports from members', 'members rate it 78/100 from 12 reports',
@@ -1243,7 +1243,7 @@ Deno.test('studies in people lead when there are some; in pregnancy studies firs
   assertEquals([items[0].community, items[0].communityNote], [null, 'pregnancy']);        // what people report is left out
   assert(!ev2.some((e) => e.event === 'card' && (e.data.type === 'voices' || e.data.type === 'community')));
   const pnotes = ((stack.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
-  assert(!pnotes.includes('What the community reports most') && pnotes.includes('What people report is left out') && pnotes.includes('Community: left out in pregnancy.'));
+  assert(!pnotes.includes('What the community reports most') && pnotes.includes('What people report is left out') && pnotes.includes('Community: what people report is left out in pregnancy.'));
   assert(pnotes.includes('don\'t list what others use or report'));
   assertEquals(ev2.find((e) => e.event === 'step' && e.data.agent === 'community')!.data.title, 'Left out what others use: pregnancy comes first');
   assert(!ev2.some((e) => e.event === 'step' && e.data.agent === 'community' && (e.data.chips ?? []).some((c: { id: string }) => !['bpc157', 'creatine'].includes(c.id))));
@@ -1457,6 +1457,9 @@ Deno.test('the number check: a number the sources don\'t have is flagged, names 
   assertEquals(unsourcedNumbers('About 75 out of 100, from 1240 members, 30% of whom improved in 2024.', known), []);
   assertEquals(unsourcedNumbers('About 412 posts, 61% positive, and 3 in 10 people, over 12 weeks.', known), ['412', '61']);
   assertEquals(unsourcedNumbers('Read [the guide](lib:lab-reports) or [CJC-1295](lib:cjc1295) for 2.5 minutes.', known), ['2.5']);
+  // Phone numbers, temperatures and years need no source
+  assertEquals(unsourcedNumbers('Call Poison Control at (800) 222-1222 or 1-800-222-1222.', known), []);
+  assertEquals(unsourcedNumbers('A fever over 100.4°F, or 38 degrees, means getting seen today. A 2019 review found 412.', known), ['412']);
 });
 
 Deno.test('a reply with a number the sources don\'t have goes to the check flagged (rule 8)', async () => {
@@ -1493,6 +1496,26 @@ Deno.test('comparing compounds: side by side, proven first, no stack card and no
   assert(plainScreen('BPC-157 vs TB-500?').compare && !plainScreen('I take BPC-157 and TB-500').compare);
   // Where the answer came from says which version of the community's numbers answered
   assert('version' in ev.find((e) => e.event === 'sources')!.data);
+});
+
+Deno.test('comparing with a medicine they take: each is checked against it, pairs between them aren\'t', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157', 'Creatine'], uses: ['injury'], goals: ['recovery'], medications: ['warfarin'], compare: true },
+    audit: { findings: [
+      { ids: ['bpc157'], kind: 'interaction', level: 'caution', note: 'You take warfarin: ask your prescriber before adding BPC-157.' },
+      { ids: ['bpc157', 'creatine'], kind: 'overlap', level: 'info', note: 'They act on different pathways.' },
+    ], summary: 'One to raise with your prescriber.' },
+    rounds: [{ text: '**They work in different ways for an injury.** ' + WORDS }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I take warfarin. BPC-157 vs creatine for a torn calf?' }]), deps(f)));
+  assert(calls.some((c) => c.kind === 'audit'), 'the auditor ran');
+  assert(ev.some((e) => e.event === 'card' && e.data.type === 'compare'), 'still a comparison');
+  const audit = ev.find((e) => e.event === 'card' && e.data.type === 'audit')!;
+  assert(audit, 'what the auditor found shows');
+  assertEquals(audit.data.findings.map((x: { ids: string[] }) => x.ids), [['bpc157']]);
+  assert(!ev.some((e) => e.event === 'card' && e.data.type === 'shortlist'), 'not their stack');
+  const sys = (calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text;
+  assert(sys.includes('warfarin') && sys.includes('not taking them together'), sys.slice(-1500));
 });
 
 Deno.test('the test set\'s key lifts the per-visitor limits, only when it matches, never the site budget', async () => {

@@ -14,7 +14,7 @@ const MOD_REASONS = [
 ];
 
 export async function renderMod(tab = 'queue') {
-  const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['held', 'Held from the Signal'], ['library', 'Library'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
+  const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['held', 'Held and serious'], ['library', 'Library'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
   const body = h('div', {}, h('div', { class: 'skel' }));
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Keeping it safe'), h('h1', {}, 'Moderation.'))),
@@ -86,11 +86,23 @@ async function modAlerts(body) {
 // Reports the Signal holds out or counts at a quarter: copies of earlier posts, and bursts of
 // week-old accounts on one compound. Clearing one lets it count in full.
 async function modHeld(body) {
-  const { data, error } = await sb.rpc('signal_holds');
+  const [{ data, error }, { data: serious }] = await Promise.all([sb.rpc('signal_holds'), sb.rpc('serious_reads')]);
   if (error) return body.replaceChildren(h('div', { class: 'msg err' }, friendly(error)));
-  if (!(data || []).length) return body.replaceChildren(h('div', { class: 'msg ok' }, 'Nothing held from the Signal.'));
-  const WHY = { copy: 'Same words as an earlier post: counts nothing', burst: 'One of a burst from week-old accounts: counts a quarter' };
-  body.replaceChildren(
+  // Posts and comments that describe a reaction that sounds serious: they stay up (each shows the
+  // writer a note to get help, with FDA MedWatch); look that nothing in them puts others at risk
+  const KIND = { report: 'Report', question: 'Question', comment: 'Comment' };
+  const seriousList = (serious || []).length ? [
+    h('h2', { class: 'h3 mt8' }, 'Reactions that sound serious'),
+    h('p', { class: 'small muted' }, 'Each one shows its writer a note to get medical help and FDA MedWatch. They stay up unless they break a rule.'),
+    ...serious.map((r) => h('div', { class: 'card mod-card' },
+      h('h3', {}, r.title),
+      h('div', { class: 'small' }, `${KIND[r.kind] || r.kind} · ${r.compound_name} · u/${r.author_handle}`),
+      h('div', { class: 'row mt8' }, h('a', { class: 'btn sm', href: `#/post/${encodeURIComponent(r.post_id)}${r.comment_id ? `?c=${encodeURIComponent(r.comment_id)}` : ''}` }, 'See it')))),
+    h('h2', { class: 'h3 mt8' }, 'Held from the Signal'),
+  ] : [];
+  if (!(data || []).length) return body.replaceChildren(...seriousList, h('div', { class: 'msg ok' }, 'Nothing held from the Signal.'));
+  const WHY = { copy: 'Same words as an earlier post by someone else: counts nothing', burst: 'From a week-old account, in a burst of them on one compound: counts a quarter' };
+  body.replaceChildren(...seriousList,
     h('p', { class: 'small muted' }, 'Reports are weighted, never people. Look at the post, then remove it, or clear it to count in full.'),
     ...data.map((r) => h('div', { class: 'card mod-card' },
       h('h3', {}, r.title),

@@ -197,7 +197,7 @@ export function notifParts(n) {
     case 'mod': return [icon('shield', 18), (MOD_TEXT[d.action] || (() => 'A note from the moderators'))(d), n.post_title, n.post_id ? `#/post/${n.post_id}` : '#/rules'];
     case 'library': return [sig(34, 'happy'), `${d.name || n.compound_name} is in the library now, as you suggested. Thanks for building it out.`, null, n.compound_id ? `#/s/${encodeURIComponent(n.compound_id)}` : '#/explore'];
     case 'checkin': return [sig(34, 'curious'), `How is it now? Your ${n.compound_name} report, ${d.week} weeks on. Two taps to update it.`, n.post_title, `#/post/${n.post_id}`];
-    case 'safety': return [icon('shield', 18), 'Your report describes a reaction that sounds serious. If it’s still happening, get medical help, and you can tell the FDA through MedWatch.', n.post_title, `#/post/${n.post_id}`];
+    case 'safety': return [icon('shield', 18), `Your ${n.comment_id ? 'comment' : 'post'} describes a reaction that sounds serious. If it’s still happening, get medical help (in an emergency, call 911), and you can tell the FDA through MedWatch.`, n.post_title, n.comment_id ? `#/post/${n.post_id}` : `#/post/${n.post_id}`];
     default: return [icon('bell', 18), 'Something new', null, '#/notifications'];
   }
 }

@@ -162,6 +162,39 @@ select is((select count(*)::integer from public.notifications where user_id = te
   'A second read doesn''t send it again');
 select tests.as_user('bob');
 select is((select read_serious from public.feed where id = tests.id('sev')), true, 'The post shows it');
+-- A question, or a comment, that describes a reaction that sounds serious gets the same note
+select tests.as_owner();
+insert into public.posts (author_id, compound_id, kind, title, body)
+values (tests.id('carol'), 'bpc157', 'question', 'Throat swelling?', 'My throat has been swelling since my injection yesterday, is this normal?')
+returning tests.remember('q_sev', id);
+select tests.as_service();
+select public.record_post_read(tests.id('q_sev'), true, 'worse', '1 day', array['Rash'], 'claude', '[]', true);
+select tests.as_owner();
+select is((select (counts, outcome, serious)::text from public.post_reads where post_id = tests.id('q_sev')), '(f,,t)',
+  'A question that describes a serious reaction is marked, and still counts for nothing');
+select is((select count(*)::integer from public.notifications where user_id = tests.id('carol') and kind = 'safety'), 1,
+  'its writer gets the note');
+select tests.as_user('bob');
+select is((select read_serious from public.feed where id = tests.id('q_sev')), true, 'and the question shows it');
+select tests.as_owner();
+insert into public.comments (post_id, author_id, body)
+values (tests.id('sev'), tests.id('dave'), 'Same thing happened to me, I ended up in the ER with chest pain')
+returning tests.remember('c_sev', id);
+select tests.as_user('dave');
+select throws_ok($$ select public.record_comment_serious(tests.id('c_sev')) $$, '42501', null,
+  'Members can''t mark comments themselves');
+select tests.as_service();
+select public.record_comment_serious(tests.id('c_sev'));
+select public.record_comment_serious(tests.id('c_sev'));
+select tests.as_owner();
+select is((select count(*)::integer from public.notifications where user_id = tests.id('dave') and kind = 'safety' and comment_id = tests.id('c_sev')), 1,
+  'A comment that describes one gets its writer the note, once');
+select tests.as_user('bob');
+select is((select serious from public.thread_comments where id = tests.id('c_sev')), true, 'and the comment shows it');
+select throws_ok($$ select * from public.serious_reads() $$, '42501', null, 'Only moderators see the list');
+select tests.as_user('mia');
+select is((select array_agg(kind order by kind) from public.serious_reads() where post_id in (tests.id('sev'), tests.id('q_sev'))),
+  array['comment', 'question', 'report'], 'Moderators see every post and comment that describes one');
 
 -- ===========================================================================
 -- 3. "Did we read you right?"
@@ -195,6 +228,26 @@ select throws_ok($$ select public.fix_read(tests.id('fx'), 'sideways') $$, 'P000
   'An answer it can''t use is refused');
 select throws_ok($$ select public.confirm_read(tests.id('fx'), null) $$, 'P0001', 'Pick better, about the same or worse.',
   'The one-tap check still needs an answer');
+-- What an author writes into the read is checked: no doses, sellers or links by that route
+select throws_ok($$ select public.fix_read(tests.id('fx'), 'better', '250mcg 2x daily from acmepeps.com') $$, 'P0001',
+  'Pick how long from the list.', 'How long must be a length of time, not a dose or a seller');
+select throws_ok($$ select public.fix_read(tests.id('fx'), 'better', null, null, array['Get it at acmepeps dot com code SAVE20']) $$, 'P0001',
+  'Pick side effects from the list.', 'A side effect must be one of the names on the list');
+select throws_ok($$ select public.fix_read(tests.id('fx'), 'better', null, null, array['Acmepeps']) $$, 'P0001',
+  'Pick side effects from the list.', 'even a single word that isn''t one');
+select lives_ok($$ select public.fix_read(tests.id('fx'), 'better', '1–3 months', null, array['Headache', 'Nausea', 'Dizziness']) $$,
+  'What they had stays, names on the list are fine, and so is a length of time');
+select is((select (duration, side_effects)::text from public.post_reads where post_id = tests.id('fx')),
+  (select ('1–3 months', array['Headache', 'Nausea', 'Dizziness'])::text), 'and they''re kept');
+select tests.as_owner();
+select ok(private.duration_ok('6 months or more') and private.duration_ok('Under a week') and private.duration_ok('8 weeks')
+          and not private.duration_ok('250 mcg') and not private.duration_ok('2x daily'), 'How long: lengths of time only');
+select is(private.clean_effects(array['Nausea', 'www.acmepeps.com', 'code SAVE20', '5mg crash', 'Metallic taste']),
+  array['Nausea', 'Metallic taste'], 'From Miracle AI''s read too, only a few plain words are kept');
+select tests.as_user('bob');
+select ok((select count(*) from public.side_effect_names()) >= 30
+          and not exists (select 1 from public.side_effect_names() n where n = 'Lethargy after dosing'),
+  'Members pick side effects from the list of names');
 select tests.as_owner();
 select ok(tests.weight('fx') = 1.25, 'A confirmed read, 1-3 months: 1.25');
 
@@ -217,6 +270,23 @@ select tests.read('copy', 'better', '3 weeks', '[{"use": "injury", "outcome": "b
 select is(tests.held('copy'), 'copy', 'A post with the same words as an earlier one is held out');
 select is(tests.held('orig'), null, 'the first one stands');
 select is(tests.weight('copy'), 0::numeric, 'and the copy weighs nothing');
+-- An old post edited to match a newer report is the copy, not the newer report
+select tests.post('newer', 'carol', 'tb500', 'Calf strain from sprinting, back to running in two weeks and the tightness is gone now', interval '2 hours');
+select tests.read('newer', 'better', '2 weeks', '[{"use": "injury", "outcome": "better"}]');
+select tests.post('older', 'bob', 'tb500', 'Something else entirely, my elbow felt a bit better after a month or so of this', interval '10 days');
+select tests.read('older', 'same', 'a month', '[{"use": "injury", "outcome": "same"}]');
+update public.posts set body = 'Calf strain from sprinting, back to running in two weeks and the tightness is gone now', edited_at = now()
+ where id = tests.id('older');
+select tests.read('older', 'better', '2 weeks', '[{"use": "injury", "outcome": "better"}]');
+select is(tests.held('newer'), null, 'An older post edited to copy a newer report doesn''t knock the newer one out');
+select is(tests.held('older'), 'copy', 'the edited one is the copy');
+-- Posting your own report again is a repeat, not a copy
+select tests.post('again1', 'alice', 'bpc157', 'Elbow tendon pain finally easing after six weeks, I can lift the kettle without wincing', interval '3 days');
+select tests.read('again1', 'better', '6 weeks', '[{"use": "tendons", "outcome": "better"}]');
+select tests.post('again2', 'alice', 'bpc157', 'Elbow tendon pain finally easing after six weeks, I can lift the kettle without wincing', interval '1 day');
+select tests.read('again2', 'better', '6 weeks', '[{"use": "tendons", "outcome": "better"}]');
+select is(tests.held('again1'), 'repeat', 'Posting the same report twice: the earlier is a repeat');
+select ok(tests.held('again2') is null and tests.weight('again2') > 0, 'and the latest counts');
 
 -- "Same for me" counts half a report, once per person per compound, and not on top of your own
 select tests.as_user('alice');
@@ -250,11 +320,33 @@ select tests.as_user('bob');
 select throws_ok($$ select * from public.signal_holds() $$, '42501', null, 'Only moderators see what''s held');
 select tests.as_user('mia');
 select is((select count(*)::integer from public.signal_holds() where held = 'burst'), 5, 'A moderator sees the burst');
-select is((select count(*)::integer from public.signal_holds() where held = 'copy'), 1, 'and the copy');
+select is((select count(*)::integer from public.signal_holds() where held = 'copy'), 2, 'and the two copies');
 select lives_ok($$ select public.clear_signal_hold(tests.id('b3')) $$, 'and can clear one');
 select tests.as_owner();
 select is(tests.held('b3'), null, 'which then counts in full');
 select is(tests.weight('b3'), 0.45, 'at its usual weight');
+-- A wave of week-old accounts tapping "same for me" is a burst too, counted by accounts
+select tests.member('nt_1', 'member', false, interval '1 day');
+select tests.member('nt_2', 'member', false, interval '1 day');
+select tests.member('nt_3', 'member', false, interval '2 days');
+select tests.member('nt_4', 'member', false, interval '2 days');
+select tests.member('nt_5', 'member', false, interval '3 days');
+select tests.post('tapme', 'dave', 'ipamorelin', 'Sleeping more deeply and recovering faster between sessions, about two months in now', interval '5 days');
+select tests.read('tapme', 'better', '2 months', '[{"use": "sleep", "outcome": "better"}]');
+do $$
+declare i integer;
+begin
+  for i in 1..5 loop
+    perform set_config('request.jwt.claims', json_build_object('sub', tests.id('nt_' || i), 'role', 'authenticated')::text, true);
+    insert into public.same_for_me (post_id, user_id, created_at) values (tests.id('tapme'), tests.id('nt_' || i), now() - make_interval(hours => i));
+  end loop;
+end $$;
+select tests.as_owner();
+select is((select count(*)::integer from private.signal_rows('ipamorelin') r where r.kind = 'same' and r.held = 'burst'), 5,
+  'Five week-old accounts tapping "same for me" within 48 hours are a burst');
+select is((select r.w from private.signal_rows('ipamorelin') r where r.kind = 'same' and r.uid = tests.id('nt_1')), 0.0625,
+  'each counts a quarter of its quarter (0.0625)');
+select is(tests.held('tapme'), null, 'and the report they tapped stands');
 
 -- ===========================================================================
 -- 5. Check-ins at 2, 6 and 12 weeks
@@ -273,8 +365,12 @@ select tests.as_user('dave');
 select is(public.checkin_reminders(), 1, 'Opening the app leaves a note in the bell');
 select is(public.checkin_reminders(), 1, 'once');
 select is((select count(*)::integer from public.notifications where user_id = tests.id('dave') and kind = 'checkin'), 1, 'just one note');
-select throws_ok($$ select public.check_in(tests.id('fresh'), 2::smallint, 'better', true) $$, 'P0001', 'That check-in isn’t due yet.',
+select throws_ok($$ select public.check_in(tests.id('fresh'), 2::smallint, 'better', true) $$, 'P0001', 'That check-in isn’t due.',
   'A check-in can''t come early');
+select throws_ok($$ select public.check_in(tests.id('ci'), 2::smallint, 'better', true) $$, 'P0001', 'That check-in isn’t due.',
+  'nor for a week that isn''t the one due (6 weeks on, the 2-week one is past)');
+select throws_ok($$ select public.check_in(tests.id('ci'), 12::smallint, 'better', true) $$, 'P0001', 'That check-in isn’t due.',
+  'nor for one still to come');
 select tests.as_user('bob');
 select throws_ok($$ select public.check_in(tests.id('ci'), 6::smallint, 'better', true) $$, '42501', null,
   'Only the author checks in');
@@ -297,6 +393,12 @@ select is((select cause from public.signal_snapshots where compound_id = 'ghkcu'
   'and the version says why');
 select tests.as_user('dave');
 select is((select count(*)::integer from public.my_checkins where post_id = tests.id('ci')), 0, 'After "I stopped", nothing more is due');
+select tests.as_owner();
+update public.posts set created_at = now() - interval '13 weeks' where id = tests.id('ci');
+select tests.as_user('dave');
+select throws_ok($$ select public.check_in(tests.id('ci'), 12::smallint, 'better', true) $$, 'P0001', 'That check-in isn’t due.',
+  'not even 12 weeks on: no points for checking in again after stopping');
+select is((select count(*)::integer from public.points where user_id = tests.id('dave') and reason = 'checkin'), 1, 'still one lot of points');
 select tests.as_user('bob');
 select is((select checkin->>'stop_reason' from public.feed where id = tests.id('ci')), 'side_effects',
   'Everyone sees the latest check-in on the post');

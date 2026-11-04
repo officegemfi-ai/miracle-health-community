@@ -67,6 +67,15 @@ async function saveRead(p, args, btn, done) {
   return true;
 }
 
+// The side effects a member can pick (the database's one name for each), loaded once
+let effectNames = null;
+async function loadEffectNames() {
+  if (effectNames) return effectNames;
+  const { data } = await sb.rpc('side_effect_names');
+  effectNames = (data || []).map((x) => (typeof x === 'string' ? x : Object.values(x || {})[0])).filter((x) => typeof x === 'string');
+  return effectNames;
+}
+
 // The editor: every part of the read, each a tap away
 function fixForm(p, close, done) {
   let outcome = p.outcome;
@@ -79,9 +88,12 @@ function fixForm(p, close, done) {
       h('option', { value: '' }, uses.size >= 3 ? 'Three at most' : 'Add a use…'),
       likelyUses(p.compound_id).filter((id) => !uses.has(id)).map((id) => h('option', { value: id }, useLabel(id))));
     usePick.addEventListener('change', () => { if (usePick.value && uses.size < 3) { uses.add(usePick.value); draw(); } });
-    const fx = h('input', { class: 'input xs', maxlength: 40, placeholder: effects.length >= 3 ? 'Three at most' : 'Add a side effect', disabled: effects.length >= 3 ? true : null, 'aria-label': 'Add a side effect' });
-    const addFx = () => { const v = fx.value.trim(); if (v && effects.length < 3 && !effects.some((e) => e.toLowerCase() === v.toLowerCase())) { effects.push(v); draw(); } };
-    fx.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addFx(); } });
+    // Side effects are picked from the names the side-effect watch counts, so the totals stay clean
+    const fx = h('select', { class: 'input xs', 'aria-label': 'Add a side effect', disabled: effects.length >= 3 ? true : null },
+      h('option', { value: '' }, effects.length >= 3 ? 'Three at most' : 'Add a side effect…'),
+      (effectNames || []).filter((n) => !effects.some((e) => e.toLowerCase() === n.toLowerCase())).map((n) => h('option', { value: n }, n)));
+    const addFx = () => { const v = fx.value; if (v && effects.length < 3 && !effects.some((e) => e.toLowerCase() === v.toLowerCase())) { effects.push(v); draw(); } };
+    fx.addEventListener('change', addFx);
     const save = h('button', { class: 'btn lime sm', type: 'button' }, 'Save +10');
     save.addEventListener('click', () => saveRead(p, { outcome, duration: duration || '', uses: [...uses], side_effects: effects, confirm: true }, save, done));
     const longs = HOW_LONG.includes(duration) || !duration ? HOW_LONG : [duration, ...HOW_LONG];
@@ -94,10 +106,11 @@ function fixForm(p, close, done) {
         h('div', { class: 'taps' }, [...uses].map((id) => h('button', { class: 'chip rm', type: 'button', 'aria-label': `Remove ${useLabel(id)}`, onclick: () => { uses.delete(id); draw(); } }, useLabel(id), icon('x', 12))), usePick)),
       h('div', { class: 'fix-row' }, h('span', { class: 'kick' }, 'Side effects'),
         h('div', { class: 'taps' }, effects.map((e, i) => h('button', { class: 'chip rm', type: 'button', 'aria-label': `Remove ${e}`, onclick: () => { effects.splice(i, 1); draw(); } }, e, icon('x', 12))),
-          fx, h('button', { class: 'btn xs ghost', type: 'button', onclick: addFx, disabled: effects.length >= 3 ? true : null }, 'Add'))),
+          fx)),
       h('div', { class: 'row end mt8' }, h('button', { class: 'btn ghost sm', type: 'button', onclick: close }, 'Cancel'), save));
   };
   draw();
+  if (!effectNames) loadEffectNames().then(() => { if (box.isConnected) draw(); });
   return box;
 }
 

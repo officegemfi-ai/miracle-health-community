@@ -146,7 +146,7 @@ select public.record_post_read(tests.id('carol_question'), true, 'better', null,
 select is((select count(*) from public.post_reads where post_id = tests.id('carol_question')), 0::bigint,
   'A question is never counted');
 select public.record_post_read(tests.id('dan_report'), true, 'sideways', null,
-  array['A', 'B', 'C', 'D'], 'claude');
+  array['Nausea', 'Headache', 'Dizziness', 'Rash'], 'claude');
 select is((select (counts, outcome, cardinality(side_effects)) from public.post_reads where post_id = tests.id('dan_report'))::text,
   '(f,,3)', 'An outcome Claude can''t name doesn''t count, and side effects stop at three');
 

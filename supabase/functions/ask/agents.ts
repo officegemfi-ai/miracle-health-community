@@ -346,12 +346,17 @@ export function sourceNumbers(text: string, into: Set<string> = new Set()): Set<
   }
   return into;
 }
+// Numbers that need no source: phone numbers ("(800) 222-1222"), temperatures ("100.4°F") and
+// years ("a 2019 review")
+const PHONE = /\(?\b\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b|\b1[-.\s]\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/g;
+const TEMPERATURE = /\b\d{2,3}(?:\.\d)?\s?(?:°\s?[FC]\b|degrees\b)/gi;
+const isYear = (k: string) => /^(?:19|20)\d{2}$/.test(k);
 export function unsourcedNumbers(text: string, known: Set<string>): string[] {
-  const plain = String(text ?? '').replace(/\]\([^)]*\)/g, ']');
+  const plain = String(text ?? '').replace(/\]\([^)]*\)/g, ']').replace(PHONE, ' ').replace(TEMPERATURE, ' ');
   const out: string[] = [];
   for (const m of plain.matchAll(REPLY_NUM)) {
     const k = numKey(m[1] + (m[2] ?? ''));
-    if (!k || (Number(k) <= 12 && Number.isInteger(Number(k))) || known.has(k) || out.includes(m[0])) continue;
+    if (!k || (Number(k) <= 12 && Number.isInteger(Number(k))) || isYear(k) || known.has(k) || out.includes(m[0])) continue;
     out.push(m[0]);
   }
   return out.slice(0, 6);
@@ -1345,15 +1350,21 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // 3. The Synergy auditor, when the member's own compounds and medicines meet
   let synNote = '';
   let upfront: Audit | null = null;
-  if (!comparing && (named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant)))) {
-    emit('step', { id: 'synergy', agent: 'synergy', status: 'run', title: `Checking ${named.length > 1 ? `${named.length} together` : ctx.byId.get(named[0])?.name ?? 'it'}${screen.medications.length ? ' with your medicines' : ''}` });
+  // Their medicines, conditions or pregnancy matter for what they compare too: each compound is
+  // checked against them (findings about taking the compared ones together are left out)
+  const memberRisk = !!(screen.medications.length || screen.conditions.length || pregnant);
+  if ((!comparing || memberRisk) && (named.length >= 2 || (named.length >= 1 && memberRisk))) {
+    emit('step', { id: 'synergy', agent: 'synergy', status: 'run', title: comparing ? `Checking each${screen.medications.length ? ' with your medicines' : ' for you'}` : `Checking ${named.length > 1 ? `${named.length} together` : ctx.byId.get(named[0])?.name ?? 'it'}${screen.medications.length ? ' with your medicines' : ''}` });
     await openSheets(named, ctx);
-    const a = await auditSet(named, screen.medications, screen.conditions, pregnant, ctx, deps);
-    emit('step', { id: 'synergy', agent: 'synergy', status: 'done', title: auditTitle(a, named.length) });
+    const all = await auditSet(named, screen.medications, screen.conditions, pregnant, ctx, deps);
+    const a = comparing ? { ...all, findings: all.findings.filter((f) => f.ids.filter((i) => named.includes(i)).length <= 1) } : all;
+    emit('step', { id: 'synergy', agent: 'synergy', status: 'done', title: auditTitle(a, comparing ? 1 : named.length) });
     upfront = a;
     named.forEach((id) => ctx.audited.add(id));
     synNote = auditText(a, ctx.byId);
-    if (ctx.shortlistsOn) {
+    if (comparing) {
+      synNote += '\nThey\'re comparing these, not taking them together: what the auditor found about their own medicines, conditions or pregnancy goes in your caution line, naming the compound it applies to.';
+    } else if (ctx.shortlistsOn) {
       synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with what the studies show (evidence, US status, cautions) beside what the community reports, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what the community reports, how they fit together. Don't repeat the card's status and cautions, and don't present these same compounds again with present_shortlist. Their plan (present_plan) puts them in its peptides and medicines layer (supplements in its supplements layer).${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
     }
   }
@@ -1383,8 +1394,11 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   }
   // The Stack builder lays out what the member named, after the guide's opening words; one
   // compound on its own gets the studies and the community side by side
-  if (comparing && ctx.shortlistsOn) compareCard(named, ctx);
-  else if (upfront && ctx.shortlistsOn) stackCard(named, upfront, ctx);
+  const cmp = comparing && ctx.shortlistsOn ? compareCard(named, ctx) : null;
+  if (cmp) {
+    // What the auditor found for them shows under the comparison, on its own card
+    if (upfront && upfront.ok && upfront.findings.length) auditCard(upfront, ctx);
+  } else if (upfront && ctx.shortlistsOn && !comparing) stackCard(named, upfront, ctx);
   else if (upfront && upfront.ok && upfront.findings.length) auditCard(upfront, ctx);
   else if (!upfront && voices.length && ctx.shortlistsOn && snap.ok !== false && !screen.reaction) voicesCard(voices.map((v) => v.id), ctx);
   // What the community reports most for what they want it for, when they ask

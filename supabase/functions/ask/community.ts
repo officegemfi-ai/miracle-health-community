@@ -277,7 +277,8 @@ export function leadLine(v: Voice): string {
 // One compound's two voices, for the guide's notes and the fact sheets it opens
 export function voiceLine(v: Voice): string {
   const fx = v.community?.sideEffects ?? [];
-  const community = v.why === 'pregnant' ? 'Community: left out in pregnancy.'
+  // In pregnancy what people report is left out, but not what's known about its safety
+  const community = v.why === 'pregnant' ? ['Community: what people report is left out in pregnancy.', ...(v.community ? safetyLines(v.community) : [])].join(' ')
     : v.why === 'reaction' ? [fx.length ? `Community: only the side effects mentioned in members' reports: ${fx.map((e) => `${said(e.effect)} (${plural(e.n, 'report')})`).join(', ')}.` : 'Community: left out while they describe a possible reaction.',
       ...(v.community ? safetyLines(v.community) : [])].join(' ')
     : communityLine(v.community);

@@ -59,6 +59,11 @@ export async function handle(req: Request, deps: {
     });
     if (readErr) return json({ error: 'Could not record the read' }, 500);
   }
+  if (kind === 'comment' && verdict.serious) {
+    // A comment that describes a reaction that sounds serious: its writer is pointed to help
+    const { error: sErr } = await deps.db.rpc('record_comment_serious', { comment_id: id });
+    if (sErr) return json({ error: 'Could not record the safety note' }, 500);
+  }
   return json({ verdict: verdict.verdict, categories: verdict.categories, signal: verdict.signal ?? null });
 }
 
