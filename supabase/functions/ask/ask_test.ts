@@ -3,7 +3,7 @@ import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
 import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
-import { applyFixes, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
+import { applyFixes, dedupeSentences, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
 import { baselineFor, blockedItem, communityOf, communityTitle, communityTop, leadOf, pulseLine, topText, useById, voiceLine, voiceOf } from './community.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
@@ -1535,4 +1535,15 @@ Deno.test('the test set\'s key lifts the per-visitor limits, only when it matche
   await events(await handle(withKey(key), deps(f, { quota })));   // no key set: an ordinary visitor
   await events(await handle(withKey(null), deps(f, { evalKey: key, quota })));
   assertEquals(seen, [true, false, false, false]);
+});
+
+Deno.test('a sentence said twice in a row in other words is said once', () => {
+  assertEquals(dedupeSentences('The studies are animal-only so far. Studies so far are animal-only. In rodents, tendons healed faster.'),
+    'The studies are animal-only so far. In rodents, tendons healed faster.');
+  const keep = 'It may help sleep. It may not help focus. **Next step:** ask your clinician.';
+  assertEquals(dedupeSentences(keep), keep);
+  assertEquals(dedupeSentences('- One line.\n- One line, again.\n\nA [BPC-157](lib:bpc157) note on healing tendons. A BPC-157 note on healing tendons.'),
+    '- One line.\n- One line, again.\n\nA [BPC-157](lib:bpc157) note on healing tendons.');
+  assertEquals(dedupeSentences('Short one. Short one.'), 'Short one. Short one.');   // too short to be sure
+  assertEquals(settle('Same words said here twice. Same words said here twice.', { ok: true }).out, 'Same words said here twice.');
 });

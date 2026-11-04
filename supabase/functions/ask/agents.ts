@@ -367,8 +367,37 @@ type Verdict = { ok: boolean; revised?: string; broken?: number[]; fixes?: Fix[]
 const CAVEAT = /\bnot\s+(?:been\s+)?(?:fda[- ])?(?:approved|established|proven)\b|\bunproven\b|\black(?:s|ing)?\b|\blittle\s+(?:or\s+no\s+)?(?:human\s+)?(?:data|evidence)\b|\bno\s+(?:good\s+|real\s+)?human\b|\bsafety\s+(?:is|are)\s+(?:unknown|not)\b|\bresearch[- ]stage\b|\b(?:isn|aren)'?t\s+approved\b|\b(?:talk|speak|check)\s+(?:to|with)\s+(?:your|a)\s+(?:clinician|doctor|prescriber)\b|\bnot\s+medical\s+advice\b|\bnot\s+a\s+measure\b|\bunverified\b|\b(?:isn|aren)'?t\s+(?:evidence|proof)\b|\bnot\s+(?:evidence|proof)\b/i;
 const STRONG = /\b(?:cures?|cured|prevents?|reverses?|safe(?:ly)?|proven|guarantee\w*|definitely|will\s+(?:heal|fix|cure|build|burn|work|repair))\b/i;
 export const addsCaveat = (before: string, after: string) => CAVEAT.test(after) && !CAVEAT.test(before) && !STRONG.test(before);
+// A sentence said twice in a row in other words ("The studies are animal-only so far. Studies so
+// far are animal-only.") is said once: the second goes when most of its words are the first's
+const SENTENCE = /[^.!?]+(?:[.!?]+|$)\s*/g;
+const wordsOf = (s: string) => new Set(s.toLowerCase().replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').match(/[a-z0-9][a-z0-9'’-]*/g)?.filter((w) => !['the', 'a', 'an'].includes(w)) ?? []);
+export function dedupeSentences(text: string): string {
+  return String(text ?? '').split('\n').map((line) => {
+    const parts = [...line.matchAll(SENTENCE)];
+    if (parts.length < 2) return line;
+    let prev = '';
+    const drop: [number, number][] = [];
+    for (const m of parts) {
+      if (prev) {
+        const a = wordsOf(prev), b = wordsOf(m[0]);
+        const shared = [...b].filter((w) => a.has(w)).length;
+        if (b.size >= 3 && shared / Math.max(a.size, b.size) >= 0.8) { drop.push([m.index!, m.index! + m[0].length]); continue; }
+      }
+      prev = m[0];
+    }
+    if (!drop.length) return line;
+    let out = '';
+    let at = 0;
+    for (const [from, to] of drop) { out += line.slice(at, from); at = to; }
+    return (out + line.slice(at)).replace(/\s+$/, '');
+  }).join('\n');
+}
 // What the check's verdict on a part comes to: the part as written, a fixed version, or nothing
 export function settle(text: string, v: Verdict): { out: string | null; edited: boolean } {
+  const r = settleRaw(text, v);
+  return r.out ? { ...r, out: dedupeSentences(r.out) } : r;
+}
+function settleRaw(text: string, v: Verdict): { out: string | null; edited: boolean } {
   if (v.ok) return { out: text, edited: false };
   const onlyClaims = (v.broken ?? []).length > 0 && (v.broken ?? []).every((n) => n === 4);
   const fixes = (v.fixes ?? []).filter((f) => !(onlyClaims && addsCaveat(f.find, f.replace)));
