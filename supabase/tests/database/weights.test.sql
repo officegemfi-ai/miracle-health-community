@@ -385,6 +385,13 @@ select throws_ok($$ select * from private.signal_rows('bpc157') $$, '42501', nul
 select throws_ok($$ select * from private.forum_counts $$, '42501', null, 'or the forum counts table');
 select throws_ok($$ insert into public.focus_pairs (compound_id, use_id) values ('nad', 'energy') $$, '42501', null,
   'or change the focus pairs');
+select throws_ok($$ select public.ask_count_site() $$, '42501', null, 'Members can''t use the test set''s budget');
+select tests.as_service();
+select is(public.ask_count_site(), '{"ok": true}'::jsonb, 'A test-set message counts against the site''s daily budget only');
+select tests.as_owner();
+update private.settings set value = '0' where key = 'ask_per_day';
+select tests.as_service();
+select is(public.ask_count_site()->>'reason', 'site_day', 'and stops when the site''s budget is spent');
 select tests.as_anon();
 select throws_ok($$ select * from public.focus_progress $$, '42501', null, 'Signed out, nothing');
 

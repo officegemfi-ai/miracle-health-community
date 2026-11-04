@@ -1120,7 +1120,32 @@ as $$
 $$;
 
 -- ===========================================================================
--- 12. Access
+-- 12. Miracle AI's test set: its messages count against the site's daily budget only
+-- ===========================================================================
+-- Called by the ask function (service role only) for a request carrying the test-set key, which
+-- is set on the test project only while scripts/ask_eval.py runs. Answers as public.ask_take does.
+create function public.ask_count_site() returns jsonb
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_n integer;
+begin
+  if coalesce(private.setting('ask_enabled'), 'on') <> 'on' then
+    return jsonb_build_object('ok', false, 'reason', 'off');
+  end if;
+  insert into private.ask_usage as u (bucket, slot, n) values ('site', date_trunc('day', now(), 'UTC'), 1)
+    on conflict (bucket, slot) do update set n = u.n + 1 returning u.n into v_n;
+  if v_n > coalesce(private.setting_int('ask_per_day'), 1000) then
+    return jsonb_build_object('ok', false, 'reason', 'site_day');
+  end if;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+revoke execute on function public.ask_count_site() from public, anon, authenticated;
+grant execute on function public.ask_count_site() to service_role;
+
+-- ===========================================================================
+-- 13. Access
 -- ===========================================================================
 revoke all on public.report_checkins, public.focus_pairs from anon, authenticated;
 revoke all on public.my_checkins, public.focus_progress from anon, authenticated;
@@ -1160,7 +1185,7 @@ grant execute on function private.fix_read(uuid, text, text, jsonb, text[], bool
   private.checkin_due(uuid), private.signal_holds(), private.clear_signal_hold(uuid) to authenticated;
 
 -- ===========================================================================
--- 13. Every Signal recalculated once, so its version carries the extras
+-- 14. Every Signal recalculated once, so its version carries the extras
 -- ===========================================================================
 do $$
 declare

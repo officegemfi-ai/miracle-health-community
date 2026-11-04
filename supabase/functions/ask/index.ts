@@ -20,7 +20,11 @@ export type HttpDeps = {
   effort?: string;
   library: Library;
   salt: string;
-  quota: (address: string) => Promise<Quota>;
+  // evalRun: a test-set run (see evalKey): counted against the site's daily budget only
+  quota: (address: string, evalRun?: boolean) => Promise<Quota>;
+  // Set only on the test project, only while its test set runs (scripts/ask_eval.py): a request
+  // carrying it in x-eval-key skips the per-visitor limits, never the site's daily budget
+  evalKey?: string;
   fetchImpl?: typeof fetch;
   log?: (line: Record<string, unknown>) => void;
 };
@@ -125,6 +129,16 @@ export function v6net(ip: string): string {
   return `${groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '') || '0').join(':')}::/64`;
 }
 
+// The test-set key, compared without leaking how much of it matched
+async function sameKey(given: string | null, want: string | undefined): Promise<boolean> {
+  if (!given || !want || want.length < 32) return false;
+  const hash = async (s: string) => new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
+  const [a, b] = await Promise.all([hash(given), hash(want)]);
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
 export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
   const cors = corsHeaders(req, deps.origins);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
@@ -140,9 +154,10 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
   const messages = await checkReplies(conv.messages, deps.salt);
 
   let q: Quota = { ok: false, reason: 'unavailable' };
+  const evalRun = await sameKey(req.headers.get('x-eval-key'), deps.evalKey);
   if (deps.apiKey) {
     try {
-      q = await deps.quota(clientAddress(req));
+      q = await deps.quota(clientAddress(req), evalRun);
     } catch {
       q = { ok: false, reason: 'unavailable' };
     }
@@ -171,7 +186,7 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
       let timedOut = false;
       const timer = setTimeout(() => { timedOut = true; abort.abort(); }, 120_000);
       const t0 = Date.now();
-      send('meta', { v: 1, left: q.left ?? null });
+      send('meta', { v: 1, left: q.left ?? null, ...(evalRun ? { eval: true } : {}) });
       try {
         const { memo } = held ? { memo: heldReply(held, messages, send) } : await runTurn(messages, {
           apiKey: deps.apiKey, models: deps.models, effort: deps.effort, library: deps.library,
@@ -232,8 +247,9 @@ if (import.meta.main) {
       snapshotUrl: Deno.env.get('SNAPSHOT_URL') || 'https://community.miraclehealth.us/snapshot.json',
     }),
     salt: service,
-    quota: async (address) => {
-      const { data, error } = await db.rpc('ask_count', { address });
+    evalKey: Deno.env.get('ASK_EVAL_KEY') || undefined,
+    quota: async (address, evalRun) => {
+      const { data, error } = evalRun ? await db.rpc('ask_count_site') : await db.rpc('ask_count', { address });
       if (error || !data) return { ok: false, reason: 'unavailable' };
       return data as Quota;
     },

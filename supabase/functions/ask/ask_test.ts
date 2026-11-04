@@ -1494,3 +1494,22 @@ Deno.test('comparing compounds: side by side, proven first, no stack card and no
   // Where the answer came from says which version of the community's numbers answered
   assert('version' in ev.find((e) => e.event === 'sources')!.data);
 });
+
+Deno.test('the test set\'s key lifts the per-visitor limits, only when it matches, never the site budget', async () => {
+  const seen: (boolean | undefined)[] = [];
+  const { f } = fakeWorld({ screen: NONE, rounds: [{ text: 'Sure.' }] });
+  const key = 'a'.repeat(64);
+  const quota = async (_a: string, evalRun?: boolean) => { seen.push(evalRun); return { ok: true, left: 5 }; };
+  const withKey = (k: string | null) => {
+    const r = ask([{ role: 'user', content: 'hi' }]);
+    const h = new Headers(r.headers);
+    if (k) h.set('x-eval-key', k);
+    return new Request(r.url, { method: 'POST', headers: h, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }) });
+  };
+  const ev = await events(await handle(withKey(key), deps(f, { evalKey: key, quota })));
+  assertEquals(ev[0].data.eval, true);
+  await events(await handle(withKey('b'.repeat(64)), deps(f, { evalKey: key, quota })));
+  await events(await handle(withKey(key), deps(f, { quota })));   // no key set: an ordinary visitor
+  await events(await handle(withKey(null), deps(f, { evalKey: key, quota })));
+  assertEquals(seen, [true, false, false, false]);
+});

@@ -17,6 +17,7 @@
 #   advisors  prints Supabase's security advisor findings (never fails the deploy)
 #   snapshot  prints the public library's numbers as JSON (private.public_snapshot():
 #             aggregate totals only, no posts or names), for the site's snapshot.json
+#   eval-key  (test only) <key> sets the key Miracle AI's test set runs with; "off" removes it
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
 #   ANTHROPIC_API_KEY, REVIEW_SECRET, MODERATION_MODEL, APP_ORIGINS, SITE_URL, ASK_ORIGINS,
@@ -27,7 +28,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ENV_NAME="${1:?test or live}"
-CMD="${2:?ref, create, setup, admin, keys, advisors or snapshot}"
+CMD="${2:?ref, create, setup, admin, keys, advisors, snapshot or eval-key}"
 case "$ENV_NAME" in test|live) ;; *) echo "The environment is test or live, not $ENV_NAME" >&2; exit 2 ;; esac
 : "${SUPABASE_ACCESS_TOKEN:?SUPABASE_ACCESS_TOKEN is not set}"
 BASE="${SUPABASE_API_BASE:-https://api.supabase.com}"
@@ -258,6 +259,22 @@ setup)
   fi
   supabase secrets set --project-ref "$REF" "${args[@]}" >/dev/null
   echo "done"
+  ;;
+
+eval-key)
+  # Miracle AI's test set (scripts/ask_eval.py): eval-key <key> sets the key that lifts the
+  # per-visitor limits on the TEST project's chat for the run; eval-key off removes it
+  [ "$ENV_NAME" = test ] || { echo "eval-key is only for the test project" >&2; exit 2; }
+  key="${3:-}"
+  if [ "$key" = off ]; then
+    supabase secrets unset --project-ref "$REF" ASK_EVAL_KEY >/dev/null 2>&1 || true
+    echo "test-set key removed"
+  else
+    [[ "$key" =~ ^[0-9a-f]{64}$ ]] || { echo "The key is 64 lowercase hex characters" >&2; exit 2; }
+    mask "$key"
+    supabase secrets set --project-ref "$REF" "ASK_EVAL_KEY=$key" >/dev/null
+    echo "test-set key set"
+  fi
   ;;
 
 admin)

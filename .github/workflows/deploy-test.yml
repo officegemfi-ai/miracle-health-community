@@ -8,7 +8,9 @@
 # project (SUPABASE_PROJECT_REF) and the repository has these secrets:
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY
 # The ask function (Miracle AI's chat on the website) is asked eleven real questions when it
-# changes (scripts/ask_smoke.py); its answers show on the run's summary page.
+# changes (scripts/ask_smoke.py), then its test set of about two hundred, graded automatically
+# (scripts/ask_eval.py, evals/questions.jsonl); answers and grades show on the run's summary page,
+# and the thirty most common questions with their answers come as a file for clinician review.
 # Optional: REVIEW_SECRET (otherwise one is made and kept in the project's Vault),
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (texts to real phones;
 #   without them only the test numbers sign in), TURNSTILE_SECRET_KEY,
@@ -162,6 +164,47 @@ jobs:
           set -o pipefail
           python3 scripts/ask_smoke.py "$URL" 2>&1 | tee "$RUNNER_TEMP/ask.log" \
             || { scripts/ci_annotate.sh "Miracle AI" "$RUNNER_TEMP/ask.log"; exit 1; }
+
+  eval:
+    name: Miracle AI's test set (test project)
+    needs: [check, backend, ask]
+    runs-on: ubuntu-24.04
+    # About two hundred questions, four at a time, each graded
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+          fetch-depth: 2
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Ask the test set (when the chat or the test set changed, or when run by hand)
+        env:
+          URL: https://${{ needs.check.outputs.ref }}.supabase.co/functions/v1/ask
+          BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ "$BY_HAND" != true ] && git diff --quiet HEAD~1 HEAD -- supabase/functions/ask evals scripts/ask_eval.py 2>/dev/null; then
+            echo "The chat didn't change in this commit; skipping (the test set costs a few dollars of Claude)."
+            exit 0
+          fi
+          # A key for this run only: it lifts the per-visitor limits on the test project's chat
+          # (never the site's daily budget), and it's removed when the run ends
+          key="$(openssl rand -hex 32)"
+          echo "::add-mask::$key"
+          scripts/supabase_project.sh test eval-key "$key"
+          trap 'scripts/supabase_project.sh test eval-key off' EXIT
+          set -o pipefail
+          python3 scripts/ask_eval.py "$URL" --key "$key" --out "$RUNNER_TEMP/eval" 2>&1 | tee "$RUNNER_TEMP/eval.log" \
+            || { scripts/ci_annotate.sh "Miracle AI's test set" "$RUNNER_TEMP/eval.log"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: miracle-ai-test-set
+          path: ${{ runner.temp }}/eval
+          if-no-files-found: ignore
 
   smoke:
     name: The test app, end to end
