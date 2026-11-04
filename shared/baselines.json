@@ -1,0 +1,390 @@
+{
+ "note": "How many people improve anyway, on a placebo or with time alone, for some of the uses members report on: context next to what members report, never a direct comparison (trial responders were measured on strict scales; a member's \"better\" is self-reported). Researched from meta-analyses and large trials, checked against each source, and shown on the library, in the community and by Miracle AI. scripts/sync_rules.sh copies this file to the app and Miracle AI; the website keeps its own copy (library/data/baselines.json).",
+ "checked": "2026-11-04",
+ "uses": [
+  {
+   "use": "sleep",
+   "label": "Sleep",
+   "placebo_pct": 42,
+   "low": 23,
+   "high": 42,
+   "short": "about 42% improve on a placebo",
+   "says": "In insomnia trials, about 42% of people on a placebo had clearly milder insomnia after 3 months.",
+   "defined_as": "Improvement of at least 6 points on the Insomnia Severity Index (ISI) after 3 months on placebo. The low end is the same measure at 1 month. A second drug programme used a 7-point cut-off and found 30–41% across months 1, 3 and 6.",
+   "population": "Adults with insomnia disorder in phase-3 trials of two orexin-receptor-antagonist sleep drugs",
+   "weeks": "4–26",
+   "pooled": "2 pooled phase-3 trials, 1,824 patients (638–685 on placebo with ISI data); plus 1 trial of 949 patients",
+   "confidence": "fair",
+   "caveat": "No meta-analysis reports placebo responder rates for insomnia, so these figures come from pooled data in two drug programmes, and the share rises the longer people stay on placebo. In a meta-analysis of primary-insomnia drug trials, placebo groups achieved about 64% of the drug's improvement (Winkler & Rief 2015).",
+   "sources": [
+    {
+     "title": "Suvorexant in Patients With Insomnia: Pooled Analyses of Three-Month Data From Phase-3 Randomized Controlled Clinical Trials",
+     "author": "Herring WJ",
+     "journal": "Journal of Clinical Sleep Medicine",
+     "year": "2016",
+     "url": "https://doi.org/10.5664/jcsm.6116"
+    },
+    {
+     "title": "Effects of suvorexant on the Insomnia Severity Index in patients with insomnia: analysis of pooled phase-3 data",
+     "author": "Herring WJ",
+     "journal": "Sleep Medicine",
+     "year": "2019",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/30522875/"
+    },
+    {
+     "title": "Impact of lemborexant treatment on insomnia severity: analyses from a 12-month study of adults with insomnia disorder",
+     "author": "Roth T",
+     "journal": "Sleep Medicine",
+     "year": "2022",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/35220140/"
+    },
+    {
+     "title": "Effect of placebo conditions on polysomnographic parameters in primary insomnia: a meta-analysis",
+     "author": "Winkler A",
+     "journal": "Sleep",
+     "year": "2015",
+     "url": "https://doi.org/10.5665/sleep.4742"
+    }
+   ]
+  },
+  {
+   "use": "pain",
+   "label": "Other pain",
+   "placebo_pct": 38,
+   "low": 28,
+   "high": 45,
+   "short": "about 38% improve on a placebo",
+   "says": "In chronic pain trials, about 38% of people on a placebo had at least 30% less pain (28–45%, depending on the kind of pain).",
+   "defined_as": "At least 30% reduction in pain intensity from baseline while on placebo",
+   "population": "Adults with chronic peripheral neuropathic pain (headline figure). The range covers fibromyalgia (low) and chronic low back pain (high) trials.",
+   "weeks": "8–14",
+   "pooled": "Neuropathic: 50 trials, 5,693 on placebo; fibromyalgia: 30 trials, 3,846 on placebo; low back pain: 2 trials, 217 on placebo",
+   "confidence": "fair",
+   "caveat": "The headline comes from a large meta-analysis that is a preprint (no journal version found); peer-reviewed figures are 28–31% for fibromyalgia and about 45% for chronic low back pain. With the stricter ≥50% cut-off, placebo shares drop to about 19% (fibromyalgia), 23% (neuropathic) and 30% (low back), and range from 7% to 43% across neuropathic pain types.",
+   "sources": [
+    {
+     "title": "Placebo response in chronic peripheral neuropathic pain trials: systematic review and meta-analysis",
+     "author": "Duarte GS",
+     "journal": "medRxiv (preprint)",
+     "year": "2022",
+     "url": "https://doi.org/10.1101/2022.02.18.22271196"
+    },
+    {
+     "title": "Placebo responders in randomized controlled drug trials of fibromyalgia syndrome: systematic review and meta-analysis",
+     "author": "Häuser W",
+     "journal": "Der Schmerz",
+     "year": "2011",
+     "url": "https://doi.org/10.1007/s00482-011-1106-4"
+    },
+    {
+     "title": "Pregabalin for pain in fibromyalgia in adults",
+     "author": "Derry S",
+     "journal": "Cochrane Database of Systematic Reviews",
+     "year": "2016",
+     "url": "https://doi.org/10.1002/14651858.CD011790.pub2"
+    },
+    {
+     "title": "Numbers-needed-to-treat analyses – do timing, dropouts, and outcome matter? Pooled analysis of two randomized, placebo-controlled chronic low back pain trials",
+     "author": "Moore RA",
+     "journal": "Pain",
+     "year": "2010",
+     "url": "https://doi.org/10.1016/j.pain.2010.07.013"
+    },
+    {
+     "title": "Placebo response changes depending on the neuropathic pain syndrome: results of a systematic review and meta-analysis",
+     "author": "Cepeda MS",
+     "journal": "Pain Medicine",
+     "year": "2012",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/22390269/"
+    }
+   ]
+  },
+  {
+   "use": "joints",
+   "label": "Joint pain",
+   "placebo_pct": 35,
+   "low": 25,
+   "high": 50,
+   "short": "about 35% improve on a placebo",
+   "says": "In osteoarthritis trials, about 35% of people on placebo pills had at least 30% less joint pain after 12 weeks.",
+   "defined_as": "At least 30% reduction in WOMAC pain after 12 weeks on placebo pills. The low end is at least 50% relief on placebo pills (25%); the high end is at least 50% relief on a placebo gel (about 5 in 10).",
+   "population": "Adults with osteoarthritis in oral anti-inflammatory trials; mostly knee osteoarthritis in topical gel trials",
+   "weeks": "6–12",
+   "pooled": "Oral: 7 trials, 3,554 patients (all arms); topical: Cochrane review of 39 studies, 10,857 participants",
+   "confidence": "fair",
+   "caveat": "The placebo response in osteoarthritis is large and depends on how the placebo is given: placebo-gel arms responded more often than placebo-pill arms (about 5 in 10 vs 25% reaching ≥50% relief). The oral figures come from one drug programme, not a meta-analysis of every osteoarthritis placebo arm.",
+   "sources": [
+    {
+     "title": "Responder analysis for pain relief and numbers needed to treat in a meta-analysis of etoricoxib osteoarthritis trials: bridging a gap between clinical trials and clinical practice",
+     "author": "Moore RA",
+     "journal": "Annals of the Rheumatic Diseases",
+     "year": "2010",
+     "url": "https://doi.org/10.1136/ard.2009.107805"
+    },
+    {
+     "title": "Topical NSAIDs for chronic musculoskeletal pain in adults",
+     "author": "Derry S",
+     "journal": "Cochrane Database of Systematic Reviews",
+     "year": "2016",
+     "url": "https://doi.org/10.1002/14651858.CD007400.pub3"
+    }
+   ]
+  },
+  {
+   "use": "mood",
+   "label": "Mood & motivation",
+   "placebo_pct": 37,
+   "low": 13,
+   "high": 52,
+   "short": "about 37% improve on a placebo",
+   "says": "In depression trials, about 37% of people on a placebo improved by half or more.",
+   "defined_as": "At least 50% reduction in depression score (HAM-D or MADRS) from baseline",
+   "population": "Adults with major depressive disorder in double-blind antidepressant trials",
+   "weeks": "4–12",
+   "pooled": "252 trials, 26,324 on placebo (pooled rate); range from 75 trials",
+   "confidence": "good",
+   "caveat": "The pooled placebo response has stayed at about 35–40% since 1991; low–high is the spread across 75 trials published 1981–2000 (mean 30%). Trial patients have diagnosed depression and regular clinic visits, while members' 'mood & motivation' is self-rated and broader.",
+   "sources": [
+    {
+     "title": "Placebo response rates in antidepressant trials: a systematic review of published and unpublished double-blind randomised controlled studies",
+     "author": "Furukawa TA",
+     "journal": "Lancet Psychiatry",
+     "year": "2016",
+     "url": "https://doi.org/10.1016/S2215-0366(16)30307-8"
+    },
+    {
+     "title": "Placebo response in studies of major depression: variable, substantial, and growing",
+     "author": "Walsh BT",
+     "journal": "JAMA",
+     "year": "2002",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/11939870/"
+    }
+   ]
+  },
+  {
+   "use": "anxiety",
+   "label": "Stress & anxiety",
+   "placebo_pct": 39,
+   "low": 27,
+   "high": 51,
+   "short": "about 39% improve on a placebo",
+   "says": "In anxiety trials, about 39% of people on a placebo improved by the trial’s own measure.",
+   "defined_as": "Responder by each trial's definition, in priority order: at least 50% drop on the Hamilton Anxiety scale (HAM-A), otherwise CGI 'much' or 'very much improved'",
+   "population": "Adults with generalized anxiety disorder in medication trials",
+   "weeks": "6–24 (mean 11)",
+   "pooled": "23 GAD placebo arms, 3,659 on placebo; 107 studies in a broader anxiety/OCD/stress-disorder meta-analysis",
+   "confidence": "fair",
+   "caveat": "The headline is the unweighted mean across trials, and low–high is mean ± 1 SD (no min–max was reported). A 2023 meta-analysis across anxiety, OCD and stress disorders found a similar 37%; members' 'stress & anxiety' is broader and usually milder than diagnosed GAD.",
+   "sources": [
+    {
+     "title": "Influence of study design on treatment response in anxiety disorder clinical trials",
+     "author": "Rutherford BR",
+     "journal": "Depression and Anxiety",
+     "year": "2015",
+     "url": "https://doi.org/10.1002/da.22433"
+    },
+    {
+     "title": "Placebo response in trials with patients with anxiety, obsessive-compulsive and stress disorders across the lifespan: a three-level meta-analysis",
+     "author": "Motta LS",
+     "journal": "BMJ Mental Health",
+     "year": "2023",
+     "url": "https://doi.org/10.1136/bmjment-2022-300630"
+    }
+   ]
+  },
+  {
+   "use": "gut",
+   "label": "Gut health",
+   "placebo_pct": 38,
+   "low": 16,
+   "high": 71,
+   "short": "about 38% improve on a placebo",
+   "says": "In irritable bowel trials, about 38% of people on a placebo said their symptoms improved.",
+   "defined_as": "Improvement or cure of global IBS symptoms or of abdominal pain, as defined by each trial",
+   "population": "Adults with irritable bowel syndrome in drug trials",
+   "weeks": "≥2–4 (varies by trial)",
+   "pooled": "73 trials, 8,364 on placebo (pooled rate); range from 45 trials",
+   "confidence": "good",
+   "caveat": "Stricter modern endpoints give lower rates: 27% for global improvement, 34% for abdominal pain and 18% for the FDA composite endpoint (73 trials, 2021). Members' 'gut health' covers much more than IBS.",
+   "sources": [
+    {
+     "title": "Meta-analysis: factors affecting placebo response rate in the irritable bowel syndrome",
+     "author": "Ford AC",
+     "journal": "Alimentary Pharmacology & Therapeutics",
+     "year": "2010",
+     "url": "https://doi.org/10.1111/j.1365-2036.2010.04328.x"
+    },
+    {
+     "title": "The placebo effect in irritable bowel syndrome trials: a meta-analysis",
+     "author": "Patel SM",
+     "journal": "Neurogastroenterology & Motility",
+     "year": "2005",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/15916620/"
+    },
+    {
+     "title": "The placebo response rate in pharmacological trials in patients with irritable bowel syndrome: a systematic review and meta-analysis",
+     "author": "Bosman M",
+     "journal": "Lancet Gastroenterology & Hepatology",
+     "year": "2021",
+     "url": "https://doi.org/10.1016/S2468-1253(21)00023-6"
+    }
+   ]
+  },
+  {
+   "use": "menopause",
+   "label": "Menopause symptoms",
+   "placebo_pct": 36,
+   "low": 27,
+   "high": 36,
+   "short": "about 36% improve on a placebo",
+   "says": "In hot-flash trials, about 36% of women on a placebo had at least half as many hot flashes after 12 weeks.",
+   "defined_as": "At least 50% reduction in the frequency of moderate-to-severe hot flashes from baseline",
+   "population": "Menopausal women with frequent moderate-to-severe hot flashes in placebo-controlled drug trials",
+   "weeks": "4–12",
+   "pooled": "2 pooled phase-3 trials, 342 on placebo; 2 further trials, 247 on placebo",
+   "confidence": "fair",
+   "caveat": "The placebo share builds week by week: 27% at week 4, 33% at week 8 (a separate pair of trials) and 36% at week 12. In hormone-therapy trials lasting 3 months to 3 years, hot-flash frequency fell 58% on average with placebo (24 trials), so a looser 'better' is likely reported by more women.",
+   "sources": [
+    {
+     "title": "Treating moderate-to-severe menopausal vasomotor symptoms with fezolinetant: analysis of responders using pooled data from two phase 3 studies (SKYLIGHT 1 and 2)",
+     "author": "Nappi RE",
+     "journal": "Menopause",
+     "year": "2024",
+     "url": "https://doi.org/10.1097/GME.0000000000002354"
+    },
+    {
+     "title": "Placebo improvement in pharmacologic treatment of menopausal hot flashes: time course, duration, and predictors",
+     "author": "Freeman EW",
+     "journal": "Psychosomatic Medicine",
+     "year": "2015",
+     "url": "https://doi.org/10.1097/PSY.0000000000000143"
+    },
+    {
+     "title": "Oral oestrogen and combined oestrogen/progestogen therapy versus placebo for hot flushes",
+     "author": "MacLennan AH",
+     "journal": "Cochrane Database of Systematic Reviews",
+     "year": "2004",
+     "url": "https://doi.org/10.1002/14651858.CD002978.pub2"
+    }
+   ]
+  },
+  {
+   "use": "injury",
+   "label": "Injury healing",
+   "placebo_pct": 84,
+   "low": 20,
+   "high": 84,
+   "short": "84% recover on their own",
+   "says": "Most acute injuries settle on their own: in a large trial of acute low back pain, 84% of people on a placebo had recovered within 12 weeks.",
+   "defined_as": "Sustained recovery (pain 0–1 out of 10 for 7 days in a row) within 12 weeks on placebo. The low end is at least 50% pain relief after about a week on a placebo gel for strains and sprains ('2 or 3 in 10').",
+   "population": "Adults with acute low back pain seen in primary care (used as a proxy for acute muscle strain); adults with acute strains, sprains and sports injuries in topical painkiller trials",
+   "weeks": "1–12",
+   "pooled": "1 trial, 553 randomised to placebo; Cochrane review of 61 studies, 8,386 participants",
+   "confidence": "weak",
+   "caveat": "No meta-analysis of natural recovery from acute muscle strain was found, so this leans on one large placebo-controlled back-pain trial (half recovered within 16 days); its 12-week figure comes from the full results, not the abstract. Acute soft-tissue injuries mostly settle on their own, so the baseline is high.",
+   "sources": [
+    {
+     "title": "Efficacy of paracetamol for acute low-back pain: a double-blind, randomised controlled trial",
+     "author": "Williams CM",
+     "journal": "Lancet",
+     "year": "2014",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/25064594/"
+    },
+    {
+     "title": "Topical NSAIDs for acute musculoskeletal pain in adults",
+     "author": "Derry S",
+     "journal": "Cochrane Database of Systematic Reviews",
+     "year": "2015",
+     "url": "https://doi.org/10.1002/14651858.CD007402.pub3"
+    }
+   ]
+  },
+  {
+   "use": "tendons",
+   "label": "Tendons & ligaments",
+   "placebo_pct": 32,
+   "low": 10,
+   "high": 89,
+   "short": "32% better in 6 weeks on their own",
+   "says": "Tendon pain often settles slowly on its own: with wait-and-see, 32% of people with tennis elbow were better at 6 weeks, and most (89%) within a year.",
+   "defined_as": "Trial-defined 'success' with a wait-and-see approach at 6 weeks. The low end is complete recovery or much improvement after a placebo injection alone at 4 weeks; the high end is global improvement at 1 year without active treatment.",
+   "population": "Adults with lateral elbow tendinopathy (tennis elbow) in wait-and-see, placebo-injection or no-treatment arms",
+   "weeks": "4–52",
+   "pooled": "Meta-analysis: 24 trials, 1,085 untreated participants (1-year figure); headline from 1 trial of 185 patients",
+   "confidence": "weak",
+   "caveat": "Recovery is slow but steady: 32% at 6 weeks, 85% by 26 weeks after a placebo injection, and 89% by 1 year across 24 trials. Almost all the data are for tennis elbow; other tendons and ligament injuries may behave differently.",
+   "sources": [
+    {
+     "title": "Persistent Tennis Elbow Symptoms Have Little Prognostic Value: A Systematic Review and Meta-analysis",
+     "author": "Ikonen J",
+     "journal": "Clinical Orthopaedics and Related Research",
+     "year": "2022",
+     "url": "https://doi.org/10.1097/CORR.0000000000002058"
+    },
+    {
+     "title": "Corticosteroid injections, physiotherapy, or a wait-and-see policy for lateral epicondylitis: a randomised controlled trial",
+     "author": "Smidt N",
+     "journal": "Lancet",
+     "year": "2002",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/11879861/"
+    },
+    {
+     "title": "Effect of corticosteroid injection, physiotherapy, or both on clinical outcomes in patients with unilateral lateral epicondylalgia: a randomized controlled trial",
+     "author": "Coombes BK",
+     "journal": "JAMA",
+     "year": "2013",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/23385272/"
+    }
+   ]
+  },
+  {
+   "use": "fat_loss",
+   "label": "Fat loss",
+   "placebo_pct": 20,
+   "low": 16,
+   "high": 25,
+   "short": "about 20% lose 5% on a placebo",
+   "says": "In weight-loss drug trials, about 20% of people on a placebo (with diet and exercise advice) lost at least 5% of their weight.",
+   "defined_as": "Losing at least 5% of starting body weight while on placebo",
+   "population": "Adults with overweight or obesity in placebo-controlled weight-loss drug trials",
+   "weeks": "varies (52 in the 1-year analysis)",
+   "pooled": "69 trials, 20,454 patients; 1-year analysis: 28 trials, 29,018 patients",
+   "confidence": "good",
+   "caveat": "Low–high is the 95% CI of the pooled estimate, not the trial-to-trial spread; the share rises with trial length (median 23% at 1 year). Placebo arms in these trials usually also get diet and exercise advice, so this is 'advice plus placebo', not doing nothing.",
+   "sources": [
+    {
+     "title": "The placebo response rate and nocebo events in obesity pharmacological trials. A systematic review and meta-analysis",
+     "author": "Chin YH",
+     "journal": "EClinicalMedicine",
+     "year": "2022",
+     "url": "https://doi.org/10.1016/j.eclinm.2022.101685"
+    },
+    {
+     "title": "Association of Pharmacological Treatments for Obesity With Weight Loss and Adverse Events: A Systematic Review and Meta-analysis",
+     "author": "Khera R",
+     "journal": "JAMA",
+     "year": "2016",
+     "url": "https://doi.org/10.1001/jama.2016.7602"
+    }
+   ]
+  }
+ ],
+ "not_shown": [
+  {
+   "use": "energy",
+   "why": "The only meta-analysis is in chronic fatigue syndrome (about 20% improved on a placebo; Cho 2005, Psychosomatic Medicine), a very different group from healthy people after more energy."
+  },
+  {
+   "use": "libido",
+   "why": "Sexual-dysfunction meta-analyses report score changes or the share of successful attempts, not the share of people who improved."
+  },
+  {
+   "use": "hair",
+   "why": "No peer-reviewed meta-analysis of placebo arms gives a share of people who improved."
+  },
+  {
+   "use": "focus",
+   "why": "The adult ADHD meta-analysis (Castells 2022, 94 trials) reports an average 23% drop in symptoms, not a share of people."
+  }
+ ]
+}

@@ -7,6 +7,7 @@
 // not evidence; plain words when neither has anything yet. Safety comes before either: for
 // anything on FDA's safety-risk list, or in pregnancy, the studies and the status lead.
 import usesList from '../_shared/uses.json' with { type: 'json' };
+import baselinesFile from '../_shared/baselines.json' with { type: 'json' };
 import { cleanField } from './guard.ts';
 import { BLOCKED, type Goal, GOALS, type Item, LEVEL_SHORT, type Pulse, type Signal } from './library.ts';
 
@@ -21,6 +22,15 @@ export const useById = (id: string | undefined | null) => USES.find((u) => u.id 
 // can't put something at the top
 export const RANK_MIN = { reports: 10, voices: 5 };
 
+// How many people improve anyway, on a placebo or with time alone, for some uses
+// (shared/baselines.json, from meta-analyses and large trials): context for what members report,
+// never a direct comparison
+export type Baseline = { use: string; placebo_pct: number; low: number; high: number; short: string; says: string; confidence: string };
+const BASELINES: Baseline[] = ((baselinesFile as { uses?: Baseline[] }).uses ?? [])
+  .filter((b) => b && typeof b.use === 'string' && Number.isFinite(b.placebo_pct) && typeof b.says === 'string');
+export const baselineFor = (id: string | null | undefined) => BASELINES.find((b) => b.use === id) ?? null;
+const STOP_WORDS: Record<string, string> = { done: 'it worked and they were done', no_effect: 'it didn\'t help', side_effects: 'side effects', cost: 'cost or hassle', other: 'something else' };
+
 // The studies' side, as the caller worked it out from the fact sheet (agents.ts studiesOf)
 export type Finding = { claim: string; evidence: string; source?: { title: string; year: string; url: string } };
 export type Studies = {
@@ -29,7 +39,9 @@ export type Studies = {
   main: string | null;     // the fact sheet's grade for its main use
   finding: Finding | null; // its best finding (about what was asked, when there is one)
 };
-type UseRow = { id: string; label: string; rating: number | null; reports: number; forum: string | null };
+// rating: pooled (what members report for that use everywhere, moving toward this compound's own
+// reports); low, high: its likely range; betterPct: the share of its reports that said better
+type UseRow = { id: string; label: string; rating: number | null; low: number | null; high: number | null; betterPct: number | null; reports: number; forum: string | null };
 export type Community = {
   score: number; level: string; levelName: string;
   firstHand: number;       // members' own first-hand reports
@@ -45,6 +57,15 @@ export type Community = {
   uses: UseRow[];
   sideEffects: { effect: string; n: number }[];   // n: how many reports mention it
   themes: { theme: string; label: string }[];     // what people describe most (Miracle Health's forum research)
+  // How many improve anyway for what was asked (or its closest use), from trials: context only
+  baseline: { use: string; pct: number; says: string } | null;
+  // Side effects reported unusually often for it, compared with every other compound
+  watch: { effect: string; n: number; of: number; pct: number; othersPct: number }[];
+  serious: number;   // members' reports describing a reaction that sounded serious (3 or more)
+  // What members' check-ins 2 to 12 weeks on say
+  checkins: { reports: number; still: number; stopped: number; reasons: { reason: string; n: number }[]; at12: number; still12: number } | null;
+  // Counted forum data from sources whose terms allow it
+  forumCounts: { source: string; posts: number; positive: number | null; mixed: number | null; negative: number | null }[];
 };
 // Which source the answer starts with, for this compound and this question; why: when safety
 // decides it rather than the evidence
@@ -76,11 +97,18 @@ export function communityOf(sig: Signal | null | undefined, use: Use | null, lab
   const read = o ? n0(o.better) + n0(o.same) + n0(o.worse) : 0;
   const label = (id: string) => words(labels[id]?.[0] ?? useById(id)?.label ?? id.replace(/_/g, ' '), 40);
   type Raw = NonNullable<Signal['by_use']>[number];
-  const row = (u: Raw): UseRow => ({
-    id: words(u.use, 30), label: label(u.use),
-    rating: typeof u.rating === 'number' && Number.isFinite(u.rating) ? Math.round(u.rating) : null,
-    reports: n0(u.reports), forum: u.forum ? words(u.forum, 20) : null,
-  });
+  const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? Math.round(x) : null);
+  const row = (u: Raw): UseRow => {
+    const rating = num(u.rating);
+    const low = rating != null ? num(u.low) : null;
+    const high = rating != null ? num(u.high) : null;
+    return {
+      id: words(u.use, 30), label: label(u.use), rating,
+      ...(low != null && high != null && low <= rating! && high >= rating! ? { low, high } : { low: null, high: null }),
+      betterPct: rating != null ? num(u.better_pct) : null,
+      reports: n0(u.reports), forum: u.forum ? words(u.forum, 20) : null,
+    };
+  };
   const heard = (u: Raw) => typeof u.rating === 'number' || !!u.forum;
   const best = (a: Raw, b: Raw) => Number(typeof b.rating === 'number') - Number(typeof a.rating === 'number')
     || Number(b.rating ?? 0) - Number(a.rating ?? 0) || forumRank(b.forum) - forumRank(a.forum);
@@ -98,12 +126,29 @@ export function communityOf(sig: Signal | null | undefined, use: Use | null, lab
       better: n0(o!.better), same: n0(o!.same), worse: n0(o!.worse),
       pct: typeof o!.better_pct === 'number' ? Math.round(o!.better_pct) : Math.round((100 * n0(o!.better)) / read),
     } : null,
-    use: use ? (mine ? { ...row(mine), id: use.id, label: use.label } : { id: use.id, label: use.label, rating: null, reports: 0, forum: null }) : null,
+    use: use ? (mine ? { ...row(mine), id: use.id, label: use.label } : { id: use.id, label: use.label, rating: null, low: null, high: null, betterPct: null, reports: 0, forum: null }) : null,
     near: near ? row(near) : null,
     // What it's used for: rated uses first, then what the forums mention most
     uses: [...byUse].filter(heard).sort(best).slice(0, 3).map(row),
     sideEffects: (Array.isArray(sig.side_effects) ? sig.side_effects : []).slice(0, 4).map((e) => ({ effect: cleanField(e?.effect, 40), n: n0(e?.n) })).filter((e) => e.effect),
     themes: (Array.isArray(sig.themes) ? sig.themes : []).slice(0, 3).map((t) => ({ theme: cleanField(t?.theme, 60), label: words(t?.label, 20) })).filter((t) => t.theme),
+    baseline: (() => {
+      const b = baselineFor(use?.id) ?? (near ? baselineFor(near.use) : null);
+      return b ? { use: b.use, pct: Math.round(b.placebo_pct), says: words(b.says, 240) } : null;
+    })(),
+    watch: (Array.isArray(sig.watch) ? sig.watch : []).slice(0, 3)
+      .map((w) => ({ effect: cleanField(w?.effect, 40), n: n0(w?.n), of: n0(w?.of), pct: n0(w?.pct), othersPct: Math.max(0, Math.round(Number(w?.others_pct) * 10) / 10 || 0) }))
+      .filter((w) => w.effect && w.n && w.of),
+    serious: n0(sig.serious),
+    checkins: sig.checkins && n0(sig.checkins.reports) ? {
+      reports: n0(sig.checkins.reports), still: n0(sig.checkins.still), stopped: n0(sig.checkins.stopped),
+      reasons: Object.entries(sig.checkins.reasons ?? {}).filter(([k]) => STOP_WORDS[k]).map(([reason, n]) => ({ reason, n: n0(n) })).filter((r) => r.n).sort((a, b) => b.n - a.n),
+      at12: n0(sig.checkins.at12), still12: n0(sig.checkins.still12),
+    } : null,
+    forumCounts: (Array.isArray(sig.forum_counts) ? sig.forum_counts : []).slice(0, 2)
+      .map((f) => ({ source: words(f?.source, 60), posts: n0(f?.posts), positive: typeof f?.positive_pct === 'number' ? Math.round(f.positive_pct) : null,
+        mixed: typeof f?.mixed_pct === 'number' ? Math.round(f.mixed_pct) : null, negative: typeof f?.negative_pct === 'number' ? Math.round(f.negative_pct) : null }))
+      .filter((f) => f.source && f.posts),
   };
 }
 
@@ -130,7 +175,7 @@ export function voiceOf(item: Pick<Item, 'id' | 'name'>, studies: Studies | null
 // What the community reports most for one use: members' ratings first (only those with enough
 // reports from enough members), then how often the public forums mention it, then the overall
 // Signal. What people report, never a recommendation, and never anything blockedItem() keeps off.
-export type TopRow = { id: string; name: string; status: string; rating: number | null; reports: number; forum: string | null; score: number; level: string };
+export type TopRow = { id: string; name: string; status: string; rating: number | null; low: number | null; high: number | null; reports: number; forum: string | null; score: number; level: string };
 export function communityTop(signals: Record<string, Signal>, byId: Map<string, Item>, use: Use, n = 5): TopRow[] {
   const rows: TopRow[] = [];
   for (const [id, sig] of Object.entries(signals ?? {})) {
@@ -140,10 +185,16 @@ export function communityTop(signals: Record<string, Signal>, byId: Map<string, 
     if (!u) continue;
     const rated = typeof u.rating === 'number' && Number.isFinite(u.rating) && n0(u.reports) >= RANK_MIN.reports && n0(u.voices) >= RANK_MIN.voices;
     if (!rated && !u.forum) continue;
-    rows.push({ id, name: it.name, status: it.status, rating: rated ? Math.round(u.rating!) : null, reports: rated ? n0(u.reports) : 0, forum: u.forum ? words(u.forum, 20) : null,
+    const rating = rated ? Math.round(u.rating!) : null;
+    const ranged = rated && typeof u.low === 'number' && typeof u.high === 'number' && u.low <= rating! && u.high >= rating!;
+    rows.push({ id, name: it.name, status: it.status, rating, low: ranged ? Math.round(u.low!) : null, high: ranged ? Math.round(u.high!) : null,
+      reports: rated ? n0(u.reports) : 0, forum: u.forum ? words(u.forum, 20) : null,
       score: Math.round(Number(sig.score) * 10) / 10, level: LEVEL_SHORT[sig.certification ?? ''] ? sig.certification! : 'forum' });
   }
-  rows.sort((a, b) => Number(b.rating != null) - Number(a.rating != null) || (b.rating ?? 0) - (a.rating ?? 0) || b.reports - a.reports
+  // Members' ratings by the low end of their likely range (how sure the community can be), then the
+  // rating, then how many reported; the forums after
+  const floor = (r: TopRow) => r.low ?? r.rating ?? 0;
+  rows.sort((a, b) => Number(b.rating != null) - Number(a.rating != null) || floor(b) - floor(a) || (b.rating ?? 0) - (a.rating ?? 0) || b.reports - a.reports
     || forumRank(b.forum) - forumRank(a.forum) || b.score - a.score || a.name.localeCompare(b.name));
   return rows.slice(0, n);
 }
@@ -162,7 +213,17 @@ function studiesLine(s: Studies | null): string {
 }
 const FORUM_WORDS: Record<string, string> = { 'very common': 'very often', common: 'often', mixed: 'now and then, with mixed reports', occasional: 'now and then' };
 const forumWords = (f: string) => `the public forums mention it ${FORUM_WORDS[f.toLowerCase()] ?? 'now and then'}`;
-const useWords = (u: UseRow) => (u.rating != null ? `members rate it ${u.rating}/100 from ${plural(u.reports, 'report')}` : forumWords(u.forum ?? 'occasional'));
+const range = (r: { low: number | null; high: number | null }) => (r.low != null && r.high != null ? ` (likely ${r.low} to ${r.high})` : '');
+const useWords = (u: UseRow) => (u.rating != null
+  ? `members rate it ${u.rating}/100${range(u)} from ${plural(u.reports, 'report')}${u.betterPct != null ? `, ${u.betterPct}% of which said better` : ''}`
+  : forumWords(u.forum ?? 'occasional'));
+// What the community knows about safety: the side-effect watch and serious reactions
+function safetyLines(c: Community): string[] {
+  const out: string[] = [];
+  if (c.watch.length) out.push(`Side-effect watch: members report ${c.watch.map((w) => `${said(w.effect)} unusually often with it (${w.n} of ${w.of} reports, ${w.pct}%, against ${w.othersPct}% for other compounds)`).join('; ')}. Say so in plain words with the caution line.`);
+  if (c.serious) out.push(`${plural(c.serious, 'member report')} describe a reaction that sounded serious. A serious reaction needs medical help, and anyone can report one to the FDA through MedWatch.`);
+  return out;
+}
 export function communityLine(c: Community | null): string {
   if (!c) return 'Community: no Signal yet (no member reports, and the public forums haven\'t been read for it).';
   const parts: string[] = [];
@@ -184,8 +245,16 @@ export function communityLine(c: Community | null): string {
     const o = c.outcomes;
     parts.push(`Across all uses, ${o.better + o.same + o.worse} members' first-hand reports so far: ${o.better} better, ${o.same} about the same, ${o.worse} worse.`);
   }
+  if (c.checkins) {
+    const k = c.checkins;
+    parts.push(`Check-ins 2 to 12 weeks after a report: ${plural(k.reports, 'report')} followed up; ${k.still} still taking it, ${k.stopped} stopped${k.reasons.length ? ` (${k.reasons.map((r) => `${STOP_WORDS[r.reason]}: ${r.n}`).join(', ')})` : ''}${k.at12 ? `; at 12 weeks, ${k.still12} of ${k.at12} were still taking it` : ''}.`);
+  }
   if (c.themes.length) parts.push(`What people on the forums describe most: ${c.themes.map((t) => `${said(t.theme)} (${t.label.toLowerCase()})`).join(', ')}.`);
+  if (c.forumCounts.length) parts.push(`Counted forum data: ${c.forumCounts.map((f) => `${f.source}, ${plural(f.posts, 'post')} read${f.positive != null ? `: ${f.positive}% positive, ${f.mixed ?? 0}% mixed, ${f.negative ?? 0}% negative` : ''}`).join('; ')}.`);
   if (c.sideEffects.length) parts.push(`Side effects mentioned in members' reports: ${c.sideEffects.map((e) => `${said(e.effect)} (${plural(e.n, 'report')})`).join(', ')}.`);
+  parts.push(...safetyLines(c));
+  // How many improve anyway: said once, as context for what people report, never as a comparison
+  if (c.baseline && c.use) parts.push(`For context, how many improve anyway: ${c.baseline.says} A member's "better" is self-reported, so this is context, not a comparison; say it in a few words when you give what people report on this.`);
   return parts.join(' ');
 }
 export function leadLine(v: Voice): string {
@@ -209,7 +278,8 @@ export function leadLine(v: Voice): string {
 export function voiceLine(v: Voice): string {
   const fx = v.community?.sideEffects ?? [];
   const community = v.why === 'pregnant' ? 'Community: left out in pregnancy.'
-    : v.why === 'reaction' ? (fx.length ? `Community: only the side effects mentioned in members' reports: ${fx.map((e) => `${said(e.effect)} (${plural(e.n, 'report')})`).join(', ')}.` : 'Community: left out while they describe a possible reaction.')
+    : v.why === 'reaction' ? [fx.length ? `Community: only the side effects mentioned in members' reports: ${fx.map((e) => `${said(e.effect)} (${plural(e.n, 'report')})`).join(', ')}.` : 'Community: left out while they describe a possible reaction.',
+      ...(v.community ? safetyLines(v.community) : [])].join(' ')
     : communityLine(v.community);
   return `${v.name} [${v.id}], the studies and the community. ${studiesLine(v.studies)} ${community}\n${leadLine(v)}`;
 }
@@ -227,8 +297,8 @@ export const COMMUNITY_DOWN = 'Community: its numbers couldn\'t be loaded just n
 export function topText(top: TopRow[], use: Use | null, status: (id: string) => string = () => ''): string {
   if (!use) return '';
   if (!top.length) return `Nothing on the community's list for ${lower(use.label)} yet.`;
-  return [`What the community reports most for ${lower(use.label)} (members' ratings first, counted only with ${RANK_MIN.reports} or more reports from ${RANK_MIN.voices} or more people; then how often the public forums mention it). What people report, not a recommendation and never a reason to choose one; give each one's US status with it:`,
-    ...top.map((r, i) => `${i + 1}. ${r.name} [${r.id}] (${status(r.id) || r.status}): ${r.rating != null ? `members rate it ${r.rating}/100 from ${plural(r.reports, 'report')}` : `${forumWords(r.forum ?? 'occasional')}; not rated by members`} · overall Signal ${r.score.toFixed(1)} (${LEVEL_SHORT[r.level] ?? LEVEL_SHORT.forum})`),
+  return [`What the community reports most for ${lower(use.label)} (members' ratings first, counted only with ${RANK_MIN.reports} or more reports from ${RANK_MIN.voices} or more people, in order of how sure the community can be: the low end of each likely range; then how often the public forums mention it). What people report, not a recommendation and never a reason to choose one; give each one's US status with it:`,
+    ...top.map((r, i) => `${i + 1}. ${r.name} [${r.id}] (${status(r.id) || r.status}): ${r.rating != null ? `members rate it ${r.rating}/100${range(r)} from ${plural(r.reports, 'report')}` : `${forumWords(r.forum ?? 'occasional')}; not rated by members`} · overall Signal ${r.score.toFixed(1)} (${LEVEL_SHORT[r.level] ?? LEVEL_SHORT.forum})`),
   ].join('\n');
 }
 

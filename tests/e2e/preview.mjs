@@ -136,9 +136,16 @@ await page.click('dialog button:text("Keep going")');
 await page.waitForSelector('dialog.modal', { state: 'detached' });
 await page.screenshot({ path: `${OUT}preview_02_report.png` });
 
-// The author checks the read
-await page.click('.airead button:text("Better")');
-await page.waitForSelector('.airead .kick:text("Confirmed by the author")');
+// The author checks the read: "Did we read you right?" asks the one thing it's missing (what it
+// was for), then the author confirms the rest
+await page.waitForSelector('.airead .kick:text("Did we read you right?")');
+await page.waitForSelector('.airead .ask1:has-text("what did you take it for?")');
+check('The read in one line, and one question about what it’s missing', /Better · 6 weeks/.test(await page.textContent('.airead')));
+await page.click('.airead .ask1 button:has-text("Endurance")');
+await page.waitForSelector('.airead button:has-text("Yes, that’s right")');
+check('Answering it fills in the read', /for endurance/.test(await page.textContent('.airead')), (await page.textContent('.airead')).slice(0, 140));
+await page.click('.airead button:has-text("Yes, that’s right")');
+await page.waitForSelector('.airead .kick:has-text("by the author")');
 check('Confirming Miracle AI’s read earns 10', (await waitPoints(page, afterReport)) === afterReport + 10);
 
 // A thread

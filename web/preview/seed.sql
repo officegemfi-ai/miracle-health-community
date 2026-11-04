@@ -113,7 +113,7 @@ from (values
   ('p12', 'same', '20 days', array[]::text[]), ('p17', 'same', '6 weeks', array[]::text[]),
   ('p6', 'same', '3 weeks', array['Headache']), ('p16', 'better', '8 weeks', array['Water retention']),
   ('p11', 'better', '2 weeks', array['Fatigue']), ('p19', 'better', '3 weeks', array[]::text[]),
-  ('p5', 'better', '10 weeks', array[]::text[]), ('p14', 'better', '6 weeks', array['Injection-site reaction']),
+  ('p5', 'better', '10 weeks', array[]::text[]), ('p14', 'better', '6 weeks', array['Injection site reaction']),
   ('p18', 'better', '1 week', array[]::text[]), ('p4', 'better', '8 weeks', array[]::text[]),
   ('p10', 'better', '5 weeks', array[]::text[]), ('p13', 'better', '2 months', array['Constipation']),
   ('p2', 'same', '5 weeks', array[]::text[]), ('p8', 'better', '1 week', array[]::text[]),

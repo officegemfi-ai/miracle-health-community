@@ -7,6 +7,16 @@ import { render, setRail, railCards, sigSay } from './shell.js';
 import { LEVELS, levelOf, levelAfter, shareAfter, sealSvg, flowSvg, takeoverSvg, splitBar } from './signalviz.js';
 
 export const OUTCOME = { better: ['Better', 'pos'], same: ['About the same', 'neu'], worse: ['Worse', 'neg'] };
+// Why people stopped, from their check-ins
+export const STOPPED = {
+  done: 'It worked, I’m done', no_effect: 'It didn’t help', side_effects: 'Side effects', cost: 'Cost or hassle', other: 'Something else',
+};
+// Where anyone in the US can report a serious reaction to the FDA
+export const MEDWATCH = 'https://www.fda.gov/safety/medwatch-fda-safety-information-and-adverse-event-reporting-program';
+// How many people improve on a placebo in trials, for a use (shared/baselines.json, with sources)
+export function baselineOf(use) {
+  return (S.baselines?.uses || []).find((b) => b.use === use && b.placebo_pct != null) || null;
+}
 const CAUSE = {
   report: 'a first-hand report', same: 'a “same for me”', removed: 'a post taken down', restored: 'a post restored',
   edit: 'a report edited', deleted: 'a report deleted',
@@ -142,16 +152,60 @@ function byUse(x, max = 6, compact = false) {
   return h('div', { class: `uses ${compact ? 'compact' : ''}`.trim(), 'aria-label': 'Rated by use' },
     h('div', { class: 'row between' }, h('span', { class: 'kick' }, 'Rated by use'),
       h('span', { class: 'xs mono dim' }, rated.length ? 'From first-hand reports' : 'Each use is rated after 3 reports')),
-    shown.map((u) => h('div', { class: `use ${u.rating != null ? 'rated' : 'waiting'}`, 'data-use': u.use },
-      h('span', { class: 'use-n' }, useLabel(u.use)),
-      h('b', { class: 'num' }, u.rating != null ? String(u.rating) : '—'),
-      u.rating != null ? bar(u.rating) : h('div', { class: 'bar wait' }),
-      h('span', { class: 'use-meta' }, [
-        u.reports ? `${fmtN(u.reports)} report${u.reports === 1 ? '' : 's'}` : 'No reports yet',
-        u.forum ? `forums: ${FORUM_WORD[u.forum] || String(u.forum).toLowerCase()}` : null,
-        u.rating == null && u.reports < 3 ? `${3 - (u.reports || 0)} more to rate` : null,
-      ].filter(Boolean).join(' · ')))),
+    shown.map((u) => {
+      const base = u.rating != null && u.better_pct != null ? baselineOf(u.use) : null;
+      return h('div', { class: `use ${u.rating != null ? 'rated' : 'waiting'}`, 'data-use': u.use },
+        h('span', { class: 'use-n' }, useLabel(u.use)),
+        h('b', { class: 'num', title: u.low != null ? `Likely between ${u.low} and ${u.high}` : null }, u.rating != null ? String(u.rating) : '—',
+          u.low != null && !compact ? h('span', { class: 'rng' }, ` ${u.low}–${u.high}`) : null),
+        u.rating != null ? rangeBar(u.rating, u.low, u.high) : h('div', { class: 'bar wait' }),
+        h('span', { class: 'use-meta' }, [
+          u.reports ? `${fmtN(u.reports)} report${u.reports === 1 ? '' : 's'}` : 'No reports yet',
+          u.better_pct != null ? `${u.better_pct}% said better` : null,
+          base ? `in trials: ${base.short}` : null,
+          u.forum ? `forums: ${FORUM_WORD[u.forum] || String(u.forum).toLowerCase()}` : null,
+          u.rating == null && u.reports < 3 ? `${3 - (u.reports || 0)} more to rate` : null,
+        ].filter(Boolean).join(' · ')));
+    }),
+    rated.length && !compact ? h('p', { class: 'xs dim' }, 'Each rating starts from what members report for that use across every compound and moves toward this one’s own reports, so a handful of glowing reports can’t outrank many good ones. The band is the likely range.') : null,
     !compact && list.length > max ? h('p', { class: 'xs dim' }, `+ ${list.length - max} more use${list.length - max === 1 ? '' : 's'}`) : null);
+}
+
+// A rating with its likely range: the band from low to high, the bar up to the rating
+function rangeBar(rating, low, high) {
+  const el = bar(rating, 'rbar');
+  if (low != null && high != null) {
+    const band = h('span', { class: 'band', 'aria-hidden': 'true' });
+    band.style.left = `${Math.max(0, low)}%`;
+    band.style.width = `${Math.max(1, Math.min(100, high) - Math.max(0, low))}%`;
+    el.append(band);
+  }
+  return el;
+}
+
+// The side-effect watch, serious reactions and check-ins under a Signal
+function watchTool(x) {
+  const watch = x.watch || [];
+  const serious = x.serious_reports || 0;
+  if (!watch.length && !serious) return null;
+  return h('div', { class: 'tool watch' },
+    h('span', { class: 'kick' }, 'Side-effect watch'),
+    watch.length ? h('div', { class: 'post-chips' }, watch.map((w) => h('span', { class: 'chip fx warn', title: `Reported ${w.ratio}× as often as for other compounds` },
+      `${w.effect} · ${w.n} of ${w.of} reports (${w.pct}%) · ${w.others_pct}% for others`))) : null,
+    h('p', { class: 'xs' }, [
+      watch.length ? 'Reported unusually often with this compound compared with every other one here. ' : '',
+      serious ? `${fmtN(serious)} report${serious === 1 ? '' : 's'} describe${serious === 1 ? 's' : ''} a reaction that sounded serious. ` : '',
+      'A serious reaction needs medical help; anyone can report one to the FDA through ',
+    ], h('a', { href: MEDWATCH, target: '_blank', rel: 'noopener' }, 'MedWatch'), '.'));
+}
+function checkinTool(x) {
+  const c = x.checkins || {};
+  if (!c.reports) return null;
+  const reasons = Object.entries(c.reasons || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${STOPPED[k] ? STOPPED[k].toLowerCase() : k} ${n}`);
+  return h('div', { class: 'tool' },
+    h('span', { class: 'kick' }, 'Check-ins, 2 to 12 weeks on'),
+    h('p', { class: 'xs' }, `${fmtN(c.reports)} report${c.reports === 1 ? '' : 's'} followed up: ${fmtN(c.still)} still taking it, ${fmtN(c.stopped)} stopped${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+      + (c.at12 ? ` At 12 weeks, ${fmtN(c.still12)} of ${fmtN(c.at12)} were still taking it.` : '')));
 }
 
 // The measuring tools under a Signal: its level, how first-hand reports split (with a 95%
@@ -173,6 +227,8 @@ function measuringTools(x, name) {
       : h('p', { class: 'xs tool' }, 'No first-hand reports here yet. With the first one you’ll see how reports split: better, about the same or worse.'),
     (x.side_effects_top || []).length ? h('div', { class: 'tool' }, h('span', { class: 'kick' }, 'Side effects members mention'),
       h('div', { class: 'post-chips' }, x.side_effects_top.map((e) => h('span', { class: 'chip fx' }, `${e.effect} · ${e.n}`)))) : null,
+    watchTool(x),
+    checkinTool(x),
     h('div', { class: 'tool' }, h('span', { class: 'kick' }, 'On the takeover line'),
       both((compact) => takeoverSvg({ w, max: w * 6, you: { share: x.internal_share, label: name.toUpperCase().slice(0, 18) } }, { compact }))),
     h('details', { class: 'tool built' },

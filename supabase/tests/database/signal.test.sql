@@ -179,9 +179,9 @@ select throws_ok($$ update public.posts set same_count = 500 where id = tests.id
 select tests.as_service();
 select public.record_post_read(tests.id('dan_report'), true, 'better', '1 week', null, 'claude');
 select tests.as_user('bob');
--- bob's report and carol's tap weigh 1 each, dan's report 0.5: 2.5 of 52.5 is 5%
--- (at full weight it would be 3 of 53, 6%)
-select is((select b.internal_share from tests.board('bpc157') b), 5::smallint, 'A brand-new account''s report counts half');
+-- bob's report (six weeks) weighs 1, carol's tap half a report, dan's report (one week: 0.9)
+-- half that for a brand-new account: 1.95 of 51.95 is 4% (at full weight, 2.4 of 52.4: 5%)
+select is((select b.internal_share from tests.board('bpc157') b), 4::smallint, 'A brand-new account''s report counts half');
 select is((select b.first_hand from tests.board('bpc157') b), 2, 'Both reports are counted');
 
 -- ===========================================================================

@@ -8,6 +8,7 @@ import { askLink, draftFrom } from '../kit/kit.js';
 import { signalCard, sigNum, outcomeChip, readMini, refreshSignal, movement } from './signal.js';
 import { afterEarn } from './game.js';
 import { openReport } from './post.js';
+import { dueCheckin } from './checks.js';
 import { compoundPicker, picksNote, idsFrom, partChips, searchLibrary, FAMILIES, isStack, familyLabel, containing, suggestCompound } from './library.js';
 
 // ---------------------------------------------------------------------------
@@ -262,12 +263,16 @@ export async function renderHome(sort = 'hot') {
   const joined = S.spaces.filter((s) => s.joined);
   const list = h('div', {});
   const reload = () => fillFeed(list, joined.length ? feedQuery(sort).eq('in_my_spaces', true) : feedQuery(sort), emptyHome());
+  // A check-in that's due (2, 6 or 12 weeks after one of your reports) comes first
+  const due = h('div', { class: 'due' });
+  const drawDue = () => { if (S.me.status !== 'suspended') dueCheckin(() => setTimeout(drawDue, 3500)).then((box) => due.replaceChildren(box || '')); };
+  drawDue();
   render(
     S.me.status === 'suspended' ? h('div', { class: 'msg note' }, `Your account is paused until ${new Date(S.me.suspended_until).toLocaleString()}. You can read, but not post or comment.`) : null,
     h('div', { class: 'page-h' },
       h('div', {}, h('div', { class: 'kick' }, joined.length ? `// ${joined.length} space${joined.length === 1 ? '' : 's'} you follow` : '// Everything, until you join spaces'), h('h1', {}, 'Your feed.')),
       h('p', { class: 'cap' }, 'First-hand reports, read by Miracle AI into the Community Signal.')),
-    composerBar(), sortbar('#/home', sort),
+    due, composerBar(), sortbar('#/home', sort),
     newPostsPill(list, (row) => !joined.length || (row.part_ids?.length ? row.part_ids : [row.compound_id]).some((id) => joined.some((s) => s.compound_id === id)), reload),
     list);
   setRail(await railCards('home'));
@@ -409,7 +414,7 @@ export function renderNew(param = '', d = '') {
   const updateHint = () => { hint.classList.toggle('hide', kindQ.checked); };
   kindExp.addEventListener('change', updateHint); kindQ.addEventListener('change', updateHint);
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// New post'), h('h1', {}, 'Share how it went.'))),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// New post'), h('h1', {}, 'What have you taken, and how did it go?'))),
     draft ? h('div', { class: 'msg note from-plan' }, sig(32, 'happy'),
       h('span', {}, h('b', {}, 'Drafted for you on miraclehealth.us. '), 'It’s yours to change: add side effects or anything else, check what you took, and nothing is posted until you press Post.')) : null,
     h('form', {

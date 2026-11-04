@@ -732,3 +732,35 @@ label.f.nm{margin:0}
   .signal-hero .hero-stats div:nth-child(2n){border-left:1px solid var(--ink-line)}
   .signal-hero .hero-stats div:nth-child(-n+2){border-top:0}
   .signal-hero .hero-stats div:last-child{grid-column:1/-1}}
+/* Checks on a report: the author's check on the read, one question, a serious reaction,
+   check-ins, the focus pairs, ranges by use and the side-effect watch */
+.taps{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ask1{display:grid;gap:8px;margin-top:10px}
+.ask1 .lnk{justify-self:start;font-size:12px}
+.fix{display:grid;gap:12px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line-2)}
+.fix-row{display:grid;gap:6px}
+.fix .input.xs{min-height:30px;width:auto;max-width:220px;padding:4px 10px;border-radius:10px;font-size:13px}
+.chip.rm{cursor:pointer;text-transform:none;letter-spacing:0;font:500 12.5px var(--body);height:28px}
+.chip.rm:hover{border-color:var(--neg);color:var(--neg)}
+.safety{display:flex;gap:10px;align-items:flex-start;margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:var(--neg-tint);color:var(--neg)}
+.safety p{margin:0;font-size:13.5px;line-height:1.45;color:var(--text)}
+.safety a{color:var(--text);font-weight:600}
+.safety .ic{flex:none;margin-top:1px;color:var(--neg)}
+.checkin-line{display:flex;gap:8px;align-items:center;margin:8px 0 2px;font-size:13.5px;color:var(--text-2)}
+.checkin-line .ic{color:var(--muted)}
+.card.checkin{display:grid;gap:12px;margin:12px 0;border-color:var(--lime-2);box-shadow:inset 3px 0 0 var(--lime-2)}
+.card.checkin .kick{color:var(--lime-ink)}
+.ci-q{display:grid;gap:6px}
+.due:empty{display:none}
+.card.focus .focus-list{display:grid;gap:12px;margin-top:10px}
+.focus-i{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:baseline;color:var(--text);text-decoration:none}
+.focus-i:hover .focus-n b{text-decoration:underline}
+.focus-n{font-size:14px}
+.focus-c{font-size:11.5px;color:var(--muted)}
+.focus-i .bar{grid-column:1/-1;height:5px}
+.bar.rbar{position:relative;overflow:visible}
+.bar.rbar i{position:relative;z-index:1}
+.bar.rbar .band{position:absolute;top:-3px;height:12px;border-radius:6px;background:rgba(216,255,61,.22);border:1px solid rgba(216,255,61,.45);z-index:0}
+.use .num .rng{font:500 11px var(--mono);color:rgba(252,252,252,.5);margin-left:2px}
+.chip.fx.warn{text-transform:none;letter-spacing:0;font:500 12px var(--body);height:auto;min-height:24px;padding:3px 9px;white-space:normal;background:rgba(255,154,142,.14);border-color:rgba(255,154,142,.4);color:#FFD2CC}
+.tool.watch a{color:var(--on-ink);font-weight:600}

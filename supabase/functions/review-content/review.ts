@@ -12,9 +12,21 @@ export type Outcome = 'better' | 'same' | 'worse';
 // What members take things for (shared/uses.json; the database checks the same list)
 export const USES: readonly { id: string; label: string }[] = usesList.uses;
 export type UseRead = { use: string; outcome: Outcome };
-// What the writer says happened to them, for the Community Signal (posts only)
+// One name per side effect, so the side-effect watch counts them together (the database maps
+// other words for these to the same names: private.effect_terms)
+export const EFFECTS = [
+  'Nausea', 'Vomiting', 'Stomach upset', 'Constipation', 'Diarrhea', 'Bloating', 'Headache', 'Migraine',
+  'Injection site reaction', 'Fatigue', 'Trouble sleeping', 'Vivid dreams', 'Dizziness', 'Flushing',
+  'Fast heartbeat', 'Water retention', 'Increased hunger', 'Low appetite', 'Numbness or tingling', 'Acne',
+  'Hair loss', 'Low mood', 'Mood swings', 'Irritability', 'Anxiety', 'Low libido', 'Joint pain',
+  'Muscle aches', 'Rash', 'Darker skin or moles', 'Low blood sugar', 'High blood pressure', 'Brain fog',
+  'Sweating', 'Breast tenderness',
+] as const;
+// What the writer says happened to them, for the Community Signal (posts only). serious: a
+// reaction that sounds like it needed, or needs, urgent care
 export type SignalRead = {
   first_hand: boolean; outcome: Outcome | null; duration: string | null; side_effects: string[]; uses: UseRead[];
+  serious: boolean;
 };
 export type Verdict = { verdict: 'ok' | 'hold'; categories: Category[]; explanation: string; signal?: SignalRead };
 
@@ -40,14 +52,16 @@ export function systemPrompt(): string {
     '- A post may be about a stack (several compounds taken together). Then read how the stack as a whole went; don\'t split it by compound.',
     '- outcome: how the writer says they are now compared with before they started: "better", "same" or "worse". null if they don\'t say.',
     '- duration: how long they used it, short and in their words (for example "6 weeks"). null if they don\'t say.',
-    '- side_effects: up to three side effects they say they had, in plain words (for example "Nausea"). [] if none.',
+    '- side_effects: up to three side effects they say they had. Use one of these names when one fits: '
+      + EFFECTS.join(', ') + '. Otherwise a short plain name (for example "Metallic taste"). [] if none.',
+    '- serious: true only if what they describe sounds like it needed urgent medical care or could be dangerous: an ER or hospital visit, chest pain, trouble breathing, fainting, a seizure, a severe allergic reaction (swelling of the face or throat), vision loss, signs of a stroke, severe belly pain, yellow skin or eyes, vomiting blood or black stools. Otherwise false.',
     '- uses: what they took it for, up to three, each with how that went for them ("better", "same" or "worse"). Pick only from these ids: '
       + USES.map((u) => `${u.id} (${u.label})`).join(', ') + '. [] if they don\'t say what it was for. Side effects are not uses.',
     '',
     'Answer with JSON only, no other text, in exactly this shape:',
     '{"verdict":"ok"|"hold","categories":[...],"explanation":"one short sentence for the moderators",'
       + '"signal":{"first_hand":true|false,"outcome":"better"|"same"|"worse"|null,"duration":"..."|null,"side_effects":[...],'
-      + '"uses":[{"use":"<id>","outcome":"better"|"same"|"worse"}]}}',
+      + '"uses":[{"use":"<id>","outcome":"better"|"same"|"worse"}],"serious":true|false}}',
     'For comments, leave "signal" out.',
     `Allowed categories: ${CATEGORIES.join(', ')}.`,
   ].join('\n');
@@ -96,6 +110,7 @@ export function parseVerdict(raw: string): Verdict {
           .map((x) => x.trim().slice(0, 40)).slice(0, 3)
         : [],
       uses: readUses(r.uses, outcome),
+      serious: r.serious === true,
     };
   }
   return out;

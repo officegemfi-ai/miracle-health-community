@@ -41,6 +41,7 @@ export type Screen = {
   uses: string[];   // what they want it for, as the Signal rates it (shared/uses.json), most important first
   asks_community: boolean; // they ask what other people, members or the forums report, use or rate
   reaction: boolean;       // something happening now that could be a reaction to what they take or inject
+  compare: boolean;        // they weigh compounds against each other (X vs Y, which is better for...)
   ok: boolean;     // false: the Safety agent couldn't run, so only the plain checks did
 };
 export type Finding = { ids: string[]; kind: string; level: 'avoid' | 'caution' | 'info'; note: string };
@@ -49,8 +50,10 @@ export type Audit = { findings: Finding[]; summary: string; ok: boolean };
 const MAX_ROUNDS = 6;
 // A reply with cards but fewer characters of words than this gets written again, once
 const FEW_WORDS = 240;
-const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the short version of what they asked (two or three sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, the one caution line, and at most one short question at the end. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
+const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the bottom line of what they asked (two sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, the one caution line, and at most one short question at the end. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
+// Weighing compounds against each other, in plain words (the Safety agent reads it too)
+const COMPARE = /\b(?:vs\.?|versus|compared?\s+(?:to|with)|comparison|which\s+(?:is|one\s+is|works?)\s+better|better\s+than|difference\s+between)\b/i;
 // Food-like, low-risk supplements a plan may add before the Library has a fact sheet for them
 // (protein, amino acids, fiber, electrolytes, basic vitamins and minerals); any other
 // supplement needs a fact sheet first
@@ -128,7 +131,8 @@ export function plainScreen(text: string): Screen {
   return {
     red_flag: CRISIS.test(text) ? 'self_harm' : URGENT.test(text) ? 'emergency' : MINOR.test(text) ? 'minor' : 'none',
     compounds: [], goals: [], medications: [], conditions: [], pregnant: PREGNANT.test(text), tested_athlete: false,
-    asks_dose: false, asks_source: false, note: '', injects: INJECTS.test(text), uses: [], asks_community: false, reaction: false, ok: false,
+    asks_dose: false, asks_source: false, note: '', injects: INJECTS.test(text), uses: [], asks_community: false, reaction: false,
+    compare: COMPARE.test(text), ok: false,
   };
 }
 
@@ -160,6 +164,7 @@ export async function screenMessage(messages: ChatMessage[], deps: TurnDeps): Pr
     uses: [...new Set(strs(raw.uses, 3, 30).filter((u) => USE_IDS.includes(u)))],
     asks_community: raw.asks_community === true,
     reaction: raw.reaction === true,
+    compare: raw.compare === true,
     ok: true,
   };
   // The plain checks still apply: a sign of crisis or an emergency is never left to one reader
@@ -223,7 +228,8 @@ function screenNote(s: Screen, st: Standing, shortlists: boolean): string {
     `conditions, in their words: ${list(s.conditions)}`,
     `pregnant, trying or breastfeeding: ${yes(s.pregnant || st.pregnant)}`,
     `drug-tested athlete: ${yes(s.tested_athlete)}`,
-    s.reaction ? 'a possible reaction to something they take or inject, happening now: yes (what to do about it comes first; the community\'s ratings and lists are left out this turn)' : '',
+    s.reaction ? 'a possible reaction to something they take or inject, happening now: yes (what to do about it comes first; the community\'s ratings and lists are left out this turn; if it could be serious, say once that serious reactions can be reported to the FDA through MedWatch: the When to get help card links it)' : '',
+    s.compare ? 'they\'re weighing compounds against each other: compare, don\'t pick a winner' : '',
     `asked for a dose: ${yes(s.asks_dose)}${s.asks_dose ? ' (explain once why there are no doses here, then help with the rest)' : ''}`,
     `asked where to get it: ${yes(s.asks_source)}${s.asks_source ? ' (no sellers or brands; say why briefly)' : ''}`,
     shortlists ? '' : 'shortlists and plans are off for this turn',
@@ -315,6 +321,41 @@ function auditText(a: Audit, byId: Map<string, Item>): string {
 // small batches while the guide keeps writing, and go out in order.
 // ---------------------------------------------------------------------------
 type Fix = { find: string; replace: string };
+
+// ---------------------------------------------------------------------------
+// The number check: a number in a reply should come from what Miracle AI was given (its
+// instructions, the notes and fact sheets for the turn, what the tools returned, the member's own
+// words). One that doesn't (like "51 forum posts" when the notes said 51 Signals) is flagged to the
+// Safety agent's check, which cuts it or says it without a number. Small counts (up to 12) need
+// no source; numbers in names (BPC-157, GLP-1, 5-HTP) aren't numbers.
+// ---------------------------------------------------------------------------
+const SOURCE_NUM = /\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g;
+const REPLY_NUM = /(?<![\w.\-\/])(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?(?![\w\-]|\.\d|\/\d)/g;
+const numKey = (raw: string) => {
+  const n = Number(raw.replace(/,/g, ''));
+  return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : '';
+};
+export function sourceNumbers(text: string, into: Set<string> = new Set()): Set<string> {
+  for (const m of String(text ?? '').matchAll(SOURCE_NUM)) {
+    const k = numKey(m[0]);
+    if (!k) continue;
+    into.add(k);
+    // A decimal also stands for its whole number either way ("74.6" covers "about 75")
+    const n = Number(k);
+    if (!Number.isInteger(n)) { into.add(String(Math.floor(n))); into.add(String(Math.ceil(n))); }
+  }
+  return into;
+}
+export function unsourcedNumbers(text: string, known: Set<string>): string[] {
+  const plain = String(text ?? '').replace(/\]\([^)]*\)/g, ']');
+  const out: string[] = [];
+  for (const m of plain.matchAll(REPLY_NUM)) {
+    const k = numKey(m[1] + (m[2] ?? ''));
+    if (!k || (Number(k) <= 12 && Number.isInteger(Number(k))) || known.has(k) || out.includes(m[0])) continue;
+    out.push(m[0]);
+  }
+  return out.slice(0, 6);
+}
 type Verdict = { ok: boolean; revised?: string; broken?: number[]; fixes?: Fix[] };
 // Disclaimers belong in the reply's one caution line. A change that only adds one to a part that
 // describes benefits (and makes no strong claim) isn't made; a claim that goes too far is softened.
@@ -360,6 +401,11 @@ export class Gate {
   released = '';
   cards = 0;
   checked = 0; edited = 0; held = 0; unchecked = 0;
+  // Numbers flagged to the check as not found in Miracle AI's sources (for the log)
+  unsourced = 0;
+  private known = new Set<string>();
+  // Everything Miracle AI was given this turn: the numbers in it are the ones a reply may use
+  sources(text: string) { sourceNumbers(text, this.known); }
   // Which rules the check found broken, by number (no text): for tuning the guide
   rules: number[] = [];
   wordsFirst = false;
@@ -513,10 +559,13 @@ export class Gate {
     const code = nonce();
     const s = this.screen;
     const hits = parts.flatMap((p) => scan(p.text).map((h) => `${p.id}: "${h.text}" (${h.kind})`)).slice(0, 12);
+    const nums = parts.filter((p) => p.kind === 'text').flatMap((p) => unsourcedNumbers(p.text, this.known).map((n) => `${p.id}: "${n}"`));
+    this.unsourced += nums.length;
     const prompt = [
       markers(code),
       `Flags for this turn: red flag ${s.red_flag}${this.st.minor ? '; under 18 (from this chat)' : ''}${this.st.crisis ? '; signs of crisis earlier in this chat' : ''}${s.pregnant || this.st.pregnant ? '; pregnant, trying to conceive or breastfeeding' : ''}; asked for a dose: ${s.asks_dose ? 'yes' : 'no'}; asked where to get it: ${s.asks_source ? 'yes' : 'no'}.`,
       hits.length ? `Plain checks flagged these words to look at: ${hits.join(', ')}.` : 'Plain checks flagged nothing.',
+      nums.length ? `Numbers not found in what Miracle AI was given this turn (rule 8): ${nums.join(', ')}.` : '',
       wrap(code, 'the member\'s latest message', this.last.slice(0, 2000)),
       this.released ? wrap(code, 'already shown to the member, for context only', maskTargets(this.released.slice(-2500)).text) : '',
       ...parts.map((p) => wrap(code, `part ${p.id} (${p.kind === 'text' ? 'reply text' : 'card label'})`, p.text)),
@@ -536,7 +585,7 @@ export class Gate {
             ? (v.fixes as Record<string, unknown>[]).filter((f) => typeof f?.find === 'string' && f.find).slice(0, 8)
               .map((f) => ({ find: String(f.find).slice(0, 600), replace: typeof f.replace === 'string' ? f.replace.slice(0, 600) : '' }))
             : undefined,
-          broken: (Array.isArray(v.broken) ? v.broken : []).map(Number).filter((n) => n >= 1 && n <= 7),
+          broken: (Array.isArray(v.broken) ? v.broken : []).map(Number).filter((n) => n >= 1 && n <= 8),
         });
       }
       return out;
@@ -842,6 +891,35 @@ function voicesCard(ids: string[], ctx: Ctx): string | null {
   return card;
 }
 
+// Two to four compounds side by side for what the member asked: what the studies show, what the
+// community reports, US status and the one caution for each. Proven options first, then in the
+// order they named them; never ranked by what people report, and no winner.
+function compareCard(ids: string[], ctx: Ctx): string | null {
+  const pregnant = ctx.screen.pregnant || ctx.st.pregnant;
+  const note: CardItem['communityNote'] | null = pregnant ? 'pregnancy' : ctx.screen.reaction ? 'reaction' : ctx.snap.ok === false ? 'down' : null;
+  const items = ids.filter((id) => ctx.byId.has(id)).slice(0, 4).map((id, order) => {
+    const it = ctx.byId.get(id)!;
+    const sh = ctx.sheets.get(id);
+    const v = voiceFor(id, ctx)!;
+    const key = sh?.status_us?.key ?? it.status ?? '';
+    const { tag, tone } = tagFor(it, sh, ctx.byId);
+    return {
+      id, name: v.name, url: `/library/${id}/`, family: familyOne(it.family), tag, tone, order,
+      status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null,
+      studies: v.studies, community: note ? null : v.community, lead: v.lead, ...(note ? { communityNote: note } : {}),
+      caution: cautionFor(it, sh, pregnant), proven: proven(key) === 0,
+    };
+  }).sort((a, b) => Number(b.proven) - Number(a.proven) || a.order - b.order).map(({ order: _o, ...i }) => i);
+  if (items.length < 2) return null;
+  const card = `card${++ctx.stepN}`;
+  ctx.gate.card([], () => {
+    ctx.memo.push(`a comparison of ${items.map((i) => `${i.name} [${i.id}]`).join(', ')}`);
+    step(ctx, { id: nextId(ctx, 'cmp'), agent: 'builder', status: 'done', title: `Laid ${items.length} side by side`, chips: items.map((i) => chip(i.id, ctx)) });
+    return { type: 'compare', id: card, use: ctx.use ? { id: ctx.use.id, label: ctx.use.label } : null, items };
+  }, { tag: 'compare', count: false });
+  return card;
+}
+
 // What the community reports most for what they want it for, when they ask: members' ratings
 // first, then the public forums. What people report, never a recommendation: each shows its US
 // status, and nothing on FDA's safety-risk list is ever on it.
@@ -1137,6 +1215,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       // the community on what they named come with the full answer
       ctx.gate.dropWaiting('voices');
       ctx.gate.dropWaiting('crowd');
+      ctx.gate.dropWaiting('compare');
       if (ctx.gate.dropWaiting('stack')) {
         step(ctx, { id: 'synergy', agent: 'synergy', status: 'done', title: 'Will check your stack with your answers' });
       }
@@ -1180,6 +1259,9 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const minor = screen.red_flag === 'minor' || st.minor;
   const held = screen.red_flag === 'self_harm' || screen.red_flag === 'emergency' || minor;
   const gate = new Gate(emit, deps, screen, { ...st, minor }, last);
+  // The number check knows what the member and Miracle AI have said in this chat; the notes, fact
+  // sheets and tool results are added as they come
+  for (const m of messages) gate.sources(m.content);
   // What they want it for, as the community rates it: the use that belongs to the goal they want
   // help with (both voices answer the same question); its goal stands in when they named none
   const use = held ? null : screen.goals.length
@@ -1236,6 +1318,8 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // The community's list answers what they asked about, even when it's not the goal the studies
   // answer for (no studies voice is involved in it)
   const listUse = use ?? (screen.asks_community && !held ? useById(screen.uses[0]) : null);
+  // Weighing two to four compounds against each other: a comparison, side by side, not their stack
+  const comparing = !held && screen.compare && named.length >= 2 && named.length <= 4;
   if (!held && items.length && (named.length || listUse)) {
     voices.push(...named.slice(0, 4).map((id) => voiceFor(id, ctx)).filter((v): v is Voice => !!v));
     // What the community reports most for a use: only when they ask, never in pregnancy or when
@@ -1254,13 +1338,14 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       voices.length ? 'What the studies show and what the community reports on each compound they named, and which leads for this question, come with its fact sheet below.' : '',
       showVoices ? `After your opening words the member sees a card with the studies and the community side by side on ${voices.map((v) => v.name).join(', ')} (if you ask them questions first, it comes with your full answer instead). Don't read its numbers out one by one: say what they mean for their question, starting with the voice your notes say leads.` : '',
       showCrowd ? `After your opening words the member sees a card of what the community reports most for ${listUse!.label.toLowerCase()}, each with its US status. Say what stands out and how the studies compare; don't list it again.` : '',
+      comparing && ctx.shortlistsOn ? `They're comparing ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}. After your opening words they see a card with them side by side${use ? ` for ${use.label.toLowerCase()}` : ''}: what the studies show, what the community reports, US status and the one caution for each. Don't pick a winner, and never rank them by what people report: say how they differ for their goal (evidence in people, what people report, status, risks), proven options first, and what to ask a clinician. Don't read the card's numbers out.` : '',
     ].filter(Boolean).join('\n');
   }
 
   // 3. The Synergy auditor, when the member's own compounds and medicines meet
   let synNote = '';
   let upfront: Audit | null = null;
-  if (named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant))) {
+  if (!comparing && (named.length >= 2 || (named.length >= 1 && (screen.medications.length || screen.conditions.length || pregnant)))) {
     emit('step', { id: 'synergy', agent: 'synergy', status: 'run', title: `Checking ${named.length > 1 ? `${named.length} together` : ctx.byId.get(named[0])?.name ?? 'it'}${screen.medications.length ? ' with your medicines' : ''}` });
     await openSheets(named, ctx);
     const a = await auditSet(named, screen.medications, screen.conditions, pregnant, ctx, deps);
@@ -1278,6 +1363,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     { type: 'text', text: guideSystem(indexText(items)), cache_control: { type: 'ephemeral' } },
     { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, community: communityNote, synergy: synNote, sheets: sheetsForTurn }) },
   ];
+  gate.sources(system.map((b) => b.text).join('\n'));
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
   // Held turns: someone under 18 can still get questions to take to their doctor; a crisis or
   // an emergency gets words only
@@ -1297,7 +1383,8 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   }
   // The Stack builder lays out what the member named, after the guide's opening words; one
   // compound on its own gets the studies and the community side by side
-  if (upfront && ctx.shortlistsOn) stackCard(named, upfront, ctx);
+  if (comparing && ctx.shortlistsOn) compareCard(named, ctx);
+  else if (upfront && ctx.shortlistsOn) stackCard(named, upfront, ctx);
   else if (upfront && upfront.ok && upfront.findings.length) auditCard(upfront, ctx);
   else if (!upfront && voices.length && ctx.shortlistsOn && snap.ok !== false && !screen.reaction) voicesCard(voices.map((v) => v.id), ctx);
   // What the community reports most for what they want it for, when they ask
@@ -1365,6 +1452,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       }
     }
     gate.flush();
+    for (const out of outs.values()) gate.sources(out);
     const results: Block[] = uses.map((u) => ({ type: 'tool_result', tool_use_id: String(u.id), content: outs.get(String(u.id)) ?? 'Skipped: too many tool calls at once.' }));
     convo.push({ role: 'user', content: results });
     // Questions for the member end the reply (once there are words before them): the answers
@@ -1403,6 +1491,8 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
         names: heard.slice(0, 8).map(([id]) => ({ id, name: ctx.byId.get(id)?.name ?? id })),
       },
       crowd: { members: Math.max(0, Math.round(Number(p.members) || 0)), reports: Math.max(0, Math.round(Number(p.reports) || 0)) },
+      // Which version of the community's numbers answered (the library's pages read the same one)
+      version: typeof snap.generated_at === 'string' ? snap.generated_at.slice(0, 40) : null,
     });
   }
 
@@ -1412,7 +1502,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     ? `Every part checked before you saw it · ${[gate.edited ? `edited ${gate.edited}` : '', notShown ? `held back ${notShown}` : ''].filter(Boolean).join(' · ')}`
     : 'Every part checked before you saw it: no doses, no sellers';
   emit('step', { id: 'review', agent: 'review', status: 'done', title, fixed: !!(gate.edited || notShown) });
-  emit('review', { ok: !(gate.edited || notShown), edited: gate.edited, held: notShown, rules: gate.rules.slice(0, 20) });
+  emit('review', { ok: !(gate.edited || notShown), edited: gate.edited, held: notShown, rules: gate.rules.slice(0, 20), numbers: gate.unsourced });
   if (ctx.shortlists || ctx.stacks || ctx.questions || ctx.plans) {
     emit('step', { id: 'clinician', agent: 'clinician', status: 'pending', title: 'Not yet: take your packet to a clinician who knows you' });
   }
@@ -1428,7 +1518,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   deps.log?.({
     ask: {
       ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, signals: heard.length, use: use?.id ?? null, shortlists: ctx.shortlists, stacks: ctx.stacks, asked: ctx.asked,
-      parts: { checked: gate.checked, edited: gate.edited, held: gate.held, unchecked: gate.unchecked }, tokens: usage,
+      parts: { checked: gate.checked, edited: gate.edited, held: gate.held, unchecked: gate.unchecked, unsourced: gate.unsourced }, tokens: usage, compare: comparing,
     },
   });
   return { memo, text: gate.released };

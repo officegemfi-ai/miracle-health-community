@@ -3,8 +3,8 @@ import { sse, stream, tuning, canForceTool } from './claude.ts';
 import { clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
 import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
-import { applyFixes, benefitsOf, plainScreen, screenTitle, settle, standing, studiesOf, tagFor, cautionFor, useOf } from './agents.ts';
-import { blockedItem, communityOf, communityTitle, communityTop, leadOf, pulseLine, topText, useById, voiceLine, voiceOf } from './community.ts';
+import { applyFixes, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
+import { baselineFor, blockedItem, communityOf, communityTitle, communityTop, leadOf, pulseLine, topText, useById, voiceLine, voiceOf } from './community.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
 
@@ -524,7 +524,8 @@ Deno.test('a part that slips in a dose is rewritten before anyone sees it', asyn
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
   assertEquals(text, 'Miracle Health doesn’t give doses.\n\nHere is what the evidence shows.');
   assert(!JSON.stringify(ev).includes('250 mcg'));
-  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [1] });   // which rule, never the text
+  // which rule, never the text (and the dose was also a number the check couldn't find in the sources)
+  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [1], numbers: 1 });
   assert(ev[ev.length - 1].data.memo.endsWith('Miracle Health doesn’t give doses.\n\nHere is what the evidence shows.'));
   // In place of a dose: what the studies show and what the community reports, side by side
   assert(ev.some((e) => e.event === 'card' && e.data.type === 'voices' && e.data.items[0].id === 'bpc157'));
@@ -541,7 +542,7 @@ Deno.test('the check changes only the words that break a rule: a claim softened,
   const ev = await events(await handle(ask([{ role: 'user', content: 'What will BPC-157 do for my tendon?' }]), deps(f)));
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
   assertEquals(text, '**Your stack is aimed at repair.** BPC-157 may speed tendon healing, and on forums people describe quicker recovery.\n\nThe one caution: it is research-stage.');
-  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [4] });
+  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [4], numbers: 0 });
   // Changes that don't fit the words as written fall back to the rewrite, or hold the part
   assertEquals(applyFixes('It speeds healing.', [{ find: 'heals fast', replace: 'may heal' }]), null);
   assertEquals(applyFixes('Most people use 250 mcg daily. It may help.', [{ find: 'Most people use 250 mcg daily.', replace: '' }]), 'It may help.');
@@ -1108,7 +1109,7 @@ Deno.test('which voice leads: studies in people when there are some, what people
   const injury = useById('injury')!;
   const sig = SNAPSHOT.signals as never as Record<string, never>;
   const bpc = communityOf(sig.bpc157, injury, SNAPSHOT.uses as never)!;
-  assertEquals([bpc.score, bpc.level, bpc.firstHand, bpc.use], [71.2, 'backed', 14, { id: 'injury', label: 'Injury healing', rating: 78, reports: 12, forum: null }]);
+  assertEquals([bpc.score, bpc.level, bpc.firstHand, bpc.use], [71.2, 'backed', 14, { id: 'injury', label: 'Injury healing', rating: 78, low: null, high: null, betterPct: null, reports: 12, forum: null }]);
   assertEquals(bpc.outcomes, { better: 10, same: 3, worse: 1, pct: 71 });
   const tb = communityOf(sig.tb500, injury)!;
   assertEquals([tb.firstHand, tb.use?.forum, tb.uses.map((u) => u.id)], [0, 'Very common', ['injury', 'tendons']]);
@@ -1148,7 +1149,7 @@ Deno.test('which voice leads: studies in people when there are some, what people
 Deno.test('nothing reported for exactly what was asked: the closest use for the same goal, said as such', () => {
   const sig = SNAPSHOT.signals as never as Record<string, never>;
   const c = communityOf(sig.bpc157, useById('tendons'), SNAPSHOT.uses as never)!;
-  assertEquals([c.use?.rating, c.use?.forum, c.near], [null, null, { id: 'injury', label: 'Injury healing', rating: 78, reports: 12, forum: null }]);
+  assertEquals([c.use?.rating, c.use?.forum, c.near], [null, null, { id: 'injury', label: 'Injury healing', rating: 78, low: null, high: null, betterPct: null, reports: 12, forum: null }]);
   assertEquals(leadOf(studiesOf(SHEET_BPC, 'recovery'), c), 'community');
   const line = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, studiesOf(SHEET_BPC, 'recovery'), c));
   assert(line.includes('Nothing reported on it for tendons & ligaments specifically yet; for injury healing, the closest use reported, members rate it 78/100 from 12 reports.'), line);
@@ -1402,4 +1403,94 @@ Deno.test('the check never hangs a caveat on a number already framed as what peo
   assertEquals(settle(text, v), { out: text, edited: false });
   // A real overclaim is still softened
   assertEquals(settle('Members say TB-500 heals hamstrings.', { ok: false, broken: [4], fixes: [{ find: 'heals', replace: 'may help' }] }), { out: 'Members say TB-500 may help hamstrings.', edited: true });
+});
+
+// ---------------------------------------------------------------------------
+// Ranges, how many improve anyway, the side-effect watch and check-ins
+// ---------------------------------------------------------------------------
+const RICH = {
+  score: 74, certification: 'verified', first_hand: 40, internal_share: 45,
+  outcomes: { better: 28, same: 8, worse: 4, better_pct: 70 },
+  by_use: [{ use: 'injury', rating: 72, low: 61, high: 81, own: 76, better_pct: 64, reports: 14, voices: 12 }],
+  watch: [{ effect: 'Headache', n: 6, of: 40, pct: 15, others_pct: 3.2, ratio: 4.6 }],
+  serious: 3,
+  checkins: { reports: 9, still: 6, stopped: 3, reasons: { side_effects: 2, no_effect: 1, junk: 4 }, at12: 4, still12: 3 },
+  forum_counts: [{ source: 'A licensed forum', posts: 412, positive_pct: 61, mixed_pct: 24, negative_pct: 15 }],
+};
+Deno.test('the community says how sure it is: a likely range, how many said better, and how many improve anyway', () => {
+  const c = communityOf(RICH as never, useById('injury'))!;
+  assertEquals(c.use, { id: 'injury', label: 'Injury healing', rating: 72, low: 61, high: 81, betterPct: 64, reports: 14, forum: null });
+  assertEquals(c.baseline?.use, 'injury');
+  assert(baselineFor('injury')!.says.includes('84%') && baselineFor('energy') === null, 'energy has no comparable trials');
+  const line = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, studiesOf(SHEET_BPC, 'recovery'), c));
+  for (const x of ['members rate it 72/100 (likely 61 to 81) from 14 reports, 64% of which said better',
+    'For context, how many improve anyway: Most acute injuries settle on their own', 'context, not a comparison',
+    'Side-effect watch: members report "headache" unusually often with it (6 of 40 reports, 15%, against 3.2% for other compounds)',
+    '3 member reports describe a reaction that sounded serious', 'MedWatch',
+    'Check-ins 2 to 12 weeks after a report: 9 reports followed up; 6 still taking it, 3 stopped (side effects: 2, it didn\'t help: 1); at 12 weeks, 3 of 4 were still taking it',
+    'Counted forum data: A licensed forum, 412 posts read: 61% positive, 24% mixed, 15% negative']) assert(line.includes(x), x);
+  assert(!line.includes('junk'));
+  // A range that doesn't hold its own rating isn't shown
+  const odd = communityOf({ ...RICH, by_use: [{ use: 'injury', rating: 72, low: 80, high: 90, reports: 14 }] } as never, useById('injury'))!;
+  assertEquals([odd.use?.low, odd.use?.high], [null, null]);
+  // A possible reaction: the watch and serious reactions still come through, the ratings don't
+  const r = voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, null, c, { reaction: true }));
+  assert(r.includes('Side-effect watch') && r.includes('MedWatch') && !r.includes('72/100'), r);
+  // No use asked: no "how many improve anyway"
+  assert(!voiceLine(voiceOf({ id: 'bpc157', name: 'BPC-157' }, null, communityOf(RICH as never, null))).includes('improve anyway'));
+});
+
+Deno.test('the community\'s list goes by how sure each rating is: three glowing reports can\'t outrank many good ones', () => {
+  const byId = new Map(ITEMS.map((i) => [i.id, i]));
+  const signals = {
+    bpc157: { score: 70, by_use: [{ use: 'injury', rating: 90, low: 70, high: 99, reports: 10, voices: 6 }] },
+    creatine: { score: 70, by_use: [{ use: 'injury', rating: 84, low: 79, high: 88, reports: 200, voices: 150 }] },
+  };
+  const top = communityTop(signals as never, byId, useById('injury')!);
+  assertEquals(top.map((r) => [r.id, r.rating, r.low]), [['creatine', 84, 79], ['bpc157', 90, 70]]);
+  assert(topText(top, useById('injury')).includes('members rate it 84/100 (likely 79 to 88) from 200 reports'));
+});
+
+Deno.test('the number check: a number the sources don\'t have is flagged, names and small counts aren\'t', () => {
+  const known = sourceNumbers('The community so far: 1,240 members, 3,410 first-hand reports and 51 Community Signals. Signal 74.6/100. In 2024, 30% improved.');
+  assertEquals(unsourcedNumbers('On the forums, 51 forum posts mention BPC-157 and TB-500 with GLP-1 drugs; 5-HTP too.', known), []);
+  assertEquals(unsourcedNumbers('About 75 out of 100, from 1240 members, 30% of whom improved in 2024.', known), []);
+  assertEquals(unsourcedNumbers('About 412 posts, 61% positive, and 3 in 10 people, over 12 weeks.', known), ['412', '61']);
+  assertEquals(unsourcedNumbers('Read [the guide](lib:lab-reports) or [CJC-1295](lib:cjc1295) for 2.5 minutes.', known), ['2.5']);
+});
+
+Deno.test('a reply with a number the sources don\'t have goes to the check flagged (rule 8)', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['TB-500'], uses: ['injury'], goals: ['recovery'] },
+    review: (p) => (/412/.test(p.text) ? { ok: false, broken: [8], fixes: [{ find: 'in 412 forum posts', replace: 'on the forums' }] } : { ok: true }),
+    rounds: [{ text: '**TB-500 is mostly forum data.** People describe faster healing in 412 forum posts.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Does TB-500 help a pulled hamstring?' }]), deps(f)));
+  const prompt = String((calls.find((c) => c.kind === 'review')!.body.messages as { content: string }[])[0].content);
+  assert(prompt.includes('Numbers not found in what Miracle AI was given this turn (rule 8): t0: "412"'), prompt.slice(0, 600));
+  const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
+  assertEquals(text, '**TB-500 is mostly forum data.** People describe faster healing on the forums.');
+  assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [8], numbers: 1 });
+  // The guide was told how many improve anyway, and the version of the numbers is in the sources
+  const sys = (calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text;
+  assert(sys.includes('For context, how many improve anyway'), 'baseline in the notes');
+});
+
+Deno.test('comparing compounds: side by side, proven first, no stack card and no winner', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157', 'Creatine'], uses: ['injury'], goals: ['recovery'], compare: true },
+    rounds: [{ text: '**They work in different ways for an injury.** ' + WORDS }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'BPC-157 vs creatine for healing a torn calf: which is better?' }]), deps(f)));
+  const card = ev.find((e) => e.event === 'card' && e.data.type === 'compare')!;
+  assert(card, 'a compare card');
+  assertEquals(card.data.items.map((i: { id: string }) => i.id), ['creatine', 'bpc157']);   // proven first
+  assert(card.data.items.every((i: { studies: unknown; caution: string }) => 'studies' in i && typeof i.caution === 'string'));
+  assert(!ev.some((e) => e.event === 'card' && e.data.type === 'shortlist'), 'not their stack');
+  assert(!calls.some((c) => c.kind === 'audit'), 'no check of them together');
+  const sys = (calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text;
+  assert(sys.includes('They\'re comparing BPC-157, Creatine') && sys.includes('Don\'t pick a winner'), sys.slice(-1500));
+  assert(plainScreen('BPC-157 vs TB-500?').compare && !plainScreen('I take BPC-157 and TB-500').compare);
+  // Where the answer came from says which version of the community's numbers answered
+  assert('version' in ev.find((e) => e.event === 'sources')!.data);
 });

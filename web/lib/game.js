@@ -196,6 +196,8 @@ export function notifParts(n) {
     case 'badge': return [h('span', { class: 'seal' }, icon('check', 18)), `New badge: ${d.name}`, d.description, `#/u/${encodeURIComponent(S.me?.handle || '')}`];
     case 'mod': return [icon('shield', 18), (MOD_TEXT[d.action] || (() => 'A note from the moderators'))(d), n.post_title, n.post_id ? `#/post/${n.post_id}` : '#/rules'];
     case 'library': return [sig(34, 'happy'), `${d.name || n.compound_name} is in the library now, as you suggested. Thanks for building it out.`, null, n.compound_id ? `#/s/${encodeURIComponent(n.compound_id)}` : '#/explore'];
+    case 'checkin': return [sig(34, 'curious'), `How is it now? Your ${n.compound_name} report, ${d.week} weeks on. Two taps to update it.`, n.post_title, `#/post/${n.post_id}`];
+    case 'safety': return [icon('shield', 18), 'Your report describes a reaction that sounds serious. If it’s still happening, get medical help, and you can tell the FDA through MedWatch.', n.post_title, `#/post/${n.post_id}`];
     default: return [icon('bell', 18), 'Something new', null, '#/notifications'];
   }
 }
@@ -317,6 +319,7 @@ export function levelUp(d) {
 // ---------------------------------------------------------------------------
 export function onboarding() {
   let step = 0;
+  let shareNext = false;
   const picks = new Set(S.spaces.filter((s) => s.joined).map((s) => s.compound_id));
   const popular = [...S.spaces].sort((a, b) => (b.members_count - a.members_count) || ((b.score ?? 0) - (a.score ?? 0))).slice(0, 16);
   const dots = () => h('div', { class: 'step-dots' }, [0, 1, 2].map((i) => h('i', { class: i === step ? 'on' : '' })));
@@ -328,6 +331,9 @@ export function onboarding() {
     // does someone who came for a page (a space from the Library, a draft from their plan)
     if (location.hash !== at) return;
     if (at && !/^#\/?(?:home)?$/.test(at)) return;
+    // "Share how it went": straight to a report on what they picked
+    // (one pick fills it in; several could be a stack or separate reports, so they choose)
+    if (shareNext) { location.hash = picks.size === 1 ? `#/new?c=${encodeURIComponent([...picks][0])}` : '#/new'; return; }
     if (at === '#/home') window.dispatchEvent(new HashChangeEvent('hashchange'));
     else location.hash = '#/home';
   };
@@ -360,8 +366,8 @@ export function onboarding() {
       }));
       const count = h('span', { class: 'kick' }, `${picks.size} joined`);
       box.replaceChildren(
-        h('div', { class: 'row nw' }, sig(56, 'curious'), h('div', {}, h('div', { class: 'kick' }, 'Step 2 of 3'), h('h2', {}, 'Join your spaces.'))),
-        h('p', { class: 'small' }, 'Each compound has a space, like s/BPC-157. Join three and your Home feed fills up (and you finish your first quest).'),
+        h('div', { class: 'row nw' }, sig(56, 'curious'), h('div', {}, h('div', { class: 'kick' }, 'Step 2 of 3'), h('h2', {}, 'What have you taken?'))),
+        h('p', { class: 'small' }, 'Pick what you’ve taken, and you can tell everyone how it went next. Haven’t taken anything yet? Pick what you’re curious about. Each one is a space, like s/BPC-157: join three and your Home feed fills up (and you finish your first quest).'),
         grid,
         h('div', { class: 'row between mt16' }, count, h('button', { class: 'btn lime', type: 'button', onclick: async () => { await loadSpaces(); step = 2; draw(); } }, 'Next')), dots());
     } else {
@@ -373,7 +379,9 @@ export function onboarding() {
           h('div', {}, h('b', {}, '+40'), ' a first-hand report that feeds the Signal'),
           h('div', {}, h('b', {}, '+5'), ' each “same for me”, given or received'),
           h('div', {}, h('b', {}, '+5'), ' your first contribution each day, and your streak grows')),
-        h('div', { class: 'row end mt16' }, h('button', { class: 'btn lime', type: 'button', onclick: close }, 'Let’s go')), dots());
+        h('div', { class: 'row end mt16' },
+          h('button', { class: `btn ${picks.size ? 'ghost' : 'lime'}`, type: 'button', onclick: close }, 'Let’s go'),
+          picks.size ? h('button', { class: 'btn lime', type: 'button', onclick: () => { shareNext = true; close(); } }, 'Share how it went') : null), dots());
     }
   };
   draw();

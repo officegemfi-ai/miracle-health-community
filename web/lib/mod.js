@@ -14,14 +14,14 @@ const MOD_REASONS = [
 ];
 
 export async function renderMod(tab = 'queue') {
-  const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['library', 'Library'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
+  const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['held', 'Held from the Signal'], ['library', 'Library'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
   const body = h('div', {}, h('div', { class: 'skel' }));
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Keeping it safe'), h('h1', {}, 'Moderation.'))),
     h('nav', { class: 'tabs', 'aria-label': 'Moderation' }, tabs.map(([k, l]) => h('a', { href: `#/mod/${k}`, 'aria-current': k === tab ? 'page' : null }, l))),
     body);
   setRail([]);
-  const views = { queue: modQueue, alerts: modAlerts, library: modLibrary, numbers: modNumbers, terms: modTerms, invites: modInvites };
+  const views = { queue: modQueue, alerts: modAlerts, held: modHeld, library: modLibrary, numbers: modNumbers, terms: modTerms, invites: modInvites };
   await (views[tab] || modQueue)(body);
 }
 
@@ -81,6 +81,23 @@ async function modAlerts(body) {
       h('div', { class: 'row mt8' },
         h('a', { class: 'btn sm', href: `#/s/${encodeURIComponent(a.compound_id)}?sort=new` }, 'See the posts'),
         h('button', { class: 'btn sm', type: 'button', onclick: async () => { const { error: e } = await sb.rpc('review_alert', { alert_id: a.id }); if (!e) modAlerts(body); } }, 'Mark reviewed')))));
+}
+
+// Reports the Signal holds out or counts at a quarter: copies of earlier posts, and bursts of
+// week-old accounts on one compound. Clearing one lets it count in full.
+async function modHeld(body) {
+  const { data, error } = await sb.rpc('signal_holds');
+  if (error) return body.replaceChildren(h('div', { class: 'msg err' }, friendly(error)));
+  if (!(data || []).length) return body.replaceChildren(h('div', { class: 'msg ok' }, 'Nothing held from the Signal.'));
+  const WHY = { copy: 'Same words as an earlier post: counts nothing', burst: 'One of a burst from week-old accounts: counts a quarter' };
+  body.replaceChildren(
+    h('p', { class: 'small muted' }, 'Reports are weighted, never people. Look at the post, then remove it, or clear it to count in full.'),
+    ...data.map((r) => h('div', { class: 'card mod-card' },
+      h('h3', {}, r.title),
+      h('div', { class: 'small' }, `${r.compound_name} · u/${r.author_handle} · ${WHY[r.held] || r.held}`),
+      h('div', { class: 'row mt8' },
+        h('a', { class: 'btn sm', href: `#/post/${encodeURIComponent(r.post_id)}` }, 'See the post'),
+        h('button', { class: 'btn sm', type: 'button', onclick: async () => { const { error: e } = await sb.rpc('clear_signal_hold', { post_id: r.post_id }); if (e) toast(friendly(e)); else modHeld(body); } }, 'Clear: count it in full')))));
 }
 
 async function modNumbers(body) {

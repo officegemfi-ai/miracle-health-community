@@ -246,6 +246,8 @@ async function loadMe() {
   const { data, error } = await sb.rpc('me');
   S.me = !error && Array.isArray(data) && data[0] ? data[0] : null;
   if (!S.me) return;
+  // Check-ins that are due leave a note in the bell first, so the count includes them
+  await sb.rpc('checkin_reminders').then(() => null, () => null);
   await Promise.all([loadReference(), loadSpaces(), loadSignal(), loadCard(), loadPulse(), loadUnread()]);
   document.body.classList.remove('auth');
   renderTop();
@@ -381,9 +383,10 @@ async function enterPreview() {
 // ---------------------------------------------------------------------------
 async function boot() {
   startTelemetry();
-  [S.rules, S.uses] = await Promise.all([
+  [S.rules, S.uses, S.baselines] = await Promise.all([
     fetch('rules.json').then((r) => r.json()).catch(() => null),
     fetch('uses.json').then((r) => r.json()).catch(() => null),
+    fetch('baselines.json').then((r) => r.json()).catch(() => null),
   ]);
   const foot = document.getElementById('foot-text');
   if (S.rules?.footer) foot.textContent = S.rules.footer;

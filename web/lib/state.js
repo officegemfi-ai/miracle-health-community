@@ -13,6 +13,7 @@ export const S = {
   history: new Map(),// compound_id -> [scores by version]
   rules: null,
   uses: null,          // shared/uses.json: what members take things for, and the twelve goals
+  baselines: null,     // shared/baselines.json: how many improve on a placebo in trials, by use
   levels: [],
   badges: [],
   pointRules: {},

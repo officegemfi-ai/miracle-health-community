@@ -1,13 +1,14 @@
-// One post: what Miracle AI read (and the author's check on it), the reply
-// thread, reporting and editing.
+// One post: what Miracle AI read (and the author's check on it, lib/checks.js), how it is
+// now, the reply thread, reporting and editing.
 import { h, icon, fmtN, fmt1, ago, toast, friendly, msgBox, say, modal, confirmBox } from './ui.js';
 import { sig, emblem } from './art.js';
-import { S, sb, signalOf, spaceOf, loadCard, track } from './state.js';
+import { S, sb, spaceOf, loadCard, track } from './state.js';
 import { partChips } from './library.js';
 import { render, setRail, railCards, sigSay } from './shell.js';
-import { OUTCOME, outcomeChip, sigNum, refreshSignal, useLabel } from './signal.js';
+import { outcomeChip, refreshSignal } from './signal.js';
 import { voteWidget, sameButton, statusChip, spaceLink, authorLink, stickerRow, reactButton, moreButton } from './feed.js';
 import { afterEarn } from './game.js';
+import { readCheck, safetyNote, checkinLine, checkinBox } from './checks.js';
 
 export const REASONS = [
   ['sourcing', 'Selling or sourcing (rule 1)'],
@@ -49,56 +50,6 @@ export function openReport(kind, id) {
     h('div', { class: 'row end' }, h('button', { class: 'btn ghost', type: 'button', onclick: close }, 'Cancel'), send), msg);
     return box;
   }, { label: 'Report' });
-}
-
-// ---------------------------------------------------------------------------
-// What Miracle AI read, and the author's check
-// ---------------------------------------------------------------------------
-function readPanel(p, refresh) {
-  if (p.kind === 'question') return null;
-  const x = signalOf(p.compound_id);
-  const confirmRow = (label) => h('div', { class: 'confirm' },
-    h('span', { class: 'kick' }, label),
-    ...Object.entries(OUTCOME).map(([k, [name]]) => h('button', {
-      class: `btn xs ${p.outcome === k ? 'ink' : 'ghost'}`, type: 'button',
-      onclick: async (e) => {
-        const btn = e.currentTarget;
-        btn.disabled = true;
-        const { error } = await sb.rpc('confirm_read', { post_id: p.id, outcome: k });
-        btn.disabled = false;
-        if (error) { toast(friendly(error)); return; }
-        track('confirm_read', { changed: k !== p.outcome });
-        await afterEarn(btn, '· thanks for checking the read');
-        await refreshSignal();
-        sigSay(['Got it: ', h('b', {}, name), '. Your own word counts more than my read.'], 'happy', 4200);
-        refresh();
-      },
-    }, name)));
-  if (p.counts_for_signal && OUTCOME[p.outcome]) {
-    const uses = (p.read_uses || []).map((u) => `${useLabel(u.use).toLowerCase()}${u.outcome !== p.outcome && OUTCOME[u.outcome] ? ` (${OUTCOME[u.outcome][0].toLowerCase()})` : ''}`);
-    const bits = [OUTCOME[p.outcome][0], uses.length ? `for ${uses.join(', ')}` : null, p.duration,
-      (p.side_effects || []).length ? `side effects: ${p.side_effects.join(', ')}` : null].filter(Boolean).join(' · ');
-    return h('section', { class: 'airead', 'aria-label': 'What Miracle AI read' },
-      sig(40, p.read_confirmed ? 'happy' : 'watching'),
-      h('div', { class: 'grow' },
-        h('div', { class: 'kick' }, p.read_confirmed ? (p.read_corrected ? 'Corrected by the author' : 'Confirmed by the author') : 'Miracle AI read'),
-        h('p', {}, h('b', {}, `${bits}. `),
-          x && x.score != null
-            ? ['It feeds the ', h('a', { href: `#/s/${encodeURIComponent(p.compound_id)}` }, `${p.compound_name} Signal`), ', now ', sigNum(p.compound_id), '.']
-            : `It counts toward the first ${p.compound_name} Signal${p.compound_kind === 'stack' ? ' (this exact stack)' : ''}.`),
-        p.is_mine && !p.read_confirmed && p.status === 'visible' ? confirmRow('Is that right? +10') : null));
-  }
-  if (p.read_pending) {
-    return h('section', { class: 'airead', 'aria-label': 'Miracle AI is reading', 'data-reading': p.id },
-      sig(40, 'think'), h('div', {}, h('div', { class: 'kick' }, 'Miracle AI is reading'), h('p', {}, 'It’s reading how it went for the Signal. This takes a moment; the page updates by itself.')));
-  }
-  if (p.is_mine && p.status === 'visible') {
-    return h('section', { class: 'airead' }, sig(40, 'curious'),
-      h('div', { class: 'grow' }, h('div', { class: 'kick' }, 'Not in the Signal yet'),
-        h('p', {}, 'Miracle AI couldn’t tell how it went. Tell it yourself and your report counts:'),
-        confirmRow('How did it go?')));
-  }
-  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -216,11 +167,16 @@ export async function renderPost(id, opts = {}) {
   const thread = h('div', { class: 'thread' });
   const heading = h('h2', {});
   const readBox = h('div', {});
-  const drawRead = () => readBox.replaceChildren(readPanel(p, async () => {
+  const reread = async () => {
     const { data } = await sb.from('feed').select('*').eq('id', id).limit(1);
     if (data?.[0]) Object.assign(p, data[0]);
     drawRead();
-  }) || '');
+  };
+  // The read and the author's check on it, a serious reaction, the latest check-in, and (for the
+  // author) the check-in due now
+  const drawRead = () => readBox.replaceChildren(...[readCheck(p, reread), safetyNote(p), checkinLine(p),
+    p.is_mine && p.checkin_due ? checkinBox({ post_id: p.id, week: p.checkin_due, compound_name: p.compound_name }, () => setTimeout(reread, 2500)) : null]
+    .filter(Boolean));
   drawRead();
 
   const loadThread = async (focusId) => {

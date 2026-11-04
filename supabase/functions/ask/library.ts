@@ -39,12 +39,29 @@ export type Signal = {
   summary_label?: string; confidence_label?: string; themes?: { theme: string; label: string }[];
   outcomes?: { better: number; same: number; worse: number; better_pct?: number; better_low?: number; better_high?: number } | null;
   side_effects?: { effect: string; n: number }[];
-  by_use?: { use: string; rating?: number | null; reports?: number; voices?: number; forum?: string | null }[];
+  // rating: pooled toward what members report for that use everywhere; low, high: its likely range
+  // (90%); better_pct: the share of those reports that said better
+  by_use?: {
+    use: string; rating?: number | null; low?: number | null; high?: number | null; own?: number | null;
+    better_pct?: number | null; better_low?: number | null; better_high?: number | null;
+    reports?: number; voices?: number; forum?: string | null;
+  }[];
+  // Side effects reported unusually often for it compared with every other compound
+  watch?: { effect: string; n: number; of: number; pct: number; others_pct: number; ratio: number }[];
+  serious?: number | null;   // reports describing a reaction that sounded serious (shown at 3 or more)
+  // What check-ins 2, 6 and 12 weeks on say (shown once three reports have them)
+  checkins?: { reports?: number; still?: number; stopped?: number; reasons?: Record<string, number>; at12?: number; still12?: number } | null;
+  week?: number | null;      // where the Signal stood a week ago
+  // Counted forum data, from sources whose terms allow it
+  forum_counts?: { source: string; use?: string | null; posts: number; positive_pct?: number | null; mixed_pct?: number | null; negative_pct?: number | null; from?: string | null; to?: string | null }[] | null;
 };
 // The whole community, in totals
 export type Pulse = { members?: number; reports?: number; signals?: number; community_share?: number; external_weight?: number };
 // ok false: the snapshot couldn't be read, so nothing is known about what people report
-export type Snapshot = { signals: Record<string, Signal>; uses: Record<string, [string, string]>; community?: Pulse; ok?: boolean };
+export type Snapshot = {
+  signals: Record<string, Signal>; uses: Record<string, [string, string]>; community?: Pulse; ok?: boolean;
+  generated_at?: string;   // which version of the community's numbers this is
+};
 
 export const LEVEL: Record<string, string> = {
   forum: 'Forum data (mostly public forums so far)',

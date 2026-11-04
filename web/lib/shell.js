@@ -6,6 +6,7 @@ import { S, sb, isMod, levelOf } from './state.js';
 import { signalCard, movesCard } from './signal.js';
 import { meCard, questsCard, buildersCard, goalsCard, seasonCard, bellButton, claimable } from './game.js';
 import { searchLibrary, familyLabel } from './library.js';
+import { focusCard } from './checks.js';
 import { SITE, placeHref, askLink, askAboutCompound, meterHtml, node } from '../kit/kit.js';
 
 const app = document.getElementById('app');
@@ -28,14 +29,14 @@ export function setWide(on) { document.body.classList.toggle('wide', !!on); }
 // ---------------------------------------------------------------------------
 export async function railCards(kind, ctx = {}) {
   switch (kind) {
-    case 'space': return [await aboutSpace(ctx.cid), await goalsCard(4, ctx.cid), buildersCard(5)];
+    case 'space': return [await aboutSpace(ctx.cid), await focusCard(), await goalsCard(4, ctx.cid), buildersCard(5)];
     case 'post': return [ctx.cid ? signalCard(ctx.cid, { compact: true }) : null, await aboutSpace(ctx.cid), questsCard(3)];
     case 'signal': return [await movesCard(), seasonCard(), await goalsCard(5)];
     case 'builders': return [meCard(), seasonCard(), questsCard(3)];
     case 'quests': return [meCard(), await movesCard(), buildersCard(5)];
     case 'profile': return [buildersCard(5), await movesCard()];
     case 'explore': return [seasonCard(), await movesCard()];
-    default: return [meCard(), questsCard(3), await movesCard(), buildersCard(5), await goalsCard(4)];
+    default: return [meCard(), await focusCard(), questsCard(3), await movesCard(), buildersCard(5), await goalsCard(4)];
   }
 }
 

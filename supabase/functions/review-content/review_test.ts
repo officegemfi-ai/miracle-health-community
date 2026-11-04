@@ -1,5 +1,5 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
-import { classify, parseVerdict, readUses, systemPrompt, userMessage, USES } from './review.ts';
+import { classify, EFFECTS, parseVerdict, readUses, systemPrompt, userMessage, USES } from './review.ts';
 import { handle } from './index.ts';
 
 Deno.test('a clean JSON answer is read', () => {
@@ -89,9 +89,9 @@ Deno.test('if Claude is down, the post stays up', async () => {
 
 Deno.test('the read for the Signal is parsed and kept tidy', () => {
   const v = parseVerdict('{"verdict":"ok","categories":[],"explanation":"Fine","signal":{"first_hand":true,"outcome":"better","duration":" 6 weeks ","side_effects":["Nausea","Headache","Fatigue","Hair loss",3]}}');
-  assertEquals(v.signal, { first_hand: true, outcome: 'better', duration: '6 weeks', side_effects: ['Nausea', 'Headache', 'Fatigue'], uses: [] });
+  assertEquals(v.signal, { first_hand: true, outcome: 'better', duration: '6 weeks', side_effects: ['Nausea', 'Headache', 'Fatigue'], uses: [], serious: false });
   const odd = parseVerdict('{"verdict":"ok","categories":[],"explanation":"x","signal":{"first_hand":"yes","outcome":"amazing"}}');
-  assertEquals(odd.signal, { first_hand: false, outcome: null, duration: null, side_effects: [], uses: [] });
+  assertEquals(odd.signal, { first_hand: false, outcome: null, duration: null, side_effects: [], uses: [], serious: false });
   assertEquals(parseVerdict('{"verdict":"ok","categories":[],"explanation":"x"}').signal, undefined);
 });
 
@@ -120,8 +120,21 @@ Deno.test('for a post, the function records the review and the Signal read', asy
   assertEquals(calls.byName.record_ai_review.verdict, 'ok');
   assertEquals(calls.byName.record_post_read, {
     post_id: '7', counts: true, outcome: 'worse', duration: '5 weeks', side_effects: ['Nausea'], model: 'claude-haiku-4-5',
-    uses: [{ use: 'gut', outcome: 'worse' }],
+    uses: [{ use: 'gut', outcome: 'worse' }], serious: false,
   });
+});
+
+Deno.test('a reaction that sounds serious is read as such, and side effects take one name', async () => {
+  const v = parseVerdict('{"verdict":"ok","categories":[],"explanation":"x","signal":{"first_hand":true,"outcome":"worse","duration":"3 weeks","side_effects":["Stomach upset"],"uses":[],"serious":true}}');
+  assertEquals(v.signal?.serious, true);
+  assertEquals(parseVerdict('{"verdict":"ok","categories":[],"explanation":"x","signal":{"first_hand":true,"outcome":"worse","serious":"yes"}}').signal?.serious, false);
+  const s = systemPrompt();
+  assert(s.includes('serious: true only if') && s.includes('Injection site reaction') && s.includes('"serious":true|false'));
+  assert(EFFECTS.length >= 30 && new Set(EFFECTS).size === EFFECTS.length);
+  const seriousFetch = (async () => new Response(JSON.stringify({ content: [{ type: 'text', text: '{"verdict":"ok","categories":[],"explanation":"Report","signal":{"first_hand":true,"outcome":"worse","duration":"3 weeks","side_effects":["Stomach upset"],"uses":[{"use":"fat_loss","outcome":"worse"}],"serious":true}}' }] }))) as unknown as typeof fetch;
+  const { db, calls } = fakeDb({ id: '9', title: 't', body: 'Ended up in the ER', status: 'visible' });
+  await handle(req({ kind: 'post', id: '9' }), { secret: 's3cret', apiKey: 'k', db: db as never, fetchImpl: seriousFetch });
+  assertEquals(calls.byName.record_post_read.serious, true);
 });
 
 Deno.test('for a comment, nothing is recorded for the Signal', async () => {
