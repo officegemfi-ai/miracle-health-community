@@ -5,7 +5,7 @@
 # from that commit, and nothing else; the test app and the preview stay off the site.
 # Called by the two deploy workflows, after the database is updated. It can also be run
 # by hand (Actions > Pages > Run workflow), and it runs every hour so the public library's
-# numbers (snapshot.json, read by miraclehealth.us/library) stay current.
+# numbers (snapshot.json and the evidence files, read by miraclehealth.us/library) stay current.
 # With the repository secret SITE_PASSWORD set, every app sits behind that password.
 # Each app's public key comes from Supabase with the SUPABASE_ACCESS_TOKEN secret (or the
 # TEST_/LIVE_SUPABASE_URL and _ANON_KEY variables, when set).
@@ -126,6 +126,19 @@ jobs:
           fi
           # No CNAME file: with a GitHub Actions deploy, the custom domain is set in
           # Settings > Pages, and GitHub ignores a CNAME file.
+      - uses: denoland/setup-deno@v2
+        if: steps.live.outputs.open == 'true'
+        with:
+          deno-version: v2.5.6
+      - name: The evidence files (both voices, per compound and use)
+        if: steps.live.outputs.open == 'true'
+        run: |
+          # Worked out with Miracle AI's own code from the same snapshot, so the library's fact
+          # sheets and Miracle AI say the same thing (scripts/build_evidence.ts)
+          if [ -s _site/snapshot.json ]; then
+            deno run --allow-read --allow-write --allow-net=miraclehealth.us scripts/build_evidence.ts _site/snapshot.json _site \
+              || echo "::warning title=Evidence files::Couldn't build them; the library's pages show the snapshot's numbers only."
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
