@@ -218,23 +218,39 @@ export function resolve(items: Item[], names: string[]): string[] {
   return out;
 }
 
-// Compounds named anywhere in a message, as a backstop to the Safety agent's list
+// Compounds named anywhere in a message, as a backstop to the Safety agent's list. Longer names
+// are looked for first, and each one found is blanked out, so a name inside a longer one isn't
+// counted too ("clomiphene" inside "enclomiphene"); names of the same length are looked for together
 export function mentioned(items: Item[], text: string): string[] {
-  const t = spaced(text);
+  let t = spaced(text);
   const j = joined(text);
-  const squashed = fold(text);
-  const out: string[] = [];
-  for (const it of items) {
+  let squashed = fold(text);
+  const byLen = new Map<number, { i: number; k: string }[]>();
+  items.forEach((it, i) => {
     for (const k of [it.name, it.id, ...it.aliases]) {
-      const ks = spaced(k);
-      const core = ks.trim();
+      const core = spaced(k).trim();
       if (core.length < 2 || AMBIGUOUS.has(core)) continue;
-      const hit = COMBO.test(k) ? j.includes(joined(k)) : t.includes(ks) || (fold(k).length >= 6 && squashed.includes(fold(k)));
-      if (hit) { if (!out.includes(it.id)) out.push(it.id); break; }
+      const n = fold(k).length;
+      byLen.set(n, [...(byLen.get(n) || []), { i, k }]);
     }
-    if (out.length >= 8) break;
+  });
+  const found = new Set<number>();
+  for (const n of [...byLen.keys()].sort((a, b) => b - a)) {
+    const hits: string[] = [];
+    for (const { i, k } of byLen.get(n)!) {
+      // A name that joins compounds only counts written joined the same way, and never blanks out
+      // its parts (tidyBlends decides between the blend and its parts)
+      if (COMBO.test(k)) { if (j.includes(joined(k))) found.add(i); continue; }
+      const ks = spaced(k);
+      if (t.includes(ks) || (n >= 6 && squashed.includes(fold(k)))) { found.add(i); hits.push(k); }
+    }
+    for (const k of hits) {
+      const ks = spaced(k);
+      t = t.split(ks).join(` ${'#'.repeat(ks.length - 2)} `);
+      squashed = squashed.split(fold(k)).join('#'.repeat(fold(k).length));
+    }
   }
-  return out;
+  return [...found].sort((a, b) => a - b).slice(0, 8).map((i) => items[i].id);
 }
 
 // A blend named along with every one of its parts: either they're listing the parts (keep the

@@ -192,6 +192,18 @@ Deno.test('names resolve to Library ids, everyday words never do', () => {
   assertEquals(search(ITEMS, 'thymosin')[0].id, 'tb500');
 });
 
+Deno.test('a name inside a longer name is not named too: enclomiphene is not clomiphene', () => {
+  const items: Item[] = [...ITEMS,
+    { id: 'somatropin', name: 'Somatropin (HGH)', family: 'Growth-hormone axis', category: 'Growth-hormone axis', aliases: ['HGH', 'growth hormone', 'somatropin'], kind: 'compound', parts: [], sheet: true },
+    { id: 'clomiphene', name: 'Clomiphene', family: 'Hormone balance', category: 'Hormone balance', aliases: ['Clomid', 'clomiphene citrate'], kind: 'compound', parts: [], sheet: true },
+    { id: 'enclomiphene', name: 'Enclomiphene', family: 'Hormone balance', category: 'Hormone balance', aliases: ['enclomiphene citrate'], kind: 'compound', parts: [], sheet: true }];
+  assertEquals(mentioned(items, 'What do HGH and enclomiphene do together?'), ['somatropin', 'enclomiphene']);
+  assertEquals(mentioned(items, 'HGH+enclomiphene stack'), ['somatropin', 'enclomiphene']);
+  assertEquals(mentioned(items, 'Enclomiphene vs clomiphene for men?'), ['clomiphene', 'enclomiphene']);
+  assertEquals(mentioned(items, 'I was on Clomid, now enclomiphene citrate'), ['clomiphene', 'enclomiphene']);
+  assertEquals(mentioned(items, 'I take clomiphene'), ['clomiphene']);
+});
+
 Deno.test('a blend counts only when it is named, never because its parts are listed', () => {
   const items: Item[] = [...ITEMS, { id: 'wolverine', name: 'Wolverine blend (BPC-157 + TB-500)', family: 'Blends', category: 'Healing & recovery', aliases: ['Wolverine', 'Wolverine stack', 'BPC/TB', 'BPC-157/TB-500'], kind: 'blend', parts: ['bpc157', 'tb500'], sheet: false }];
   const listed = 'I take BPC-157, TB-500 and creatine for a shoulder injury.';
@@ -1590,4 +1602,6 @@ Deno.test('Sig answers a combination with what the community has on it, and know
   assert(prompt.includes('A combination (two or more they take or ask about together)'));
   assert(prompt.includes('Never describe what a combination does as something people reported when nobody has'));
   assert(prompt.includes('the member\'s screen draws how each compound they named works in the body'));
+  // What two do together is a question about the compounds: answered in full, not with questions first
+  assert(prompt.includes('is about the compounds, not a check of their stack: answer it in full'));
 });
