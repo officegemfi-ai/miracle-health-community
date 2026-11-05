@@ -293,6 +293,30 @@ export function pulseLine(p: Pulse | undefined): string {
   if (!reports) return 'The community so far: no members\' first-hand reports yet, so every Community Signal is public forum data (each member\'s report counts as it comes in). Say "on the forums" for what they show.';
   return `The community so far: ${plural(members, 'member')}, ${plural(reports, 'first-hand report')} and ${plural(signals, 'Community Signal')}; on average ${Math.min(100, n0(p?.community_share))}% of a Signal comes from members' reports, the rest from public forum data.`;
 }
+// ---------------------------------------------------------------------------
+// The exact combination: its own Signal, from members' first-hand reports of that stack. The
+// community names a stack after its parts, joined with " + " in alphabetical order; every order
+// is tried, so nothing depends on how a database sorts names.
+// ---------------------------------------------------------------------------
+export function stackSignal(names: string[], signals: Record<string, Signal> | undefined | null): Signal | null {
+  if (!signals || names.length < 2 || names.length > 5) return null;
+  const want = new Set<string>();
+  const perm = (xs: string[], pre: string[] = []): void => {
+    if (!xs.length) { want.add(pre.join(' + ').toLowerCase()); return; }
+    xs.forEach((x, i) => perm([...xs.slice(0, i), ...xs.slice(i + 1)], [...pre, x]));
+  };
+  perm(names);
+  return Object.values(signals).find((s) => !!s && s.kind === 'stack' && want.has(String(s.name ?? '').toLowerCase())) ?? null;
+}
+export function comboLine(names: string[], sig: Signal | null, use: Use | null, labels: Record<string, [string, string]> = {}): string {
+  const what = names.join(' + ');
+  if (!sig) {
+    return `This exact combination (${what}): nobody has reported taking them together yet, as members or counted from the forums. Say so plainly in one sentence near the top, in an ask-first reply too ("Nobody here has reported taking them together yet"), then what people report on each one alone. Never describe what the combination does as something people reported.`;
+  }
+  const c = communityOf(sig, use, labels);
+  return `This exact combination (${what}), from reports of taking them together: ${communityLine(c).replace(/^Community: /, '')} Say what people report about taking them together first, with these numbers, before each one alone.`;
+}
+
 // When the community's numbers couldn't be read: nothing is said about what people report
 export const COMMUNITY_DOWN = 'Community: its numbers couldn\'t be loaded just now. Don\'t describe what people report, and don\'t say nobody has reported.';
 export function topText(top: TopRow[], use: Use | null, status: (id: string) => string = () => ''): string {

@@ -1,10 +1,10 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { sse, stream, tuning, canForceTool } from './claude.ts';
-import { clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, tidyBlends } from './library.ts';
+import { clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, type Signal, tidyBlends } from './library.ts';
 import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, dedupeSentences, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
-import { baselineFor, blockedItem, communityOf, communityTitle, communityTop, leadOf, pulseLine, topText, useById, voiceLine, voiceOf } from './community.ts';
+import { baselineFor, blockedItem, comboLine, communityOf, communityTitle, communityTop, leadOf, pulseLine, stackSignal, topText, useById, voiceLine, voiceOf } from './community.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
 import { guideSystem } from './prompts.ts';
 
@@ -1565,4 +1565,29 @@ Deno.test('Sig says it is Sig, an AI, and never goes by its old name', () => {
   assert(!/packet/i.test(prompt));
   // No clinician step, but nothing Sig suggests is a plan until the member's own clinician says so
   assert(prompt.includes("Nothing here is a plan until they've reviewed it."));
+});
+
+Deno.test('a combination: its own Signal when members reported it, said plainly when nobody has', () => {
+  const sigs = {
+    somatropin: { name: 'Somatropin (HGH)', kind: 'compound', score: 78.8 },
+    'stack-abc': { name: 'BPC-157 + TB-500', kind: 'stack', score: 71.2, summary_label: 'Mostly positive', certification: 'early', first_hand: 6, internal_share: 100 },
+  } as Record<string, Signal>;
+  // Found in any order, whatever order the database named it in
+  assertEquals(stackSignal(['TB-500', 'BPC-157'], sigs)?.score, 71.2);
+  assertEquals(stackSignal(['BPC-157', 'TB-500'], sigs)?.score, 71.2);
+  assertEquals(stackSignal(['Somatropin (HGH)', 'Enclomiphene'], sigs), null);
+  assertEquals(stackSignal(['Somatropin (HGH)'], sigs), null);
+  const none = comboLine(['Somatropin (HGH)', 'Enclomiphene'], null, null);
+  assert(none.includes('nobody has reported taking them together yet'));
+  assert(none.includes('Never describe what the combination does as something people reported'));
+  const some = comboLine(['BPC-157', 'TB-500'], sigs['stack-abc'], null);
+  assert(some.startsWith('This exact combination (BPC-157 + TB-500), from reports of taking them together: Signal 71.2/100'), some);
+  assert(!some.includes('Community: '), some);
+});
+
+Deno.test('Sig answers a combination with what the community has on it, and knows the screen draws the rest', () => {
+  const prompt = guideSystem('');
+  assert(prompt.includes('A combination (two or more they take or ask about together)'));
+  assert(prompt.includes('Never describe what a combination does as something people reported when nobody has'));
+  assert(prompt.includes('the member\'s screen draws how each compound they named works in the body'));
 });

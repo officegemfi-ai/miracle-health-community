@@ -15,8 +15,8 @@ import {
 } from './prompts.ts';
 import { cleanField, CRISIS, INJECTS, maskTargets, MINOR, PREGNANT, scan, strict, unmaskTargets, URGENT } from './guard.ts';
 import {
-  blockedItem, type Community, COMMUNITY_DOWN, communityOf, communityTitle, communityTop, type Lead, pulseLine, type Studies, topText, type TopRow, type Use,
-  useById, USE_IDS, type Voice, voiceLine, voiceOf,
+  blockedItem, comboLine, type Community, COMMUNITY_DOWN, communityOf, communityTitle, communityTop, type Lead, pulseLine, stackSignal, type Studies, topText,
+  type TopRow, type Use, useById, USE_IDS, type Voice, voiceLine, voiceOf,
 } from './community.ts';
 import { INJECT_CARD, INJECT_SIGNS, warningCard } from './urgency.ts';
 
@@ -1369,6 +1369,8 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       pulseLine(snap.community),
       top.length ? topText(top, listUse, (id) => ctx.byId.get(id)?.status_label ?? '') : '',
       asksInPregnancy ? 'They asked what others use, and they\'re pregnant, trying to conceive or breastfeeding: don\'t list what others use or report; say in a few words that it\'s left out because most of these haven\'t been studied in pregnancy, and that their obstetric clinician is the one to ask.' : '',
+      // Two or more taken together: what the community has on that exact combination, first
+      !comparing && voices.length >= 2 && !asksInPregnancy ? comboLine(voices.map((v) => v.name), stackSignal(voices.map((v) => v.name), snap.signals), listUse, snap.uses) : '',
       voices.length ? 'What the studies show and what the community reports on each compound they named, and which leads for this question, come with its fact sheet below.' : '',
       showVoices ? `After your opening words the member sees a card with the studies and the community side by side on ${voices.map((v) => v.name).join(', ')} (if you ask them questions first, it comes with your full answer instead). Don't read its numbers out one by one: say what they mean for their question, starting with the voice your notes say leads.` : '',
       showCrowd ? `After your opening words the member sees a card of what the community reports most for ${listUse!.label.toLowerCase()}, each with its US status. Say what stands out and how the studies compare; don't list it again.` : '',

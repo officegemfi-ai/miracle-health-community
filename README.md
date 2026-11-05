@@ -98,7 +98,10 @@ goes through four agents and the community's numbers, and the page shows each st
    compound it decides which voice leads: the studies when there are studies in people for what
    was asked; the community's reports when there aren't (animal studies only, nothing on that use,
    or no fact sheet yet), with their sample size and where they come from; plain words when
-   neither has anything. The page shows the two side by side, and when the visitor asks what the
+   neither has anything. For two or more taken together, it first gives what the community has on
+   that exact combination: its own Signal (members' first-hand reports of that stack), or plainly
+   that nobody has reported it yet, so Sig never describes a combination from what each does alone.
+   The page shows the two side by side, and when the visitor asks what the
    community rates highest for something, the community's list (members' ratings first, then
    forum mentions; never anything on FDA's safety-risk list), as reports, not recommendations.
    Totals only: never a post or a name. Each answer ends with where it came from (fact sheets and
