@@ -1,4 +1,4 @@
-// ask: Miracle AI's chat on miraclehealth.us/ai. Anyone can talk with it, no account needed.
+// ask: Sig's chat on miraclehealth.us/ai. Anyone can talk with it, no account needed.
 // The page sends the conversation it keeps in the visitor's own browser; this function runs
 // the agents (see agents.ts) and streams their steps and the answer back as server-sent
 // events. Nothing the visitor writes is stored or logged here. The only thing kept is a
@@ -48,10 +48,10 @@ const json = (body: unknown, status: number, headers: Record<string, string>) =>
 const HELP = ' If you’re thinking about hurting yourself, call or text 988 any time; in an emergency, call 911.';
 const MESSAGES: Record<string, [number, string]> = {
   burst: [429, `You’re sending messages quickly. Give it a minute, then try again.${HELP}`],
-  visitor_day: [429, `That’s today’s limit for this connection. Miracle AI will be ready for you again tomorrow.${HELP}`],
-  site_day: [429, `Miracle AI has answered as many messages as it can today. It’ll be back tomorrow; the Library is open in the meantime.${HELP}`],
-  off: [503, `Miracle AI is paused for maintenance. The Library is open in the meantime.${HELP}`],
-  unavailable: [503, `Miracle AI is resting for a moment. Please try again shortly.${HELP}`],
+  visitor_day: [429, `That’s today’s limit for this connection. Sig will be ready for you again tomorrow.${HELP}`],
+  site_day: [429, `Sig has answered as many messages as it can today. It’ll be back tomorrow; the Library is open in the meantime.${HELP}`],
+  off: [503, `Sig is paused for maintenance. The Library is open in the meantime.${HELP}`],
+  unavailable: [503, `Sig is resting for a moment. Please try again shortly.${HELP}`],
 };
 
 export const cleanText = (s: string) => s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\r\n?/g, '\n').trim();
@@ -93,7 +93,7 @@ export function readConversation(body: unknown): { messages: InMessage[] } | { e
   return { messages: kept };
 }
 
-// Miracle AI's own replies come back from the page with a signature, so a page (or anyone
+// Sig's own replies come back from the page with a signature, so a page (or anyone
 // calling directly) can't put words in its mouth: an unsigned or altered reply is replaced
 const hmac = async (key: string, data: string) => {
   const enc = new TextEncoder();
@@ -101,7 +101,7 @@ const hmac = async (key: string, data: string) => {
   return [...new Uint8Array(await crypto.subtle.sign('HMAC', k, enc.encode(data)))].map((b) => b.toString(16).padStart(2, '0')).join('');
 };
 export const signReply = async (salt: string, text: string) => (await hmac(`ask-reply-v1:${salt}`, text)).slice(0, 40);
-export const NOT_SHOWN = '[An earlier reply from Miracle AI that can’t be shown here.]';
+export const NOT_SHOWN = '[An earlier reply from Sig that can’t be shown here.]';
 export async function checkReplies(messages: InMessage[], salt: string): Promise<ChatMessage[]> {
   const out: ChatMessage[] = [];
   for (const m of messages) {
@@ -204,7 +204,7 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
           send('error', {
             code: timedOut ? 'timeout' : busy ? 'busy' : 'failed',
             message: timedOut ? 'That took too long. Please try again, maybe with a shorter question.'
-              : busy ? 'Miracle AI is busy right now. Please try again in a moment.' : 'Something went wrong on our side. Please try again.',
+              : busy ? 'Sig is busy right now. Please try again in a moment.' : 'Something went wrong on our side. Please try again.',
           });
           deps.log?.({ ask_error: { kind: timedOut ? 'timeout' : (e as { kind?: string })?.kind ?? (e as Error)?.name ?? 'error', status: (e as { status?: number })?.status ?? null } });
         }

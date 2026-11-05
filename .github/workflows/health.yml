@@ -3,7 +3,7 @@
 #   - miraclehealth.us and its Library, and community.miraclehealth.us, answer
 #   - the community's public numbers (snapshot.json) are less than three hours old
 #   - the evidence files the Library reads are there
-#   - Miracle AI's chat and the weekly email sign-up answer from miraclehealth.us
+#   - Sig's chat and the weekly email sign-up answer from miraclehealth.us
 name: Health check
 on:
   schedule:
@@ -31,7 +31,7 @@ jobs:
           page "$SITE/" "Miracle Health"
           page "$SITE/library/" "Library"
           page "$SITE/library/bpc157/" "BPC-157"
-          page "$SITE/ai/" "Miracle AI"
+          page "$SITE/ai/" "Ask Sig"
           page "$COMMUNITY/" "Miracle Health"
 
           snap="$(curl -fsS --max-time 30 "$COMMUNITY/snapshot.json")" || bad "snapshot.json didn't answer"

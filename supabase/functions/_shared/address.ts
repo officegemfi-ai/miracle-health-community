@@ -1,4 +1,4 @@
-// Who's calling, for counts only (the same rule as Miracle AI's chat, ask/index.ts): the address
+// Who's calling, for counts only (the same rule as Sig's chat, ask/index.ts): the address
 // Cloudflare in front of Supabase saw, which callers can't change; failing that, the last address
 // the proxies added to x-forwarded-for. An IPv6 address counts as its /64 network. The database
 // turns it into a daily code and never stores the address itself.

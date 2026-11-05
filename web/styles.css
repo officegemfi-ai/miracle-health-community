@@ -244,7 +244,7 @@ a.post-title:hover{text-decoration:underline;text-decoration-color:var(--line-2)
 .menu button,.menu a{display:flex;align-items:center;gap:10px;justify-items:start;padding:9px 10px;font:600 13px var(--body);text-transform:none;letter-spacing:0;color:var(--text);text-decoration:none;border-radius:10px}
 .menu button:hover,.menu a:hover{background:var(--surface-3)}
 
-/* What Miracle AI read */
+/* What Sig read */
 .airead{display:flex;gap:12px;align-items:flex-start;margin:14px 0 4px;padding:12px 14px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
 .airead .sig{margin-top:-2px}
 .airead b.n{font:600 13px var(--mono)}
@@ -620,7 +620,7 @@ label.f.nm{margin:0}
 .hero .chip.part:hover{border-color:var(--lime)}
 .hero .aka{position:relative;z-index:1;color:var(--on-ink-2)}
 /* A space's links into the rest of Miracle Health: the evidence meter (the Library's grade), the
-   fact sheet and Miracle AI */
+   fact sheet and Sig */
 .space-links{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin-top:14px;font-size:13.5px}
 .space-links a{display:inline-flex;align-items:center;gap:6px;color:var(--on-ink);font-weight:600;text-decoration:none}
 .space-links a:hover{color:var(--lime)}

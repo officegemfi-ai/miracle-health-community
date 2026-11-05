@@ -49,7 +49,7 @@ function startCard() {
   return h('section', { class: 'card start-card' },
     h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Start here')),
     way(`${SITE}/library/`, 'flask', 'Look it up', 'What the studies show, compound by compound'),
-    way(placeHref('ai'), 'sparkle', 'Ask Miracle AI', 'The studies and what people report, in one answer'),
+    way(placeHref('ai'), 'sparkle', 'Ask Sig', 'The studies and what people report, in one answer'),
     way('#/new', 'plus', 'Share how it went', 'Your first report starts your points and emblem', ' main'));
 }
 
@@ -69,9 +69,9 @@ async function aboutSpace(cid) {
     sp.kind === 'stack' ? null : h('a', { class: 'lib-link mt12', href: `${LIBRARY}${encodeURIComponent(cid)}/` },
       icon('flask', 18), h('span', { class: 'grow' }, h('b', {}, 'Fact sheet'), h('span', { class: 'xs muted' }, 'Evidence, risks and blood markers, with sources')), icon('chevron', 16)),
     h('a', { class: 'lib-link mt8', href: askLink(askAbout(sp)) },
-      icon('sparkle', 18), h('span', { class: 'grow' }, h('b', {}, 'Ask Miracle AI'), h('span', { class: 'xs muted' }, `What ${sp.name} may do for you, and how it fits what you take`)), icon('chevron', 16)));
+      icon('sparkle', 18), h('span', { class: 'grow' }, h('b', {}, 'Ask Sig'), h('span', { class: 'xs muted' }, `What ${sp.name} may do for you, and how it fits what you take`)), icon('chevron', 16)));
 }
-// The question a space starts Miracle AI with (typed in for them, never sent)
+// The question a space starts Sig with (typed in for them, never sent)
 export const askAbout = (sp) => (sp.kind === 'stack'
   ? `I'm thinking about this stack: ${(sp.part_ids || []).map((id) => S.spaces.find((s) => s.compound_id === id)?.name || id).join(', ')}. What may it do for me, and how do they fit together?`
   : askAboutCompound(sp.name));
@@ -121,7 +121,7 @@ export function renderNav(current = '', cid = '') {
     // The rest of Miracle Health, the same places as the bar at the top of every page
     h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Miracle Health')),
     h('a', { class: 'nav-i', href: placeHref('library') }, icon('flask', 20), 'The Library'),
-    h('a', { class: 'nav-i', href: placeHref('ai') }, icon('sparkle', 20), 'Miracle AI'),
+    h('a', { class: 'nav-i', href: placeHref('ai') }, icon('sparkle', 20), 'Ask Sig'),
     h('a', { class: 'nav-i', href: placeHref('my') }, icon('layers', 20), 'My Miracle'),
     h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Resources')),
     h('a', { class: 'nav-i', href: '#/how', 'aria-current': current === 'how' ? 'page' : null }, icon('info', 20), 'How it works'),

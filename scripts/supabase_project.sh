@@ -20,7 +20,7 @@
 #   fn-key    <texts|newsletter> prints the key the scheduled workflows call those functions with
 #   public-reports  prints the reports their authors made public, as JSON
 #             (private.public_reports()), for the pages at community.miraclehealth.us/r/
-#   eval-key  (test only) <key> sets the key Miracle AI's test set runs with; "off" removes it
+#   eval-key  (test only) <key> sets the key Sig's test set runs with; "off" removes it
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
 #   ANTHROPIC_API_KEY, REVIEW_SECRET, MODERATION_MODEL, APP_ORIGINS, SITE_URL, ASK_ORIGINS,
@@ -213,7 +213,7 @@ setup)
     fi
   fi
 
-  echo "== Vault: where the database sends new posts for Miracle AI's read, and the shared secret"
+  echo "== Vault: where the database sends new posts for Sig's read, and the shared secret"
   sql "do \$\$ declare v uuid; begin
          select id into v from vault.secrets where name = 'project_url';
          if v is null then perform vault.create_secret('https://$REF.supabase.co', 'project_url');
@@ -246,7 +246,7 @@ setup)
     case ",$origins," in *,http://127.0.0.1:4173,*) ;; *) origins="$origins,http://127.0.0.1:4173" ;; esac
   fi
   args=("REVIEW_SECRET=$secret" "MODERATION_MODEL=${MODERATION_MODEL:-claude-haiku-5-5}" "APP_ORIGINS=$origins")
-  # Miracle AI's chat (the ask function) answers the public website; the test project also
+  # Sig's chat (the ask function) answers the public website; the test project also
   # answers the deploy's own check, which calls it from the runner
   ask_origins="${ASK_ORIGINS:-https://miraclehealth.us,https://www.miraclehealth.us}"
   if [ "$ENV_NAME" = test ]; then
@@ -261,7 +261,7 @@ setup)
     mask "$ANTHROPIC_API_KEY"
     args+=("ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
   else
-    echo "::warning title=Miracle AI::ANTHROPIC_API_KEY isn't set, so Miracle AI won't read posts and reports won't count toward the Signal."
+    echo "::warning title=Sig::ANTHROPIC_API_KEY isn't set, so Sig won't read posts and reports won't count toward the Signal."
   fi
   # The weekly email and the check-in texts. Their keys for the scheduled workflows are made
   # from the access token both sides already have, so there's nothing more to set up by hand.
@@ -282,7 +282,7 @@ setup)
   ;;
 
 eval-key)
-  # Miracle AI's test set (scripts/ask_eval.py): eval-key <key> sets the key that lifts the
+  # Sig's test set (scripts/ask_eval.py): eval-key <key> sets the key that lifts the
   # per-visitor limits on the TEST project's chat for the run; eval-key off removes it
   [ "$ENV_NAME" = test ] || { echo "eval-key is only for the test project" >&2; exit 2; }
   key="${3:-}"

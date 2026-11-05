@@ -1,5 +1,5 @@
 {
- "note": "How many people improve anyway, on a placebo or with time alone, for some of the uses members report on: context next to what members report, never a direct comparison (trial responders were measured on strict scales; a member's \"better\" is self-reported). Researched from meta-analyses and large trials, checked against each source, and shown on the library, in the community and by Miracle AI. scripts/sync_rules.sh copies this file to the app and Miracle AI; the website keeps its own copy (library/data/baselines.json).",
+ "note": "How many people improve anyway, on a placebo or with time alone, for some of the uses members report on: context next to what members report, never a direct comparison (trial responders were measured on strict scales; a member's \"better\" is self-reported). Researched from meta-analyses and large trials, checked against each source, and shown on the library, in the community and by Sig. scripts/sync_rules.sh copies this file to the app and Sig; the website keeps its own copy (library/data/baselines.json).",
  "checked": "2026-11-04",
  "uses": [
   {

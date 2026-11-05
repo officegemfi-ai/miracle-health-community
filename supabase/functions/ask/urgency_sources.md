@@ -1,6 +1,6 @@
 # When to get help: where each level comes from
 
-The warning signs Miracle AI can show (`urgency.ts`), each with the public guidance its level
+The warning signs Sig can show (`urgency.ts`), each with the public guidance its level
 rests on (checked October 29, 2026; 69 pages opened). Drafted from public medical guidance, always
 taking the more urgent level when sources differ or it is borderline. **Not yet reviewed by a
 clinician**: the card says so until someone has. Notes below flag the calls to look at first.

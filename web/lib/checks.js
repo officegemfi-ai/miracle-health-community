@@ -1,5 +1,5 @@
 // Checks on a report, and what they feed:
-// - "Did we read you right?": the author sees Miracle AI's read in one line and confirms or
+// - "Did we read you right?": the author sees Sig's read in one line and confirms or
 //   fixes it (how it went, how long, what for, side effects). When something important is
 //   missing (usually how long), it asks that one question first.
 // - "How is it now?": check-ins 2, 6 and 12 weeks after a report, in two or three taps.
@@ -124,8 +124,8 @@ export function readCheck(p, refresh) {
       ? ['It feeds the ', h('a', { href: `#/s/${encodeURIComponent(p.compound_id)}` }, `${p.compound_name} Signal`), ', now ', sigNum(p.compound_id), '.']
       : `It counts toward the first ${p.compound_name} Signal${p.compound_kind === 'stack' ? ' (this exact stack)' : ''}.`;
     const kick = p.read_confirmed ? (p.read_corrected ? 'Corrected by the author' : 'Confirmed by the author')
-      : mine ? 'Did we read you right?' : 'Miracle AI read';
-    const panel = h('section', { class: 'airead', 'aria-label': 'What Miracle AI read' },
+      : mine ? 'Did we read you right?' : 'Sig’s read';
+    const panel = h('section', { class: 'airead', 'aria-label': 'What Sig read' },
       sig(40, p.read_confirmed ? 'happy' : mine ? 'curious' : 'watching'),
       h('div', { class: 'grow' }, h('div', { class: 'kick' }, kick), h('p', {}, h('b', {}, `${readLine(p)}. `), feeds), actions));
     const showConfirm = () => actions.replaceChildren(h('div', { class: 'confirm' },
@@ -159,13 +159,13 @@ export function readCheck(p, refresh) {
     return panel;
   }
   if (p.read_pending) {
-    return h('section', { class: 'airead', 'aria-label': 'Miracle AI is reading', 'data-reading': p.id },
-      sig(40, 'think'), h('div', {}, h('div', { class: 'kick' }, 'Miracle AI is reading'), h('p', {}, 'It’s reading how it went for the Signal. This takes a moment; the page updates by itself.')));
+    return h('section', { class: 'airead', 'aria-label': 'Sig is reading', 'data-reading': p.id },
+      sig(40, 'think'), h('div', {}, h('div', { class: 'kick' }, 'Sig is reading'), h('p', {}, 'I’m reading how it went, for the Signal. This takes a moment; the page updates by itself.')));
   }
   if (mine) {
     return h('section', { class: 'airead' }, sig(40, 'curious'),
       h('div', { class: 'grow' }, h('div', { class: 'kick' }, 'Not in the Signal yet'),
-        h('p', {}, 'Miracle AI couldn’t tell how it went. Tell it yourself and your report counts:'),
+        h('p', {}, 'I couldn’t tell how it went. Tell me and your report counts:'),
         h('div', { class: 'confirm' }, taps(Object.entries(OUTCOME).map(([k, [label]]) => [k, label]), null, (v, btn) => saveRead(p, { outcome: v, confirm: true }, btn, () => {
           sigSay(['Got it: ', h('b', {}, OUTCOME[v][0]), '. Your own word counts more than my read.'], 'happy', 4200);
           refresh();

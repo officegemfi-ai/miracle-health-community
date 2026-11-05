@@ -1,4 +1,4 @@
-// Claude's Messages API, the two ways Miracle AI's agents call it: streamed (the guide,
+// Claude's Messages API, the two ways Sig's agents call it: streamed (the guide,
 // whose words reach the member as they are written) and plain (the agents that answer
 // by filling in a form: the Safety agent, the Synergy auditor and the final check).
 export const API = 'https://api.anthropic.com/v1/messages';

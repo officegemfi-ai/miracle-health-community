@@ -1,4 +1,4 @@
-// The community's side of every answer. Miracle AI speaks for two sources together: what the
+// The community's side of every answer. Sig speaks for two sources together: what the
 // studies show (the Library's fact sheets) and what the community reports (the Community
 // Signal: members' first-hand reports and public forum data). This reads the second, from the
 // public snapshot's aggregate numbers (never a post, a handle or a name), and decides, compound

@@ -1,8 +1,8 @@
 // Builds the evidence files: for every compound in the Library, the two voices for each use it's
 // known for (what the studies show, what the community reports, which leads, and how many improve
-// anyway), worked out with the very code Miracle AI uses (supabase/functions/ask/community.ts and
+// anyway), worked out with the very code Sig uses (supabase/functions/ask/community.ts and
 // agents.ts) from the same hourly snapshot. The library's fact sheets read these files, so a fact
-// sheet and Miracle AI say the same thing about the same question.
+// sheet and Sig say the same thing about the same question.
 //
 // Usage: deno run --allow-read --allow-write --allow-net=miraclehealth.us \
 //          scripts/build_evidence.ts <snapshot.json> <out_dir> [library_data_url]
@@ -97,6 +97,6 @@ for (const it of index.items) {
 }
 await Deno.writeTextFile(`${outDir}/evidence/index.json`, JSON.stringify({
   version: snap.generated_at ?? null, built_at: new Date().toISOString(), compounds,
-  note: 'Both voices for each compound and use, worked out with Miracle AI\'s own code from the same snapshot. Aggregate numbers only.',
+  note: 'Both voices for each compound and use, worked out with Sig\'s own code from the same snapshot. Aggregate numbers only.',
 }));
 console.log(`evidence: ${compounds.length} compounds from the snapshot of ${snap.generated_at ?? 'unknown'}`);

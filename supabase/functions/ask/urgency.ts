@@ -1,4 +1,4 @@
-// When to get help: Miracle AI never words warning signs itself. The guide picks signs from this
+// When to get help: Sig never words warning signs itself. The guide picks signs from this
 // table by id, and each one is shown under the level the table gives it. Drafted from public
 // medical guidance (each sign's sources are in urgency_sources.md), always taking the more urgent
 // level when sources differ or it's borderline. Not yet reviewed by a clinician: the card says so.

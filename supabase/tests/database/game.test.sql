@@ -166,7 +166,7 @@ select is(tests.total('carol'), 10, 'A first post of the day earns 5, plus 5 for
 
 select tests.as_service();
 select public.record_post_read(tests.id('bob_report'), true, 'better', '6 weeks', array['Nausea'], 'claude');
-select is(tests.total('bob'), 70, 'A first-hand report Miracle AI counts earns 40');
+select is(tests.total('bob'), 70, 'A first-hand report Sig counts earns 40');
 select is(tests.level('bob'), 2::smallint, 'which takes him past 60 points to Pulse');
 select is(tests.notes('bob', 'level_up'), 1::bigint, 'and tells him');
 select ok(tests.has_badge('bob', 'first_report'), 'His first counted report earns the First report badge');
@@ -296,7 +296,7 @@ select ok(tests.has_badge('bob', 'builder'), 'Top ten with 100+ points this mont
 select throws_ok($$ select public.claim_quest('report') $$, '23505', null, 'once a week');
 
 -- ===========================================================================
--- 9. Authors check Miracle AI's read
+-- 9. Authors check Sig's read
 -- ===========================================================================
 select tests.as_user('carol');
 select throws_ok($$ select public.confirm_read(tests.id('bob_report'), 'worse') $$, '42501', null,
@@ -306,7 +306,7 @@ select throws_like($$ select public.confirm_read(tests.id('carol_q'), 'better') 
 select tests.as_user('bob');
 select public.confirm_read(tests.id('bob_report'), 'same');
 select is((select (outcome, corrected, confirmed_at is not null) from public.post_reads where post_id = tests.id('bob_report'))::text,
-  '(same,t,t)', 'The author''s correction replaces Miracle AI''s read');
+  '(same,t,t)', 'The author''s correction replaces Sig''s read');
 select is(tests.total('bob'), 139, 'and earns 10');
 select is((select outcome from public.feed where id = tests.id('bob_report')), 'same', 'The feed shows the corrected read');
 select tests.as_service();

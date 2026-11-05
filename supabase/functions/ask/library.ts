@@ -1,4 +1,4 @@
-// The Miracle Health Library and the Community Signal, as Miracle AI's agents read them:
+// The Miracle Health Library and the Community Signal, as Sig's agents read them:
 // the public index of every compound (miraclehealth.us/library/data/index.json), each fact
 // sheet (entries/<id>.json) and the community's public snapshot (aggregate numbers only).
 // Everything is fetched from the public sites and kept for a few minutes.

@@ -14,7 +14,7 @@ Community-backed, Community-verified, Signal Certified) as members' first-hand r
 from the public forums, which count as 50 reports per compound. Each space shows its measuring
 tools: how first-hand reports split, with a 95% interval for "better", the side effects members
 mention and where it sits on the takeover line. Each Signal is also rated by use (joint pain,
-injury healing, sleep...): Miracle AI reads what each report was for (the list is
+injury healing, sleep...): Sig reads what each report was for (the list is
 `shared/uses.json`), and a use gets its own rating from members' reports once three name it, next
 to how often the public forums mention it. `web/lib/signalviz.js` draws these as plain SVG,
 so the public library on miraclehealth.us can use the same drawings.
@@ -23,7 +23,7 @@ so the public library on miraclehealth.us can use the same drawings.
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
 - `supabase/tests/database/`: 400 access, Community Signal, certification, ratings-by-use, game, stack and chat-limit tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal),
-  `delete-account`, `ask`: Miracle AI's chat on the public website (miraclehealth.us/ai), below,
+  `delete-account`, `ask`: Sig's chat on the public website (miraclehealth.us/ai), below,
   `newsletter`: The Signal, the weekly email (sign-ups from miraclehealth.us, double opt-in, confirm and
   unsubscribe links, sending an issue; emails go out once `RESEND_API_KEY` and `NEWSLETTER_FROM` are set),
   and `send-texts`: check-in texts for members who ask for them (once a Twilio messaging service is
@@ -34,9 +34,9 @@ so the public library on miraclehealth.us can use the same drawings.
 - `shared/rules.json`, `shared/uses.json`: the community rules and the list of uses, copied to the app and
   the AI reviewer by `scripts/sync_rules.sh`
 - `shared/kit/`: Miracle Health's design kit, the pieces the app and the website (miraclehealth.us) share
-  so they look like one product and can't drift apart: the bar of the four places (Library, Miracle AI,
+  so they look like one product and can't drift apart: the bar of the four places (Library, Ask Sig,
   Community, My Miracle), the evidence meter, the Community Signal number, compound tiles and chips, Sig,
-  the Signal drawings (`signalviz.js`) and the links between places (a question for Miracle AI, a check-in
+  the Signal drawings (`signalviz.js`) and the links between places (a question for Sig, a check-in
   from a member's Miracle Plan drafted as a post). `scripts/sync_kit.sh [path/to/miraclehealth-site]`
   copies it to `web/kit`, `web/lib/signalviz.js` and the website; CI checks every copy matches
   (`scripts/check_kit_sync.sh`), the website's on its main branch included
@@ -52,8 +52,23 @@ so the public library on miraclehealth.us can use the same drawings.
   the snapshot's age, the evidence files and the server functions answer; a failure emails you)
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
 
-## Miracle AI's chat (`supabase/functions/ask`)
-Anyone can talk with Miracle AI on miraclehealth.us/ai about improving with peptides,
+## Ask Sig (`supabase/functions/ask`)
+Sig is the Community Signal in person, and Miracle Health's AI: it reads every report into the
+Signal in the community, and answers questions in the chat called Ask Sig on the website.
+- **The names**: "Ask Sig" is the place (the menu, buttons, the page at miraclehealth.us/ai, with
+  miraclehealth.us/sig as a short link); "Sig" is who answers, and speaks as "I". The first mention
+  on a page says it plainly: "Sig, Miracle Health's AI". Never "Sig AI", never "Miracle AI".
+- **Saying it's an AI**: the page's opening line, its fine print, the adults-only check, the
+  welcome in the community, the privacy notice and the terms all say Sig is an AI, not a person
+  or a clinician; if asked, Sig says so too (`prompts.ts`).
+- **The voice**: friendly, plain and upbeat; never cute about risks; when safety comes up the
+  cheer goes and the words get plain. Never doses or directions for taking anything (on a
+  prescription, "Sig" is the pharmacist's word for the directions; Sig never gives them).
+- **No clinician step**: Sig doesn't make review packets any more; it says what to ask a
+  clinician, and the member's own clinician decides. Old packet links still open at
+  miraclehealth.us/ai/packet/.
+
+Anyone can talk with Sig on miraclehealth.us/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
 for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
 community (the Community Signal: members' first-hand reports and public forum data). Each message
@@ -101,14 +116,11 @@ goes through four agents and the community's numbers, and the page shows each st
    its cards, is read by Claude (Haiku) against the rules and released only once it's cleared,
    rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
    dosing units, supplement-extract brands and outside links are always taken out as well.
-   Nothing here is a plan until the visitor's own clinician, outside Miracle Health, has
-   reviewed it (no one at Miracle Health reviews chats). The page builds a review packet the
-   visitor takes to their own clinician (print or PDF, or a QR
-   code and link that carry the packet in the URL fragment to `miraclehealth.us/ai/packet/`, so
-   no server ever receives it); after the visit they mark it reviewed, in their own browser.
+   Sig lists questions for the visitor's own clinician, who decides what's right for them (no
+   one at Miracle Health reviews chats); the page copies them in one tap.
 
 No doses, no sellers, no diagnosis, ever. Flags that matter for the rest of a chat (under 18,
-pregnancy, an earlier crisis) carry over through Miracle AI's own replies, which the page sends
+pregnancy, an earlier crisis) carry over through Sig's own replies, which the page sends
 back signed, so nobody can put words in its mouth. The page keeps the conversation in the
 visitor's own browser tab; this function stores no messages and logs only timings and token
 counts. To keep the free chat from being run up, the database counts messages per visitor

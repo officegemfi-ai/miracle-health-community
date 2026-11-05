@@ -36,7 +36,7 @@ jobs:
           set -o pipefail
           deno test --allow-env supabase/functions 2>&1 | tee "$RUNNER_TEMP/deno.log" \
             || { scripts/ci_annotate.sh "Server function tests" "$RUNNER_TEMP/deno.log"; exit 1; }
-      - name: The evidence build still fits Miracle AI's code
+      - name: The evidence build still fits Sig's code
         run: |
           set -o pipefail
           deno check scripts/build_evidence.ts 2>&1 | tee "$RUNNER_TEMP/evidence.log" \

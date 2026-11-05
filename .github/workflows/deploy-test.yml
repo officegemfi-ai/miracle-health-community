@@ -7,7 +7,7 @@
 # It stays quiet until the test project is connected: deploy/test.env names the
 # project (SUPABASE_PROJECT_REF) and the repository has these secrets:
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, ANTHROPIC_API_KEY
-# The ask function (Miracle AI's chat on the website) is asked eleven real questions when it
+# The ask function (Sig's chat on the website) is asked eleven real questions when it
 # changes (scripts/ask_smoke.py), then its test set of about two hundred, graded automatically
 # (scripts/ask_eval.py, evals/questions.jsonl); answers and grades show on the run's summary page,
 # and the thirty most common questions with their answers come as a file for clinician review.
@@ -147,7 +147,7 @@ jobs:
       id-token: write
 
   ask:
-    name: Miracle AI answers real questions (test project)
+    name: Sig answers real questions (test project)
     needs: [check, backend]
     runs-on: ubuntu-24.04
     # A few minutes of questions, plus up to ten if the per-visitor limit makes it wait
@@ -168,10 +168,10 @@ jobs:
           fi
           set -o pipefail
           python3 scripts/ask_smoke.py "$URL" 2>&1 | tee "$RUNNER_TEMP/ask.log" \
-            || { scripts/ci_annotate.sh "Miracle AI" "$RUNNER_TEMP/ask.log"; exit 1; }
+            || { scripts/ci_annotate.sh "Sig" "$RUNNER_TEMP/ask.log"; exit 1; }
 
   eval:
-    name: Miracle AI's test set (test project)
+    name: Sig's test set (test project)
     needs: [check, backend, ask]
     runs-on: ubuntu-24.04
     # About two hundred questions, four at a time, each graded
@@ -203,7 +203,7 @@ jobs:
           trap 'scripts/supabase_project.sh test eval-key off' EXIT
           set -o pipefail
           python3 scripts/ask_eval.py "$URL" --key "$key" --out "$RUNNER_TEMP/eval" 2>&1 | tee "$RUNNER_TEMP/eval.log" \
-            || { scripts/ci_annotate.sh "Miracle AI's test set" "$RUNNER_TEMP/eval.log"; exit 1; }
+            || { scripts/ci_annotate.sh "Sig's test set" "$RUNNER_TEMP/eval.log"; exit 1; }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -240,7 +240,7 @@ jobs:
           (cd "$RUNNER_TEMP/site" && nohup python3 -m http.server 4173 --bind 127.0.0.1 > "$RUNNER_TEMP/http.log" 2>&1 &)
           for _ in $(seq 1 40); do curl -fsS -o /dev/null http://127.0.0.1:4173/test/ && break; sleep 0.5; done
           curl -fsS -o /dev/null http://127.0.0.1:4173/test/
-      - name: Sign up with a test number, post, Miracle AI reads it, delete the account
+      - name: Sign up with a test number, post, Sig reads it, delete the account
         env:
           BASE_URL: http://127.0.0.1:4173/test/
           EXPECT_SUPABASE_URL: https://${{ needs.check.outputs.ref }}.supabase.co

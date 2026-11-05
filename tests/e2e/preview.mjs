@@ -110,7 +110,7 @@ await upBtn.click();
 await page.waitForFunction((n) => Number(document.querySelectorAll('article.post')[1].querySelector('.vrail b').textContent) === n + 1, scoreBefore);
 check('Votes count', true);
 
-// A report: Miracle AI reads it, the Signal moves, the author is told. SS-31 has
+// A report: Sig reads it, the Signal moves, the author is told. SS-31 has
 // no reports here yet, so a first one has to move its number.
 const ssBefore = await page.evaluate(() => Number(document.querySelector('#tick-track [data-sig-of="ss31"]')?.textContent));
 await page.goto(`${BASE}#/new?c=ss31`);
@@ -119,10 +119,10 @@ await page.fill('#title', 'Six weeks on SS-31: more stamina on long rides');
 await page.fill('#body', 'Took it for 6 weeks through a clinic. I can ride longer before my legs give out. Compared with before I started: better.');
 await page.click('form button[type=submit]:text("Post")');
 await page.waitForSelector('h1.post-title:text("Six weeks on SS-31")');
-check('The new report opens, and Miracle AI starts reading', await page.isVisible('.airead:has-text("Miracle AI is reading")'));
+check('The new report opens, and Sig starts reading', await page.isVisible('.airead:has-text("Sig is reading")'));
 await page.waitForSelector('.airead:has-text("Better")', { timeout: 30000 });
-check('Miracle AI reads it as better, for 6 weeks, and it feeds the SS-31 Signal', /6 weeks/.test(await page.textContent('.airead')) && /SS-31 Signal/.test(await page.textContent('.airead')));
-await page.waitForSelector('.sigsay.in:has-text("Miracle AI read your report")', { timeout: 15000 });
+check('Sig reads it as better, for 6 weeks, and it feeds the SS-31 Signal', /6 weeks/.test(await page.textContent('.airead')) && /SS-31 Signal/.test(await page.textContent('.airead')));
+await page.waitForSelector('.sigsay.in:has-text("Sig read your report")', { timeout: 15000 });
 check('Sig tells the author how the report moved the Signal', /moved the SS-31 Signal [\d.]+ → [\d.]+/.test(await page.textContent('.sigsay')), (await page.textContent('.sigsay')).slice(0, 90));
 await page.waitForFunction((before) => Number(document.querySelector('#tick-track [data-sig-of="ss31"]')?.textContent) !== before, ssBefore, { timeout: 10000 });
 const ssAfter = await page.evaluate(() => Number(document.querySelector('#tick-track [data-sig-of="ss31"]')?.textContent));
@@ -146,7 +146,7 @@ await page.waitForSelector('.airead button:has-text("Yes, that’s right")');
 check('Answering it fills in the read', /for endurance/.test(await page.textContent('.airead')), (await page.textContent('.airead')).slice(0, 140));
 await page.click('.airead button:has-text("Yes, that’s right")');
 await page.waitForSelector('.airead .kick:has-text("by the author")');
-check('Confirming Miracle AI’s read earns 10', (await waitPoints(page, afterReport)) === afterReport + 10);
+check('Confirming Sig’s read earns 10', (await waitPoints(page, afterReport)) === afterReport + 10);
 
 // A thread
 await page.fill('#comment', 'Update at week 5: still better on stairs.');

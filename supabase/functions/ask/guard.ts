@@ -1,4 +1,4 @@
-// Plain checks on what Miracle AI writes. The Safety agent reads every part of a reply before
+// Plain checks on what Sig writes. The Safety agent reads every part of a reply before
 // it's shown (agents.ts, the gate); these run as well, on everything that goes out:
 //   - amounts in dosing units are always taken out, whatever the agent said, since Miracle
 //     Health gives no doses (body-weight changes like "lost 8.4 kg" and lab units like

@@ -1,6 +1,6 @@
 // After a deploy: the test app, on the real test project, works end to end. A test
 // number (no text is sent to it) signs up (no invite needed), joins a space, posts
-// a first-hand report, and Miracle AI reads it for real (the database asks the
+// a first-hand report, and Sig reads it for real (the database asks the
 // review-content function, which asks Claude); the read and the points arrive live.
 // Then the account is deleted, which removes everything it wrote.
 // Usage: BASE_URL=<the test app, e.g. served from the runner: http://127.0.0.1:4173/test/>
@@ -97,8 +97,8 @@ try {
 
   // The read comes back through the database's hook, the function and Claude
   const read = await page.waitForSelector('.airead:has-text("Better")', { timeout: 150000 }).then(() => true, () => false);
-  check('Miracle AI reads it for real: better, and it feeds the BPC-157 Signal', read, read ? '' : (await page.textContent('.airead').catch(() => 'no read panel')).slice(0, 120));
-  const told = await page.waitForSelector('.sigsay:has-text("Miracle AI read your report")', { timeout: 15000 }).then(() => true, () => false);
+  check('Sig reads it for real: better, and it feeds the BPC-157 Signal', read, read ? '' : (await page.textContent('.airead').catch(() => 'no read panel')).slice(0, 120));
+  const told = await page.waitForSelector('.sigsay:has-text("Sig read your report")', { timeout: 15000 }).then(() => true, () => false);
   check('and Sig tells the author as it lands (live updates work)', told);
   await shot('2_read');
 

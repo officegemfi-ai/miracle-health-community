@@ -106,7 +106,7 @@ from (values
    'I have tried Selank (see my other post). Curious how people who tried both compare them for focus, not anxiety.', null, null)
 ) as t(k, author, compound, kind, hours, title, body, status, reason);
 
--- What Miracle AI read in each report (the real backend asks Claude)
+-- What Sig read in each report (the real backend asks Claude)
 select public.record_post_read(pg_temp.p(k), true, outcome, duration, effects, 'preview-reader')
 from (values
   ('p20', 'worse', '6 weeks', array['Nausea', 'Vomiting']), ('p21', 'same', '3 months', array[]::text[]),

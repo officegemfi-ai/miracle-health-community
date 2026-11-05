@@ -229,7 +229,7 @@ grant all on bpc_before to authenticated, service_role;
 select tests.as_service();
 select public.record_post_read(tests.id('bob_stack'), true, 'better', '6 weeks', null, 'claude');
 select is((select compound_id from public.post_reads where post_id = tests.id('bob_stack')), tests.cid('bob_stack'),
-  'Miracle AI''s read of a stack report counts for the stack');
+  'Sig''s read of a stack report counts for the stack');
 select tests.as_user('bob');
 select is((select kind || ':' || have || ':' || need from public.community_goals where compound_id = tests.cid('bob_stack')),
   'unlock:1:3', 'After its first report the stack has a goal: three reports unlock its Signal');

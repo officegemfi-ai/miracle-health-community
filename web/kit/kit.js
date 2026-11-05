@@ -17,7 +17,7 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 // ---------------------------------------------------------------------------
 // The four places, in this order on every page
 // ---------------------------------------------------------------------------
-export const PLACES = [['library', 'Library'], ['ai', 'Miracle AI'], ['community', 'Community'], ['my', 'My Miracle']];
+export const PLACES = [['library', 'Library'], ['ai', 'Ask Sig'], ['community', 'Community'], ['my', 'My Miracle']];
 // On the website pass site: '' (its own links stay on the page's origin); in the community pass
 // community: '' (its own home is #/home)
 export function placeHref(key, { site = SITE, community = COMMUNITY } = {}) {
@@ -36,7 +36,7 @@ export function barHtml(current = '', { cls = '', label = 'Miracle Health', ...w
 // ---------------------------------------------------------------------------
 export const b64u = (text) => btoa(String.fromCharCode(...new TextEncoder().encode(String(text)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 export const unb64u = (text) => new TextDecoder().decode(Uint8Array.from(atob(String(text).replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
-// Miracle AI with a question typed in, not sent: they read it, change it, then send it
+// Sig with a question typed in, not sent: they read it, change it, then send it
 export const askAboutCompound = (name) => `What may ${name} do for me? What does the evidence say, and what do members report?`;
 export const askLink = (question, { site = SITE } = {}) => `${site}/ai/#ask=${b64u(String(question).slice(0, 1500))}`;
 export function askFrom(hash) {

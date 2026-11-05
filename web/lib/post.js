@@ -1,4 +1,4 @@
-// One post: what Miracle AI read (and the author's check on it, lib/checks.js), how it is
+// One post: what Sig read (and the author's check on it, lib/checks.js), how it is
 // now, the reply thread, reporting and editing.
 import { h, icon, fmtN, fmt1, ago, toast, friendly, msgBox, say, modal, confirmBox } from './ui.js';
 import { sig, emblem } from './art.js';
@@ -238,7 +238,7 @@ export async function renderPost(id, opts = {}) {
   await loadThread(opts.focus);
   if (opts.edit && p.is_mine) editPost(p, bodyBox, msg);
 
-  // When Miracle AI's read lands, or a moderator acts on this post, the page
+  // When Sig's read lands, or a moderator acts on this post, the page
   // updates by itself. The listeners go away once the page does.
   const onRead = async (e) => {
     if (!document.body.contains(readBox)) { document.removeEventListener('mh:read', onRead); return; }
@@ -309,7 +309,7 @@ function editPost(p, bodyBox, msg) {
       const { error } = await sb.from('posts').update({ title: title.value.trim(), body: body.value.trim() }).eq('id', p.id);
       save.disabled = false;
       if (error) return say(msg, friendly(error));
-      sigSay('Saved. Miracle AI reads it again, so it counts the way you wrote it now.', 'think', 4000);
+      sigSay('Saved. I’ll read it again, so it counts the way you wrote it now.', 'think', 4000);
       renderPost(p.id);
     },
   }, h('label', { class: 'f' }, h('span', {}, 'Title'), title), h('label', { class: 'f' }, h('span', {}, 'Post'), body),

@@ -276,7 +276,7 @@ export async function renderHome(sort = 'hot') {
       h('div', {},
         h('div', { class: 'kick' }, joined.length ? `// ${joined.length} space${joined.length === 1 ? '' : 's'} you follow` : '// Everything, until you join spaces'),
         h('h1', {}, 'Your feed.'),
-        h('p', { class: 'feed-hero-cap' }, 'First-hand reports, read by Miracle AI into the Community Signal.'))),
+        h('p', { class: 'feed-hero-cap' }, 'First-hand reports, read by Sig into the Community Signal.'))),
     due, composerBar(), sortbar('#/home', sort),
     newPostsPill(list, (row) => !joined.length || (row.part_ids?.length ? row.part_ids : [row.compound_id]).some((id) => joined.some((s) => s.compound_id === id)), reload),
     list);
@@ -300,14 +300,14 @@ export async function renderPopular(sort = 'hot') {
 }
 
 // Where this space leads in the rest of Miracle Health: how strong the evidence is (the Library's
-// grade), its fact sheet, and Miracle AI with a question about it typed in
+// grade), its fact sheet, and Sig with a question about it typed in
 function spaceLinks(sp) {
   const slot = h('span', { class: 'ev-slot' });
   if (sp.kind !== 'stack') evidenceTag(sp.compound_id).then((el) => { if (el) slot.replaceWith(el); else slot.remove(); });
   return h('div', { class: 'space-links' },
     sp.kind === 'stack' ? null : slot,
     sp.kind === 'stack' ? null : h('a', { href: `${LIBRARY}${encodeURIComponent(sp.compound_id)}/` }, icon('flask', 16), 'Fact sheet'),
-    h('a', { href: askLink(askAbout(sp)) }, icon('sparkle', 16), 'Ask Miracle AI'));
+    h('a', { href: askLink(askAbout(sp)) }, icon('sparkle', 16), 'Ask Sig'));
 }
 
 export async function renderSpace(cid, sort = 'hot', only = 'all') {
@@ -398,7 +398,7 @@ export async function renderExplore(family = '') {
 // ---------------------------------------------------------------------------
 // New post
 // ---------------------------------------------------------------------------
-// d: a draft from miraclehealth.us (a Miracle Plan check-in, or "add how it went" in Miracle AI;
+// d: a draft from miraclehealth.us (a Miracle Plan check-in, or "add how it went" in Sig;
 // kit.js draftLink), to edit
 // A title from the report's first sentence, when none was given (a title is 5 to 140 characters,
 // so a very short first sentence gives way to a plain one)
@@ -426,7 +426,7 @@ export function renderNew(param = '', d = '') {
   else if (fromGuest?.body) body.value = fromGuest.body;
   const go = h('button', { class: 'btn lime', type: 'submit' }, 'Post');
   const hint = h('div', { class: 'rules-note' }, sig(40, 'think'), h('div', {},
-    h('b', {}, 'Miracle AI reads every report into the Signal. '),
+    h('b', {}, 'Sig reads every report into the Signal. '),
     'Say how it compares to before you started, and for how long. A report that says it didn’t work counts just as much (and earns the same 40 points). No sourcing or sellers (rule 1), and don’t tell others what to take (rule 2).'));
   // A report (not a question) can also go on a public page, if its author chooses
   const pub = h('input', { type: 'checkbox', id: 'make-public' });

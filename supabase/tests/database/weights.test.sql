@@ -243,7 +243,7 @@ select tests.as_owner();
 select ok(private.duration_ok('6 months or more') and private.duration_ok('Under a week') and private.duration_ok('8 weeks')
           and not private.duration_ok('250 mcg') and not private.duration_ok('2x daily'), 'How long: lengths of time only');
 select is(private.clean_effects(array['Nausea', 'www.acmepeps.com', 'code SAVE20', '5mg crash', 'Metallic taste']),
-  array['Nausea', 'Metallic taste'], 'From Miracle AI''s read too, only a few plain words are kept');
+  array['Nausea', 'Metallic taste'], 'From Sig''s read too, only a few plain words are kept');
 select tests.as_user('bob');
 select ok((select count(*) from public.side_effect_names()) >= 30
           and not exists (select 1 from public.side_effect_names() n where n = 'Lethargy after dosing'),
@@ -460,12 +460,12 @@ select is((select (reports, goal)::text from public.focus_progress where compoun
   'The focus pairs count reports toward their goal, one per member (BPC-157 for injury: 2 of 10)');
 select tests.as_owner();
 insert into private.forum_counts (compound_id, use_id, source, posts, positive, mixed, negative, method, terms_ok)
-values ('tb500', 'injury', 'A licensed forum', 412, 251, 100, 61, 'Every post naming TB-500 in 2026, read by Miracle AI', true),
+values ('tb500', 'injury', 'A licensed forum', 412, 251, 100, 61, 'Every post naming TB-500 in 2026, read by Sig', true),
        ('tb500', null, 'Reddit', 900, 600, 200, 100, 'Not allowed: no agreement for commercial use', false);
 update public.signal_snapshots set computed_at = now() - interval '8 days' where compound_id = 'bpc157' and version = 1;
 create temp table snap as select private.public_snapshot() as j;
 select is((select j->'signals'->'tb500'->'forum_counts' from snap),
-  '[{"to": null, "use": "injury", "from": null, "posts": 412, "method": "Every post naming TB-500 in 2026, read by Miracle AI", "source": "A licensed forum", "mixed_pct": 24, "negative_pct": 15, "positive_pct": 61}]'::jsonb,
+  '[{"to": null, "use": "injury", "from": null, "posts": 412, "method": "Every post naming TB-500 in 2026, read by Sig", "source": "A licensed forum", "mixed_pct": 24, "negative_pct": 15, "positive_pct": 61}]'::jsonb,
   'Counted forum data shows only from sources whose terms allow it');
 select is((select jsonb_array_length(j->'signals'->'kpv'->'watch') from snap), 1, 'The snapshot carries the watch');
 select ok((select (u->>'low') is not null and (u->>'high') is not null from snap, jsonb_array_elements(j->'signals'->'melatonin'->'by_use') u

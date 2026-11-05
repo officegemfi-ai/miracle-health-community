@@ -177,7 +177,7 @@ export function notifParts(n) {
   const d = n.data || {};
   const who = n.actor_handle ? `u/${n.actor_handle}` : 'Someone';
   switch (n.kind) {
-    case 'welcome': return [sig(34, 'happy'), 'Welcome to Miracle Health. I’m Sig, the Community Signal in person. Join a few spaces and share how it went.', null, '#/explore'];
+    case 'welcome': return [sig(34, 'happy'), 'Welcome to Miracle Health. I’m Sig, the Community Signal in person, and Miracle Health’s AI: I read every report into the Signal. Join a few spaces and share how it went.', null, '#/explore'];
     case 'comment': return [icon('comment', 18), `${who} commented on your post`, n.comment_body || n.post_title, `#/post/${n.post_id}`];
     case 'reply': return [icon('comment', 18), `${who} replied to you`, n.comment_body, `#/post/${n.post_id}`];
     case 'same_for_me': {
@@ -188,8 +188,8 @@ export function notifParts(n) {
       const out = OUTCOME[d.outcome]?.[0] || 'counted';
       const moved = d.from != null && d.to != null && Number(d.from) !== Number(d.to);
       return [sig(34, 'cheer'), moved
-        ? `Miracle AI read your report: ${out}. It moved the ${n.compound_name} Signal ${fmt1(d.from)} → ${fmt1(d.to)}.`
-        : `Miracle AI read your report: ${out}. It now feeds the ${n.compound_name} Signal.`, n.post_title, `#/post/${n.post_id}`];
+        ? `Sig read your report: ${out}. It moved the ${n.compound_name} Signal ${fmt1(d.from)} → ${fmt1(d.to)}.`
+        : `Sig read your report: ${out}. It now feeds the ${n.compound_name} Signal.`, n.post_title, `#/post/${n.post_id}`];
     }
     case 'milestone': return [icon('up', 18), `Your post reached ${d.score} helpful votes`, n.post_title, `#/post/${n.post_id}`];
     case 'level_up': return [emblem(d.level, 34), `You reached ${d.name}. Level ${d.level} of 15, ${d.tier} tier.`, null, `#/u/${encodeURIComponent(S.me?.handle || '')}`];
@@ -344,6 +344,7 @@ export function onboarding() {
       box.replaceChildren(
         h('div', { class: 'row nw' }, sig(88, 'happy'), h('div', {}, h('div', { class: 'kick' }, 'Welcome'), h('h2', {}, 'Hi, I’m Sig.'))),
         h('p', {}, 'I’m the Community Signal in person: one number per compound, built from what people report happened to them. Every report, every “same for me” and every vote here makes me sharper.'),
+        h('p', { class: 'small' }, 'I’m also Miracle Health’s AI. I read each report into the Signal (you check my read with a tap), and at Ask Sig on miraclehealth.us I answer questions from the studies and from what people report.'),
         h('p', { class: 'small muted' }, 'Experiences, not medical advice. Nobody here tells anyone what to take.'),
         h('div', { class: 'row end mt16' }, h('button', { class: 'btn lime', type: 'button', onclick: () => { step = 1; draw(); } }, 'Show me around')), dots());
     } else if (step === 1) {

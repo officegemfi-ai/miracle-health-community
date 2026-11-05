@@ -143,7 +143,7 @@ await A.fill('#body', 'Stairs are easier than before I started. Took it for six 
 await A.click('form button[type=submit]:text("Post")');
 await A.waitForSelector('h1.post-title:text("Week 4 on BPC-157")');
 const postId = decodeURIComponent(A.url().split('#/post/')[1]);
-check('Their report goes up, and Miracle AI starts reading it', !!postId && await A.isVisible('.airead:has-text("Miracle AI is reading")'));
+check('Their report goes up, and Sig starts reading it', !!postId && await A.isVisible('.airead:has-text("Sig is reading")'));
 
 // Who can read it is the author's choice: members only, or anyone, on a public page
 await A.waitForSelector('.pub-line button:text("Let anyone read it")');
@@ -168,15 +168,15 @@ check('Another member joins s/BPC-157, and the report is on their Home feed', tr
 await B.waitForSelector('#tick-track [data-sig-of="bpc157"]', { state: 'attached' });
 const bpcBefore = await tickerValue(B, 'bpc157');
 
-// Miracle AI reads the report. Test runs have no Anthropic key, so the test records
+// Sig reads the report. Test runs have no Anthropic key, so the test records
 // the read the way the review-content function does (with the database owner's rights).
 await db.query(`select public.record_post_read($1, true, 'better', '6 weeks', array['Nausea'], 'e2e',
                  '[{"use": "injury", "outcome": "better"}, {"use": "joints", "outcome": "better"}]')`, [postId]);
 
-await A.waitForSelector('.sigsay.in:has-text("Miracle AI read your report")', { timeout: 20000 });
+await A.waitForSelector('.sigsay.in:has-text("Sig read your report")', { timeout: 20000 });
 check('The author hears from Sig the moment the read lands, without a reload (live)', /Better/.test(await A.textContent('.sigsay')), (await A.textContent('.sigsay')).slice(0, 100));
 await A.waitForSelector('.airead:has-text("Better")', { timeout: 15000 });
-check('The post shows what Miracle AI read: better, what for, for 6 weeks, side effects, feeding the BPC-157 Signal',
+check('The post shows what Sig read: better, what for, for 6 weeks, side effects, feeding the BPC-157 Signal',
   /6 weeks/.test(await A.textContent('.airead')) && /Nausea/.test(await A.textContent('.airead')) && /BPC-157 Signal/.test(await A.textContent('.airead'))
   && /for injury healing, joint pain/.test(await A.textContent('.airead')), (await A.textContent('.airead')).slice(0, 160));
 await A.waitForSelector('dialog .celebrate h2:text("You reached Pulse.")', { timeout: 15000 });
@@ -223,7 +223,7 @@ await A.click('#bell');
 await A.waitForSelector('.notif-pop .notif');
 const aNotes = await A.locator('.notif-pop .notif').allTextContents();
 check('Notifications open from the bell: the read, the new emblem, the badges',
-  aNotes.some((t) => /Miracle AI read your report/.test(t)) && aNotes.some((t) => /You reached Pulse/.test(t)) && aNotes.some((t) => /New badge/.test(t)), `${aNotes.length} notifications`);
+  aNotes.some((t) => /Sig read your report/.test(t)) && aNotes.some((t) => /You reached Pulse/.test(t)) && aNotes.some((t) => /New badge/.test(t)), `${aNotes.length} notifications`);
 await A.click('#bell');   // closes it
 await A.waitForSelector('.notif-pop', { state: 'detached' });
 await A.waitForSelector('#bell .count.hide', { state: 'attached' });
@@ -245,7 +245,7 @@ await B.click('form.composer button:text("Comment")');
 await B.waitForSelector('.cm:has-text("turning point")');
 check('They comment, and the count updates', (await B.textContent('.row h2:has-text("Comments")')).includes('(1)'));
 check('The author is told about the comment on their screen (live)', await aToldComment);
-check('Miracle AI’s read shows on the post for everyone, and it feeds the BPC-157 Signal',
+check('Sig’s read shows on the post for everyone, and it feeds the BPC-157 Signal',
   (await B.textContent('.airead')).includes('Better') && (await B.textContent('.airead')).includes('BPC-157 Signal'));
 const aToldSame = seen(A, '.toast:has-text("said “same for me” on your report")');
 await B.click('article.post button.same');
@@ -331,7 +331,7 @@ check('or hand themselves a badge', r.status >= 400, `HTTP ${r.status}`);
 r = await api('POST', 'rpc/claim_quest', { quest: 'report' });
 check('A quest can’t be claimed before it’s done', r.status >= 400 && /Not done yet/.test(r.body?.message || ''), r.body?.message);
 r = await api('POST', 'rpc/confirm_read', { post_id: postId, outcome: 'worse' });
-check('Only the author can confirm or correct Miracle AI’s read', r.status >= 400, `HTTP ${r.status} ${r.body?.message || ''}`);
+check('Only the author can confirm or correct Sig’s read', r.status >= 400, `HTTP ${r.status} ${r.body?.message || ''}`);
 r = await api('GET', 'notifications?select=user_id');
 check('Through the API, a member reads only their own notifications', r.status === 200 && r.body.length > 0 && r.body.every((x) => x.user_id === bId), `${r.body?.length} rows`);
 r = await api('GET', 'points?select=user_id');

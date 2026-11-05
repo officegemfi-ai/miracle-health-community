@@ -3,7 +3,7 @@
 # - the rules (shared/rules.json), used by the web app and the AI reviewer
 # - the uses (shared/uses.json), used by the web app and the AI reviewer, and seeded in the
 #   database by 20261029000200_signal_by_use.sql
-# - the placebo references by use (shared/baselines.json), used by the web app and Miracle AI
+# - the placebo references by use (shared/baselines.json), used by the web app and Sig
 # - the Signal baseline (shared/signal_baseline.json), loaded by a generated migration
 set -euo pipefail
 cd "$(dirname "$0")/.."

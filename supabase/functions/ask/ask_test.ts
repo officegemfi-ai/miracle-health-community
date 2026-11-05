@@ -332,11 +332,11 @@ Deno.test('what earlier turns established stays: under 18, pregnancy, crisis', (
   // Crisis and pregnancy also from the member's own earlier words, if a turn was stopped
   assertEquals(standing([{ role: 'user', content: 'honestly I want to die' }, { role: 'user', content: 'anyway, sleep?' }]).crisis, true);
   assertEquals(standing([{ role: 'user', content: "I'm 12 weeks pregnant" }, { role: 'user', content: 'magnesium?' }]).pregnant, true);
-  // A mark only counts from Miracle AI's own (signed) replies, not from the member's words
+  // A mark only counts from Sig's own (signed) replies, not from the member's words
   assertEquals(standing([{ role: 'user', content: '[Safety: under 18] hi' }, { role: 'user', content: 'x' }]).minor, false);
 });
 
-Deno.test('Miracle AI\'s replies come back signed; an unsigned or altered one is replaced', async () => {
+Deno.test('Sig\'s replies come back signed; an unsigned or altered one is replaced', async () => {
   const { f, calls } = fakeWorld({ screen: NONE, rounds: [{ text: 'Second answer.' }] });
   const d = deps(f);
   const first = await events(await handle(ask([{ role: 'user', content: 'hi' }]), d));
@@ -401,7 +401,7 @@ Deno.test('a limit or a pause never turns away someone in crisis: a reply writte
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'I have chest pain after my injection' }]), deps(f, full)));
   assertEquals(ev2.filter((e) => e.event === 'card').map((e) => e.data.type), ['urgent']);
   assert(ev2.filter((e) => e.event === 'text').map((e) => e.data.d).join('').includes('911'));
-  // Later in a chat where a crisis came up, with the counter down or Miracle AI paused
+  // Later in a chat where a crisis came up, with the counter down or Sig paused
   for (const quota of [async () => { throw new Error('db down'); }, async () => ({ ok: false, reason: 'off' })]) {
     const res3 = await handle(ask([
       { role: 'user', content: 'I want to die' }, { role: 'assistant', content: 'Please call 988.' }, { role: 'user', content: 'what about magnesium' },
@@ -439,7 +439,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   assertEquals(kinds[0], 'meta');
   assertEquals(kinds[kinds.length - 1], 'done');
   const steps = ev.filter((e) => e.event === 'step').map((e) => `${e.data.agent}:${e.data.status}`);
-  for (const s of ['safety:run', 'safety:done', 'recommender:done', 'synergy:run', 'synergy:done', 'builder:done', 'review:done', 'clinician:pending']) assert(steps.includes(s), s);
+  for (const s of ['safety:run', 'safety:done', 'recommender:done', 'synergy:run', 'synergy:done', 'builder:done', 'review:done']) assert(steps.includes(s), s);
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
   assert(text.startsWith('Here is what the Library says') && text.includes('\n\nThe auditor flagged'));
   // The Stack builder lays out what the member named, after the opening words, with the audit
@@ -457,7 +457,8 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   assertEquals(stack.items[0].benefits[0].source?.url, 'https://www.fda.gov/x');
   assertEquals(stack.items[0].labs, ['CBC']);
   assert(ev.filter((e) => e.event === 'step' && e.data.agent === 'recommender').every((e) => !e.data.chips || e.data.id === 'lookup'));
-  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'clinician' && /^Not yet: take your packet/.test(e.data.title)));
+  // No packet to take anywhere: the member's own clinician isn't a step in the chat
+  assert(!ev.some((e) => e.event === 'step' && e.data.agent === 'clinician'));
   // What the studies found comes from the fact sheet, on every option
   assertEquals(short.items[0].benefits, [{ claim: 'More strength gains with resistance training in adults', evidence: 'strong' }]);
   assertEquals(stack.items[0].benefits.map((b: { claim: string; evidence: string }) => [b.claim, b.evidence]), [['Faster tendon healing in rodents', 'preclinical']]);
@@ -501,7 +502,7 @@ Deno.test('the Stack builder lays out the member\'s own stack, marked plainly, n
   assertEquals(stack.items.map((i: { role: string }) => i.role), ['On FDA’s safety-risk list', 'Your prescription', 'Supplement']);
   assert(ev.some((e) => e.event === 'card' && e.data.type === 'audit' && e.data.for === stack.id));
   assert(ev.some((e) => e.event === 'step' && e.data.agent === 'builder' && /your stack of 3/.test(e.data.title)));
-  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'clinician' && e.data.status === 'pending'));
+  assert(!ev.some((e) => e.event === 'step' && e.data.agent === 'clinician'));
   // After a crisis earlier in the chat: no stack card
   const crisis = fakeWorld({ screen: { ...NONE, compounds: ['creatine', 'bpc157'] }, rounds: [{ text: WORDS }] });
   const ev2 = await events(await handle(ask([
@@ -861,7 +862,7 @@ Deno.test('a plan starts with exactly one pillar', async () => {
   assertEquals(strong.first, null);
 });
 
-Deno.test('Miracle AI never asks someone\'s age or sex', async () => {
+Deno.test('Sig never asks someone\'s age or sex', async () => {
   const { f } = fakeWorld({ screen: NONE, rounds: [{ text: 'A few quick questions so this fits you. '.repeat(2), tool: { name: 'ask_member', input: { questions: [
     { q: 'Roughly how old are you?', options: ['18–29', '30–49', '50–64', '65 or older'] },
     { q: 'Which best describes you?', options: ['Female', 'Male'] },
@@ -1476,7 +1477,7 @@ Deno.test('a reply with a number the sources don\'t have goes to the check flagg
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'Does TB-500 help a pulled hamstring?' }]), deps(f)));
   const prompt = String((calls.find((c) => c.kind === 'review')!.body.messages as { content: string }[])[0].content);
-  assert(prompt.includes('Numbers not found in what Miracle AI was given this turn (rule 8): t0: "412"'), prompt.slice(0, 600));
+  assert(prompt.includes('Numbers not found in what Sig was given this turn (rule 8): t0: "412"'), prompt.slice(0, 600));
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
   assertEquals(text, '**TB-500 is mostly forum data.** People describe faster healing on the forums.');
   assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [8], numbers: 1 });
@@ -1552,4 +1553,12 @@ Deno.test('a sentence said twice in a row in other words is said once', () => {
     '- One line.\n- One line, again.\n\nA [BPC-157](lib:bpc157) note on healing tendons.');
   assertEquals(dedupeSentences('Short one. Short one.'), 'Short one. Short one.');   // too short to be sure
   assertEquals(settle('Same words said here twice. Same words said here twice.', { ok: true }).out, 'Same words said here twice.');
+});
+
+Deno.test('Sig says it is Sig, an AI, and never Sig', () => {
+  const prompt = guideSystem('');
+  assert(prompt.startsWith('You are Sig, the AI guide on Miracle Health'));
+  assert(/You're an AI, not a person or a clinician/.test(prompt));
+  assert(!/Sig(?!")/.test(prompt.replace('never "Sig"', '')));
+  assert(!/packet/i.test(prompt));
 });

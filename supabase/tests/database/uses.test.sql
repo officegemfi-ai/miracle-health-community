@@ -113,7 +113,7 @@ select tests.as_anon();
 select throws_ok($$ select * from public.signal_uses $$, '42501', null, 'Nobody signed out reads them');
 
 -- ===========================================================================
--- 2. What a report was for, as Miracle AI reads it
+-- 2. What a report was for, as Sig reads it
 -- ===========================================================================
 select tests.as_owner();
 select tests.post('r1', 'bob', 'bpc157');

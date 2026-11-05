@@ -143,7 +143,7 @@ function authLayout(...formKids) {
       h('p', { class: 'lede' }, 'Your report moves the number for the next person, even if it did nothing. Free, for adults 18 and over.'),
       h('ol', { class: 'auth-steps' },
         h('li', {}, h('span', { class: 'n' }, '01'), h('b', {}, 'Share how it went'), h('span', {}, 'What you took it for, for how long, and whether things got better, stayed the same or got worse.')),
-        h('li', {}, h('span', { class: 'n' }, '02'), h('b', {}, 'Check the read'), h('span', {}, 'Miracle AI shows you what it understood. Fix anything it got wrong: your word wins.')),
+        h('li', {}, h('span', { class: 'n' }, '02'), h('b', {}, 'Check the read'), h('span', {}, 'Sig shows you what it understood. Fix anything it got wrong: your word wins.')),
         h('li', {}, h('span', { class: 'n' }, '03'), h('b', {}, 'See it count'), h('span', {}, 'The rating for that use updates, and you’re asked how it’s going at 2, 6 and 12 weeks.')))),
     h('div', { class: 'auth-form' }, h('div', { class: 'inner' }, ...formKids))));
 }

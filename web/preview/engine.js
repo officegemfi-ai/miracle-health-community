@@ -346,7 +346,7 @@ let soonTimer = null;
 function soon() { clearTimeout(soonTimer); soonTimer = setTimeout(pump, 60); }
 
 // ---------------------------------------------------------------------------
-// Miracle AI's read, in the preview: a quick word-list stand-in for the Claude
+// Sig's read, in the preview: a quick word-list stand-in for the Claude
 // read the real backend does. It records the read the same way (record_post_read).
 // ---------------------------------------------------------------------------
 const AI_POS = [/\bbetter\b/, /\bimprov/, /\bhelp(ed|s|ing)?\b/, /\bwork(ed|s|ing)\b/, /\blost \d/, /\bdown \d+\s?(lb|lbs|kg|pounds)\b/, /\bdropped\b/, /\bgone\b/, /\bhealed\b/, /\brecover(ed|ing)\b/, /\bgreat\b/, /\bnoticeabl/, /\bstronger\b/, /\bmore energy\b/, /\bsleeping better\b/, /\bless pain\b/, /\beased\b/, /\bcalmer\b/, /\beasier\b/];

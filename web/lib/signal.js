@@ -306,7 +306,7 @@ export async function renderSignalPage() {
     movers, sortbar, list,
     h('section', { class: 'card mt16' },
       h('h3', {}, 'How the number moves'),
-      h('p', { class: 'small muted' }, '65% is what people report happened, 15% how much those reports agree, 10% how many independent voices there are and 10% how much there is to go on. Every first-hand report Miracle AI reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
+      h('p', { class: 'small muted' }, '65% is what people report happened, 15% how much those reports agree, 10% how many independent voices there are and 10% how much there is to go on. Every first-hand report Sig reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
       h('a', { class: 'lnk small', href: '#/how' }, 'More on how it works')));
   setRail(await railCards('signal'));
   const [rows, pulse] = await Promise.all([loadSignal(), loadPulse(), loadHistory()]);
@@ -397,11 +397,11 @@ export async function renderSignalPage() {
 export function outcomeChip(p) {
   if (!p.counts_for_signal || !OUTCOME[p.outcome]) return null;
   const [label, cls] = OUTCOME[p.outcome];
-  return h('span', { class: `chip oc ${cls}`, title: 'Miracle AI read this as a first-hand report. It feeds the Signal.' }, h('span', { class: 'dot' }), `Feeds the Signal · ${label}`);
+  return h('span', { class: `chip oc ${cls}`, title: 'Sig read this as a first-hand report. It feeds the Signal.' }, h('span', { class: 'dot' }), `Feeds the Signal · ${label}`);
 }
 
 export function readMini(p) {
   if (p.kind === 'question') return null;
-  if (p.read_pending) return h('span', { class: 'read-mini' }, sig(18, 'think'), 'Miracle AI is reading…');
+  if (p.read_pending) return h('span', { class: 'read-mini' }, sig(18, 'think'), 'Sig is reading…');
   return null;
 }

@@ -147,8 +147,8 @@ jobs:
       - name: The evidence files (both voices, per compound and use)
         if: steps.live.outputs.open == 'true'
         run: |
-          # Worked out with Miracle AI's own code from the same snapshot, so the library's fact
-          # sheets and Miracle AI say the same thing (scripts/build_evidence.ts)
+          # Worked out with Sig's own code from the same snapshot, so the library's fact
+          # sheets and Sig say the same thing (scripts/build_evidence.ts)
           if [ -s _site/snapshot.json ]; then
             deno run --allow-read --allow-write --allow-net=miraclehealth.us scripts/build_evidence.ts _site/snapshot.json _site \
               || echo "::warning title=Evidence files::Couldn't build them; the library's pages show the snapshot's numbers only."
