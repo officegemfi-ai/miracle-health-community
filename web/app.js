@@ -128,18 +128,21 @@ async function mountTurnstile(box) {
   });
 }
 
+// Signed out: the same photo, words and three steps as the "Took something?" band on
+// miraclehealth.us, so joining from there lands where it left off
 function authLayout(...formKids) {
   document.body.classList.add('auth');
   render(h('section', { class: 'auth-wrap' },
     h('div', { class: 'auth-art' },
-      h('div', { class: 'sig-hero' }, sig(150, 'happy')),
+      h('img', { class: 'auth-photo', src: 'img/join-1600.webp', srcset: 'img/join-960.webp 960w, img/join-1600.webp 1600w', sizes: '(max-width: 860px) 100vw, 55vw', alt: '', width: 1600, height: 1066, decoding: 'async' }),
+      h('div', { class: 'sig-hero' }, sig(132, 'happy')),
       h('div', { class: 'kick' }, '// The Miracle Health community'),
-      h('h1', {}, 'Built by the people who take it.'),
-      h('p', { class: 'lede' }, 'Real experiences with peptides, hormones and supplements, from the adults who took them: what for, how long, and whether it was better, the same or worse. Every report moves a live number.'),
-      h('div', { class: 'proof' },
-        h('div', {}, h('b', {}, 'Live'), h('span', {}, 'A Signal per compound')),
-        h('div', {}, h('b', {}, '0'), h('span', {}, 'Sellers allowed')),
-        h('div', {}, h('b', {}, 'You'), h('span', {}, 'Make it more accurate')))),
+      h('h1', {}, 'Took something? Say how it went.'),
+      h('p', { class: 'lede' }, 'Your report moves the number for the next person, even if it did nothing. Free, for adults 18 and over.'),
+      h('ol', { class: 'auth-steps' },
+        h('li', {}, h('span', { class: 'n' }, '01'), h('b', {}, 'Share how it went'), h('span', {}, 'What you took it for, for how long, and whether things got better, stayed the same or got worse.')),
+        h('li', {}, h('span', { class: 'n' }, '02'), h('b', {}, 'Check the read'), h('span', {}, 'Miracle AI shows you what it understood. Fix anything it got wrong: your word wins.')),
+        h('li', {}, h('span', { class: 'n' }, '03'), h('b', {}, 'See it count'), h('span', {}, 'The rating for that use updates, and you’re asked how it’s going at 2, 6 and 12 weeks.')))),
     h('div', { class: 'auth-form' }, h('div', { class: 'inner' }, ...formKids))));
 }
 

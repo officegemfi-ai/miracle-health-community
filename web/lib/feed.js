@@ -269,9 +269,13 @@ export async function renderHome(sort = 'hot') {
   drawDue();
   render(
     S.me.status === 'suspended' ? h('div', { class: 'msg note' }, `Your account is paused until ${new Date(S.me.suspended_until).toLocaleString()}. You can read, but not post or comment.`) : null,
-    h('div', { class: 'page-h' },
-      h('div', {}, h('div', { class: 'kick' }, joined.length ? `// ${joined.length} space${joined.length === 1 ? '' : 's'} you follow` : '// Everything, until you join spaces'), h('h1', {}, 'Your feed.')),
-      h('p', { class: 'cap' }, 'First-hand reports, read by Miracle AI into the Community Signal.')),
+    // The feed opens the way miraclehealth.us does: its photo as it is, the words on the sky
+    h('section', { class: 'feed-hero' },
+      h('img', { class: 'feed-photo', src: 'img/hero-960.webp', srcset: 'img/hero-960.webp 960w, img/hero-1600.webp 1600w', sizes: '(max-width: 860px) 100vw, 780px', alt: '', width: 960, height: 640, decoding: 'async' }),
+      h('div', {},
+        h('div', { class: 'kick' }, joined.length ? `// ${joined.length} space${joined.length === 1 ? '' : 's'} you follow` : '// Everything, until you join spaces'),
+        h('h1', {}, 'Your feed.'),
+        h('p', { class: 'feed-hero-cap' }, 'First-hand reports, read by Miracle AI into the Community Signal.'))),
     due, composerBar(), sortbar('#/home', sort),
     newPostsPill(list, (row) => !joined.length || (row.part_ids?.length ? row.part_ids : [row.compound_id]).some((id) => joined.some((s) => s.compound_id === id)), reload),
     list);

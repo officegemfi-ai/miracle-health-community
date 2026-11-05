@@ -1,6 +1,7 @@
 /* Miracle Health Community
-   Colors and type after AlgoRx: lime on deep green-black, off-white sections,
-   Inter headlines, Plus Jakarta Sans text, IBM Plex Mono labels.
+   The look of miraclehealth.us, after AlgoRx: lime on deep green-black, near-white paper,
+   the site's photographs and frosted glass, Inter headlines, Plus Jakarta Sans text and
+   IBM Plex Mono labels and buttons.
    Layout after Reddit: a menu on the left (never removed), the feed in the
    middle, context on the right. */
 
@@ -13,10 +14,10 @@
 :root{
   --lime:#D8FF3D;--lime-2:#C6F02A;--lime-ink:#3F5200;--lime-tint:#F2FFC7;
   --ink:#121E1D;--ink-2:#101817;--ink-3:#0C1413;--ink-line:rgba(255,255,255,.12);--on-ink:#FCFCFC;--on-ink-2:rgba(252,252,252,.68);
-  --bg:#EFF1F0;--surface:#FFFFFF;--surface-2:#F6F7F6;--surface-3:#ECEEED;
+  --bg:#F6F7F5;--paper:#FCFCFC;--surface:#FFFFFF;--surface-2:#F4F6F1;--surface-3:#ECEFEA;
   --line:rgba(18,30,29,.12);--line-2:rgba(18,30,29,.22);
   --text:#121E1D;--text-2:#33403E;--muted:#6A6F6E;
-  --pos:#3F6E00;--pos-tint:#ECFBC2;--neu:#8A6A00;--neu-tint:#FBF0CC;--neg:#A43A33;--neg-tint:#F9DEDA;
+  --pos:#3F6E00;--pos-tint:#ECFBC2;--neu:#7A5C00;--neu-tint:#FBF0CC;--neg:#A43A33;--neg-tint:#F9DEDA;
   --red:#B0453D;--amber:#D4A72C;
   --scale:linear-gradient(90deg,#B0453D,#D4A72C 55%,#D8FF3D);
   --r:16px;--r-sm:12px;--pill:9999px;
@@ -24,11 +25,11 @@
   --body:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   --shadow:0 1px 2px rgba(18,30,29,.06),0 8px 24px -12px rgba(18,30,29,.18);
-  --nav-w:252px;--rail-w:320px;--top-h:60px;--tick-h:30px;
+  --nav-w:252px;--rail-w:320px;--top-h:66px;--tick-h:30px;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#0A1110;--surface:#121E1D;--surface-2:#16231F;--surface-3:#1C2A27;
+  --bg:#0A1110;--paper:#0E1716;--surface:#121E1D;--surface-2:#16231F;--surface-3:#1C2A27;
   --line:rgba(255,255,255,.10);--line-2:rgba(255,255,255,.18);
   --text:#F2F5F4;--text-2:#C9D1CF;--muted:#8E9996;
   --pos:#C9F25B;--pos-tint:rgba(216,255,61,.12);--neu:#F0CC6A;--neu-tint:rgba(212,167,44,.16);--neg:#FF9A8E;--neg-tint:rgba(176,69,61,.22);
@@ -48,7 +49,7 @@ img,svg{flex:none}
 .skip{position:absolute;left:-999px;z-index:50}.skip:focus{left:12px;top:12px;background:var(--surface);padding:8px 12px;border-radius:8px}
 :focus-visible{outline:2px solid var(--lime-2);outline-offset:2px;border-radius:6px}
 .mono{font-family:var(--mono)}
-.kick{font:500 11px/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.kick{font:500 11.5px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .muted{color:var(--muted)}.small{font-size:13.5px}.xs{font-size:12px}.tnum{font-variant-numeric:tabular-nums}
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.row.nw{flex-wrap:nowrap}.row.end{justify-content:flex-end}.row.between{justify-content:space-between}
 .grow{flex:1 1 auto;min-width:0}.stack{display:grid;gap:12px}
@@ -71,10 +72,10 @@ img,svg{flex:none}
 @keyframes live{0%{box-shadow:0 0 0 0 rgba(216,255,61,.55)}70%{box-shadow:0 0 0 7px rgba(216,255,61,0)}100%{box-shadow:0 0 0 0 rgba(216,255,61,0)}}
 
 /* ---------------------------------------------------------------- top bar */
-.topbar{position:sticky;top:var(--tick-h);z-index:29;height:var(--top-h);display:flex;align-items:center;gap:14px;padding:0 16px;background:var(--ink);color:var(--on-ink);border-bottom:1px solid var(--ink-line)}
+.topbar{position:sticky;top:var(--tick-h);z-index:29;height:var(--top-h);display:flex;align-items:center;gap:16px;padding:0 20px;background:rgba(12,20,19,.93);-webkit-backdrop-filter:saturate(1.2) blur(16px);backdrop-filter:saturate(1.2) blur(16px);color:var(--on-ink);border-bottom:1px solid rgba(255,255,255,.08)}
 .burger{display:none;background:none;border:0;color:var(--on-ink);padding:6px;margin-left:-6px;border-radius:10px}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--on-ink);flex:none}
-.logo img{height:30px;width:auto;display:block}
+.logo img{height:28px;width:auto;display:block}
 .logo .tag{font:600 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--lime);border:1px solid rgba(216,255,61,.35);border-radius:var(--pill);padding:3px 8px}
 .search{flex:1;max-width:560px;margin:0 auto;position:relative}
 .search input{width:100%;height:40px;border-radius:var(--pill);border:1px solid var(--ink-line);background:rgba(255,255,255,.06);color:var(--on-ink);padding:0 14px 0 40px;outline:none}
@@ -97,7 +98,7 @@ img,svg{flex:none}
 .me-chip .kick{color:var(--on-ink-2)}
 
 /* ---------------------------------------------------------------- buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 18px;border-radius:var(--pill);border:1px solid var(--line-2);background:var(--surface);color:var(--text);font:600 12.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 20px;border-radius:var(--pill);border:1px solid var(--line-2);background:var(--surface);color:var(--text);font:500 12px var(--mono);letter-spacing:.11em;text-transform:uppercase;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
 .btn:hover{border-color:var(--text)}
 .btn:active{transform:translateY(1px)}
 .btn.lime{background:var(--lime);border-color:var(--lime);color:var(--ink)}
@@ -108,8 +109,8 @@ img,svg{flex:none}
 .btn.on-ink{background:transparent;border-color:rgba(252,252,252,.4);color:var(--on-ink)}
 .btn.on-ink:hover{border-color:var(--lime);color:var(--lime)}
 .btn.danger{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 45%,transparent);background:transparent}
-.btn.sm{min-height:32px;padding:0 13px;font-size:11.5px}
-.btn.xs{min-height:28px;padding:0 10px;font-size:11px}
+.btn.sm{min-height:34px;padding:0 15px;font-size:11px}
+.btn.xs{min-height:28px;padding:0 11px;font-size:10.5px}
 .btn.block{width:100%}
 .btn:disabled{opacity:.5;cursor:default;transform:none}
 .btn .ic{margin:0 -2px}
@@ -150,7 +151,7 @@ body.wide main{max-width:none}
 
 /* ---------------------------------------------------------------- headings */
 .page-h{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:6px 0 16px}
-h1{font:600 40px/1.02 var(--head);letter-spacing:-.035em;margin:6px 0 0}
+h1{font:600 clamp(34px,3.3vw,48px)/1 var(--head);letter-spacing:-.04em;margin:8px 0 0}
 h2{font:600 22px/1.2 var(--head);letter-spacing:-.02em;margin:26px 0 12px}
 h3{font:600 16px/1.3 var(--head);letter-spacing:-.01em;margin:0}
 .lede{color:var(--text-2);max-width:62ch;margin:10px 0 0}
@@ -161,7 +162,7 @@ h3{font:600 16px/1.3 var(--head);letter-spacing:-.01em;margin:0}
 .card-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
 .card-h a,.card-h button{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;background:none;border:0}
 .card-h a:hover{color:var(--text)}
-.dark{background:var(--ink);color:var(--on-ink);border-color:var(--ink-line)}
+.dark{background:linear-gradient(160deg,#1A2826,#0E1716 70%);color:var(--on-ink);border-color:var(--ink-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
 .dark .kick,.dark .muted{color:var(--on-ink-2)}
 .dark .bar{background:rgba(255,255,255,.1)}
 .bar{height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden}
@@ -183,6 +184,12 @@ a.chip:hover{border-color:var(--text)}
 .chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 
 /* ---------------------------------------------------------------- feed chrome */
+/* The home feed opens like miraclehealth.us: the photo shown as it is, the words in ink on its sky */
+.feed-hero{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:flex-end;min-height:220px;margin:2px 0 14px;padding:26px 30px 24px;border-radius:20px;border:1px solid var(--line);background:#D5D1CC;color:var(--ink)}
+.feed-photo{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;object-position:60% 72%}
+.feed-hero .kick{color:var(--ink)}
+.feed-hero h1{margin-top:10px;color:var(--ink)}
+.feed-hero-cap{max-width:36ch;margin:10px 0 0;font-size:15px;line-height:1.5;color:#2B3534}
 .composer-bar{display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:12px}
 .composer-bar .fake{flex:1;min-width:0;display:block;height:42px;line-height:40px;border-radius:var(--pill);border:1px solid var(--line);background:var(--surface-2);color:var(--muted);text-align:left;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .composer-bar .fake:hover{border-color:var(--line-2)}
@@ -309,7 +316,7 @@ a.post-title:hover{text-decoration:underline;text-decoration-color:var(--line-2)
 @keyframes fup{0%,35%{color:#7FD858;text-shadow:0 0 18px rgba(216,255,61,.6)}100%{text-shadow:none}}
 @keyframes fdn{0%,35%{color:#FF7A6A;text-shadow:0 0 18px rgba(255,122,106,.5)}100%{text-shadow:none}}
 
-.hero{position:relative;overflow:hidden;border-radius:20px;padding:28px 28px 24px;background:var(--ink);color:var(--on-ink);margin-bottom:16px}
+.hero{position:relative;overflow:hidden;border-radius:20px;padding:30px 30px 26px;background:radial-gradient(55% 70% at 10% 0%,rgba(216,255,61,.12),rgba(216,255,61,0) 62%),linear-gradient(160deg,#1A2826,#0C1413 72%);color:var(--on-ink);margin-bottom:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 30px 60px -40px rgba(12,20,19,.6)}
 .hero::after{content:'';position:absolute;inset:auto -10% -60% 40%;height:120%;background:radial-gradient(closest-side,rgba(216,255,61,.16),transparent);pointer-events:none}
 .hero h1{color:var(--on-ink)}
 .hero .lede{color:var(--on-ink-2)}
@@ -449,19 +456,30 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .rules-note{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);font-size:13.5px;color:var(--text-2)}
 
 /* ---------------------------------------------------------------- sign in */
-.auth-wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);min-height:calc(100vh - var(--top-h) - var(--tick-h))}
-.auth-art{position:relative;overflow:hidden;background:var(--ink);color:var(--on-ink);padding:56px 48px;display:flex;flex-direction:column;justify-content:flex-end;gap:16px}
-.auth-art::before{content:'';position:absolute;inset:-20% -30% auto auto;width:90%;height:90%;background:radial-gradient(closest-side,rgba(216,255,61,.22),transparent 70%);pointer-events:none}
-.auth-art h1{font-size:52px;color:var(--on-ink);position:relative}
-.auth-art .lede{color:var(--on-ink-2);position:relative;font-size:16px}
-.auth-art .kick{color:var(--lime);position:relative}
-.auth-art .proof{display:flex;gap:28px;flex-wrap:wrap;margin-top:14px;position:relative}
-.auth-art .proof b{display:block;font:600 30px/1 var(--head);letter-spacing:-.02em;color:var(--on-ink)}
-.auth-art .proof span{font:500 10.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--on-ink-2)}
-.auth-art .sig-hero{position:absolute;right:48px;top:56px;width:150px;height:150px}
-.auth-form{display:flex;align-items:center;justify-content:center;padding:48px 28px;background:var(--surface)}
-.auth-form .inner{width:100%;max-width:420px}
-.auth-form h2{font-size:30px;margin:6px 0 8px}
+/* The photo side, as on miraclehealth.us's "Took something?" band: the gym photo toned down
+   and cooled toward the brand's green-black, darkest behind the words, a lime glow from the
+   top, and frosted glass cards */
+.auth-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);min-height:calc(100vh - var(--top-h) - var(--tick-h))}
+.auth-art{position:relative;isolation:isolate;overflow:hidden;background:var(--ink-3);color:var(--on-ink);padding:56px 48px 48px;display:flex;flex-direction:column;justify-content:flex-end;gap:16px}
+.auth-photo{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;object-position:58% 46%;filter:grayscale(.25) contrast(1.08)}
+.auth-art::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(60% 30% at 50% 0%,rgba(216,255,61,.14) 0%,rgba(216,255,61,0) 62%),
+  linear-gradient(180deg,rgba(12,20,19,.5) 0%,rgba(12,20,19,.22) 26%,rgba(12,20,19,.7) 58%,rgba(12,20,19,.95) 100%)}
+.auth-art h1{max-width:12ch;font-size:clamp(42px,4.4vw,66px);line-height:1;letter-spacing:-.04em;color:var(--on-ink)}
+.auth-art .lede{max-width:46ch;color:var(--on-ink-2);font-size:17px;line-height:1.6}
+.auth-art .kick{color:var(--lime)}
+.auth-art .sig-hero{position:absolute;right:44px;top:44px;width:132px;height:132px;filter:drop-shadow(0 18px 30px rgba(0,0,0,.45))}
+.auth-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 0;padding:0;list-style:none}
+.auth-steps li{display:grid;gap:8px;align-content:start;padding:18px 18px 20px;border-radius:16px;border:1px solid rgba(255,255,255,.16);background:linear-gradient(180deg,rgba(30,40,38,.32),rgba(10,16,15,.5));-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.auth-steps .n{font:500 11px/1 var(--mono);letter-spacing:.12em;color:var(--lime)}
+.auth-steps b{font:600 17px/1.25 var(--head);letter-spacing:-.015em}
+.auth-steps span:last-child{font-size:13.5px;line-height:1.5;color:var(--on-ink-2)}
+/* The form side: the site's paper, its pill field and its big lime button */
+.auth-form{display:flex;align-items:center;justify-content:center;padding:48px 32px;background:var(--paper)}
+.auth-form .inner{width:100%;max-width:430px}
+.auth-form h2{font-size:clamp(34px,3vw,46px);line-height:1;letter-spacing:-.04em;margin:14px 0 12px}
+.auth-form .input{min-height:56px;padding:0 22px;border-radius:var(--pill);font-size:16px}
+.auth-form .btn.block{min-height:56px;margin-top:6px}
 .gate{min-height:calc(100vh - var(--top-h) - var(--tick-h));display:grid;place-items:center;padding:24px;background:var(--ink);color:var(--on-ink)}
 .gate .inner{max-width:420px;width:100%}
 .gate h1{color:var(--on-ink);font-size:44px}
@@ -522,8 +540,18 @@ table.metrics td.v{text-align:right;font:600 15px var(--mono);white-space:nowrap
 .mod-card{margin-bottom:10px}
 
 /* ---------------------------------------------------------------- footer, preview */
-.foot{max-width:1440px;margin:0 auto;padding:18px 20px 28px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line)}
-body.auth .foot{display:none}
+/* The footer, as on miraclehealth.us: green-black, the places and pages in mono, then the
+   rules' own words */
+.foot{background:var(--ink);color:var(--on-ink-2);font-size:14px}
+.foot-in{max-width:1440px;margin:0 auto;padding:40px 24px calc(34px + env(safe-area-inset-bottom))}
+.foot-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px 32px}
+.foot-row+.foot-row{margin-top:26px;padding-top:22px;border-top:1px solid var(--ink-line)}
+.foot img{display:block;height:24px;width:auto}
+.foot p{margin:0}
+.foot-links{display:flex;flex-wrap:wrap;gap:8px 24px;font:500 12px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.foot-links a,.foot #foot-text a{color:var(--on-ink);text-decoration:none;transition:color .15s}
+.foot-links a:hover,.foot #foot-text a:hover{color:var(--lime)}
+.foot .copy{font:500 12px/1.4 var(--mono);letter-spacing:.06em}
 .demo-banner{position:relative;z-index:31;padding:7px 14px;text-align:center;font:500 11.5px/1.5 var(--mono);letter-spacing:.03em;background:var(--lime);color:var(--ink)}
 .demo-banner .short{display:none}
 .boot{min-height:60vh;display:grid;place-items:center;text-align:center;padding:40px 20px}
@@ -682,6 +710,10 @@ label.f.nm{margin:0}
   .logo .tag{display:none}
   h1{font-size:32px}
   .hero{padding:22px 18px 20px;border-radius:18px}
+  .feed-hero{min-height:196px;padding:20px 18px 18px;border-radius:18px}
+  /* On a phone the figure fills more of the banner, so a veil of the photo's own sky keeps the words readable */
+  .feed-hero::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(214,209,203,.95) 0%,rgba(214,209,203,.8) 46%,rgba(214,209,203,0) 76%)}
+  .feed-hero-cap{font-size:14px;max-width:24ch}
   .post{grid-template-columns:minmax(0,1fr)}
   .post .vrail{display:none}
   .post .vote.h{display:inline-flex}
@@ -690,14 +722,17 @@ label.f.nm{margin:0}
   .movers{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .auth-wrap{grid-template-columns:1fr}
-  .auth-art{padding:36px 22px 28px;min-height:auto}
-  .auth-art h1{font-size:38px}
-  .auth-art .sig-hero{position:relative;right:auto;top:auto;width:84px;height:84px;margin-bottom:4px}
-  .auth-art .sig-hero .sig{width:84px;height:84px}
+  .auth-art{min-height:min(500px,118vw);padding:120px 20px 30px}
+  .auth-art h1{font-size:clamp(36px,10vw,46px)}
+  .auth-art .lede{font-size:16px}
+  .auth-art .sig-hero{right:16px;top:16px;width:76px;height:76px}
+  .auth-art .sig-hero .sig{width:76px;height:76px}
+  .auth-steps{display:none}
+  .auth-photo{object-position:79% 40%}
   .demo-banner .long{display:none}.demo-banner .short{display:inline}
   .cap{text-align:left;max-width:none}
   .page-h{margin-bottom:12px}
-  .auth-form{padding:28px 18px 40px}
+  .auth-form{padding:30px 20px 44px}
   .space-hero{grid-template-columns:auto minmax(0,1fr)}
   .space-hero .join{grid-column:1/-1}
   .space-hero .tile{width:56px;height:56px}
@@ -710,7 +745,8 @@ label.f.nm{margin:0}
   .sigdock{right:12px;bottom:76px}
   .sigdock>button .sig{width:48px;height:48px}
   .toasts{bottom:84px}
-  .foot{padding-bottom:90px}
+  .foot-in{padding:32px 16px calc(96px + env(safe-area-inset-bottom))}
+  .foot-links{gap:8px 18px}
   .pick-grid{grid-template-columns:1fr}
   .podium{gap:6px}
   .ladder-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
