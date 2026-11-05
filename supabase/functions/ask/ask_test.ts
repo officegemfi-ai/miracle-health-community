@@ -6,7 +6,7 @@ import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, dedupeSentences, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
 import { baselineFor, blockedItem, comboLine, communityOf, communityTitle, communityTop, leadOf, pulseLine, stackSignal, topText, useById, voiceLine, voiceOf } from './community.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
-import { guideSystem } from './prompts.ts';
+import { AUDIT_SYSTEM, guideSystem } from './prompts.ts';
 
 // ---------------------------------------------------------------------------
 // Fixtures: a tiny library, two fact sheets and a snapshot
@@ -1604,4 +1604,9 @@ Deno.test('Sig answers a combination with what the community has on it, and know
   assert(prompt.includes('the member\'s screen draws how each compound they named works in the body'));
   // What two do together is a question about the compounds: answered in full, not with questions first
   assert(prompt.includes('is about the compounds, not a check of their stack: answer it in full'));
+});
+
+Deno.test('the Synergy auditor says which compound carries a risk, and "both" only when both do', () => {
+  assert(AUDIT_SYSTEM.includes('when each of them has that effect'));
+  assert(AUDIT_SYSTEM.includes('A risk only one of them carries doesn\'t add up: never write "both" for it'));
 });

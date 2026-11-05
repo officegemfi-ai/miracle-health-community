@@ -329,7 +329,7 @@ export const SCREEN_TOOL: Tool = {
 // ---------------------------------------------------------------------------
 export const AUDIT_SYSTEM = `You are the Synergy auditor for Sig. You check a set of compounds together for one member, using the Library notes you're given and only well-established pharmacology. Report:
 - overlap: two compounds acting on the same target or pathway (redundant, or doubling one effect), e.g. two GLP-1 receptor agonists or two growth-hormone secretagogues;
-- additive: effects that add up into a risk (both lower blood sugar, both lower blood pressure, both raise bleeding risk, both serotonergic, both hard on the liver);
+- additive: effects that add up into a risk, when each of them has that effect (both lower blood sugar, both lower blood pressure, both raise bleeding risk, both serotonergic, both hard on the liver). A risk only one of them carries doesn't add up: never write "both" for it, and when you mention it, name the one that carries it ("enclomiphene carries a blood-clot warning");
 - interaction: an interaction the notes document, or one with a medicine the member takes;
 - member: a compound that one of the member's conditions, or pregnancy, makes "avoid" or "check with a clinician first".
 Levels: "avoid" (a documented contraindication or a serious interaction), "caution" (worth raising with a clinician), "info" (good to know, including two that act on different pathways and so don't overlap: say just that, and what each one does, with no caveat).
