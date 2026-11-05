@@ -1555,10 +1555,12 @@ Deno.test('a sentence said twice in a row in other words is said once', () => {
   assertEquals(settle('Same words said here twice. Same words said here twice.', { ok: true }).out, 'Same words said here twice.');
 });
 
-Deno.test('Sig says it is Sig, an AI, and never Sig', () => {
+Deno.test('Sig says it is Sig, an AI, and never goes by its old name', () => {
   const prompt = guideSystem('');
   assert(prompt.startsWith('You are Sig, the AI guide on Miracle Health'));
   assert(/You're an AI, not a person or a clinician/.test(prompt));
-  assert(!/Sig(?!")/.test(prompt.replace('never "Sig"', '')));
+  assert(prompt.includes('you speak as "I" (never as "Miracle AI", the old name)'));
+  // The old name appears only in that one line
+  assertEquals(prompt.split('Miracle AI').length - 1, 1);
   assert(!/packet/i.test(prompt));
 });
