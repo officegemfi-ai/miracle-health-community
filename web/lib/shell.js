@@ -36,8 +36,21 @@ export async function railCards(kind, ctx = {}) {
     case 'quests': return [meCard(), await movesCard(), buildersCard(5)];
     case 'profile': return [buildersCard(5), await movesCard()];
     case 'explore': return [seasonCard(), await movesCard()];
-    default: return [meCard(), await focusCard(), questsCard(3), await movesCard(), buildersCard(5), await goalsCard(4)];
+    // Until their first report, a newcomer sees three ways in, and the game after that
+    default: return S.card && !Number(S.card.posts)
+      ? [startCard(), await focusCard(), await movesCard(), await goalsCard(4)]
+      : [meCard(), await focusCard(), questsCard(3), await movesCard(), buildersCard(5), await goalsCard(4)];
   }
+}
+
+// Three ways in, for someone who hasn't posted yet: look it up, ask, share how it went
+function startCard() {
+  const way = (href, ic, title, sub, cls = '') => h('a', { class: `start-i${cls}`, href }, icon(ic, 18), h('span', {}, h('b', {}, title), h('span', { class: 'xs muted' }, sub)), icon('chevron', 16));
+  return h('section', { class: 'card start-card' },
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Start here')),
+    way(`${SITE}/library/`, 'flask', 'Look it up', 'What the studies show, compound by compound'),
+    way(placeHref('ai'), 'sparkle', 'Ask Miracle AI', 'The studies and what people report, in one answer'),
+    way('#/new', 'plus', 'Share how it went', 'Your first report starts your points and emblem', ' main'));
 }
 
 // The public library, with a fact sheet for every compound and blend in the community's

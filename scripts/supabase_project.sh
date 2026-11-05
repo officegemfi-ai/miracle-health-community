@@ -17,6 +17,9 @@
 #   advisors  prints Supabase's security advisor findings (never fails the deploy)
 #   snapshot  prints the public library's numbers as JSON (private.public_snapshot():
 #             aggregate totals only, no posts or names), for the site's snapshot.json
+#   fn-key    <texts|newsletter> prints the key the scheduled workflows call those functions with
+#   public-reports  prints the reports their authors made public, as JSON
+#             (private.public_reports()), for the pages at community.miraclehealth.us/r/
 #   eval-key  (test only) <key> sets the key Miracle AI's test set runs with; "off" removes it
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
@@ -28,7 +31,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ENV_NAME="${1:?test or live}"
-CMD="${2:?ref, create, setup, admin, keys, advisors, snapshot or eval-key}"
+CMD="${2:?ref, create, setup, admin, keys, advisors, snapshot, fn-key, public-reports or eval-key}"
 case "$ENV_NAME" in test|live) ;; *) echo "The environment is test or live, not $ENV_NAME" >&2; exit 2 ;; esac
 : "${SUPABASE_ACCESS_TOKEN:?SUPABASE_ACCESS_TOKEN is not set}"
 BASE="${SUPABASE_API_BASE:-https://api.supabase.com}"
@@ -36,6 +39,9 @@ NAME="miracle-health-$ENV_NAME"
 # GitHub reads workflow commands from both output streams; stderr keeps them out of
 # anything a caller captures (like the ref that "create" prints)
 mask() { [ -n "${GITHUB_ACTIONS:-}" ] && [ -n "$1" ] && echo "::add-mask::$1" >&2; return 0; }
+# The key a scheduled workflow calls the check-in texts or the weekly email function with: made
+# from the access token, so the workflow and the function's secret (set by "setup") always match
+derive() { printf '%s' "${SUPABASE_ACCESS_TOKEN:-}:$1:$ENV_NAME" | sha256sum | cut -c1-64; }
 
 # One Management API call (path from /v1); prints the response body, fails with Supabase's message
 call() {
@@ -257,6 +263,20 @@ setup)
   else
     echo "::warning title=Miracle AI::ANTHROPIC_API_KEY isn't set, so Miracle AI won't read posts and reports won't count toward the Signal."
   fi
+  # The weekly email and the check-in texts. Their keys for the scheduled workflows are made
+  # from the access token both sides already have, so there's nothing more to set up by hand.
+  if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+    tk="$(derive texts)"; nk="$(derive newsletter)"; mask "$tk"; mask "$nk"
+    args+=("TEXTS_CRON_KEY=$tk" "NEWSLETTER_ADMIN_KEY=$nk")
+  fi
+  news_origins="${NEWSLETTER_ORIGINS:-https://miraclehealth.us,https://www.miraclehealth.us}"
+  if [ "$ENV_NAME" = test ]; then news_origins="$news_origins,http://127.0.0.1:4173,http://127.0.0.1:4310"; fi
+  args+=("NEWSLETTER_ORIGINS=$news_origins")
+  for v in RESEND_API_KEY NEWSLETTER_FROM TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_MESSAGING_SERVICE_SID; do
+    if [ -n "${!v:-}" ]; then mask "${!v}"; args+=("$v=${!v}"); fi
+  done
+  [ -n "${RESEND_API_KEY:-}" ] || echo "::notice title=Weekly email::RESEND_API_KEY isn't set: sign-ups are kept, and confirmation emails go once it is."
+  [ -n "${TWILIO_MESSAGING_SERVICE_SID:-}" ] || echo "::notice title=Check-in texts::TWILIO_MESSAGING_SERVICE_SID isn't set: members can turn texts on, and they start once it is."
   supabase secrets set --project-ref "$REF" "${args[@]}" >/dev/null
   echo "done"
   ;;
@@ -293,8 +313,21 @@ admin)
   ;;
 
 snapshot)
-  # One row, one column: the JSON itself; anything else (an error) fails the command
-  sql "select private.public_snapshot() as j" | jq -ce 'if type == "array" and (.[0].j | type) == "object" then .[0].j else error("no snapshot") end'
+  # One row, one column: the JSON itself; anything else (an error) fails the command. With how
+  # many founding-reporter spots are taken (miraclehealth.us/founders), once the database has it.
+  pick='if type == "array" and (.[0].j | type) == "object" then .[0].j else error("no snapshot") end'
+  sql "select private.public_snapshot() || jsonb_build_object('founders', private.founding_progress()) as j" 2>/dev/null | jq -ce "$pick" \
+    || sql "select private.public_snapshot() as j" | jq -ce "$pick"
+  ;;
+
+fn-key)
+  # Prints (masked) the key for the texts or newsletter function, for the workflows that call them
+  case "${3:-}" in texts|newsletter) ;; *) echo "Which key: fn-key texts or fn-key newsletter" >&2; exit 2 ;; esac
+  k="$(derive "$3")"; mask "$k"; echo "$k"
+  ;;
+
+public-reports)
+  sql "select private.public_reports() as j" | jq -ce 'if type == "array" and (.[0].j | type) == "array" then .[0].j else error("no list of public reports") end'
   ;;
 
 *)

@@ -34,6 +34,8 @@ jobs:
       TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
       POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
       SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+      # "on" once check-in texts can be sent (the Twilio messaging service is registered)
+      CHECKIN_TEXTS: ${{ vars.CHECKIN_TEXTS }}
       SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
@@ -126,6 +128,18 @@ jobs:
           fi
           # No CNAME file: with a GitHub Actions deploy, the custom domain is set in
           # Settings > Pages, and GitHub ignores a CNAME file.
+      - name: Public reports (only those their authors chose to make public)
+        if: steps.live.outputs.open == 'true'
+        run: |
+          # Each report's own page at /r/<id>/ and the list at /r/, made fresh every hour from
+          # private.public_reports(): a report taken back, held or removed is gone at the next
+          # build. Without the list, every report page is left out rather than an old one kept.
+          if scripts/supabase_project.sh live public-reports > "$RUNNER_TEMP/public-reports.json"; then
+            node scripts/build_public_reports.mjs "$RUNNER_TEMP/public-reports.json" _site
+          else
+            echo "::warning title=Public reports::Couldn't list them; this build leaves the report pages out."
+            node scripts/build_public_reports.mjs - _site
+          fi
       - uses: denoland/setup-deno@v2
         if: steps.live.outputs.open == 'true'
         with:

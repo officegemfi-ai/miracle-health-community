@@ -34,9 +34,17 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
      ships encrypted with it. Delete it to open the site. Either takes effect on the next deploy.
    - Optional: `LIVE_SUPABASE_DB_PASSWORD`, only if the live database ever refuses the access
      token's temporary sign-in (reset the password in Supabase and save it here).
+   - The weekly email (optional until you send it): `RESEND_API_KEY` (Resend > API keys, after
+     verifying miraclehealth.us in Resend; its DNS records go in Namecheap). Sign-ups are kept before
+     it's set, and get their confirm link from Actions > Weekly email > confirmations.
+   - Check-in texts (optional): `TWILIO_MESSAGING_SERVICE_SID`, a Twilio Messaging Service whose
+     number is registered for US texting (A2P 10DLC), with Advanced Opt-Out on for STOP and HELP.
 4. Variables (all optional): `MODERATION_MODEL` (default `claude-haiku-5-5`), `PRIVACY_URL`
    (default https://miraclehealth.us/privacy), `CONTACT_EMAIL` (default hello@miraclehealth.us),
-   `TURNSTILE_SITE_KEY`, `POSTHOG_KEY`, `SENTRY_DSN`.
+   `TURNSTILE_SITE_KEY`, `POSTHOG_KEY`, `SENTRY_DSN`; `NEWSLETTER_FROM`, the weekly email's sender
+   (e.g. `Miracle Health <signal@miraclehealth.us>`, on the domain verified in Resend);
+   `CHECKIN_TEXTS` = `on` once check-in texts can be sent (it shows members the choice, and starts
+   the hourly Check-in texts workflow). After setting any of these, run Promote to live.
 
 ## 2. Supabase
 - The test project: create it (any name), and put its ref in `deploy/test.env`. Its deploy does the rest.

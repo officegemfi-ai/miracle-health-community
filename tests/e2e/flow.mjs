@@ -145,6 +145,16 @@ await A.waitForSelector('h1.post-title:text("Week 4 on BPC-157")');
 const postId = decodeURIComponent(A.url().split('#/post/')[1]);
 check('Their report goes up, and Miracle AI starts reading it', !!postId && await A.isVisible('.airead:has-text("Miracle AI is reading")'));
 
+// Who can read it is the author's choice: members only, or anyone, on a public page
+await A.waitForSelector('.pub-line button:text("Let anyone read it")');
+await A.click('.pub-line button');
+await A.waitForSelector('.pub-line button:text("Make it members-only")');
+const madePublic = (await db.query('select public_at from public.posts where id = $1', [postId])).rows[0].public_at;
+await A.click('.pub-line button');
+await A.waitForSelector('.pub-line button:text("Let anyone read it")');
+const tookBack = (await db.query('select public_at from public.posts where id = $1', [postId])).rows[0].public_at;
+check('The author can let anyone read their report, and take it back', !!madePublic && tookBack === null);
+
 // ---------------------------------------------------------------------------
 // B: a second member, on a phone, joins with no invite at all, and follows the same space
 // ---------------------------------------------------------------------------

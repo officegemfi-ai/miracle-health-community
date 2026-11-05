@@ -7,7 +7,7 @@
 // - The pairs the community fills first (focus pairs), with how far along each is.
 import { h, icon, toast, friendly, bar, fmtN } from './ui.js';
 import { sig } from './art.js';
-import { S, sb, signalOf, track } from './state.js';
+import { S, C, sb, signalOf, track } from './state.js';
 import { sigSay } from './shell.js';
 import { OUTCOME, MEDWATCH, STOPPED, sigNum, refreshSignal, useLabel } from './signal.js';
 import { afterEarn } from './game.js';
@@ -198,8 +198,10 @@ export function checkinBox(item, onDone, opts = {}) {
     track('check_in', { week: item.week, still: answer.still });
     await afterEarn(btn, '· thanks for checking in');
     await refreshSignal();
-    box.replaceChildren(h('div', { class: 'row nw' }, sig(44, 'cheer'),
-      h('p', { class: 'small' }, h('b', {}, 'Thanks. '), `Your report now says how it is ${item.week} weeks on, and it counts more in the ${item.compound_name} Signal.`)));
+    // After the last check-in (12 weeks) there's no next one to text about
+    const offer = item.week < 12 ? textsChoice({ compact: true }) : null;
+    box.replaceChildren(...[h('div', { class: 'row nw' }, sig(44, 'cheer'),
+      h('p', { class: 'small' }, h('b', {}, 'Thanks. '), `Your report now says how it is ${item.week} weeks on, and it counts more in the ${item.compound_name} Signal.`)), offer].filter(Boolean));
     onDone?.();
   };
   const draw = () => {
@@ -222,6 +224,44 @@ export function checkinBox(item, onDone, opts = {}) {
       ...steps);
   };
   draw();
+  return box;
+}
+
+// Check-in texts, by the member's choice: a text when a report is due for its check-in. Only
+// shown once texts are set up for the community (C.checkinTexts: the CHECKIN_TEXTS variable,
+// set once the messaging service is registered with US carriers). compact: the one-line offer
+// after a check-in, shown only to members who haven't turned them on.
+export function textsChoice({ compact = false } = {}) {
+  if (!C.checkinTexts) return null;
+  const box = h('div', { class: compact ? 'texts-offer' : 'texts-choice', 'aria-live': 'polite' });
+  const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } })();
+  const terms = 'At most one a day, between 9am and 8pm your time, and they never say what you took. Message and data rates may apply. Reply STOP to stop or HELP for help. Your number is never shared.';
+  const draw = (on) => {
+    const btn = h('button', {
+      class: on ? 'btn ghost sm' : 'btn lime sm', type: 'button',
+      onclick: async () => {
+        btn.disabled = true;
+        const { data, error } = await sb.rpc('set_checkin_texts', { turn_on: !on, tz });
+        btn.disabled = false;
+        if (error) { toast(friendly(error)); return; }
+        track('checkin_texts', { on: !on });
+        if (compact && !on) { box.replaceChildren(icon('check', 16), h('span', { class: 'small' }, 'Done: you’ll get a text when the next one is due. Turn them off any time in Account.')); return; }
+        draw(!!data?.on);
+      },
+    }, on ? 'Stop check-in texts' : compact ? 'Text me next time' : 'Text me when a check-in is due');
+    if (compact) {
+      box.replaceChildren(icon('phone', 16), h('span', { class: 'small' }, 'Want a text when the next check-in is due? ', h('span', { class: 'xs muted' }, terms)), btn);
+      return;
+    }
+    box.replaceChildren(
+      h('p', {}, on ? h('b', {}, 'On. ') : null, 'A text when one of your reports is due for a check-in: 2, 6 and 12 weeks after you post it. ', h('span', { class: 'small muted' }, terms)),
+      h('div', { class: 'row' }, btn));
+  };
+  sb.rpc('my_checkin_texts').then(({ data }) => {
+    const on = !!data?.on;
+    if (compact && on) { box.remove(); return; }
+    draw(on);
+  });
   return box;
 }
 

@@ -15,6 +15,8 @@ import { renderPost } from './lib/post.js';
 import { renderProfile, renderBuilders, renderQuests, renderNotifications, refreshQuests, onboarding, setUnread } from './lib/game.js';
 import { renderMod } from './lib/mod.js';
 import { renderRules, renderHow, renderAccount } from './lib/pages.js';
+import { saveGuestDraft, readGuestDraft } from './lib/draft.js';
+import { SITE, draftFrom } from './kit/kit.js';
 
 // ---------------------------------------------------------------------------
 // Analytics and errors: optional, and never given health content
@@ -144,6 +146,41 @@ function authLayout(...formKids) {
         h('li', {}, h('span', { class: 'n' }, '02'), h('b', {}, 'Check the read'), h('span', {}, 'Miracle AI shows you what it understood. Fix anything it got wrong: your word wins.')),
         h('li', {}, h('span', { class: 'n' }, '03'), h('b', {}, 'See it count'), h('span', {}, 'The rating for that use updates, and you’re asked how it’s going at 2, 6 and 12 weeks.')))),
     h('div', { class: 'auth-form' }, h('div', { class: 'inner' }, ...formKids))));
+}
+
+// Signed out on "Share how it went": write first, sign in when you post. The words wait in this
+// tab (lib/draft.js) and fill the new-post page once they're in.
+function renderGuestDraft(cid = '', d = '') {
+  const msg = msgBox();
+  const saved = readGuestDraft();
+  const linked = draftFrom(d);
+  const head = h('h2', {}, 'How did it go?');
+  if (cid) {
+    fetch(`${SITE}/library/data/index.json`).then((r) => (r.ok ? r.json() : null)).then((x) => {
+      const it = (x?.items || []).find((i) => i.id === cid);
+      if (it?.name) head.textContent = `How did ${it.name.replace(/\s*\(.*\)$/, '')} go?`;
+    }).catch(() => {});
+  }
+  const body = h('textarea', { class: 'input', id: 'gbody', maxlength: 10000, required: true, rows: 7,
+    placeholder: 'What you took it for, for how long, and whether things got better, stayed the same or got worse. Side effects too.' });
+  body.value = (saved && (!cid || saved.cid === cid) ? saved.body : '') || linked?.body || '';
+  authLayout(
+    h('div', { class: 'kick' }, '// Share how it went'),
+    head,
+    h('p', { class: 'muted' }, 'Write it first. Then we text you a code to sign in, and nothing is posted until you press Post.'),
+    h('form', {
+      onsubmit: (e) => {
+        e.preventDefault();
+        const words = body.value.trim();
+        if (words.length < 20) return say(msg, 'A sentence or two is plenty: what you took it for, for how long, and how it went.');
+        saveGuestDraft({ cid, body: words });
+        renderSignIn();
+      },
+    },
+    h('label', { class: 'f', for: 'gbody' }, h('span', {}, 'Your report'), body),
+    h('p', { class: 'small muted' }, 'On a phone? Tap the microphone on your keyboard to talk instead of typing.'),
+    h('button', { class: 'btn lime block', type: 'submit' }, 'Next: sign in to post'), msg),
+    h('p', { class: 'small mt16' }, 'Already a member? ', h('button', { class: 'lnk', type: 'button', onclick: () => renderSignIn() }, 'Sign in first')));
 }
 
 function renderSignIn() {
@@ -322,6 +359,7 @@ async function route() {
   }
   if (r.name === 'rules' && !S.me) { document.body.classList.add('auth'); return renderRules(true); }
   if (!S.session || !S.me) rememberNext();
+  if (!S.session && r.name === 'new') return renderGuestDraft(r.q.get('c') || '', r.q.get('d') || '');
   if (!S.session) return renderSignIn();
   if (!S.me) return renderSignup();
   document.body.classList.remove('auth');

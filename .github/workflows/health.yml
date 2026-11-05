@@ -1,0 +1,55 @@
+# Health check: every six hours, checks what visitors and members rely on is up, and fails (so
+# GitHub emails you) when something isn't. Nothing here changes anything.
+#   - miraclehealth.us and its Library, and community.miraclehealth.us, answer
+#   - the community's public numbers (snapshot.json) are less than three hours old
+#   - the evidence files the Library reads are there
+#   - Miracle AI's chat and the weekly email sign-up answer from miraclehealth.us
+name: Health check
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SITE: https://miraclehealth.us
+      COMMUNITY: https://community.miraclehealth.us
+      FUNCTIONS: https://nerfymdslkhopsomwriv.supabase.co/functions/v1
+    steps:
+      - name: Check the sites and the server functions
+        run: |
+          fail=0
+          bad() { echo "::error title=Health check::$1"; fail=1; }
+          page() {  # a page answers 200 and has the words it should
+            body="$(curl -fsSL --max-time 30 "$1")" || { bad "$1 didn't answer"; return; }
+            grep -q "$2" <<<"$body" || bad "$1 answered, but without \"$2\""
+          }
+          page "$SITE/" "Miracle Health"
+          page "$SITE/library/" "Library"
+          page "$SITE/library/bpc157/" "BPC-157"
+          page "$SITE/ai/" "Miracle AI"
+          page "$COMMUNITY/" "Miracle Health"
+
+          snap="$(curl -fsS --max-time 30 "$COMMUNITY/snapshot.json")" || bad "snapshot.json didn't answer"
+          if [ -n "${snap:-}" ]; then
+            at="$(jq -r '.generated_at // empty' <<<"$snap")"
+            if [ -z "$at" ]; then bad "snapshot.json has no generated_at"
+            else
+              age=$(( $(date -u +%s) - $(date -u -d "$at" +%s) ))
+              echo "snapshot.json is $((age / 60)) minutes old, with $(jq '.signals | length' <<<"$snap") Signals"
+              [ "$age" -lt 10800 ] || bad "snapshot.json is $((age / 3600)) hours old: the hourly Pages build may be failing"
+            fi
+          fi
+          curl -fsS --max-time 30 -o /dev/null "$COMMUNITY/evidence/bpc157.json" || bad "The evidence files (evidence/bpc157.json) aren't there"
+
+          for fn in ask newsletter; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 -X OPTIONS "$FUNCTIONS/$fn" \
+              -H "Origin: $SITE" -H 'Access-Control-Request-Method: POST')" || code=000
+            echo "$fn: $code"
+            case "$code" in 2*) ;; *) bad "The $fn function answered $code from miraclehealth.us" ;; esac
+          done
+          exit "$fail"

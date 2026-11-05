@@ -110,6 +110,9 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NEWSLETTER_FROM: ${{ vars.NEWSLETTER_FROM }}
+          TWILIO_MESSAGING_SERVICE_SID: ${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}
           MODERATION_MODEL: ${{ vars.MODERATION_MODEL }}
           APP_ORIGINS: ${{ vars.APP_ORIGINS }}
           ASK_ORIGINS: ${{ vars.ASK_ORIGINS }}
@@ -126,7 +129,9 @@ jobs:
           set -o pipefail
           { supabase functions deploy review-content --no-verify-jwt --project-ref "$REF" \
             && supabase functions deploy delete-account --project-ref "$REF" \
-            && supabase functions deploy ask --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
+            && supabase functions deploy ask --no-verify-jwt --project-ref "$REF" \
+            && supabase functions deploy newsletter --no-verify-jwt --project-ref "$REF" \
+            && supabase functions deploy send-texts --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
             || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
       - name: Supabase's security advisor
         run: scripts/supabase_project.sh test advisors

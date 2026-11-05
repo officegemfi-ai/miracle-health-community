@@ -1,0 +1,35 @@
+# Check-in texts: every hour, the live send-texts function texts members who asked for it
+# (Account > Check-in texts) when one of their reports is due for a check-in, between 9am and 8pm
+# where they are, at most once a day. Runs only once the repository variable CHECKIN_TEXTS is
+# "on", which is also what shows members the choice; that comes after the Twilio messaging
+# service is registered with US carriers (A2P 10DLC) and TWILIO_MESSAGING_SERVICE_SID is set.
+name: Check-in texts
+on:
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: checkin-texts
+  cancel-in-progress: false
+jobs:
+  send:
+    if: vars.CHECKIN_TEXTS == 'on'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send the texts that are due
+        run: |
+          ref="$(scripts/supabase_project.sh live ref)"
+          key="$(scripts/supabase_project.sh live fn-key texts)"
+          out="$(curl -sS -X POST "https://$ref.supabase.co/functions/v1/send-texts" -H "x-cron-key: $key" --max-time 300 -w '\n%{http_code}')"
+          code="$(tail -n1 <<<"$out")"; body="$(sed '$d' <<<"$out")"
+          echo "send-texts answered $code: $body"
+          case "$code" in 2*) ;; *) echo "::error title=Check-in texts::send-texts answered $code"; exit 1 ;; esac
+          if [ "$(jq -r '.failed // 0' <<<"$body")" != 0 ]; then
+            echo "::warning title=Check-in texts::Some texts didn't go: $body"
+          fi

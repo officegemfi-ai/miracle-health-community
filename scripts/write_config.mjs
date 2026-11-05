@@ -3,6 +3,8 @@
 // Usage: node scripts/write_config.mjs <out_dir>
 // Reads: SUPABASE_URL, SUPABASE_ANON_KEY, TURNSTILE_SITE_KEY, POSTHOG_KEY,
 //        POSTHOG_HOST, SENTRY_DSN, CONTACT_EMAIL, PRIVACY_URL, ENVIRONMENT,
+//        CHECKIN_TEXTS=on (offer check-in texts: only once the Twilio messaging service is
+//        registered with US carriers and TWILIO_MESSAGING_SERVICE_SID is set),
 //        SITE_PASSWORD (optional: puts the whole site behind a password),
 //        DEMO=1 (a preview build: the real database running in the browser with a
 //        sample community; see web/preview/engine.js and scripts/build_preview.mjs)
@@ -33,6 +35,7 @@ const cfg = {
   sentryDsn: E.SENTRY_DSN || '',
   contactEmail: E.CONTACT_EMAIL || '',
   privacyUrl: E.PRIVACY_URL || '',
+  checkinTexts: E.CHECKIN_TEXTS === 'on' || demo,
   sentryBundle: E.SENTRY_DSN ? `https://browser.sentry-cdn.com/${SENTRY_VERSION}/bundle.min.js` : '',
 };
 if (demo) cfg.demo = true;

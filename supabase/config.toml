@@ -63,3 +63,12 @@ verify_jwt = true
 # and counts messages per visitor; see supabase/functions/ask)
 [functions.ask]
 verify_jwt = false
+
+# The weekly email: sign-ups from the public website, and the links in its emails (it checks
+# the page's address and counts sign-ups per visitor; see supabase/functions/newsletter)
+[functions.newsletter]
+verify_jwt = false
+
+# The check-in texts, called by the hourly workflow with its own key
+[functions.send-texts]
+verify_jwt = false

@@ -210,6 +210,7 @@ export async function renderPost(id, opts = {}) {
         },
       }, icon('trash', 16), 'Delete'));
   }
+  const pubLine = p.is_mine && p.kind === 'experience' && p.status === 'visible' ? publicLine(p) : null;
   const sortSel = h('div', { class: 'sortbar' }, [['best', 'Best'], ['new', 'New']].map(([k, l]) => h('a', {
     href: '#', 'aria-current': sort === k ? 'page' : null,
     onclick: (e) => { e.preventDefault(); sort = k; sortSel.querySelectorAll('a').forEach((a) => a.setAttribute('aria-current', a.textContent === l ? 'page' : '')); loadThread(); },
@@ -228,6 +229,7 @@ export async function renderPost(id, opts = {}) {
         readBox,
         stickers,
         h('div', { class: 'acts' }, voteWidget('post', p, true), sameButton(p), reactButton(p, drawStickers), moreButton(p), ...ownerActs),
+        pubLine,
         msg)),
     p.status === 'visible' && S.me.status !== 'suspended' ? replyBox(p, null, (cid) => loadThread(cid)) : h('p', { class: 'small muted' }, p.status === 'visible' ? 'Your account is paused, so you can’t comment right now.' : 'Comments are closed while this post isn’t up.'),
     h('div', { class: 'row between mt16' }, heading, sortSel),
@@ -268,6 +270,32 @@ export async function renderPost(id, opts = {}) {
       }
     }, 3000);
   }
+}
+
+// For the author of a report: who can read it. Members only, or anyone, on a public page that
+// the community's site build makes every hour (community.miraclehealth.us/r/<id>/).
+function publicLine(p) {
+  const box = h('div', { class: 'pub-line', 'aria-live': 'polite' });
+  const url = `${location.origin}/r/${encodeURIComponent(p.id)}/`;
+  const draw = (at) => {
+    const btn = h('button', {
+      class: 'btn ghost sm', type: 'button',
+      onclick: async () => {
+        btn.disabled = true;
+        const { data, error } = await sb.rpc('set_post_public', { post_id: p.id, make_public: !at });
+        btn.disabled = false;
+        if (error) { toast(friendly(error)); return; }
+        track('post_public', { on: !at });
+        draw(data || null);
+      },
+    }, at ? 'Make it members-only' : 'Let anyone read it');
+    box.replaceChildren(icon(at ? 'globe' : 'lock', 16),
+      at ? h('span', { class: 'small' }, 'Anyone can read this report, without its comments, at ', h('a', { href: url, rel: 'noopener' }, url.replace(/^https?:\/\//, '')), ' (it goes up, or comes down, within the hour).')
+        : h('span', { class: 'small muted' }, 'Only members can read this report.'),
+      btn);
+  };
+  sb.from('posts').select('public_at').eq('id', p.id).limit(1).then(({ data }) => draw(data?.[0]?.public_at || null));
+  return box;
 }
 
 function editPost(p, bodyBox, msg) {

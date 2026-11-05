@@ -1,0 +1,53 @@
+# The Signal, Miracle Health's weekly email. Run by hand (Actions > Weekly email > Run workflow):
+#   1. confirmations: emails the confirm link to everyone who signed up before email was set up
+#      (and anyone who hasn't had theirs). Safe to run again: each address is asked once.
+#   2. send: emails issue <n> (miraclehealth.us/weekly/<n>/email.html, published first) to every
+#      confirmed address that hasn't had it. Safe to run again: nobody gets an issue twice.
+# Needs the email account set up first: the RESEND_API_KEY secret and the NEWSLETTER_FROM variable
+# (an address on a domain verified with Resend), then a deploy to live so the function has them.
+name: Weekly email
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: confirmations (send the confirm links) or send (send an issue)
+        type: choice
+        options: [confirmations, send]
+        default: confirmations
+      issue:
+        description: The issue number to send (for send)
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: weekly-email
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ACTION: ${{ inputs.action }}
+      ISSUE: ${{ inputs.issue }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the issue is on the site
+        if: inputs.action == 'send'
+        run: |
+          case "$ISSUE" in ''|*[!0-9]*) echo "::error title=Weekly email::Say which issue to send (a number)"; exit 1 ;; esac
+          curl -fsS -o /dev/null "https://miraclehealth.us/weekly/$ISSUE/email.html" \
+            || { echo "::error title=Weekly email::miraclehealth.us/weekly/$ISSUE/email.html isn't published yet"; exit 1; }
+      - name: Call the newsletter function
+        run: |
+          ref="$(scripts/supabase_project.sh live ref)"
+          key="$(scripts/supabase_project.sh live fn-key newsletter)"
+          if [ "$ACTION" = send ]; then body="{\"send\":$ISSUE}"; else body='{"confirmations":true}'; fi
+          out="$(curl -sS -X POST "https://$ref.supabase.co/functions/v1/newsletter" -H "x-admin-key: $key" \
+            -H 'Content-Type: application/json' --data "$body" --max-time 900 -w '\n%{http_code}')"
+          code="$(tail -n1 <<<"$out")"; answer="$(sed '$d' <<<"$out")"
+          echo "The newsletter function answered $code: $answer"
+          case "$code" in 2*) ;; *) echo "::error title=Weekly email::$answer"; exit 1 ;; esac
+          echo "### Weekly email: $ACTION" >> "$GITHUB_STEP_SUMMARY"
+          echo "$answer" >> "$GITHUB_STEP_SUMMARY"

@@ -5,6 +5,7 @@ import { S, C, sb, levelOf, track, stopLive } from './state.js';
 import { render, setRail, railCards } from './shell.js';
 import { LEVELS } from './signalviz.js';
 import { seal } from './signal.js';
+import { textsChoice } from './checks.js';
 
 export function renderRules(standalone = false) {
   const R = S.rules;
@@ -70,6 +71,7 @@ export function renderAccount() {
   const confirmBox = h('input', { class: 'input', id: 'confirm-delete', autocomplete: 'off', placeholder: 'Type DELETE' });
   const del = h('button', { class: 'btn danger', type: 'submit' }, 'Delete my account');
   const lv = levelOf(S.card?.level || 1);
+  const texts = textsChoice();
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Settings'), h('h1', {}, 'Account.'))),
     h('section', { class: 'card row nw' },
@@ -81,6 +83,8 @@ export function renderAccount() {
         onclick: async () => { stopLive(); await sb.auth.signOut(); S.session = null; S.me = null; location.hash = '#/'; location.reload(); },
       }, icon('logout', 16), 'Sign out')),
     S.me.status === 'suspended' ? h('div', { class: 'msg note' }, `Paused until ${new Date(S.me.suspended_until).toLocaleString()}`) : null,
+    texts ? h('h2', {}, 'Check-in texts') : null,
+    texts ? h('section', { class: 'card' }, texts) : null,
     h('h2', {}, 'Delete your account'),
     h('section', { class: 'card' },
       h('p', { class: 'small' }, 'This deletes your profile, every post and comment you wrote, your votes, your stickers and your points, right away. Reports you filed stay, without your name. It can’t be undone.'),

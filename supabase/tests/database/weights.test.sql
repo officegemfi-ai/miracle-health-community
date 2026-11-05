@@ -474,7 +474,7 @@ select ok((select (j->'signals'->'ghkcu'->>'checkins') is null from snap), 'Chec
 select ok((select (j->'signals'->'bpc157'->>'week')::numeric = 91.9 from snap), 'Each Signal says where it stood a week ago');
 select ok((select exists (select 1 from jsonb_array_elements(j->'moves') m where m->>'id' = 'bpc157' and (m->>'from')::numeric = 91.9) from snap),
   'and the week''s moves list it');
-select is((select j->'focus'->0->>'id' from snap), 'bpc157', 'The snapshot lists the focus pairs, in order');
+select is((select j->'focus'->0->>'id' from snap), 'tirzepatide', 'The snapshot lists the focus pairs, in order (GLP-1s first)');
 select is((select j->'signals'->'semaglutide'->>'serious' from snap), null, 'One serious reaction isn''t shown on its own');
 
 -- ===========================================================================

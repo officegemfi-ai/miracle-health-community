@@ -23,7 +23,13 @@ so the public library on miraclehealth.us can use the same drawings.
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
 - `supabase/tests/database/`: 400 access, Community Signal, certification, ratings-by-use, game, stack and chat-limit tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal),
-  `delete-account`, and `ask`: Miracle AI's chat on the public website (miraclehealth.us/ai), below
+  `delete-account`, `ask`: Miracle AI's chat on the public website (miraclehealth.us/ai), below,
+  `newsletter`: The Signal, the weekly email (sign-ups from miraclehealth.us, double opt-in, confirm and
+  unsubscribe links, sending an issue; emails go out once `RESEND_API_KEY` and `NEWSLETTER_FROM` are set),
+  and `send-texts`: check-in texts for members who ask for them (once a Twilio messaging service is
+  registered and `TWILIO_MESSAGING_SERVICE_SID` is set)
+- `scripts/build_public_reports.mjs`, `site/r.css`: the pages at community.miraclehealth.us/r/ for reports
+  their authors chose to let anyone read, rebuilt every hour by the Pages workflow
 - `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
 - `shared/rules.json`, `shared/uses.json`: the community rules and the list of uses, copied to the app and
   the AI reviewer by `scripts/sync_rules.sh`
@@ -40,7 +46,10 @@ so the public library on miraclehealth.us can use the same drawings.
   (PGlite) with a sample community (preview builds only)
 - `tests/e2e/`: real-browser tests (the whole flow with three people and live updates, the site
   password, the preview) and a scripted spam attack
-- `.github/workflows/`: tests on every change, deploy to test, promote to live
+- `.github/workflows/`: tests on every change, deploy to test, promote to live; the site build every hour
+  (`pages.yml`); **Check-in texts** (hourly, once the variable `CHECKIN_TEXTS` is `on`); **Weekly email**
+  (by hand: send the confirm links, or send issue *n*); **Health check** (every six hours: both sites,
+  the snapshot's age, the evidence files and the server functions answer; a failure emails you)
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
 
 ## Miracle AI's chat (`supabase/functions/ask`)
