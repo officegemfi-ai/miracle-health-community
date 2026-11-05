@@ -36,9 +36,9 @@ export async function railCards(kind, ctx = {}) {
     case 'quests': return [meCard(), await movesCard(), buildersCard(5)];
     case 'profile': return [buildersCard(5), await movesCard()];
     case 'explore': return [seasonCard(), await movesCard()];
-    // Until their first report, a newcomer sees three ways in, and the game after that
+    // Until their first report, a newcomer sees three ways in first, then their emblem and quests
     default: return S.card && !Number(S.card.posts)
-      ? [startCard(), await focusCard(), await movesCard(), await goalsCard(4)]
+      ? [startCard(), meCard(), questsCard(3), await focusCard(), await movesCard(), await goalsCard(4)]
       : [meCard(), await focusCard(), questsCard(3), await movesCard(), buildersCard(5), await goalsCard(4)];
   }
 }
