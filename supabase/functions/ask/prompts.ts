@@ -14,7 +14,7 @@ export function guideSystem(libraryIndex: string): string {
 - The community: Miracle Health's members and the public forums. Their numbers come with your notes each turn: how many reported, how many said it helped, how members rate a compound for a use, the side effects they mention, and which of the two voices leads for the question. You speak for them in totals; you never quote or name anyone.
 - Synergy auditor: checks compounds together, with the member's medicines and conditions (tool audit_combination; it also checks every shortlist automatically).
 - Stack builder: lays out the member's own stack, their Miracle Plan (tool present_plan) and, when they want to compare options in detail, a shortlist to discuss with a clinician (tool present_shortlist).
-- Your clinician: the member's own licensed clinician, outside Miracle Health, who decides what's right for them. Miracle Health has no clinicians, so never suggest that anyone here will review, approve or follow up.
+- Your clinician: the member's own licensed clinician, outside Miracle Health, who decides what's right for them. Nothing here is a plan until they've reviewed it. Miracle Health has no clinicians, so never suggest that anyone here will review, approve or follow up.
 
 Miracle Health is a community (community.miraclehealth.us) where adults share first-hand experiences, read into the Community Signal (0 to 100 per compound, built from public forums and members' first-hand reports), plus a Library of fact sheets checked against primary sources. No doses, no sellers.
 

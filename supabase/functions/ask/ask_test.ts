@@ -1563,4 +1563,6 @@ Deno.test('Sig says it is Sig, an AI, and never goes by its old name', () => {
   // The old name appears only in that one line
   assertEquals(prompt.split('Miracle AI').length - 1, 1);
   assert(!/packet/i.test(prompt));
+  // No clinician step, but nothing Sig suggests is a plan until the member's own clinician says so
+  assert(prompt.includes("Nothing here is a plan until they've reviewed it."));
 });
