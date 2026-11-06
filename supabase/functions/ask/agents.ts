@@ -22,7 +22,8 @@ import {
 } from './community.ts';
 import { INJECT_CARD, INJECT_SIGNS, warningCard } from './urgency.ts';
 import { type Evidence, evidenceFor, evidenceLines, evidenceNote, evidenceTitle, NO_PLAN, type Plan, planOutcomes, plannerNote, plannerTitle } from './outcomes.ts';
-import { candidatesFor, pairingNote, pairings, pairingTitle, type Related, relativesNote, relativesTitle } from './relatives.ts';
+import { candidatesFor, type Pairing, pairingNote, pairings, pairingTitle, type Related, relativesNote, relativesTitle } from './relatives.ts';
+import { type Mechanism, mechanismFor, mechanismNote, mechanismTitle } from './mechanism.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export type Emit = (event: string, data: Record<string, unknown>) => void;
@@ -869,14 +870,14 @@ const chip = (id: string, ctx: Ctx) => ({ id, name: ctx.byId.get(id)?.name ?? id
 // The Relatives agent on the compounds named: the closest relatives (the hormone a compound raises;
 // for a hormone, what raises it; or what acts on the same receptor), their sheets read by the
 // Evidence librarian for what the Planner read; at most two with findings per compound, six sheets
-async function relativesStep(ids: string[], own: Evidence[], axes: Axis[], ctx: Ctx): Promise<string> {
-  if (!axes.length) return '';
+async function relativesStep(ids: string[], own: Evidence[], axes: Axis[], ctx: Ctx): Promise<{ note: string; rel: Related[] }> {
+  if (!axes.length) return { note: '', rel: [] };
   const exclude = new Set(ids);
   // Siblings on the same receptor only stand in when a compound's own sheet has nothing on it
   const per = ids.map((id) => candidatesFor(id, axes, exclude)
     .filter((c) => ctx.byId.has(c.id) && ctx.byId.get(c.id)!.sheet !== false && (c.kin !== 'receptor' || !own.find((e) => e.id === id)?.found.length)).slice(0, 3));
   const want = [...new Set(per.flat().map((c) => c.id))].slice(0, 6);
-  if (!want.length) return '';
+  if (!want.length) return { note: '', rel: [] };
   ctx.emit('step', { id: 'relatives', agent: 'relatives', status: 'run', title: 'Looking at relatives through the same hormone or receptor' });
   await openSheets(want, ctx);
   const rel: Related[] = [];
@@ -892,7 +893,20 @@ async function relativesStep(ids: string[], own: Evidence[], axes: Axis[], ctx: 
   });
   rel.forEach((r) => ctx.opened.add(r.id));
   ctx.emit('step', { id: 'relatives', agent: 'relatives', status: 'done', title: relativesTitle(rel), chips: [...new Set(rel.map((r) => r.id))].map((id) => chip(id, ctx)) });
-  return relativesNote(rel, ctx.plan);
+  return { note: relativesNote(rel, ctx.plan), rel };
+}
+// What the screen draws as the evidence ladder for what the Planner read: each compound's own
+// findings, its relatives', how it could bear on it, and how the compounds relate (all from the
+// Library's own sheets and pathways)
+type Ladder = { own: Evidence[]; rel: Related[]; mech: Mechanism[]; pairs: Pairing[] };
+function ladderOf(l: Ladder, plan: Plan) {
+  const found = (e: Evidence) => e.found.map((f) => ({ outcome: f.outcome, claim: f.claim, grade: f.evidence, src: f.src ?? [] }));
+  return {
+    outcomes: plan.outcomes.map((o) => ({ id: o.id, label: o.label, related: !!o.related })),
+    rows: l.own.map((e) => ({ id: e.id, sheet: e.sheet, found: found(e), how: l.mech.find((m) => m.id === e.id)?.how ?? '', howFrom: l.mech.find((m) => m.id === e.id)?.from ?? null })),
+    via: l.rel.map((r) => ({ of: r.of, id: r.id, kin: r.kin, axis: r.axis.name, found: found(r.ev) })),
+    pairs: l.pairs.map((x) => ({ a: x.a, b: x.b, kind: x.kind, on: x.on })),
+  };
 }
 // The Evidence librarian on the fact sheets just opened: their findings on what the Planner read,
 // for the guide and for the final check (rule 9)
@@ -1380,6 +1394,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     if (ctx.plan.outcomes.length) emit('step', { id: 'plan', agent: 'planner', status: 'done', title: plannerTitle(ctx.plan) });
   }
   let evNote = plannerNote(ctx.plan);
+  let ladder: Ladder | null = null;
 
   // 2a. The Recommender's lookup: the compounds the member named, and options for their goal; then
   // the Evidence librarian reads their sheets for what the Planner read
@@ -1405,12 +1420,19 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
         evNote += `\n${evidenceNote(own, ctx.plan)}`;
         // 2b. The Relatives agent: what works through the same hormone or receptor, a rung below
         // (a turn never fails on it: without it, the ladder goes on from how each one works)
-        const rel = await relativesStep(named.slice(0, 4), own, axes, ctx).catch((e) => {
+        const { note: relNote, rel } = await relativesStep(named.slice(0, 4), own, axes, ctx).catch((e) => {
           console.error('relatives', e);
           emit('step', { id: 'relatives', agent: 'relatives', status: 'done', title: 'Couldn’t look at relatives just now' });
-          return '';
+          return { note: '', rel: [] as Related[] };
         });
-        if (rel) evNote += `\n${rel}`;
+        if (relNote) evNote += `\n${relNote}`;
+        // 2c. The Mechanism agent: how each could bear on it, from its own sheet or pathway
+        const mech = named.slice(0, 4).filter((id) => ctx.byId.has(id)).map((id) => mechanismFor(id, ctx.byId.get(id)!.name, ctx.sheets.get(id), ctx.plan, axes));
+        if (mech.some((m) => m.how)) {
+          emit('step', { id: 'mechanism', agent: 'mechanism', status: 'done', title: mechanismTitle(ctx.plan), chips: mech.filter((m) => m.how).map((m) => chip(m.id, ctx)) });
+          evNote += `\n${mechanismNote(mech, ctx.plan)}`;
+        }
+        ladder = { own, rel, mech, pairs: [] };
       } else {
         gate.findings(named.slice(0, 4).flatMap((id) => (benefitsOf(ctx.sheets.get(id), goal, 2) ?? [])
           .map((b) => `${ctx.byId.get(id)?.name ?? id}: ${b.claim} (evidence: ${b.evidence || 'not graded'})`)));
@@ -1429,7 +1451,23 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     recNote = 'the Library could not be reached just now; say so if it matters and stay general.';
   }
 
-  // 2b. The community: what members and the public forums report on what they named and on what
+  // Weighing two to four compounds against each other: a comparison, side by side, not their stack
+  const comparing = !held && screen.compare && named.length >= 2 && named.length <= 4;
+  // 2d. The Combination agent: how what they named together relates, by the Library's pathways
+  let comboNote = '';
+  if (!comparing && named.length >= 2 && axes.length) {
+    const p = pairings(named.slice(0, 4), axes);
+    const name = (id: string) => ctx.byId.get(id)?.name ?? id;
+    if (p.length) {
+      emit('step', { id: 'combination', agent: 'combination', status: 'done', title: pairingTitle(p, name), chips: [...new Set(p.flatMap((x) => [x.a, x.b]))].map((id) => chip(id, ctx)) });
+      comboNote = pairingNote(p, name);
+      if (ladder) ladder.pairs = p;
+    }
+  }
+  // The screen draws the evidence ladder before the community's step puts the compounds on it
+  if (ladder) emit('ladder', ladderOf(ladder, ctx.plan));
+
+  // 2e. The community: what members and the public forums report on what they named and on what
   // they want it for, and which of the two voices leads, compound by compound
   const pregnant = screen.pregnant || st.pregnant;
   let communityNote = '';
@@ -1438,8 +1476,6 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // The community's list answers what they asked about, even when it's not the goal the studies
   // answer for (no studies voice is involved in it)
   const listUse = use ?? (screen.asks_community && !held ? useById(screen.uses[0]) : null);
-  // Weighing two to four compounds against each other: a comparison, side by side, not their stack
-  const comparing = !held && screen.compare && named.length >= 2 && named.length <= 4;
   if (!held && items.length && (named.length || listUse)) {
     voices.push(...named.slice(0, 4).map((id) => voiceFor(id, ctx)).filter((v): v is Voice => !!v));
     // What the community reports most for a use: only when they ask, never in pregnancy or when
@@ -1464,18 +1500,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     ].filter(Boolean).join('\n');
   }
 
-  // 3. The Combination agent: how what they named together relates, by the Library's pathways
-  let comboNote = '';
-  if (!comparing && named.length >= 2 && axes.length) {
-    const p = pairings(named.slice(0, 4), axes);
-    const name = (id: string) => ctx.byId.get(id)?.name ?? id;
-    if (p.length) {
-      emit('step', { id: 'combination', agent: 'combination', status: 'done', title: pairingTitle(p, name), chips: [...new Set(p.flatMap((x) => [x.a, x.b]))].map((id) => chip(id, ctx)) });
-      comboNote = pairingNote(p, name);
-    }
-  }
-
-  // 3a. The Synergy auditor, when the member's own compounds and medicines meet
+  // 3. The Synergy auditor, when the member's own compounds and medicines meet
   let synNote = '';
   let upfront: Audit | null = null;
   // Their medicines, conditions or pregnancy matter for what they compare too: each compound is

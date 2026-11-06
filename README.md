@@ -72,7 +72,7 @@ Anyone can talk with Sig on miraclehealth.us/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
 for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
 community (the Community Signal: members' first-hand reports and public forum data). Each message
-goes through eight agents and the community's numbers, and the page shows each step as it happens:
+goes through nine agents and the community's numbers, and the page shows each step as it happens:
 
 1. **Safety agent** (Claude Haiku) reads the message first: emergencies (911), signs of crisis
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
@@ -110,6 +110,11 @@ goes through eight agents and the community's numbers, and the page shows each s
    hormone itself, the findings of what raises it (tesamorelin's for HGH), as support, never as
    a test of it; and, when a compound's own sheet has nothing, what acts on the same receptor.
    Their sheets count among the sources, never among the findings the final check puts back.
+   **Mechanism agent** (no model: `mechanism.ts`) reads how each compound could bear on it: the
+   sentences of its own sheet's "what it is" that are about it, or else its pathway, always as
+   expected from how it works, not tested. Then the page gets the evidence ladder (a `ladder`
+   event: each compound's own findings, its relatives', how it could bear on it, how the compounds
+   relate), and the screen beside the chat opens on it, rung by rung.
 5. **The community** (no model: the community's public totals in `snapshot.json`, read by
    `community.ts`): for each compound named, and for what the visitor wants it for (one of the
    uses in `shared/uses.json`, which the Safety agent picks out), what members' first-hand reports

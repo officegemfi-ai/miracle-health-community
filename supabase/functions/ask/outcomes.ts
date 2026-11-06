@@ -18,7 +18,7 @@ export const OUTCOMES: Outcome[] = [
   { id: 'body_fat', label: 'body fat', with: ['body_weight', 'lean_mass'],
     asked: /\bfat\b|\bcutting\b|\b(?:a|my|on\s+a)\s+cut\b|\bshred|\blean(?:er)?\s+out\b|\bbody\s+composition\b|\blipoly/i,
     found: /\bbody\s+fat\b|\bfat\s+(?:mass|loss)\b|\b(?:less|lower|lost|losing|reduced|cut)\s+(?:\w+\s+){0,3}?fat\b|\b(?:liver|trunk)\s+fat\b|\bvisceral\b|\bwaist\b|\badipos|\blipoly/i },
-  { id: 'body_weight', label: 'body weight', with: ['body_fat'],
+  { id: 'body_weight', label: 'body weight', with: ['body_fat', 'appetite'],
     asked: /\bweight\b(?!\s+(?:training|lifting|room|bench|vest|class))|\bpounds\b|\bobes|\boverweight\b|\bbmi\b/i,
     found: /\bbody[- ]weight\b|\bweight\s+(?:loss|reduction|regain)\b|\b(?:lost|lose|losing|lower)\s+(?:\w+\s+){0,3}?weight\b|\bbmi\b/i },
   { id: 'appetite', label: 'appetite',
@@ -92,7 +92,7 @@ export function effectOf(claim: string): string {
   return m && m.index >= 12 ? claim.slice(0, m.index) : claim;
 }
 
-export type Found = { outcome: string; claim: string; evidence: string };
+export type Found = { outcome: string; claim: string; evidence: string; src?: number[] };
 export type Evidence = { id: string; name: string; sheet: 'ok' | 'none' | 'unread'; found: Found[] };
 const RANK: Record<string, number> = { strong: 0, moderate: 1, limited: 2, preclinical: 3, anecdotal: 4 };
 // How strong, in the words the site uses
@@ -113,10 +113,11 @@ export function evidenceFor(id: string, name: string, sheet: Sheet | null | unde
   (sheet?.benefits ?? []).forEach((b, i) => {
     const o = aboutOf(effectOf(String(b.claim ?? '')), outcomes);
     const claim = cleanField(strict(String(b.claim ?? '')), 300);
-    if (o && claim) found.push({ outcome: o.label, claim, evidence: String(b.evidence || ''), r: RANK[b.evidence] ?? 5, i });
+    const src = (Array.isArray(b.sources) ? b.sources : []).filter((n) => Number.isInteger(n) && n > 0 && n < 100).slice(0, 3);
+    if (o && claim) found.push({ outcome: o.label, claim, evidence: String(b.evidence || ''), src, r: RANK[b.evidence] ?? 5, i });
   });
   found.sort((a, b) => a.r - b.r || a.i - b.i);
-  return { id, name, sheet: sheet ? 'ok' : unread ? 'unread' : 'none', found: found.slice(0, 3).map(({ outcome, claim, evidence }) => ({ outcome, claim, evidence })) };
+  return { id, name, sheet: sheet ? 'ok' : unread ? 'unread' : 'none', found: found.slice(0, 3).map(({ outcome, claim, evidence, src }) => ({ outcome, claim, evidence, src })) };
 }
 
 const listOf = (xs: string[], and = 'and') => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} ${and} ${xs[xs.length - 1]}`);

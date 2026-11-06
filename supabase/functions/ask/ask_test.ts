@@ -1879,7 +1879,48 @@ Deno.test('a turn: HGH and enclomiphene for fat loss gets their relatives\' find
 
 Deno.test('Sig knows the Relatives agent and the Combination agent', () => {
   const prompt = guideSystem('');
+  assert(prompt.includes('- Mechanism agent: reads how each compound could bear on what the Planner read'));
+  assert(prompt.includes('the screen opens on the evidence for it, rung by rung'));
   assert(prompt.includes('- Relatives agent: for each compound named, finds what works through the same hormone or receptor'));
   assert(prompt.includes('always say whose evidence it is'));
   assert(prompt.includes('- Combination agent: says whether compounds named together act on the same receptor (overlap)'));
+});
+
+// ---------------------------------------------------------------------------
+// The Mechanism agent, and the evidence ladder the screen draws
+// ---------------------------------------------------------------------------
+Deno.test('the Mechanism agent: the sentences of a sheet\'s "what it is" about what they asked, or else its pathway', async () => {
+  const { mechanismFor, mechanismNote } = await import('./mechanism.ts');
+  const { planOutcomes } = await import('./outcomes.ts');
+  const plan = planOutcomes(['Is HGH plus enclomiphene good for fat loss?'], []);
+  const axes = AXES.axes.filter((a) => a.members) as never;
+  const hgh = mechanismFor('somatropin', 'Somatropin (HGH)', { ...SHEET_BPC, what_it_is: 'Somatropin is recombinant human growth hormone made in E. coli. In children it promotes growth; in adults it shifts body composition toward more lean mass and less fat. Blood levels of IGF-1 rise.' }, plan, axes);
+  assertEquals(hgh, { id: 'somatropin', name: 'Somatropin (HGH)', how: 'In adults it shifts body composition toward more lean mass and less fat.', from: 'sheet' });
+  const enclo = mechanismFor('enclomiphene', 'Enclomiphene', { ...SHEET_BPC, what_it_is: 'A SERM that raises LH and FSH in men.' }, plan, axes);
+  assertEquals(enclo, { id: 'enclomiphene', name: 'Enclomiphene', how: 'Raises the body\'s own testosterone in men.', from: 'pathway' });
+  const note = mechanismNote([hgh, enclo], plan);
+  assert(note.startsWith('Mechanism agent, how each could bear on body fat, from its own fact sheet (say it as expected from how it works, not tested):'), note);
+  assert(note.includes('- Enclomiphene (its pathway): Raises the body\'s own testosterone in men.'), note);
+});
+
+Deno.test('a turn: the screen gets the evidence ladder (own findings, relatives, how each works, how they relate) before the community\'s step', async () => {
+  const { f } = fakeWorld({
+    screen: { ...NONE, compounds: ['HGH', 'enclomiphene'], goals: ['weight'] },
+    rounds: [{ text: 'Nobody has tested them together for fat loss. Talk to a clinician first.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Is HGH plus enclomiphene good for fat loss?' }]), deps(withLibrary(f))));
+  const at = (pred: (e: { event: string; data: Record<string, any> }) => boolean) => ev.findIndex(pred);
+  const i = at((e) => e.event === 'ladder');
+  assert(i > 0 && i < at((e) => e.event === 'step' && e.data.agent === 'community'));
+  const l = ev[i].data;
+  assertEquals(l.outcomes.map((o: { label: string }) => o.label), ['body fat', 'body weight', 'lean mass']);
+  assertEquals(l.rows.map((r: { id: string; found: unknown[] }) => [r.id, r.found.length]), [['somatropin', 1], ['enclomiphene', 0]]);
+  assertEquals(l.via.map((v: { of: string; id: string; kin: string }) => `${v.of}<${v.kin}:${v.id}`), ['somatropin<raises:tesamorelin', 'enclomiphene<hormone:testosterone']);
+  assertEquals(l.pairs, [{ a: 'somatropin', b: 'enclomiphene', kind: 'apart', on: ['growth hormone', 'testosterone'] }]);
+  assertEquals(l.rows[1].howFrom, 'pathway');
+  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'mechanism' && e.data.title === 'Read how each could bear on body fat'));
+  // Nothing about a goal, nothing named: no ladder
+  const w2 = fakeWorld({ screen: NONE, rounds: [{ text: 'Hi there.' }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'hi' }]), deps(withLibrary(w2.f))));
+  assert(!ev2.some((e) => e.event === 'ladder'));
 });
