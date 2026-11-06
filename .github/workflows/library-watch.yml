@@ -20,6 +20,10 @@ on:
         description: Only these compounds (Library ids, comma-separated)
         type: string
         default: ''
+      show:
+        description: Just print these PubMed ids' abstracts (comma-separated), to check a study
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -45,10 +49,12 @@ jobs:
           GH_REPO: ${{ github.repository }}
           BACKFILL: ${{ inputs.backfill }}
           ONLY: ${{ inputs.only }}
+          SHOW: ${{ inputs.show }}
         run: |
           args=(--site site --out "$RUNNER_TEMP/watch" --issue)
           if [ "$BACKFILL" = true ]; then args+=(--backfill); fi
           if [ -n "$ONLY" ]; then args+=(--only "$ONLY"); fi
+          if [ -n "$SHOW" ]; then args=(--site site --show "$SHOW"); fi
           python3 scripts/library_watch.py "${args[@]}"
       - uses: actions/upload-artifact@v4
         if: always()

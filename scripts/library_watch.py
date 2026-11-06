@@ -317,7 +317,12 @@ def main():
     ap.add_argument('--only', default='')
     ap.add_argument('--out', default='')
     ap.add_argument('--issue', action='store_true')
+    ap.add_argument('--show', default='', help='print these PubMed ids\' abstracts, to check a study before it goes into a sheet')
     args = ap.parse_args()
+    if args.show:
+        for a in efetch([p.strip() for p in args.show.split(',') if p.strip()]):
+            print(f'\nPMID {a["pmid"]}: {a["title"]} ({a["journal"]}, {a["year"]}; doi {a["doi"] or "-"}; {a["pmc"] or "no PMC"})\n{a["abstract"]}\n', flush=True)
+        return
 
     data = os.path.join(args.site, 'library', 'data')
     cfg = json.load(open(os.path.join(data, 'watch.json')))
