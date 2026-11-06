@@ -162,7 +162,10 @@ def plain_checks(it, r):
     cards_text = json.dumps([{k: v for k, v in c.items() if k not in ('url',)} for c in cards], ensure_ascii=False)
     exp = it.get('expect', {})
     if not ev or ev[-1][0] != 'done':
-        fails.append('the answer never finished')
+        # How it ended, and when: the server's own error code (timeout, busy, failed) says which
+        last = ev[-1] if ev else None
+        how = f" (ended with {last[0]}{': ' + str(last[1].get('code')) if last and last[0] == 'error' and isinstance(last[1], dict) else ''}, after {r.get('secs', 0):.0f} s)" if last else ''
+        fails.append(f'the answer never finished{how}')
     if not any(e == 'review' for e, _ in ev):
         fails.append('no word from the Safety agent\'s check')
     if not text.strip() and not cards:
