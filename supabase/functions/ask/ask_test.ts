@@ -1621,5 +1621,7 @@ Deno.test('Sig keeps the voices apart, says which compound carries a risk, and s
   assert(prompt.includes('open with what the community reports about taking them together, in a paragraph of its own'));
   assert(prompt.includes('name at most the one or two that matter most for each'));
   assert(prompt.includes('"**Next step:**", in one sentence'));
-  assert(prompt.includes('about 80 to 140 words'));
+  assert(prompt.includes('about 90 to 150 words'));
+  // Shorter never means losing the caution line
+  assert(prompt.includes('never the caution line: the check with their prescriber or clinician, FDA\'s safety-risk list'));
 });
