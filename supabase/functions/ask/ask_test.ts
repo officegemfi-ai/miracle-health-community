@@ -1611,3 +1611,15 @@ Deno.test('the Synergy auditor says which compound carries a risk, and "both" on
   // What counts as a finding is unchanged: additive risks still add up when both have them
   assert(AUDIT_SYSTEM.includes('- additive: effects that add up into a risk (both lower blood sugar'));
 });
+
+Deno.test('Sig keeps the voices apart, says which compound carries a risk, and stays short beside the screen', () => {
+  const prompt = guideSystem('');
+  // The chat marks each paragraph with its voice, so a paragraph keeps to one
+  assert(prompt.includes('what the studies show and what people report go in separate sentences, and a paragraph that\'s about one of them keeps to it'));
+  assert(prompt.includes('"both" only when each of them has it'));
+  // A combination opens with the community on the pair, on its own, and leaves the markers to the screen
+  assert(prompt.includes('open with what the community reports about taking them together, in a paragraph of its own'));
+  assert(prompt.includes('name at most the one or two that matter most for each'));
+  assert(prompt.includes('"**Next step:**", in one sentence'));
+  assert(prompt.includes('about 80 to 140 words'));
+});
