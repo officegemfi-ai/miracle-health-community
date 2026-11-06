@@ -98,8 +98,8 @@ export function pairingNote(p: Pairing[], name: (id: string) => string): string 
   if (!p.length) return '';
   const lines = p.map((x) => {
     const pair = `${name(x.a)} and ${name(x.b)}`;
-    return x.kind === 'overlap' ? `- ${pair} both act on ${x.on[0]}: they overlap, so little extra is expected from taking both, while side effects add up.`
-      : x.kind === 'same' ? `- ${pair} both work on ${x.on[0]}, by different routes: its effects, and its risks, can add up.`
+    return x.kind === 'overlap' ? `- ${pair} both act on ${x.on[0]}: they overlap, so little extra is expected from taking both, while side effects add up. Whether to take both is a question for their prescriber.`
+      : x.kind === 'same' ? `- ${pair} both work on ${x.on[0]}, by different routes: its effects, and its risks, can add up. Whether to take both is a question for their clinician.`
       : `- ${pair} work through different pathways (${x.on[0]}; ${x.on[1]}): separate roads to a goal in theory, and only a study of the two together can show whether they add up (your other notes and their fact sheets say whether there is one).`;
   });
   return `Combination agent, from the Library's pathways (each member's fact sheet), for what they named together:\n${lines.join('\n')}`;
