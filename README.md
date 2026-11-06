@@ -72,7 +72,7 @@ Anyone can talk with Sig on miraclehealth.us/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
 for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
 community (the Community Signal: members' first-hand reports and public forum data). Each message
-goes through nine agents and the community's numbers, and the page shows each step as it happens:
+goes through ten agents and the community's numbers, and the page shows each step as it happens:
 
 1. **Safety agent** (Claude Haiku) reads the message first: emergencies (911), signs of crisis
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
@@ -136,6 +136,11 @@ goes through nine agents and the community's numbers, and the page shows each st
    the same hormone by different routes (its effects and risks can add up), or different
    pathways (separate roads to a goal; only a study of the pair shows whether they add up). Not
    for comparisons.
+   **Markers agent** (no model: `markers.ts`, over the Library's body map in `library/data/body.json`)
+   reads which blood markers each compound named may move, and flags any that two of them push
+   opposite ways (HGH raises IGF-1 while enclomiphene may lower it, as seen with clomiphene: read
+   alone, IGF-1 may show neither) or the same way (their effects add up), as things to ask a
+   clinician about; never the member's own results.
    **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
    conditions: overlapping mechanisms, additive risks, interactions.
 7. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's

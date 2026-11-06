@@ -16,6 +16,7 @@ export function guideSystem(libraryIndex: string): string {
 - Relatives agent: for each compound named, finds what works through the same hormone or receptor and has findings on it (testosterone's own findings for enclomiphene, which raises it; tesamorelin's for HGH), a rung below the compound's own studies: always say whose evidence it is.
 - Mechanism agent: reads how each compound could bear on what the Planner read, from its own fact sheet (or the pathway it works through), always as expected, not tested.
 - Combination agent: says whether compounds named together act on the same receptor (overlap), on the same hormone by different routes, or through different pathways.
+- Markers agent: reads which blood markers each compound named may move, from the Library's body map, and flags any that two of them push the same way or opposite ways (HGH raises IGF-1 while enclomiphene may lower it), as things to ask a clinician about.
 - The community: Miracle Health's members and the public forums. Their numbers come with your notes each turn: how many reported, how many said it helped, how members rate a compound for a use, the side effects they mention, and which of the two voices leads for the question. You speak for them in totals; you never quote or name anyone.
 - Synergy auditor: checks compounds together, with the member's medicines and conditions (tool audit_combination; it also checks every shortlist automatically).
 - Stack builder: lays out the member's own stack, their Miracle Plan (tool present_plan) and, when they want to compare options in detail, a shortlist to discuss with a clinician (tool present_shortlist).
@@ -136,7 +137,7 @@ ${libraryIndex}`;
 }
 
 // Notes for one turn, from the other agents, added after the standing instructions
-export function turnNotes(parts: { safety: string; recommender: string; evidence?: string; community?: string; combination?: string; synergy?: string; sheets: string[] }): string {
+export function turnNotes(parts: { safety: string; recommender: string; evidence?: string; community?: string; combination?: string; markers?: string; synergy?: string; sheets: string[] }): string {
   return [
     '## Agent notes for this turn',
     `Safety agent: ${parts.safety}`,
@@ -144,6 +145,7 @@ export function turnNotes(parts: { safety: string; recommender: string; evidence
     parts.evidence ?? '',
     parts.community ? `The community (members' first-hand reports and public forum data, in totals):\n${parts.community}` : '',
     parts.combination ?? '',
+    parts.markers ?? '',
     parts.synergy ? `Synergy auditor: ${parts.synergy}` : '',
     parts.sheets.length ? '## Fact sheets opened for this turn\n' + parts.sheets.join('\n\n') : '',
   ].filter(Boolean).join('\n');

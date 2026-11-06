@@ -137,6 +137,7 @@ async function cached<T>(key: string, ttl: number, now: number, load: () => Prom
   }
 }
 
+import type { Body } from './markers.ts';
 export type LibraryOpts = { base: string; snapshotUrl: string; fetchImpl?: typeof fetch; now?: () => number };
 // The pathways compounds act through (axes.json, from each member's fact sheet): which hormone an
 // axis carries, and the receptor each member acts on
@@ -171,6 +172,14 @@ export function createLibrary(opts: LibraryOpts) {
     async sheet(id: string): Promise<Sheet | null> {
       if (!/^[a-z0-9]{1,40}$/.test(id)) return null;
       return await cached(`sheet:${id}`, 15 * 60_000, now(), async () => (await getJson(`${opts.base}/entries/${id}.json`)) as Sheet | null);
+    },
+    // The body map (body.json): where each drawn compound acts and which markers it may move;
+    // none when it can't be read
+    async body(): Promise<Body | null> {
+      return await cached('body', 10 * 60_000, now(), async () => {
+        const b = await getJson(`${opts.base}/body.json`).catch(() => null);
+        return b && typeof b.compounds === 'object' && typeof b.markers === 'object' ? { markers: b.markers, compounds: b.compounds } as Body : null;
+      });
     },
     // The pathways; none when they can't be read (the agents that use them then say nothing)
     async axes(): Promise<Axis[]> {

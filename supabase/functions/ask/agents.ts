@@ -24,6 +24,7 @@ import { INJECT_CARD, INJECT_SIGNS, warningCard } from './urgency.ts';
 import { type Evidence, evidenceFor, evidenceLines, evidenceNote, evidenceTitle, NO_PLAN, type Plan, planOutcomes, plannerNote, plannerTitle } from './outcomes.ts';
 import { candidatesFor, type Pairing, pairingNote, pairings, pairingTitle, type Related, relativesNote, relativesTitle } from './relatives.ts';
 import { type Mechanism, mechanismFor, mechanismNote, mechanismTitle } from './mechanism.ts';
+import { type Body, markersNote, markersTitle, readMarkers } from './markers.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export type Emit = (event: string, data: Record<string, unknown>) => void;
@@ -1356,11 +1357,12 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
 
   // 1. The Safety agent reads the message while the Library loads
   emit('step', { id: 'safety', agent: 'safety', status: 'run', title: 'Screening your message' });
-  const [screen, items, snap, axes] = await Promise.all([
+  const [screen, items, snap, axes, body] = await Promise.all([
     screenMessage(messages, deps),
     deps.library.items().catch(() => [] as Item[]),
     deps.library.snapshot().catch(() => ({ signals: {}, uses: {}, ok: false }) as Snapshot),
     deps.library.axes().catch(() => [] as Axis[]),
+    deps.library.body().catch(() => null as Body | null),
   ]);
   const minor = screen.red_flag === 'minor' || st.minor;
   const held = screen.red_flag === 'self_harm' || screen.red_flag === 'emergency' || minor;
@@ -1464,10 +1466,19 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       if (ladder) ladder.pairs = p;
     }
   }
+  // 2e. The Markers agent: the blood markers what they named may move, and any pushed both ways
+  let markNote = '';
+  if (!held && named.length && body) {
+    const r = readMarkers(named.slice(0, 4), body);
+    if (r.drawn.length) {
+      emit('step', { id: 'markers', agent: 'markers', status: 'done', title: markersTitle(r), chips: r.drawn.map((id) => chip(id, ctx)) });
+      markNote = markersNote(r, (id) => ctx.byId.get(id)?.name ?? id);
+    }
+  }
   // The screen draws the evidence ladder before the community's step puts the compounds on it
   if (ladder) emit('ladder', { ...ladderOf(ladder, ctx.plan), compare: comparing });
 
-  // 2e. The community: what members and the public forums report on what they named and on what
+  // 2f. The community: what members and the public forums report on what they named and on what
   // they want it for, and which of the two voices leads, compound by compound
   const pregnant = screen.pregnant || st.pregnant;
   let communityNote = '';
@@ -1525,7 +1536,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // 4. The guide writes, with the Library tools; every part goes through the gate
   const system = [
     { type: 'text', text: guideSystem(indexText(items)), cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, combination: comboNote, synergy: synNote, sheets: sheetsForTurn }) },
+    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, combination: comboNote, markers: markNote, synergy: synNote, sheets: sheetsForTurn }) },
   ];
   gate.sources(system.map((b) => b.text).join('\n'));
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));

@@ -1830,6 +1830,14 @@ Deno.test('the Relatives agent: the hormone a compound raises, what raises a hor
   assertEquals((await lib.axes()).map((a) => a.id), ['gh', 'testosterone', 'glp1']);
 });
 
+// The body map: HGH raises IGF-1, enclomiphene may lower it; both raise hematocrit (made up)
+const BODY = {
+  markers: { igf1: { name: 'IGF-1', what: 'The growth factor growth hormone tells the body to make.' }, hematocrit: { name: 'Hematocrit', what: 'The share of red blood cells.' }, lh: { name: 'LH' } },
+  compounds: {
+    somatropin: { lines: [{ at: 'liver', op: 'up', say: 'IGF-1 rises', markers: ['igf1'], src: [1] }], dirs: { igf1: 'up', hematocrit: 'up' } },
+    enclomiphene: { lines: [{ at: 'liver', op: 'down', say: 'IGF-1 may fall (seen with clomiphene)', markers: ['igf1'], src: [9] }], dirs: { igf1: 'down', hematocrit: 'up', lh: 'up', nope: 'sideways' } },
+  },
+};
 // The fixture library, with HGH, enclomiphene, tesamorelin and testosterone's sheets and the pathways
 function withLibrary(f: typeof fetch): typeof fetch {
   const items: Item[] = [
@@ -1848,6 +1856,7 @@ function withLibrary(f: typeof fetch): typeof fetch {
     const u = String(url);
     if (u.endsWith('/index.json')) return new Response(JSON.stringify({ items: [...ITEMS, ...items] }));
     if (u.endsWith('/axes.json')) return new Response(JSON.stringify(AXES));
+    if (u.endsWith('/body.json')) return new Response(JSON.stringify(BODY));
     const m = u.match(/\/entries\/([a-z0-9]+)\.json$/);
     if (m && sheets[m[1]]) return new Response(JSON.stringify(sheets[m[1]]));
     return f(url, init);
@@ -1923,4 +1932,37 @@ Deno.test('a turn: the screen gets the evidence ladder (own findings, relatives,
   const w2 = fakeWorld({ screen: NONE, rounds: [{ text: 'Hi there.' }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'hi' }]), deps(withLibrary(w2.f))));
   assert(!ev2.some((e) => e.event === 'ladder'));
+});
+
+// ---------------------------------------------------------------------------
+// The Markers agent
+// ---------------------------------------------------------------------------
+Deno.test('the Markers agent: markers on more than one list, pushed opposite ways first, then the same way; never anyone\'s own results', async () => {
+  const { readMarkers, markersTitle, markersNote } = await import('./markers.ts');
+  const r = readMarkers(['somatropin', 'enclomiphene', 'creatine'], BODY as never);
+  assertEquals(r.drawn, ['somatropin', 'enclomiphene']);
+  assertEquals(r.shared.map((x) => [x.m, x.up, x.down]), [['igf1', ['somatropin'], ['enclomiphene']], ['hematocrit', ['somatropin', 'enclomiphene'], []]]);
+  assertEquals(markersTitle(r), 'IGF-1: pushed both ways');
+  const name = (id: string) => ({ somatropin: 'Somatropin (HGH)', enclomiphene: 'Enclomiphene' } as Record<string, string>)[id] ?? id;
+  const note = markersNote(r, name);
+  assert(note.includes('- IGF-1: Somatropin (HGH) may raise it; Enclomiphene may lower it. Pushed opposite ways: read alone, IGF-1 may show neither one\'s effect. What IGF-1 is: The growth factor growth hormone tells the body to make.'), note);
+  assert(note.includes('- Hematocrit: Somatropin (HGH) may raise it; Enclomiphene may raise it. Pushed the same way: their effects on it can add up.'), note);
+  assert(note.includes('- Enclomiphene alone: Hematocrit and LH may rise; IGF-1 may fall.'), note);
+  assert(note.includes('never read or judge their own results'), note);
+  // One compound: what it may move; none drawn: nothing to say
+  assertEquals(markersTitle(readMarkers(['enclomiphene'], BODY as never)), 'Read 3 blood markers from the body map');
+  assertEquals(markersNote(readMarkers(['creatine'], BODY as never), name), '');
+});
+
+Deno.test('a turn: HGH and enclomiphene get the Markers agent\'s flag that IGF-1 is pushed both ways, in the notes', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['HGH', 'enclomiphene'], goals: ['weight'] },
+    rounds: [{ text: 'Nobody has tested them together. Talk to a clinician first.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Is HGH plus enclomiphene good for fat loss?' }]), deps(withLibrary(f))));
+  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'markers' && e.data.title === 'IGF-1: pushed both ways'));
+  const notes = String((calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
+  assert(notes.includes('Markers agent, from the Library\'s body map'), notes);
+  assert(notes.includes('- IGF-1: Somatropin (HGH) may raise it; Enclomiphene may lower it. Pushed opposite ways'), notes);
+  assert(guideSystem('').includes('- Markers agent: reads which blood markers each compound named may move'));
 });
