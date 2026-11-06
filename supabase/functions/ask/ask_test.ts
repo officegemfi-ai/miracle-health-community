@@ -1785,3 +1785,101 @@ Deno.test('Sig knows the Planner and the Evidence librarian, and keeps an empty 
   assert(prompt.includes('- Evidence librarian: finds each fact sheet\'s findings on exactly what the Planner read'));
   assert(prompt.includes('An empty rung gets a few words ("nobody has tested them together")'));
 });
+
+// ---------------------------------------------------------------------------
+// The Relatives agent and the Combination agent
+// ---------------------------------------------------------------------------
+const AXES = { axes: [
+  { id: 'gh', name: 'growth hormone', hormone: 'somatropin', members: [
+    { id: 'somatropin', via: ['gh'], how: 'is growth hormone itself' },
+    { id: 'tesamorelin', via: ['ghrh'], how: 'makes the pituitary release more of the body\'s own growth hormone' },
+    { id: 'ipamorelin', via: ['ghrelin'], how: 'makes the pituitary release growth hormone through the ghrelin receptor' },
+  ] },
+  { id: 'testosterone', name: 'testosterone', hormone: 'testosterone', members: [
+    { id: 'testosterone', via: ['androgen'], how: 'is testosterone itself' },
+    { id: 'enclomiphene', via: ['serm'], how: 'raises the body\'s own testosterone in men' },
+  ] },
+  { id: 'glp1', name: 'the GLP-1 receptor', members: [
+    { id: 'semaglutide', via: ['glp1'], how: 'switches on GLP-1 receptors' },
+    { id: 'tirzepatide', via: ['glp1', 'gip'], how: 'switches on GLP-1 and GIP receptors' },
+    { id: 'orforglipron', via: ['glp1'], how: 'switches on the GLP-1 receptor' },
+  ] },
+  { id: 'broken' },
+] };
+
+Deno.test('the Relatives agent: the hormone a compound raises, what raises a hormone, siblings on a receptor; the Combination agent: overlap, same hormone, different pathways', async () => {
+  const { candidatesFor, pairings, pairingTitle } = await import('./relatives.ts');
+  const axes = AXES.axes.filter((a) => a.members) as never;
+  const kin = (id: string, ex: string[] = []) => candidatesFor(id, axes, new Set(ex)).map((c) => `${c.kin}:${c.id}`);
+  assertEquals(kin('enclomiphene'), ['hormone:testosterone']);
+  assertEquals(kin('somatropin'), ['raises:tesamorelin', 'raises:ipamorelin']);
+  assertEquals(kin('ipamorelin'), ['hormone:somatropin']);
+  assertEquals(kin('orforglipron'), ['receptor:semaglutide', 'receptor:tirzepatide']);
+  // What they named is never its own relative
+  assertEquals(kin('somatropin', ['tesamorelin']), ['raises:ipamorelin']);
+  assertEquals(kin('creatine'), []);
+  const p = (ids: string[]) => pairings(ids, axes).map((x) => `${x.kind}:${x.on.join('/')}`);
+  assertEquals(p(['somatropin', 'enclomiphene']), ['apart:growth hormone/testosterone']);
+  assertEquals(p(['semaglutide', 'tirzepatide']), ['overlap:the GLP-1 receptor']);
+  assertEquals(p(['tesamorelin', 'ipamorelin']), ['same:growth hormone']);
+  assertEquals(p(['creatine', 'somatropin']), []);
+  assertEquals(pairingTitle(pairings(['semaglutide', 'tirzepatide'], axes), (id) => id), 'Overlap: semaglutide and tirzepatide both act on the GLP-1 receptor');
+  // The Library's file: what can't be read is left out
+  const lib = createLibrary({ base: 'https://l', snapshotUrl: 's', fetchImpl: (async () => new Response(JSON.stringify(AXES))) as unknown as typeof fetch });
+  clearCache();
+  assertEquals((await lib.axes()).map((a) => a.id), ['gh', 'testosterone', 'glp1']);
+});
+
+// The fixture library, with HGH, enclomiphene, tesamorelin and testosterone's sheets and the pathways
+function withLibrary(f: typeof fetch): typeof fetch {
+  const items: Item[] = [
+    { id: 'somatropin', name: 'Somatropin (HGH)', family: 'Hormones', category: 'Growth-hormone axis', aliases: ['HGH', 'Growth hormone'], kind: 'compound', parts: [], sheet: true, status: 'approved', status_label: 'FDA-approved', grade: 'strong', goals: { muscle: 0.5 } },
+    { id: 'enclomiphene', name: 'Enclomiphene', family: 'Hormones', category: 'Hormone balance', aliases: [], kind: 'compound', parts: [], sheet: true, status: 'not_approved', status_label: 'Not approved', grade: 'moderate', goals: { hormonal: 1 } },
+    { id: 'tesamorelin', name: 'Tesamorelin', family: 'Peptides', category: 'Growth-hormone axis', aliases: [], kind: 'compound', parts: [], sheet: true, status: 'approved', status_label: 'FDA-approved', grade: 'strong', goals: { weight: 0.75 } },
+  ];
+  const sheet = (id: string, name: string, benefits: Sheet['benefits']): Sheet => ({ ...SHEET_BPC, id, name, benefits });
+  const sheets: Record<string, Sheet> = {
+    somatropin: sheet('somatropin', 'Somatropin (HGH)', [{ claim: 'More lean mass and less body fat than placebo in adults with growth hormone deficiency', evidence: 'strong' }]),
+    enclomiphene: sheet('enclomiphene', 'Enclomiphene', [{ claim: 'Raised testosterone compared with placebo in men with secondary hypogonadism', evidence: 'moderate' }]),
+    tesamorelin: sheet('tesamorelin', 'Tesamorelin', [{ claim: 'Cut visceral (deep belly) fat by about 15% over 26 weeks in adults with HIV and excess abdominal fat', evidence: 'strong' }]),
+    testosterone: sheet('testosterone', 'Testosterone', [{ claim: 'About 1.6 kg less body fat and 1.6 kg more lean mass in middle-aged and older men (29 randomized trials)', evidence: 'moderate' }]),
+  };
+  return (async (url: string | URL, init?: RequestInit) => {
+    const u = String(url);
+    if (u.endsWith('/index.json')) return new Response(JSON.stringify({ items: [...ITEMS, ...items] }));
+    if (u.endsWith('/axes.json')) return new Response(JSON.stringify(AXES));
+    const m = u.match(/\/entries\/([a-z0-9]+)\.json$/);
+    if (m && sheets[m[1]]) return new Response(JSON.stringify(sheets[m[1]]));
+    return f(url, init);
+  }) as unknown as typeof fetch;
+}
+
+Deno.test('a turn: HGH and enclomiphene for fat loss gets their relatives\' findings, said as whose they are, and how the two relate', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['HGH', 'enclomiphene'], goals: ['weight'] },
+    rounds: [{ text: 'Nobody has tested them together, and there’s no evidence enclomiphene helps fat loss. Talk to a clinician first.' }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Is HGH plus enclomiphene good for fat loss?' }]), deps(withLibrary(f))));
+  const done = ev.filter((e) => e.event === 'step' && e.data.status === 'done').map((e) => e.data);
+  assertEquals(done.find((s) => s.agent === 'relatives')?.title, 'Found evidence through Tesamorelin and Testosterone');
+  assertEquals(done.find((s) => s.agent === 'combination')?.title, 'Different pathways: growth hormone and testosterone');
+  const notes = String((calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
+  assert(notes.includes('- Enclomiphene raises the body\'s own testosterone in men (from its fact sheet). Testosterone\'s own findings: [body fat, moderate evidence] About 1.6 kg less body fat'), notes);
+  assert(notes.includes('These are Testosterone\'s evidence: for Enclomiphene they\'re expected from how it works, not tested (Enclomiphene has no finding on this in its own fact sheet).'), notes);
+  assert(notes.includes('Tesamorelin\'s findings: [body fat, strong evidence] Cut visceral (deep belly) fat') && notes.includes('they aren\'t a test of Somatropin (HGH) itself'), notes);
+  assert(notes.includes('- Somatropin (HGH) and Enclomiphene work through different pathways (growth hormone; testosterone): separate roads to a goal in theory, and only a study of the two together can show whether they add up'), notes);
+  // The final check's list is the named compounds' own findings, never a relative's
+  const checks = calls.filter((c) => c.kind === 'review').map((c) => String((c.body.messages as { content: string }[])[0].content));
+  const list = checks.find((p) => p.includes('fact sheet findings for this question'))!;
+  assert(list.includes('Somatropin (HGH): More lean mass and less body fat') && !list.includes('1.6 kg'), list);
+  // The relatives' sheets are among the sources
+  const src = ev.find((e) => e.event === 'sources')!.data;
+  assert(src.studies.names.some((n: { id: string }) => n.id === 'testosterone'));
+});
+
+Deno.test('Sig knows the Relatives agent and the Combination agent', () => {
+  const prompt = guideSystem('');
+  assert(prompt.includes('- Relatives agent: for each compound named, finds what works through the same hormone or receptor'));
+  assert(prompt.includes('always say whose evidence it is'));
+  assert(prompt.includes('- Combination agent: says whether compounds named together act on the same receptor (overlap)'));
+});

@@ -72,7 +72,7 @@ Anyone can talk with Sig on miraclehealth.us/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
 for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
 community (the Community Signal: members' first-hand reports and public forum data). Each message
-goes through six agents and the community's numbers, and the page shows each step as it happens:
+goes through eight agents and the community's numbers, and the page shows each step as it happens:
 
 1. **Safety agent** (Claude Haiku) reads the message first: emergencies (911), signs of crisis
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
@@ -103,6 +103,13 @@ goes through six agents and the community's numbers, and the page shows each ste
    fact sheet, said as expected and not tested; what people report. Not studied together is never
    "no evidence", and the risks, US status and legal limits get as much room as the benefits.
    When a reply says nothing is known, the final check is given these findings (rule 9).
+   **Relatives agent** (no model: `relatives.ts`, over the Library's pathways in
+   `library/data/axes.json`, written from each member's fact sheet) adds the rung below: for a
+   compound that raises a hormone the body makes, that hormone's own findings (testosterone's for
+   enclomiphene, HGH's for ipamorelin), said as expected from how it works, not tested; for the
+   hormone itself, the findings of what raises it (tesamorelin's for HGH), as support, never as
+   a test of it; and, when a compound's own sheet has nothing, what acts on the same receptor.
+   Their sheets count among the sources, never among the findings the final check puts back.
 5. **The community** (no model: the community's public totals in `snapshot.json`, read by
    `community.ts`): for each compound named, and for what the visitor wants it for (one of the
    uses in `shared/uses.json`, which the Safety agent picks out), what members' first-hand reports
@@ -119,7 +126,12 @@ goes through six agents and the community's numbers, and the page shows each ste
    forum mentions; never anything on FDA's safety-risk list), as reports, not recommendations.
    Totals only: never a post or a name. Each answer ends with where it came from (fact sheets and
    Signals, in totals).
-6. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
+6. **Combination agent** (no model: `relatives.ts`) says how what was named together relates,
+   from the same pathways: the same receptor (overlap: little extra expected, side effects add),
+   the same hormone by different routes (its effects and risks can add up), or different
+   pathways (separate roads to a goal; only a study of the pair shows whether they add up). Not
+   for comparisons.
+   **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
    conditions: overlapping mechanisms, additive risks, interactions.
 7. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
    safety-risk list is never on it, and the auditor checks every shortlist. When someone names

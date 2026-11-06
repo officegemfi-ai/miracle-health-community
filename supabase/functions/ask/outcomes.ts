@@ -86,7 +86,7 @@ export function planOutcomes(texts: string[], goals: Goal[]): Plan {
 
 // A finding's effect, without who was studied: "lowered triglycerides in adults with excess belly
 // fat" isn't a finding about belly fat
-const WHO = /[,;]?\s(?:in|among)\s+(?:about\s+|roughly\s+|nearly\s+|over\s+|more\s+than\s+|up\s+to\s+)?(?:[\d,]+\s+)?(?:(?:healthy|aged|old|older|younger|young|obese|overweight|postmenopausal|premenopausal|elderly|middle-aged|trained|untrained|resistance-trained|active|sedentary|hospitalized|critically\s+ill)\s+)*(?:adults?|people|persons|men|women|children|kids|teens|adolescents|boys|girls|infants|patients|participants|volunteers|athletes|subjects|individuals|mice|rats|rodents|animals|dogs|pigs|primates|monkeys|cells|smokers|users|lifters|runners|cyclists|veterans|randomi[sz]ed|(?:a\s+)?(?:small\s+|large\s+)?(?:trials?|stud(?:y|ies)|meta-analys[ie]s|reviews?))\b/i;
+const WHO = /[,;]?\s(?:in|among)\s+(?:about\s+|roughly\s+|nearly\s+|over\s+|more\s+than\s+|up\s+to\s+)?(?:[\d,]+\s+)?(?:(?:healthy|aged|old|older|younger|young|obese|overweight|postmenopausal|premenopausal|elderly|middle-aged|trained|untrained|resistance-trained|active|sedentary|hospitalized|critically\s+ill)\s+(?:and\s+|or\s+)?)*(?:adults?|people|persons|men|women|children|kids|teens|adolescents|boys|girls|infants|patients|participants|volunteers|athletes|subjects|individuals|mice|rats|rodents|animals|dogs|pigs|primates|monkeys|cells|smokers|users|lifters|runners|cyclists|veterans|randomi[sz]ed|(?:a\s+)?(?:small\s+|large\s+)?(?:trials?|stud(?:y|ies)|meta-analys[ie]s|reviews?))\b/i;
 export function effectOf(claim: string): string {
   const m = WHO.exec(claim);
   return m && m.index >= 12 ? claim.slice(0, m.index) : claim;
@@ -150,10 +150,12 @@ export function evidenceNote(ev: Evidence[], plan: Plan): string {
     if (e.sheet === 'unread') return `- ${e.name}: its fact sheet couldn't be loaded just now, so make no claims about its findings.`;
     if (e.sheet === 'none') return `- ${e.name}: no fact sheet yet, so nothing from the studies on ${what}; what people report leads for it, said as such.`;
     if (!e.found.length) return `- ${e.name}: its fact sheet has no finding on ${what}. Say that in a few words, then go down the ladder for it: what it was studied for and how that could bear on ${main} (expected from how it works, not tested), then what people report.`;
-    return `- ${e.name}: ${e.found.map((f) => `[${f.outcome}, ${GRADE[f.evidence] ?? 'not graded'}] ${f.claim}`).join(' | ')}`;
+    return `- ${e.name}: ${evidenceNoteLines(e)}`;
   });
   const balance = ev.some((e) => e.found.length) ? '\nThe risks, US status and legal limits of the same compounds, from their fact sheets, get as much room as these findings.' : '';
   return `Evidence librarian, the findings on exactly that in the fact sheets, strongest first (give each one with who was studied, which it says: a finding in people with a condition, or in animals, isn't proof for them):\n${lines.join('\n')}${balance}`;
 }
+// One sheet's findings on it, each with its label and how strong
+export const evidenceNoteLines = (e: Evidence) => e.found.map((f) => `[${f.outcome}, ${GRADE[f.evidence] ?? 'not graded'}] ${f.claim}`).join(' | ');
 // For the final check (rule 9): the findings, one line each
 export const evidenceLines = (ev: Evidence[]) => ev.flatMap((e) => e.found.map((f) => `${e.name}: ${f.claim} (evidence: ${f.evidence || 'not graded'})`));

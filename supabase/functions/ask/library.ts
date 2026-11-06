@@ -138,6 +138,10 @@ async function cached<T>(key: string, ttl: number, now: number, load: () => Prom
 }
 
 export type LibraryOpts = { base: string; snapshotUrl: string; fetchImpl?: typeof fetch; now?: () => number };
+// The pathways compounds act through (axes.json, from each member's fact sheet): which hormone an
+// axis carries, and the receptor each member acts on
+export type AxisMember = { id: string; via: string[]; how: string };
+export type Axis = { id: string; name: string; hormone?: string; members: AxisMember[] };
 
 export function createLibrary(opts: LibraryOpts) {
   const f = opts.fetchImpl ?? fetch;
@@ -167,6 +171,16 @@ export function createLibrary(opts: LibraryOpts) {
     async sheet(id: string): Promise<Sheet | null> {
       if (!/^[a-z0-9]{1,40}$/.test(id)) return null;
       return await cached(`sheet:${id}`, 15 * 60_000, now(), async () => (await getJson(`${opts.base}/entries/${id}.json`)) as Sheet | null);
+    },
+    // The pathways; none when they can't be read (the agents that use them then say nothing)
+    async axes(): Promise<Axis[]> {
+      return await cached('axes', 10 * 60_000, now(), async () => {
+        const a = await getJson(`${opts.base}/axes.json`).catch(() => null);
+        return (Array.isArray(a?.axes) ? a.axes : []).filter((x: Axis) => x && typeof x.id === 'string' && Array.isArray(x.members)).map((x: Axis) => ({
+          id: String(x.id), name: String(x.name ?? x.id), ...(x.hormone ? { hormone: String(x.hormone) } : {}),
+          members: x.members.filter((m) => m && typeof m.id === 'string').map((m) => ({ id: m.id, via: Array.isArray(m.via) ? m.via.map(String) : [], how: String(m.how ?? '') })),
+        }));
+      });
     },
     // A snapshot that can't be read isn't kept as an empty one: the last good copy stands, and with
     // none, the caller hears it failed (and says nothing about what people report)

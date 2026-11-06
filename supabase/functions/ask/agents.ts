@@ -9,7 +9,7 @@
 // Every step is announced to the page as it happens. Nothing the member writes is stored.
 import { ApiError, form, type Block, type Message, retry, stream, tuning } from './claude.ts';
 import {
-  BLOCKED, condense, familyOne, GOAL_LABEL, GOALS, type Goal, indexText, type Item, LEVEL_SHORT, type Library, mentioned,
+  type Axis, BLOCKED, condense, familyOne, GOAL_LABEL, GOALS, type Goal, indexText, type Item, LEVEL_SHORT, type Library, mentioned,
   optionLine, rank, resolve, search, type Sheet, type Signal, type Snapshot, stub, tidyBlends, UNAPPROVED,
 } from './library.ts';
 import {
@@ -22,6 +22,7 @@ import {
 } from './community.ts';
 import { INJECT_CARD, INJECT_SIGNS, warningCard } from './urgency.ts';
 import { type Evidence, evidenceFor, evidenceLines, evidenceNote, evidenceTitle, NO_PLAN, type Plan, planOutcomes, plannerNote, plannerTitle } from './outcomes.ts';
+import { candidatesFor, pairingNote, pairings, pairingTitle, type Related, relativesNote, relativesTitle } from './relatives.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export type Emit = (event: string, data: Record<string, unknown>) => void;
@@ -865,6 +866,34 @@ function sheetText(id: string, ctx: Ctx): string {
 }
 
 const chip = (id: string, ctx: Ctx) => ({ id, name: ctx.byId.get(id)?.name ?? id });
+// The Relatives agent on the compounds named: the closest relatives (the hormone a compound raises;
+// for a hormone, what raises it; or what acts on the same receptor), their sheets read by the
+// Evidence librarian for what the Planner read; at most two with findings per compound, six sheets
+async function relativesStep(ids: string[], own: Evidence[], axes: Axis[], ctx: Ctx): Promise<string> {
+  if (!axes.length) return '';
+  const exclude = new Set(ids);
+  // Siblings on the same receptor only stand in when a compound's own sheet has nothing on it
+  const per = ids.map((id) => candidatesFor(id, axes, exclude)
+    .filter((c) => ctx.byId.has(c.id) && ctx.byId.get(c.id)!.sheet !== false && (c.kin !== 'receptor' || !own.find((e) => e.id === id)?.found.length)).slice(0, 3));
+  const want = [...new Set(per.flat().map((c) => c.id))].slice(0, 6);
+  if (!want.length) return '';
+  ctx.emit('step', { id: 'relatives', agent: 'relatives', status: 'run', title: 'Looking at relatives through the same hormone or receptor' });
+  await openSheets(want, ctx);
+  const rel: Related[] = [];
+  ids.forEach((id, i) => {
+    let n = 0;
+    for (const c of per[i]) {
+      if (n >= 2 || !want.includes(c.id)) continue;
+      const ev = evidenceFor(c.id, ctx.byId.get(c.id)!.name, ctx.sheets.get(c.id), ctx.plan.outcomes);
+      if (!ev.found.length) continue;
+      n++;
+      rel.push({ ...c, name: ev.name, ofName: ctx.byId.get(id)!.name, ev, own: own.find((e) => e.id === id)?.found.length ?? 0 });
+    }
+  });
+  rel.forEach((r) => ctx.opened.add(r.id));
+  ctx.emit('step', { id: 'relatives', agent: 'relatives', status: 'done', title: relativesTitle(rel), chips: [...new Set(rel.map((r) => r.id))].map((id) => chip(id, ctx)) });
+  return relativesNote(rel, ctx.plan);
+}
 // The Evidence librarian on the fact sheets just opened: their findings on what the Planner read,
 // for the guide and for the final check (rule 9)
 function evidenceStep(ids: string[], ctx: Ctx): Evidence[] {
@@ -1313,10 +1342,11 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
 
   // 1. The Safety agent reads the message while the Library loads
   emit('step', { id: 'safety', agent: 'safety', status: 'run', title: 'Screening your message' });
-  const [screen, items, snap] = await Promise.all([
+  const [screen, items, snap, axes] = await Promise.all([
     screenMessage(messages, deps),
     deps.library.items().catch(() => [] as Item[]),
     deps.library.snapshot().catch(() => ({ signals: {}, uses: {}, ok: false }) as Snapshot),
+    deps.library.axes().catch(() => [] as Axis[]),
   ]);
   const minor = screen.red_flag === 'minor' || st.minor;
   const held = screen.red_flag === 'self_harm' || screen.red_flag === 'emergency' || minor;
@@ -1371,7 +1401,16 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       // What each sheet shows on what they asked about (or, when the Planner had nothing to go on,
       // for their goal): a reply that says nothing is known gets it put back
       if (ctx.plan.outcomes.length) {
-        evNote += `\n${evidenceNote(evidenceStep(named.slice(0, 4), ctx), ctx.plan)}`;
+        const own = evidenceStep(named.slice(0, 4), ctx);
+        evNote += `\n${evidenceNote(own, ctx.plan)}`;
+        // 2b. The Relatives agent: what works through the same hormone or receptor, a rung below
+        // (a turn never fails on it: without it, the ladder goes on from how each one works)
+        const rel = await relativesStep(named.slice(0, 4), own, axes, ctx).catch((e) => {
+          console.error('relatives', e);
+          emit('step', { id: 'relatives', agent: 'relatives', status: 'done', title: 'Couldn’t look at relatives just now' });
+          return '';
+        });
+        if (rel) evNote += `\n${rel}`;
       } else {
         gate.findings(named.slice(0, 4).flatMap((id) => (benefitsOf(ctx.sheets.get(id), goal, 2) ?? [])
           .map((b) => `${ctx.byId.get(id)?.name ?? id}: ${b.claim} (evidence: ${b.evidence || 'not graded'})`)));
@@ -1425,7 +1464,18 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     ].filter(Boolean).join('\n');
   }
 
-  // 3. The Synergy auditor, when the member's own compounds and medicines meet
+  // 3. The Combination agent: how what they named together relates, by the Library's pathways
+  let comboNote = '';
+  if (!comparing && named.length >= 2 && axes.length) {
+    const p = pairings(named.slice(0, 4), axes);
+    const name = (id: string) => ctx.byId.get(id)?.name ?? id;
+    if (p.length) {
+      emit('step', { id: 'combination', agent: 'combination', status: 'done', title: pairingTitle(p, name), chips: [...new Set(p.flatMap((x) => [x.a, x.b]))].map((id) => chip(id, ctx)) });
+      comboNote = pairingNote(p, name);
+    }
+  }
+
+  // 3a. The Synergy auditor, when the member's own compounds and medicines meet
   let synNote = '';
   let upfront: Audit | null = null;
   // Their medicines, conditions or pregnancy matter for what they compare too: each compound is
@@ -1450,7 +1500,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // 4. The guide writes, with the Library tools; every part goes through the gate
   const system = [
     { type: 'text', text: guideSystem(indexText(items)), cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, synergy: synNote, sheets: sheetsForTurn }) },
+    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, combination: comboNote, synergy: synNote, sheets: sheetsForTurn }) },
   ];
   gate.sources(system.map((b) => b.text).join('\n'));
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
