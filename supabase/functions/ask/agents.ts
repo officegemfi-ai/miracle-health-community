@@ -1465,7 +1465,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     }
   }
   // The screen draws the evidence ladder before the community's step puts the compounds on it
-  if (ladder) emit('ladder', ladderOf(ladder, ctx.plan));
+  if (ladder) emit('ladder', { ...ladderOf(ladder, ctx.plan), compare: comparing });
 
   // 2e. The community: what members and the public forums report on what they named and on what
   // they want it for, and which of the two voices leads, compound by compound
