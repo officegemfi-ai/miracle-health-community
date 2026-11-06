@@ -193,6 +193,7 @@ READ_TOOL = {
         'type': 'object',
         'properties': {
             'relevant': {'type': 'boolean', 'description': 'True only if the study measured, in people, an effect of this compound (or the drug named) on at least one of the listed markers.'},
+            'given': {'type': 'boolean', 'description': 'True if people in the study were given this compound (or the drug named); false if it was only a comparator, a background treatment, or mentioned.'},
             'effects': {'type': 'array', 'maxItems': 6, 'items': {'type': 'object', 'properties': {
                 'marker': {'type': 'string', 'description': 'One of the marker ids listed.'},
                 'direction': {'type': 'string', 'enum': ['up', 'down', 'no change', 'mixed']},
@@ -200,7 +201,7 @@ READ_TOOL = {
                 'design': {'type': 'string', 'description': 'The design, at most 6 words (for example "retrospective study", "randomized trial").'},
             }, 'required': ['marker', 'direction', 'who', 'design']}},
         },
-        'required': ['relevant', 'effects'],
+        'required': ['relevant', 'given', 'effects'],
     },
 }
 
@@ -210,8 +211,9 @@ def claude_read(art, compound, via, markers, key, model):
     prompt = (f'Compound: {compound}{f" (searched through {via})" if via else ""}\n\nBlood markers:\n{listing}\n\n'
               f'<study>\nTitle: {art["title"]}\nJournal: {art["journal"]} {art["year"]}\nAbstract: {art["abstract"][:5000]}\n</study>\n\n'
               'Did this study measure, in people, an effect of the compound (or the drug named) on any of these markers? '
-              'Record each marker it reports, which way it moved and in whom. Animal or lab studies, reviews that report no new '
-              'measurement, and studies where the compound is only mentioned are not relevant. Read only what the abstract says.')
+              'Record each marker it reports for this compound, which way it moved and in whom. Animal or lab studies, reviews that report no new '
+              'measurement, and studies where the compound is only a comparator, a background treatment or a mention are not relevant: '
+              'an effect of another drug in the same study is not this compound\'s. Read only what the abstract says.')
     body = json.dumps({'model': model, 'max_tokens': 500, 'tools': [READ_TOOL], 'tool_choice': {'type': 'tool', 'name': 'read_study'},
                        'messages': [{'role': 'user', 'content': prompt}]}).encode()
     req = urllib.request.Request('https://api.anthropic.com/v1/messages', data=body, method='POST', headers={
@@ -226,7 +228,7 @@ def claude_read(art, compound, via, markers, key, model):
                 g = use['input']
                 effects = [{'marker': e.get('marker'), 'direction': e.get('direction', 'mixed'), 'who': str(e.get('who', ''))[:120], 'design': str(e.get('design', ''))[:60]}
                            for e in g.get('effects') or [] if e.get('marker') in ids]
-                return {'relevant': bool(g.get('relevant')) and bool(effects), 'effects': effects, 'by': 'Claude'}
+                return {'relevant': bool(g.get('relevant')) and g.get('given') is not False and bool(effects), 'effects': effects, 'by': 'Claude'}
         except urllib.error.HTTPError as e:
             if e.code in (400, 401, 403, 404):
                 break
@@ -240,12 +242,23 @@ def claude_read(art, compound, via, markers, key, model):
 # The review issue
 # ---------------------------------------------------------------------------
 ARROW = {'up': '↑', 'down': '↓', 'no change': '=', 'mixed': '↕', 'unclear': '?'}
+# What to review first: the stronger the design, the more a marker matters for safety, the newer
+SAFETY = {'liver', 'kidney', 'hematocrit', 'glucose', 'psa', 'igf1', 'lipids', 'prolactin'}
+
+
+def strength(f):
+    text = ' '.join([f['title']] + [e.get('design', '') for e in f['effects']])
+    design = 3 if re.search(r'meta-analys|systematic review', text, re.I) else 2 if re.search(r'randomi[sz]ed|placebo|\bRCT\b|controlled trial', text, re.I) \
+        else 0 if re.search(r'case report', text, re.I) else 1
+    moved = [e for e in f['effects'] if e['gap'] and e['direction'] in ('up', 'down')]
+    return design + (1 if any(e['marker'] in SAFETY for e in moved) else 0) + (0.5 if moved else 0) + (0.5 if (f['year'] or '0') >= '2015' else 0)
 
 
 def render(found, markers, mode, by, counts):
     name = {m['id']: m['name'] for m in markers}
-    gaps = [f for f in found if any(e['gap'] for e in f['effects'])]
+    gaps = sorted([f for f in found if any(e['gap'] for e in f['effects'])], key=strength, reverse=True)
     more = [f for f in found if not any(e['gap'] for e in f['effects'])]
+    first = [f for f in gaps if strength(f) >= 3.5][:30]
 
     def line(f):
         fx = ', '.join(f'**{name[e["marker"]]} {ARROW.get(e["direction"], "?")}**{" (not on its sheet)" if e["gap"] else ""}' for e in f['effects'])
@@ -255,7 +268,7 @@ def render(found, markers, mode, by, counts):
 
     def section(rows):
         out, cur = [], None
-        for f in sorted(rows, key=lambda x: (x['name'].lower(), x['year'] or '0')):
+        for f in sorted(rows, key=lambda x: (x['name'].lower(), -strength(x))):
             if f['name'] != cur:
                 cur = f['name']
                 out.append(f'\n**[{cur}](https://miraclehealth.us/library/{f["id"]}/)**')
@@ -270,8 +283,12 @@ def render(found, markers, mode, by, counts):
         '',
         f'Searched {counts["compounds"]} compounds; {counts["new"]} studies not cited yet; {counts["kept"]} report an effect on a marker.',
         '',
-        f'### Markers their sheets don\'t mention at all ({len(gaps)})',
-        *(section(gaps) or ['\nNone this time.']),
+        f'### Review these first ({len(first)})',
+        'Markers their sheets don\'t mention at all, from the strongest studies (meta-analyses and randomized trials first), on markers that matter most for safety.',
+        *(section(first) or ['\nNone this time.']),
+        '',
+        f'### The rest on markers their sheets don\'t mention ({len(gaps) - len(first)})',
+        *(section([f for f in gaps if f not in first]) or ['\nNone this time.']),
         '',
         f'<details><summary>More evidence on markers their sheets already mention ({len(more)})</summary>',
         '',
