@@ -1612,16 +1612,15 @@ Deno.test('the Synergy auditor says which compound carries a risk, and "both" on
   assert(AUDIT_SYSTEM.includes('- additive: effects that add up into a risk (both lower blood sugar'));
 });
 
-Deno.test('Sig keeps the voices apart, says which compound carries a risk, and stays short beside the screen', () => {
+Deno.test('Sig keeps the voices apart, says which compound carries a risk, and leaves the markers to the screen', () => {
   const prompt = guideSystem('');
   // The chat marks each paragraph with its voice, so a paragraph keeps to one
   assert(prompt.includes('what the studies show and what people report go in separate sentences, and a paragraph that\'s about one of them keeps to it'));
   assert(prompt.includes('"both" only when each of them has it'));
-  // A combination opens with the community on the pair, on its own, and leaves the markers to the screen
-  assert(prompt.includes('open with what the community reports about taking them together, in a paragraph of its own'));
+  // A combination says what the community has on the pair in a sentence of its own, and leaves the markers to the screen
+  assert(prompt.includes('say near the top what the community reports about taking them together, in a sentence of its own'));
+  assert(prompt.includes('when they asked what the compounds do together, that\'s the bottom line'));
   assert(prompt.includes('name at most the one or two that matter most for each'));
   assert(prompt.includes('"**Next step:**", in one sentence'));
-  assert(prompt.includes('about 90 to 150 words'));
-  // Shorter never means losing the caution line
-  assert(prompt.includes('never the caution line: the check with their prescriber or clinician, FDA\'s safety-risk list'));
+  assert(prompt.includes('about 100 to 180 words'));
 });

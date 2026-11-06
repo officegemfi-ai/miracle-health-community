@@ -41,7 +41,7 @@ DOSE = re.compile(r'(?<![\w.])\d+(?:[.,]\d+)?\s?(?:mcg|µg|ug|mg|g|iu|units?|ml|
                   r'(?!\s*(?:/\s*(?:kg|lb)\s*)?(?:per\s+(?:kg|lb|pound|day)\s+)?(?:of\s+)?(?:[a-z-]+\s+){0,2}protein)'
                   r'(?!\s*(?:/|per|a|an)\s*(?:pound|lb|kg)s?\s+(?:of\s+)?(?:your\s+)?(?:lean|goal|ideal|target)\b)', re.I)
 SELLERS = re.compile(r'\b(?:peptide\s?sciences|limitless\s+life|amino\s+asylum|core\s+peptides|swiss\s?chems|paradigm\s+peptides|'
-                     r'pure\s+rawz|biotech\s+peptides|promo\s+code|discount\s+code|coupon|use\s+code|buy\s+(?:it\s+)?(?:from|at|on)|'
+                     r'pure\s+rawz|biotech\s+peptides|promo\s+code|discount\s+code|coupon|use\s+code|buy\s+(?:it\s+)?(?:from|at|on(?!\s+(?:your|their|my)\s+own))|'
                      r'order\s+(?:it\s+)?from|available\s+(?:at|on)\s+amazon)\b', re.I)
 DEMOGRAPHICS = re.compile(r'how old|your age|age range|\bsex\b|gender|\bfemale\b|\bmale\b|18.29|65 or older', re.I)
 TOOL_TALK = re.compile(r'present_shortlist|clinician_questions|ask_member|audit_combination|find_options|read_fact_sheets|search_library|warning_signs|present_plan', re.I)
