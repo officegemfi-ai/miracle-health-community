@@ -1607,6 +1607,7 @@ Deno.test('Sig answers a combination with what the community has on it, and know
 });
 
 Deno.test('the Synergy auditor says which compound carries a risk, and "both" only when both do', () => {
-  assert(AUDIT_SYSTEM.includes('when each of them has that effect'));
-  assert(AUDIT_SYSTEM.includes('A risk only one of them carries doesn\'t add up: never write "both" for it'));
+  assert(AUDIT_SYSTEM.includes('say which compound carries each risk: "both" only for a risk each of them has'));
+  // What counts as a finding is unchanged: additive risks still add up when both have them
+  assert(AUDIT_SYSTEM.includes('- additive: effects that add up into a risk (both lower blood sugar'));
 });
