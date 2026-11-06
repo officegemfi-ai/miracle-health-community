@@ -1624,3 +1624,55 @@ Deno.test('Sig keeps the voices apart, says which compound carries a risk, and l
   assert(prompt.includes('"**Next step:**", in one sentence'));
   assert(prompt.includes('about 100 to 180 words'));
 });
+
+Deno.test('Sig answers a goal rung by rung: not studied together is never "no evidence"', () => {
+  const prompt = guideSystem('');
+  assert(prompt.includes('Not studied together is never "no evidence": when a fact sheet below has a finding for their goal, give it, with who it was studied in.'));
+  assert(prompt.includes('the risks, US status and legal limits of the same compounds get as much room as the benefits'));
+});
+
+Deno.test('the final check is given what the fact sheets show when a reply says nothing is known, and puts it back (rule 9)', async () => {
+  const { Gate, DENIES } = await import('./agents.ts');
+  const { REVIEW_SYSTEM } = await import('./prompts.ts');
+  assert(REVIEW_SYSTEM.includes('9. says or implies there\'s no evidence, no studies or nothing known'));
+  assert(DENIES.test('There’s no evidence they help with fat loss.'));
+  assert(DENIES.test('It hasn’t been studied for that.'));
+  assert(!DENIES.test('No doses, no sellers. HGH may help lean mass.'));
+  const prompts: string[] = [];
+  const f = (async (_u: string, init?: RequestInit) => {
+    const text = String(JSON.parse(String(init?.body)).messages[0].content);
+    prompts.push(text);
+    const parts = partsOf(text);
+    return new Response(JSON.stringify({ content: [{ type: 'tool_use', id: 't', name: 'review', input: { parts: parts.map((p) => (/no evidence/.test(p.text)
+      ? { id: p.id, ok: false, broken: [9], fixes: [{ find: 'there’s no evidence either helps fat loss', replace: 'HGH cut body fat in adults with growth hormone deficiency' }] }
+      : { id: p.id, ok: true })) } }] }));
+  }) as unknown as typeof fetch;
+  const d = { apiKey: 'k', models: { guide: 'g', fast: 'claude-haiku-5-5', fallback: 'f' }, library: createLibrary({ base: 'x', snapshotUrl: 'y' }), fetchImpl: f };
+  const sent: string[] = [];
+  const gate = new Gate((e: string, x: Record<string, unknown>) => { if (e === 'text') sent.push(String(x.d)); }, d, plainScreen(''), { minor: false, pregnant: false, crisis: false }, 'q');
+  gate.findings(['Somatropin (HGH): More lean mass and less body fat than placebo in adults with growth hormone deficiency (evidence: strong)']);
+  gate.text('They haven’t been studied together, and there’s no evidence either helps fat loss.');
+  await gate.drain();
+  assert(prompts.some((p) => p.includes('fact sheet findings for this question') && p.includes('growth hormone deficiency')));
+  assert(sent.join('').includes('HGH cut body fat in adults with growth hormone deficiency'));
+  // A part that denies nothing goes to the check without the list
+  prompts.length = 0;
+  gate.text('\n\nHGH may help lean mass.');
+  await gate.drain();
+  assert(prompts.length && !prompts.some((p) => p.includes('fact sheet findings for this question')));
+});
+
+Deno.test('an answer about compounds that never gets to their risks or status ends with the Library\'s caution line', async () => {
+  const plain = ['BPC-157 is a short peptide first found in stomach juice.', 'In rodents, cut tendons healed faster with it.',
+    'It is thought to boost blood flow and repair signaling in injured tissue.', 'On the forums, people most often describe quicker soft-tissue recovery.',
+    'There are no studies in people for tendon healing yet.', 'Its effects in people are still a question for research.',
+    'The community has been reporting on it for years.', 'Those reports describe how people felt, not measured results.'].join(' ') + ' ';
+  const { f } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'] }, rounds: [{ text: plain }] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'What does BPC-157 do?' }]), deps(f)));
+  const text = ev.filter((e) => e.event === 'text').map((e) => String(e.data.d)).join('');
+  assert(/\*\*Caution:\*\* BPC-157: Not approved by FDA/.test(text), text.slice(-300));
+  // One that already says something about its risks or status gets nothing added
+  const w2 = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'] }, rounds: [{ text: plain + 'Talk to a clinician before trying it.' }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'What does BPC-157 do?' }]), deps(w2.f)));
+  assert(!ev2.filter((e) => e.event === 'text').map((e) => String(e.data.d)).join('').includes('**Caution:**'));
+});

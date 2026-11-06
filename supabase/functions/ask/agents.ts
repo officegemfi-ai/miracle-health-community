@@ -431,6 +431,14 @@ type Out =
 // answer in this many characters waits, and goes out right after the words
 const WORDS_FIRST = 200;
 
+// A part that says nothing is known: the final check is given what the fact sheets do show, so
+// it can put back a finding the reply left out (rule 9)
+export const DENIES = /\bno\s+(?:good\s+|real\s+|solid\s+|clear\s+|direct\s+|strong\s+|human\s+|clinical\s+|scientific\s+)?(?:evidence|proof|data|studies|research|trials?)\b|\bnothing\s+(?:shows|suggests|proves|is\s+known)\b|\b(?:hasn.t|has\s+not|haven.t|have\s+not|isn.t|is\s+not|aren.t|are\s+not|wasn.t|weren.t|never)\s+(?:been\s+)?(?:studied|tested|shown|proven)\b|\bunstudied\b|\bunproven\b/i;
+// An answer that names compounds and never says anything about their risks or status gets the
+// Library's own caution line at the end
+const FULL_ANSWER = 400;
+export const CAUTIONED = /\b(?:cautions?|risks?|risky|side[- ]effects?|warnings?|warns?|watch\s+for|careful|not\s+(?:fda[- ])?approved|unapproved|illegal|prescriptions?|prescriber|clinician|doctor|physician|monitor(?:ed|ing)?|safety|unsafe|dangerous|clots?)\b/i;
+
 export class Gate {
   released = '';
   cards = 0;
@@ -440,6 +448,9 @@ export class Gate {
   private known = new Set<string>();
   // Everything Sig was given this turn: the numbers in it are the ones a reply may use
   sources(text: string) { sourceNumbers(text, this.known); }
+  // What the fact sheets this turn show was studied, for rule 9
+  private studied: string[] = [];
+  findings(lines: string[]) { this.studied = lines.map((l) => l.slice(0, 320)).slice(0, 12); }
   // Which rules the check found broken, by number (no text): for tuning the guide
   rules: number[] = [];
   wordsFirst = false;
@@ -600,6 +611,8 @@ export class Gate {
       `Flags for this turn: red flag ${s.red_flag}${this.st.minor ? '; under 18 (from this chat)' : ''}${this.st.crisis ? '; signs of crisis earlier in this chat' : ''}${s.pregnant || this.st.pregnant ? '; pregnant, trying to conceive or breastfeeding' : ''}; asked for a dose: ${s.asks_dose ? 'yes' : 'no'}; asked where to get it: ${s.asks_source ? 'yes' : 'no'}.`,
       hits.length ? `Plain checks flagged these words to look at: ${hits.join(', ')}.` : 'Plain checks flagged nothing.',
       nums.length ? `Numbers not found in what Sig was given this turn (rule 8): ${nums.join(', ')}.` : '',
+      this.studied.length && parts.some((p) => p.kind === 'text' && DENIES.test(p.text))
+        ? wrap(code, 'fact sheet findings for this question, for rule 9 (what was studied, and in whom)', this.studied.join('\n')) : '',
       wrap(code, 'the member\'s latest message', this.last.slice(0, 2000)),
       this.released ? wrap(code, 'already shown to the member, for context only', maskTargets(this.released.slice(-2500)).text) : '',
       ...parts.map((p) => wrap(code, `part ${p.id} (${p.kind === 'text' ? 'reply text' : 'card label'})`, p.text)),
@@ -619,7 +632,7 @@ export class Gate {
             ? (v.fixes as Record<string, unknown>[]).filter((f) => typeof f?.find === 'string' && f.find).slice(0, 8)
               .map((f) => ({ find: String(f.find).slice(0, 600), replace: typeof f.replace === 'string' ? f.replace.slice(0, 600) : '' }))
             : undefined,
-          broken: (Array.isArray(v.broken) ? v.broken : []).map(Number).filter((n) => n >= 1 && n <= 8),
+          broken: (Array.isArray(v.broken) ? v.broken : []).map(Number).filter((n) => n >= 1 && n <= 9),
         });
       }
       return out;
@@ -1331,6 +1344,9 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       const ready = named.slice(0, 4).filter((id) => ctx.sheets.get(id)).length;
       emit('step', { id: 'lookup', agent: 'recommender', status: 'done', title: ready ? `Opened ${ready} fact sheet${ready === 1 ? '' : 's'}` : 'No fact sheet yet for these', chips: named.map((id) => chip(id, ctx)) });
       recNote = `the member named ${named.map((id) => `${ctx.byId.get(id)!.name} [${id}]`).join(', ')}; their fact sheets (or a note that there isn't one yet) are below.`;
+      // What each sheet shows for their goal: a reply that says nothing is known gets it put back
+      gate.findings(named.slice(0, 4).flatMap((id) => (benefitsOf(ctx.sheets.get(id), goal, 2) ?? [])
+        .map((b) => `${ctx.byId.get(id)?.name ?? id}: ${b.claim} (evidence: ${b.evidence || 'not graded'})`)));
     }
     if (goal) {
       const opts = rank(items, snap.signals, goal, { limit: 8 });
@@ -1517,6 +1533,18 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       : 'The Safety agent couldn’t check this answer just now, so it isn’t shown. Please try again in a moment.');
   } else if (!gate.released.trim() && !gate.cards) {
     gate.trusted('The Safety agent held this answer back because it broke Miracle Health’s rules. Try asking in a different way, for example about the evidence, the risks or what to ask a clinician.');
+  } else if (!held && named.length && !ctx.asked && !screen.asks_dose && !screen.asks_source
+    && gate.released.trim().length >= FULL_ANSWER && !CAUTIONED.test(gate.released)) {
+    // A full answer about compounds that never got to their risks or status: the Library's own line
+    const lines = named.slice(0, 3).map((id) => {
+      const it = ctx.byId.get(id);
+      const c = it ? cautionFor(it, ctx.sheets.get(id), pregnant) : '';
+      return c ? `${it!.name}: ${c}` : '';
+    }).filter(Boolean);
+    if (lines.length) {
+      gate.trusted(`**Caution:** ${lines.join(' ')}`);
+      ctx.memo.push('a caution line from the Library');
+    }
   }
   await gate.drain();
 
