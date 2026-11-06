@@ -171,6 +171,18 @@ Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAS
 `ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
 project eleven real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
+**The Library watch** (`.github/workflows/library-watch.yml`, `scripts/library_watch.py`) keeps
+the fact sheets from missing studies the way enclomiphene's missed IGF-1. Every Monday it
+searches PubMed for studies in people of each compound with a fact sheet, and of the drug it's
+part of (enclomiphene: clomiphene), that report an effect on a blood marker in the panel in the
+site's `library/data/watch.json` (IGF-1, blood sugar, lipids, hematocrit, liver, kidney,
+estradiol, testosterone, LH and FSH, prolactin, PSA, thyroid, cortisol), and that its sheet
+doesn't cite yet. Claude (Haiku) reads each abstract for which marker moved which way, in whom
+(a plain check does it when there's no API key). The results go to one issue, "Library watch:
+studies to review", markers a sheet doesn't mention at all first. Nothing reaches a fact sheet,
+Sig or the screen from there until an editor adds it with its source, or adds the study to
+`seen` with why it was left out. Run it by hand with "every year" to go back through everything.
+
 ## Run it on your machine (no Docker needed)
 ```
 scripts/local_db.sh up      # Postgres 16, set up like a Supabase project
