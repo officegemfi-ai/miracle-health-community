@@ -1,7 +1,9 @@
 // One turn of a conversation with Sig, agent by agent:
-//   Safety agent (first read) -> Recommender's lookup (the studies) -> the community (what members
-//   and the public forums report, and which of the two leads) -> Synergy auditor (when compounds
-//   meet) -> the guide writes, using the Library tools; Stack builder cards along the way
+//   Safety agent (first read) -> Planner (what they want, in what studies measure) -> Recommender's
+//   lookup (the studies) -> Evidence librarian (each fact sheet's findings on exactly that) -> the
+//   community (what members and the public forums report, and which of the two leads) -> Synergy
+//   auditor (when compounds meet) -> the guide writes, using the Library tools; Stack builder
+//   cards along the way
 //   -> the gate: the Safety agent checks every part of the reply, text and cards alike,
 //      before the member sees it.
 // Every step is announced to the page as it happens. Nothing the member writes is stored.
@@ -19,6 +21,7 @@ import {
   type TopRow, type Use, useById, USE_IDS, type Voice, voiceLine, voiceOf,
 } from './community.ts';
 import { INJECT_CARD, INJECT_SIGNS, warningCard } from './urgency.ts';
+import { type Evidence, evidenceFor, evidenceLines, evidenceNote, evidenceTitle, NO_PLAN, type Plan, planOutcomes, plannerNote, plannerTitle } from './outcomes.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export type Emit = (event: string, data: Record<string, unknown>) => void;
@@ -450,7 +453,7 @@ export class Gate {
   sources(text: string) { sourceNumbers(text, this.known); }
   // What the fact sheets this turn show was studied, for rule 9
   private studied: string[] = [];
-  findings(lines: string[]) { this.studied = lines.map((l) => l.slice(0, 320)).slice(0, 12); }
+  findings(lines: string[]) { this.studied = [...new Set([...this.studied, ...lines.map((l) => l.slice(0, 320))])].slice(0, 12); }
   // Which rules the check found broken, by number (no text): for tuning the guide
   rules: number[] = [];
   wordsFirst = false;
@@ -828,6 +831,7 @@ type Ctx = {
   use: Use | null;      // what they want it for, as the community rates it
   heard: Map<string, Community | null>;   // compounds whose community numbers the guide or a card used
   unread: Set<string>;  // compounds whose fact sheet exists but couldn't be loaded just now
+  plan: Plan;           // the Planner's read: what they asked about, in what studies measure
 };
 
 async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | null>> {
@@ -861,6 +865,15 @@ function sheetText(id: string, ctx: Ctx): string {
 }
 
 const chip = (id: string, ctx: Ctx) => ({ id, name: ctx.byId.get(id)?.name ?? id });
+// The Evidence librarian on the fact sheets just opened: their findings on what the Planner read,
+// for the guide and for the final check (rule 9)
+function evidenceStep(ids: string[], ctx: Ctx): Evidence[] {
+  const ev = ids.filter((id) => ctx.byId.has(id)).map((id) => evidenceFor(id, ctx.byId.get(id)!.name, ctx.sheets.get(id), ctx.plan.outcomes, ctx.unread.has(id)));
+  if (!ev.length) return ev;
+  ctx.emit('step', { id: nextId(ctx, 'ev'), agent: 'evidence', status: 'done', title: evidenceTitle(ev), chips: ev.filter((e) => e.found.length).map((e) => chip(e.id, ctx)) });
+  ctx.gate.findings(evidenceLines(ev));
+  return ev;
+}
 const step = (ctx: Ctx, data: Record<string, unknown>) => ctx.emit('step', data);
 const nextId = (ctx: Ctx, p: string) => `${p}${++ctx.stepN}`;
 
@@ -1013,7 +1026,9 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
       await openSheets(ids, ctx);
       ids.forEach((id) => ctx.opened.add(id));
       step(ctx, { id: nextId(ctx, 'rec'), agent: 'recommender', status: 'done', title: `Opened ${ids.length} fact sheet${ids.length === 1 ? '' : 's'}`, chips: ids.map((id) => chip(id, ctx)) });
-      return ids.map((id) => sheetText(id, ctx)).join('\n\n') + (unknown.length ? `\n\nNot in the Library: ${unknown.join(', ')}.` : '');
+      // What they asked about, in each of these sheets
+      const ev = ctx.plan.outcomes.length ? evidenceStep(ids, ctx) : [];
+      return ids.map((id) => sheetText(id, ctx)).join('\n\n') + (ev.length ? `\n\n${evidenceNote(ev, ctx.plan)}` : '') + (unknown.length ? `\n\nNot in the Library: ${unknown.join(', ')}.` : '');
     }
     case 'search_library': {
       const q = String(input.query ?? '').slice(0, 80);
@@ -1321,14 +1336,23 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
     opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, asked: 0, uses: {}, plans: 0, mine: new Set(), audited: new Set(),
     injectShown: !!st.injectShown,
     signs: new Set(),
-    goal: screen.goals[0], use, heard: new Map(), unread: new Set(),
+    goal: screen.goals[0], use, heard: new Map(), unread: new Set(), plan: NO_PLAN,
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
   if (screen.red_flag === 'self_harm') emit('card', { type: 'crisis' });
   if (screen.red_flag === 'emergency') emit('card', { type: 'urgent' });
 
-  // 2. The Recommender's lookup: the compounds the member named, and options for their goal
+  // 2. The Planner: what they want, in what studies measure, from their own words (their latest
+  // message that names something) or else their goal
+  if (!held && items.length) {
+    ctx.plan = planOutcomes(messages.filter((m) => m.role === 'user').map((m) => m.content).reverse(), screen.goals);
+    if (ctx.plan.outcomes.length) emit('step', { id: 'plan', agent: 'planner', status: 'done', title: plannerTitle(ctx.plan) });
+  }
+  let evNote = plannerNote(ctx.plan);
+
+  // 2a. The Recommender's lookup: the compounds the member named, and options for their goal; then
+  // the Evidence librarian reads their sheets for what the Planner read
   let recNote = 'nothing specific named yet.';
   const sheetsForTurn: string[] = [];
   const named = !held && items.length ? tidyBlends(items, [...new Set([...resolve(items, screen.compounds), ...mentioned(items, last)])], last).slice(0, 6) : [];
@@ -1344,9 +1368,16 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
       const ready = named.slice(0, 4).filter((id) => ctx.sheets.get(id)).length;
       emit('step', { id: 'lookup', agent: 'recommender', status: 'done', title: ready ? `Opened ${ready} fact sheet${ready === 1 ? '' : 's'}` : 'No fact sheet yet for these', chips: named.map((id) => chip(id, ctx)) });
       recNote = `the member named ${named.map((id) => `${ctx.byId.get(id)!.name} [${id}]`).join(', ')}; their fact sheets (or a note that there isn't one yet) are below.`;
-      // What each sheet shows for their goal: a reply that says nothing is known gets it put back
-      gate.findings(named.slice(0, 4).flatMap((id) => (benefitsOf(ctx.sheets.get(id), goal, 2) ?? [])
-        .map((b) => `${ctx.byId.get(id)?.name ?? id}: ${b.claim} (evidence: ${b.evidence || 'not graded'})`)));
+      // What each sheet shows on what they asked about (or, when the Planner had nothing to go on,
+      // for their goal): a reply that says nothing is known gets it put back
+      if (ctx.plan.outcomes.length) {
+        evNote += `\n${evidenceNote(evidenceStep(named.slice(0, 4), ctx), ctx.plan)}`;
+      } else {
+        gate.findings(named.slice(0, 4).flatMap((id) => (benefitsOf(ctx.sheets.get(id), goal, 2) ?? [])
+          .map((b) => `${ctx.byId.get(id)?.name ?? id}: ${b.claim} (evidence: ${b.evidence || 'not graded'})`)));
+      }
+    } else if (ctx.plan.outcomes.length) {
+      evNote += ' When you open fact sheets, the Evidence librarian marks their findings on exactly that.';
     }
     if (goal) {
       const opts = rank(items, snap.signals, goal, { limit: 8 });
@@ -1419,7 +1450,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   // 4. The guide writes, with the Library tools; every part goes through the gate
   const system = [
     { type: 'text', text: guideSystem(indexText(items)), cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, community: communityNote, synergy: synNote, sheets: sheetsForTurn }) },
+    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, synergy: synNote, sheets: sheetsForTurn }) },
   ];
   gate.sources(system.map((b) => b.text).join('\n'));
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));

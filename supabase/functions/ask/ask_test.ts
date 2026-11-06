@@ -1676,3 +1676,112 @@ Deno.test('an answer about compounds that never gets to their risks or status en
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'What does BPC-157 do?' }]), deps(w2.f)));
   assert(!ev2.filter((e) => e.event === 'text').map((e) => String(e.data.d)).join('').includes('**Caution:**'));
 });
+
+// ---------------------------------------------------------------------------
+// The Planner and the Evidence librarian
+// ---------------------------------------------------------------------------
+Deno.test('the Planner reads what they want as what studies measure: their words first, then their goal', async () => {
+  const { planOutcomes, plannerTitle } = await import('./outcomes.ts');
+  const ids = (texts: string[], goals: string[] = []) => planOutcomes(texts, goals as never).outcomes.map((o) => o.id);
+  // Fat loss is body fat, with the body weight and lean mass that studies of it measure too
+  assertEquals(ids(['Is HGH plus enclomiphene good for fat loss?'], ['weight']), ['body_fat', 'body_weight', 'lean_mass']);
+  assertEquals(plannerTitle(planOutcomes(['Is HGH plus enclomiphene good for fat loss?'], [])), 'Looking for evidence on body fat, body weight and lean mass');
+  assertEquals(ids(['Does tesamorelin help belly fat?']), ['belly_fat', 'body_fat', 'body_weight', 'lean_mass']);
+  assertEquals(ids(['Will creatine make me stronger?']), ['strength', 'lean_mass']);
+  // Sore muscles aren't a question about muscle mass; weight training isn't about body weight
+  assertEquals(ids(['What helps muscle soreness after weight training?'], ['recovery']), ['tendon', 'joints', 'healing']);
+  // A follow-up that names nothing measurable keeps what the last message that did asked about
+  assertEquals(ids(['What about tesamorelin?', 'Is HGH good for fat loss?']), ['body_fat', 'body_weight', 'lean_mass']);
+  // Nothing to go on: no plan
+  assertEquals(ids(['hi']), []);
+});
+
+Deno.test('the Evidence librarian finds each sheet\'s findings on exactly that, strongest first; who was studied isn\'t a finding', async () => {
+  const { planOutcomes, evidenceFor, evidenceNote, evidenceTitle, effectOf } = await import('./outcomes.ts');
+  const hgh = { ...SHEET_BPC, id: 'somatropin', name: 'Somatropin (HGH)', benefits: [
+    { claim: 'Improves growth in children with growth hormone deficiency', evidence: 'strong' },
+    { claim: 'About 2 kg more lean mass and 2 kg less fat in healthy older adults; not an approved use', evidence: 'moderate' },
+    { claim: 'More lean mass and less body fat and waist size than placebo in adults with growth hormone deficiency', evidence: 'strong' },
+  ] };
+  const tesa = { ...SHEET_BPC, id: 'tesamorelin', name: 'Tesamorelin', benefits: [
+    { claim: 'Lowered triglycerides in adults with HIV and excess abdominal fat', evidence: 'moderate' },
+    { claim: 'Cut visceral (deep belly) fat by roughly 15% over 26 weeks in adults with HIV and excess abdominal fat', evidence: 'strong' },
+  ] };
+  assertEquals(effectOf('Lowered triglycerides in adults with HIV and excess abdominal fat'), 'Lowered triglycerides');
+  const plan = planOutcomes(['Is HGH plus enclomiphene good for fat loss?'], []);
+  const ev = [
+    evidenceFor('somatropin', 'Somatropin (HGH)', hgh, plan.outcomes),
+    evidenceFor('enclomiphene', 'Enclomiphene', { ...SHEET_BPC, benefits: [{ claim: 'Raised testosterone compared with placebo in men with secondary hypogonadism', evidence: 'moderate' }] }, plan.outcomes),
+    evidenceFor('tesamorelin', 'Tesamorelin', tesa, plan.outcomes),
+    evidenceFor('tb500', 'TB-500', null, plan.outcomes),
+  ];
+  // Strongest first; the growth finding isn't about fat, and the lipid finding's "abdominal fat" is who was studied
+  assertEquals(ev[0].found.map((f) => f.evidence), ['strong', 'moderate']);
+  assert(ev[0].found[0].claim.startsWith('More lean mass and less body fat'));
+  assertEquals(ev[1].found, []);
+  assertEquals(ev[2].found.map((f) => f.outcome), ['body fat']);
+  assert(ev[2].found[0].claim.startsWith('Cut visceral'));
+  assertEquals(ev[3].sheet, 'none');
+  assertEquals(evidenceTitle(ev), 'Found 3 findings in 2 of 3 fact sheets');
+  const note = evidenceNote(ev, plan);
+  assert(note.includes('[body fat, strong evidence] More lean mass and less body fat'), note);
+  assert(note.includes('- Enclomiphene: its fact sheet has no finding on body fat, body weight or lean mass. Say that in a few words, then go down the ladder'), note);
+  assert(note.includes('(expected from how it works, not tested)'), note);
+  assert(note.includes('- TB-500: no fact sheet yet'), note);
+  // Doses never come through, even from a sheet
+  const dosed = evidenceFor('x', 'X', { ...SHEET_BPC, benefits: [{ claim: 'Less body fat at 2 mg a day in 40 adults', evidence: 'limited' }] }, plan.outcomes);
+  assert(!/2 mg/.test(dosed.found[0].claim), dosed.found[0].claim);
+});
+
+Deno.test('a turn: the Planner, then the Evidence librarian on the named compounds\' sheets, in the notes and for the final check', async () => {
+  const review: string[] = [];
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['creatine', 'BPC-157'], goals: ['muscle'] },
+    rounds: [{ text: 'There’s no evidence either of them makes you stronger. Talk to a clinician first.' }],
+    review: (p) => { review.push(p.text); return { ok: true }; },
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Will creatine and BPC-157 make me stronger?' }]), deps(f)));
+  const steps = ev.filter((e) => e.event === 'step' && e.data.status === 'done').map((e) => e.data);
+  const plan = steps.find((s) => s.agent === 'planner')!;
+  const found = steps.find((s) => s.agent === 'evidence')!;
+  assertEquals(plan.title, 'Looking for evidence on strength and lean mass');
+  assertEquals(found.title, 'Found 1 finding in 1 of 2 fact sheets');
+  assertEquals(found.chips.map((c: { id: string }) => c.id), ['creatine']);
+  // The Planner comes right after the Safety agent, the Evidence librarian right after the lookup
+  const order = steps.map((s) => s.agent);
+  assert(order.indexOf('planner') === order.indexOf('safety') + 1 && order.indexOf('evidence') > order.indexOf('recommender'), order.join(' '));
+  const notes = String((calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
+  assert(notes.includes('Planner: they asked about strength; studies of it also measure lean mass.'), notes);
+  assert(notes.includes('[strength, strong evidence] More strength gains with resistance training in adults'), notes);
+  assert(notes.includes('- BPC-157: its fact sheet has no finding on strength or lean mass.'), notes);
+  // A reply that says nothing is known goes to the final check with what the sheets do show
+  const checks = calls.filter((c) => c.kind === 'review').map((c) => String((c.body.messages as { content: string }[])[0].content));
+  assert(checks.some((p) => p.includes('fact sheet findings for this question') && p.includes('Creatine monohydrate: More strength gains with resistance training in adults')));
+});
+
+Deno.test('a goal with nothing named: the Planner\'s read goes with every fact sheet Sig opens', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, goals: ['muscle'] },
+    rounds: [{ tool: { name: 'read_fact_sheets', input: { ids: ['creatine'] } } }, { text: WORDS }],
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'What could help me build muscle?' }]), deps(f)));
+  const steps = ev.filter((e) => e.event === 'step' && e.data.status === 'done').map((e) => e.data);
+  assertEquals(steps.find((s) => s.agent === 'planner')?.title, 'Looking for evidence on lean mass and strength');
+  assertEquals(steps.find((s) => s.agent === 'evidence')?.title, 'Found 1 finding in its fact sheet');
+  const guide = calls.filter((c) => c.kind === 'guide');
+  const notes = String((guide[0].body.system as { text: string }[])[1].text);
+  assert(notes.includes('When you open fact sheets, the Evidence librarian marks their findings on exactly that.'), notes);
+  // The tool's answer carries the librarian's findings
+  assert(JSON.stringify(guide[1].body.messages).includes('[strength, strong evidence] More strength gains with resistance training in adults'));
+  // Held turns get no plan
+  const crisis = fakeWorld({ screen: { ...NONE, red_flag: 'self_harm', goals: ['muscle'] }, rounds: [{ text: 'I hear you.' }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'Will creatine make me stronger? I want to end it all' }]), deps(crisis.f)));
+  assert(!ev2.some((e) => e.event === 'step' && (e.data.agent === 'planner' || e.data.agent === 'evidence')));
+});
+
+Deno.test('Sig knows the Planner and the Evidence librarian, and keeps an empty rung short', () => {
+  const prompt = guideSystem('');
+  assert(prompt.includes('- Planner: reads what the member wants as what studies measure'));
+  assert(prompt.includes('- Evidence librarian: finds each fact sheet\'s findings on exactly what the Planner read'));
+  assert(prompt.includes('An empty rung gets a few words ("nobody has tested them together")'));
+});

@@ -72,11 +72,16 @@ Anyone can talk with Sig on miraclehealth.us/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
 for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
 community (the Community Signal: members' first-hand reports and public forum data). Each message
-goes through four agents and the community's numbers, and the page shows each step as it happens:
+goes through six agents and the community's numbers, and the page shows each step as it happens:
 
 1. **Safety agent** (Claude Haiku) reads the message first: emergencies (911), signs of crisis
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
-2. **Recommender** (Claude Sonnet, the voice of the chat) works from the public Library
+2. **Planner** (no model: `outcomes.ts`) reads what the visitor wants as what studies measure:
+   "fat loss" is body fat, with the body weight and lean mass that studies of it measure too;
+   "my knee" is joint pain and function, with tendon and ligament healing. It goes by their own
+   words (the latest message that names something), or their goal when they name nothing
+   measurable.
+3. **Recommender** (Claude Sonnet, the voice of the chat) works from the public Library
    (`miraclehealth.us/library/data/index.json` and each fact sheet) and the Community Signal
    (`snapshot.json`), with tools to rank options for a goal, open fact sheets and search. It
    talks like a caring clinician, briefly: it asks or answers, never both. When it doesn't yet
@@ -90,7 +95,15 @@ goes through four agents and the community's numbers, and the page shows each st
    the page shows each under its level: call 911 now, same day, or this week. Someone who
    says they inject gets the safety basics once in a chat (adults only); questions about a
    product's quality point to the Library's guide to reading a lab report.
-3. **The community** (no model: the community's public totals in `snapshot.json`, read by
+4. **Evidence librarian** (no model: `outcomes.ts`) reads every fact sheet opened in the turn
+   (the compounds named, and any the Recommender opens) for findings on exactly what the Planner
+   read, strongest first, each with who was studied ("in adults with excess belly fat" is who was
+   studied, not a finding about belly fat), and says plainly when a sheet has none. Sig answers
+   rung by rung: tested together; each one studied for the goal, with who; how each works, from its
+   fact sheet, said as expected and not tested; what people report. Not studied together is never
+   "no evidence", and the risks, US status and legal limits get as much room as the benefits.
+   When a reply says nothing is known, the final check is given these findings (rule 9).
+5. **The community** (no model: the community's public totals in `snapshot.json`, read by
    `community.ts`): for each compound named, and for what the visitor wants it for (one of the
    uses in `shared/uses.json`, which the Safety agent picks out), what members' first-hand reports
    and the public forums say: the Signal and its level, how members rate it for that use (or how
@@ -106,16 +119,16 @@ goes through four agents and the community's numbers, and the page shows each st
    forum mentions; never anything on FDA's safety-risk list), as reports, not recommendations.
    Totals only: never a post or a name. Each answer ends with where it came from (fact sheets and
    Signals, in totals).
-4. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
+6. **Synergy auditor** (Claude Haiku) checks compounds together with the member's medicines and
    conditions: overlapping mechanisms, additive risks, interactions.
-5. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
+7. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
    safety-risk list is never on it, and the auditor checks every shortlist. When someone names
    compounds they take or weigh together, it also lays out "Your stack", with the auditor's check
    on it (shown as it is, safety-risk items plainly marked rather than hidden). If the
    Recommender asks about their medicines first, the stack waits for their answers. Pairs never
    studied together are marked "unknown", not "good to know". The visitor can keep their stack
    on their own device (never sent anywhere).
-6. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
+8. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
    its cards, is read by Claude (Haiku) against the rules and released only once it's cleared,
    rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
    dosing units, supplement-extract brands and outside links are always taken out as well.
