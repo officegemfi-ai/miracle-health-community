@@ -37,9 +37,48 @@ function question(raw: unknown): string {
 // What Sig never asks a member: who they are or how to reach them, amounts they take,
 // or where they get things
 const NOT_TO_ASK = /\byour\s+(?:full\s+|first\s+|last\s+)?name\b|\be-?mail\b|\b(?:phone|cell)\s+number\b|\b(?:home|street|mailing)\s+address\b|\byour\s+address\b|\bzip\s*code\b|\bpostal\s+code\b|\bdate\s+of\s+birth\b|\bbirth\s?day\b|\bsocial\s+security\b|\binsurance\s+(?:id|number)\b|\bhow\s+(?:much|many)\b[^?]*\b(?:take|taking|use|using|inject|injecting|run|running)\b|\bdos(?:e|es|age|ing)\b|\bwhere\s+(?:do|did|would|will|can|could)\s+you\s+(?:get|buy|order|source)\b|\b(?:buy|purchase|vendor|seller|supplier|pharmac(?:y|ies))\b/i;
-// Sig never asks someone's age or sex (they can say if they like)
-const NO_DEMOGRAPHICS = /\bhow\s+old\b|\b(?:your|what(?:'s|\s+is))\s+(?:age|sex|gender)\b|\bage\s+(?:range|group|bracket)\b|\b(?:biological\s+)?sex\s+(?:were\s+you\s+)?assigned\b|\bbiological\s+sex\b|\b(?:male|man)\s+or\s+(?:female|woman)\b|\b(?:female|woman)\s+or\s+(?:male|man)\b/i;
-const DEMOGRAPHIC_OPTION = /^(?:under\s+18|\d{2}\s?(?:[–-]|to)\s?\d{2}|\d{2}\s?(?:\+|or\s+older|and\s+(?:up|over))|(?:fe)?male|(?:wo)?man|non-?binary|prefer\s+not\s+to\s+say)$/i;
+// Sig never asks someone's age or sex (they can say if they like). A question goes if it asks either,
+// in its words or in its answers to tap, however it's put ("Sex at birth?", "Gender?", "Are you male,
+// female or intersex?", "Male (assigned at birth)", "40s"). It errs wide on purpose: a question dropped
+// by mistake costs one question, one let through breaks a rule. Words that only look alike stay: sex
+// drive, sex life and sex hormones (SHBG), male- or female-pattern hair loss, and a range or a "60+"
+// that carries its unit ("30–60 minutes"). The gate's rule 7 checks the same rule by meaning.
+const NOT_SEX = String.raw`(?!\s+(?:drive|life|hormones?))`;
+const AGE_OR_SEX = new RegExp([
+  String.raw`\bhow\s+old\b`,
+  String.raw`\b(?:your|what(?:'s|\s+is))\s+(?:age|gender|sex${NOT_SEX})\b`,
+  String.raw`\bwhat\s+age\b`,
+  String.raw`\bage\s+(?:range|group|bracket)\b`,
+  String.raw`\byears?\s+old\b`,
+  String.raw`\b(?:in\s+)?your\s+\d0s\b`,
+  String.raw`^age\s*(?:\?|:|\(|$)`,
+  String.raw`\b(?:year\s+of\s+birth|birth\s*year|(?:year|decade)\s+(?:were\s+)?you\s+(?:were\s+)?born)\b`,
+  String.raw`\bsex\b${NOT_SEX}`,
+  String.raw`\bgender\b`,
+  String.raw`\b(?:fe)?males?\b(?![\s-]pattern)`,
+  String.raw`\b(?:wo)?man\b[^?]{0,24}\b(?:wo)?man\b`,
+  String.raw`\b(?:non-?binary|intersex|transgender|cisgender)\b`,
+  String.raw`\bassigned\b[^?]{0,24}\bbirth\b`,
+].join('|'), 'i');
+// An answer to tap that is itself an age or a sex: a bare age range, a decade, a man or a woman
+const AGE_OR_SEX_ANSWER = new RegExp([
+  String.raw`^(?:under|below|less\s+than|over|above|older\s+than|younger\s+than)\s+\d{2}(?:\s*(?:years?|yrs?)(?:\s+old)?)?$`,
+  String.raw`^\d{2}\s*(?:[–—-]|to)\s*\d{2}(?:\s*(?:years?|yrs?)(?:\s+old)?)?$`,
+  String.raw`^\d{2}\s*(?:\+|or\s+(?:older|over|above|more)|and\s+(?:up|over|older))(?:\s*(?:years?|yrs?)(?:\s+old)?)?$`,
+  String.raw`^(?:in\s+)?(?:my|your|their)?\s*\d0s$`,
+  String.raw`\b(?:wo)?m[ae]n\b`,
+  String.raw`\b(?:trans|cis)\b`,
+  String.raw`^prefer\s+not\s+to\s+say$`,
+].join('|'), 'i');
+// Compared as plain text: curly apostrophes straightened, spaces collapsed, an answer's end stop dropped
+const plainWords = (s: string) => s.normalize('NFKC').replace(/[‘’ʼ]/g, "'").replace(/\s+/g, ' ').trim();
+export function asksAgeOrSex(q: string, options: string[] = []): boolean {
+  if (AGE_OR_SEX.test(plainWords(q))) return true;
+  return options.some((o) => {
+    const a = plainWords(o).replace(/[.!?,;:]+$/, '');
+    return AGE_OR_SEX.test(a) || AGE_OR_SEX_ANSWER.test(a);
+  });
+}
 
 export async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): Promise<string> {
   const s = ctx.screen;
@@ -109,7 +148,7 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
         const key = sh?.status_us?.key ?? it.status ?? '';
         if (BLOCKED.has(key)) { dropped.push(`${it.name} (removed by the Safety agent: ${sh?.status_us?.label ?? 'restricted'})`); continue; }
         if (blockedItem(it, ctx.byId)) { dropped.push(`${it.name} (removed by the Safety agent: contains a compound on FDA's safety-risk list)`); continue; }
-        if (pregnant && (ctx.unread.has(p.id) || UNAPPROVED.has(key) || key === 'compounded' || it.family === 'Hormones' || (sh?.avoid_if ?? []).some((a) => /pregnan|breast-?fe|conceiv/i.test(a)))) {
+        if (pregnant && (ctx.unread.has(p.id) || UNAPPROVED.has(key) || key === 'compounded' || key === 'restricted' || it.family === 'Hormones' || (sh?.avoid_if ?? []).some((a) => /pregnan|breast-?fe|conceiv/i.test(a)))) {
           dropped.push(`${it.name} (removed by the Safety agent: not for pregnancy, trying to conceive or breastfeeding)`);
           continue;
         }
@@ -307,8 +346,7 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
         q: question(r?.q),
         options: [...new Set(strs(r?.options, 6, 80).map((o) => cleanField(o, 40)).filter(Boolean))],
         multi: r?.multi === true,
-      })).filter((x) => x.q && !NOT_TO_ASK.test(x.q) && !x.options.some((o) => NOT_TO_ASK.test(o))
-        && !NO_DEMOGRAPHICS.test(x.q) && !x.options.some((o) => DEMOGRAPHIC_OPTION.test(o.trim())));
+      })).filter((x) => x.q && !NOT_TO_ASK.test(x.q) && !x.options.some((o) => NOT_TO_ASK.test(o)) && !asksAgeOrSex(x.q, x.options));
       if (!qs.length) return 'No questions shown. Don\'t ask for names, contact details, birthdays, age or sex, amounts or where they get things.';
       ctx.asked++;
       // Their stack is checked once they've said what else they take, not before; the studies and

@@ -150,6 +150,8 @@ export function tagFor(item: Item, sheet: Sheet | null | undefined, byId?: Map<s
   if (key === 'compounded') return { tag: 'Compounded only', tone: 'warn' };
   if (key === 'investigational') return { tag: 'Clinical trials only', tone: 'warn' };
   if (key === 'unclear') return { tag: 'Status unclear', tone: 'warn' };
+  // A special case (today NAC): the Library's word for it, as on its fact sheet; its label says the rest
+  if (key === 'restricted') return { tag: 'Restricted', tone: 'warn' };
   if (BLOCKED.has(key)) return { tag: 'On FDA’s safety-risk list', tone: 'warn' };
   return { tag: 'Not approved', tone: 'warn' };
 }
@@ -162,11 +164,20 @@ export function cautionFor(item: Item, sheet: Sheet | null | undefined, pregnant
   else if (key === 'approved' && item.family !== 'Supplements') lines.push('A prescription medicine: whether it fits is your clinician’s call.');
   else if (key === 'investigational') lines.push('Not for use outside a clinical trial.');
   else if (key === 'compounded') lines.push('Not an FDA-approved product; only compounded under a prescription.');
+  else if (key === 'restricted') lines.push(`Its FDA status is a special case: ${specialCase(item, sheet)}.`);
   else if (UNAPPROVED.has(key)) lines.push('Not approved by FDA; products sold outside approved medicines vary in contents, purity and sterility.');
   else if (!sheet) lines.push('No fact sheet yet: the Library is still researching it.');
   if (pregnant) lines.push('Pregnant, trying or breastfeeding: check with your obstetric clinician first.');
   return lines.join(' ');
 }
 
-// Proven first: approved, over the counter or supplements, then compounded, then the rest
-export const proven = (key: string) => (['approved', 'otc', 'supplement'].includes(key) ? 0 : key === 'compounded' ? 1 : key ? 2 : 3);
+// Proven first: approved, over the counter or supplements (and NAC's special case, an approved drug
+// sold as a supplement), then compounded, then the rest
+export const proven = (key: string) => (['approved', 'otc', 'supplement', 'restricted'].includes(key) ? 0 : key === 'compounded' ? 1 : key ? 2 : 3);
+// A special case's status in the Library's own words (its fact sheet's label, else the index's),
+// to follow a colon: "Approved drug; …" becomes "approved drug; …", while "FDA …" stays as it is
+function specialCase(item: Item, sheet: Sheet | null | undefined): string {
+  const label = (sheet?.status_us?.label ?? item.status_label ?? '').trim().replace(/[.\s]+$/, '');
+  if (!label) return 'see its fact sheet';
+  return /^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label;
+}
