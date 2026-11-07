@@ -27,7 +27,18 @@ so the public library on miraclehealth.us can use the same drawings.
   `newsletter`: The Signal, the weekly email (sign-ups from miraclehealth.us, double opt-in, confirm and
   unsubscribe links, sending an issue; emails go out once `RESEND_API_KEY` and `NEWSLETTER_FROM` are set),
   and `send-texts`: check-in texts for members who ask for them (once a Twilio messaging service is
-  registered and `TWILIO_MESSAGING_SERVICE_SID` is set)
+  registered and `TWILIO_MESSAGING_SERVICE_SID` is set); `_shared/`: what they share (CORS, the
+  caller's address, the rules and uses lists)
+- `supabase/functions/ask/`, one turn of Sig's chat: `agents.ts` (the outline of a turn, the
+  guide's loop and the closing steps), `readers.ts` (the agents that read before the guide writes),
+  `screen.ts` (the Safety agent's first read), `evidence.ts`, `outcomes.ts`, `relatives.ts`,
+  `mechanism.ts`, `markers.ts` (the evidence agents), `audit.ts` (the Synergy auditor), `tools.ts`
+  (the guide's tools), `cards.ts` and `items.ts` (the cards), `gate.ts` (the Safety agent's check on
+  every part), `context.ts` and `types.ts` (a turn's shared state and shapes), `library.ts`,
+  `community.ts`, `prompts.ts`, `guard.ts`, `claude.ts`, `index.ts` (the HTTP handler)
+- `scripts/`: the checks on a deployed Sig (`ask_smoke.py`, `ask_eval.py`, sharing `sig_client.py`),
+  the Library watch (`library_watch.py`; Claude calls through `claude_call.py`), and their tests in
+  `tests/scripts/` (CI runs them)
 - `scripts/build_public_reports.mjs`, `site/r.css`: the pages at community.miraclehealth.us/r/ for reports
   their authors chose to let anyone read, rebuilt every hour by the Pages workflow
 - `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
