@@ -3,7 +3,7 @@
 import { h, icon, fmtN, fmt1, ago, toast, friendly, msgBox, say, copy, bar, plural } from './ui.js';
 import { sig, sticker, STICKERS, emblem, spaceTile } from './art.js';
 import { S, sb, on, spaceOf, signalOf, nameOf, loadSpaces, track } from './state.js';
-import { render, setRail, railCards, renderNav, sigSay, LIBRARY, askAbout, evidenceTag } from './shell.js';
+import { render, setRail, railCards, fillRail, renderNav, sigSay, LIBRARY, askAbout, evidenceTag } from './shell.js';
 import { askLink, draftFrom } from '../kit/kit.js';
 import { signalCard, sigNum, outcomeChip, readMini, refreshSignal, movement } from './signal.js';
 import { afterEarn } from './game.js';
@@ -280,8 +280,7 @@ export async function renderHome(sort = 'hot') {
     due, composerBar(), sortbar('#/home', sort),
     newPostsPill(list, (row) => !joined.length || (row.part_ids?.length ? row.part_ids : [row.compound_id]).some((id) => joined.some((s) => s.compound_id === id)), reload),
     list);
-  setRail(await railCards('home'));
-  await reload();
+  await Promise.all([fillRail('home'), reload()]);
 }
 function emptyHome() {
   return h('div', { class: 'empty card' }, sig(72, 'curious'), h('p', {}, 'Nothing here yet. Join a few spaces, or be the first to share how it went.'),
@@ -295,8 +294,7 @@ export async function renderPopular(sort = 'hot') {
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Every space'), h('h1', {}, 'Popular.')),
       h('p', { class: 'cap' }, 'What the whole community is reading and backing up right now.')),
     sortbar('#/popular', sort), newPostsPill(list, () => true, reload), list);
-  setRail(await railCards('popular'));
-  await reload();
+  await Promise.all([fillRail('popular'), reload()]);
 }
 
 // Where this space leads in the rest of Miracle Health: how strong the evidence is (the Library's
@@ -349,8 +347,7 @@ export async function renderSpace(cid, sort = 'hot', only = 'all') {
     sortbar(base, sort),
     newPostsPill(list, (row) => (row.part_ids?.length ? row.part_ids : [row.compound_id]).includes(cid) && (only !== 'own' || row.compound_id === cid) && (only !== 'stacks' || row.compound_id !== cid), reload),
     list);
-  setRail(await railCards('space', { cid }));
-  await reload();
+  await Promise.all([fillRail('space', { cid }), reload()]);
 }
 
 export async function renderExplore(family = '') {

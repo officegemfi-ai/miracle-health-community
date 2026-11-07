@@ -286,9 +286,10 @@ async function loadMe() {
   const { data, error } = await sb.rpc('me');
   S.me = !error && Array.isArray(data) && data[0] ? data[0] : null;
   if (!S.me) return;
-  // Check-ins that are due leave a note in the bell first, so the count includes them
-  await sb.rpc('checkin_reminders').then(() => null, () => null);
-  await Promise.all([loadReference(), loadSpaces(), loadSignal(), loadCard(), loadPulse(), loadUnread()]);
+  // Check-ins that are due leave a note in the bell first, so the count waits for them; everything
+  // else loads alongside (waiting for the notes first cost every start a round trip)
+  const reminders = sb.rpc('checkin_reminders').then(() => null, () => null);
+  await Promise.all([reminders.then(() => loadUnread()), loadReference(), loadSpaces(), loadSignal(), loadCard(), loadPulse()]);
   document.body.classList.remove('auth');
   renderTop();
   setUnread(S.unread);

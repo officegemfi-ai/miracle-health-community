@@ -238,5 +238,27 @@ delete from auth.users where id = tests.id('carol');
 select tests.as_user('alice');
 select is((select same_count from public.feed where id = tests.id('a_creatine')), 0, 'The count drops when a member leaves');
 
+-- ===========================================================================
+-- 8. What the board and the snapshot read from a long history
+-- ===========================================================================
+-- Fifty more versions of one Signal, a day apart, the newest today, so a week ago falls among them
+select tests.as_owner();
+update public.signal_snapshots set computed_at = now() - interval '60 days' where compound_id = 'aod9604' and version = 1;
+insert into public.signal_snapshots (compound_id, version, score, computed_at)
+select 'aod9604', 1 + g, 40 + g * 0.5, now() - make_interval(days => 50 - g) from generate_series(1, 50) g;
+
+select tests.as_user('bob');
+select is((select (b.version, b.score, b.prev_score) from tests.board('aod9604') b)::text, '(51,65.0,64.5)',
+  'The board reads the newest version and the one before it');
+select is((select b.week_score from tests.board('aod9604') b), 61.5,
+  'Its number from a week ago is the newest at least seven days old');
+select is((select b.week_score from tests.board('bpc157') b), 91.9,
+  'With nothing a week old yet, the week counts from the first number');
+
+select tests.as_owner();
+select is((select concat_ws(',', jsonb_array_length(h), h->0->>0, h->-1->>0)
+           from (select private.public_snapshot()->'signals'->'aod9604'->'history' as h) x),
+  '40,12,51', 'The public snapshot carries the newest 40 points, oldest first');
+
 select * from finish();
 rollback;

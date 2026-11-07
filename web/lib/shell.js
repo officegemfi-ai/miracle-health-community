@@ -22,24 +22,29 @@ export function render(...nodes) {
   window.scrollTo(0, 0);
 }
 export function setRail(nodes) { rail.replaceChildren(...[nodes].flat().filter(Boolean)); }
+// The rail for a page, filled beside it: a page starts this, loads its own content, then waits
+// for both, so its feed or list never waits behind the side cards' queries
+export function fillRail(kind, ctx) { return railCards(kind, ctx).then(setRail); }
 export function setWide(on) { document.body.classList.toggle('wide', !!on); }
 
 // ---------------------------------------------------------------------------
 // Right rail, by page
 // ---------------------------------------------------------------------------
-export async function railCards(kind, ctx = {}) {
+// The cards that read the database ask at the same time, in their places; one after another, a
+// phone paid a round trip per card before the rail (and the page waiting on it) could fill.
+export function railCards(kind, ctx = {}) {
   switch (kind) {
-    case 'space': return [await aboutSpace(ctx.cid), await focusCard(), await goalsCard(4, ctx.cid), buildersCard(5)];
-    case 'post': return [ctx.cid ? signalCard(ctx.cid, { compact: true }) : null, await aboutSpace(ctx.cid), questsCard(3)];
-    case 'signal': return [await movesCard(), seasonCard(), await goalsCard(5)];
-    case 'builders': return [meCard(), seasonCard(), questsCard(3)];
-    case 'quests': return [meCard(), await movesCard(), buildersCard(5)];
-    case 'profile': return [buildersCard(5), await movesCard()];
-    case 'explore': return [seasonCard(), await movesCard()];
+    case 'space': return Promise.all([aboutSpace(ctx.cid), focusCard(), goalsCard(4, ctx.cid), buildersCard(5)]);
+    case 'post': return Promise.all([ctx.cid ? signalCard(ctx.cid, { compact: true }) : null, aboutSpace(ctx.cid), questsCard(3)]);
+    case 'signal': return Promise.all([movesCard(), seasonCard(), goalsCard(5)]);
+    case 'builders': return Promise.all([meCard(), seasonCard(), questsCard(3)]);
+    case 'quests': return Promise.all([meCard(), movesCard(), buildersCard(5)]);
+    case 'profile': return Promise.all([buildersCard(5), movesCard()]);
+    case 'explore': return Promise.all([seasonCard(), movesCard()]);
     // Until their first report, a newcomer sees three ways in first, then their emblem and quests
-    default: return S.card && !Number(S.card.posts)
-      ? [startCard(), meCard(), questsCard(3), await focusCard(), await movesCard(), await goalsCard(4)]
-      : [meCard(), await focusCard(), questsCard(3), await movesCard(), buildersCard(5), await goalsCard(4)];
+    default: return Promise.all(S.card && !Number(S.card.posts)
+      ? [startCard(), meCard(), questsCard(3), focusCard(), movesCard(), goalsCard(4)]
+      : [meCard(), focusCard(), questsCard(3), movesCard(), buildersCard(5), goalsCard(4)]);
   }
 }
 
