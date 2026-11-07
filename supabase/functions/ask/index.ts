@@ -8,6 +8,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 import { type ChatMessage, heldReply, type Models, runTurn, urgentKind } from './agents.ts';
 import { createLibrary, type Library } from './library.ts';
+import { clientAddress, sameKey, v6net } from '../_shared/address.ts';
+
+// The caller's address for the counts (the same rule as every other function): exported for the tests
+export { clientAddress, v6net };
 
 export const LIMITS = { messages: 24, userChars: 2000, assistantChars: 6000, totalChars: 24000, bodyBytes: 200_000 };
 
@@ -109,37 +113,6 @@ export async function checkReplies(messages: InMessage[], salt: string): Promise
     else out.push({ role: m.role, content: m.content });
   }
   return out;
-}
-
-// Who's asking, for the counts: the address Cloudflare (in front of Supabase) saw, which
-// visitors can't change; failing that, the last address the proxies added to
-// x-forwarded-for, after anything a visitor wrote in themselves. An IPv6 address counts as its
-// /64 network, since one household gets a whole /64 to choose from.
-export function clientAddress(req: Request): string {
-  const ip = (req.headers.get('cf-connecting-ip') ??
-    (req.headers.get('x-forwarded-for') ?? '').split(',').map((x) => x.trim()).filter(Boolean).pop() ??
-    req.headers.get('x-real-ip') ?? '').trim().slice(0, 80);
-  return ip.includes(':') ? v6net(ip) : ip;
-}
-export function v6net(ip: string): string {
-  const a = ip.replace(/^\[|\]$/g, '').split('%')[0].toLowerCase();
-  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(a);
-  if (mapped) return mapped[1];
-  const [head, tail] = a.split('::');
-  const h = head ? head.split(':') : [];
-  const t = tail === undefined ? [] : tail ? tail.split(':') : [];
-  const groups = tail === undefined ? h : [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill('0'), ...t];
-  return `${groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '') || '0').join(':')}::/64`;
-}
-
-// The test-set key, compared without leaking how much of it matched
-async function sameKey(given: string | null, want: string | undefined): Promise<boolean> {
-  if (!given || !want || want.length < 32) return false;
-  const hash = async (s: string) => new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
-  const [a, b] = await Promise.all([hash(given), hash(want)]);
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0;
 }
 
 export async function handle(req: Request, deps: HttpDeps): Promise<Response> {

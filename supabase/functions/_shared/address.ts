@@ -8,7 +8,7 @@ export function clientAddress(req: Request): string {
     req.headers.get('x-real-ip') ?? '').trim().slice(0, 80);
   return ip.includes(':') ? v6net(ip) : ip;
 }
-function v6net(ip: string): string {
+export function v6net(ip: string): string {
   const a = ip.replace(/^\[|\]$/g, '').split('%')[0].toLowerCase();
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(a);
   if (mapped) return mapped[1];
