@@ -21,14 +21,21 @@ so the public library on miraclehealth.us can use the same drawings.
 
 ## What's where
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
-- `supabase/tests/database/`: 400 access, Community Signal, certification, ratings-by-use, game, stack and chat-limit tests (pgTAP)
+- `supabase/tests/database/`: 600 access, Community Signal (and its publishing), certification, ratings-by-use, game, stack and chat-limit tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal),
   `delete-account`, `ask`: Sig's chat on the public website (miraclehealth.us/ai), below,
   `newsletter`: The Signal, the weekly email (sign-ups from miraclehealth.us, double opt-in, confirm and
   unsubscribe links, sending an issue; emails go out once `RESEND_API_KEY` and `NEWSLETTER_FROM` are set),
-  and `send-texts`: check-in texts for members who ask for them (once a Twilio messaging service is
-  registered and `TWILIO_MESSAGING_SERVICE_SID` is set); `_shared/`: what they share (CORS, the
-  caller's address, the rules and uses lists)
+  `send-texts`: check-in texts for members who ask for them (once a Twilio messaging service is
+  registered and `TWILIO_MESSAGING_SERVICE_SID` is set), and `signal`: the Community Signal's public
+  read API (below); `_shared/`: what they share (CORS, the caller's address, the rules and uses lists)
+- The Community Signal, published: each minute the database builds the public snapshot and, when the
+  numbers changed, keeps it as a new numbered version (`private.signal_publications`, migration
+  20261107000100, run by pg_cron). The `signal` function serves the newest to anyone, no key:
+  `/signal` (everything `snapshot.json` has, plus `version`), `/signal/compounds/<id>` (one compound)
+  and `/signal/version` (what's current, and whether the minute job ran), with ETags, 304s and short
+  cache lifetimes. Sig reads the same version from the database; `snapshot.json` is copied from it
+  by the Pages build and is the fallback. `scripts/signal_check.py` checks a deployed one
 - `supabase/functions/ask/`, one turn of Sig's chat: `agents.ts` (the outline of a turn, the
   guide's loop and the closing steps), `readers.ts` (the agents that read before the guide writes),
   `screen.ts` (the Safety agent's first read), `evidence.ts`, `outcomes.ts`, `relatives.ts`,
@@ -61,7 +68,7 @@ so the public library on miraclehealth.us can use the same drawings.
 - `.github/workflows/`: tests on every change, deploy to test, promote to live; the site build every hour
   (`pages.yml`); **Check-in texts** (hourly, once the variable `CHECKIN_TEXTS` is `on`); **Weekly email**
   (by hand: send the confirm links, or send issue *n*); **Health check** (every six hours: both sites,
-  the snapshot's age, the evidence files and the server functions answer; a failure emails you);
+  the snapshot's age and the Signal API's, the evidence files and the server functions answer; a failure emails you);
   **Live check** (after every promote, and by hand: Sig and miraclehealth.us/ai as a visitor finds
   them); **Library watch** (Mondays: new studies for the fact sheets to review)
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
@@ -97,7 +104,7 @@ goes through ten agents and the community's numbers, and the page shows each ste
    measurable.
 3. **Recommender** (Claude Sonnet, the voice of the chat) works from the public Library
    (`miraclehealth.us/library/data/index.json` and each fact sheet) and the Community Signal
-   (`snapshot.json`), with tools to rank options for a goal, open fact sheets and search. It
+   (the database's newest published version, or `snapshot.json` when it can't be read), with tools to rank options for a goal, open fact sheets and search. It
    talks like a caring clinician, briefly: it asks or answers, never both. When it doesn't yet
    know what would change its answer, it first asks 2 to 4 questions, the way a clinician takes
    a history (what's going on, what they've tried, their foundations, medicines and conditions;
@@ -129,7 +136,7 @@ goes through ten agents and the community's numbers, and the page shows each ste
    expected from how it works, not tested. Then the page gets the evidence ladder (a `ladder`
    event: each compound's own findings, its relatives', how it could bear on it, how the compounds
    relate), and the screen beside the chat opens on it, rung by rung.
-5. **The community** (no model: the community's public totals in `snapshot.json`, read by
+5. **The community** (no model: the community's public totals, the newest published version, read by
    `community.ts`): for each compound named, and for what the visitor wants it for (one of the
    uses in `shared/uses.json`, which the Safety agent picks out), what members' first-hand reports
    and the public forums say: the Signal and its level, how members rate it for that use (or how

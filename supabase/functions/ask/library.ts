@@ -61,7 +61,12 @@ export type Pulse = { members?: number; reports?: number; signals?: number; comm
 export type Snapshot = {
   signals: Record<string, Signal>; uses: Record<string, [string, string]>; community?: Pulse; ok?: boolean;
   generated_at?: string;   // which version of the community's numbers this is
+  version?: number;        // its number, when it came from the database's publications
 };
+// The newest version the database published (public.signal_latest): its payload is left out
+// when the caller already holds that version (known); null before the first publish
+export type SignalRow = { version: number; published_at: string; payload: Record<string, unknown> | null };
+export type SignalRead = (known: number | null) => Promise<SignalRow | null>;
 
 export const LEVEL: Record<string, string> = {
   forum: 'Forum data (mostly public forums so far)',
@@ -155,7 +160,19 @@ async function cached<T>(key: string, ttl: number, now: number, load: () => Prom
 }
 
 import type { Body } from './markers.ts';
-export type LibraryOpts = { base: string; snapshotUrl: string; fetchImpl?: typeof fetch; now?: () => number };
+// signal: reads the database's newest publication of the community's numbers; snapshotUrl (the
+// static snapshot.json) is then the fallback when it can't be read
+export type LibraryOpts = { base: string; snapshotUrl: string; signal?: SignalRead; fetchImpl?: typeof fetch; now?: () => number };
+
+function toSnapshot(s: Record<string, unknown> | null): Snapshot {
+  if (!s || typeof s.signals !== 'object' || !s.signals) throw new Error('The community snapshot is unavailable');
+  return {
+    signals: s.signals as Snapshot['signals'], uses: (s.uses || {}) as Snapshot['uses'],
+    community: ((typeof s.community === 'object' && s.community) || {}) as Pulse, ok: true,
+    ...(typeof s.generated_at === 'string' ? { generated_at: s.generated_at } : {}),
+    ...(typeof s.version === 'number' ? { version: s.version } : {}),
+  };
+}
 // The pathways compounds act through (axes.json, from each member's fact sheet): which hormone an
 // axis carries, and the receptor each member acts on
 export type AxisMember = { id: string; via: string[]; how: string };
@@ -210,13 +227,21 @@ export function createLibrary(opts: LibraryOpts) {
         }));
       });
     },
-    // A snapshot that can't be read isn't kept as an empty one: the last good copy stands, and with
-    // none, the caller hears it failed (and says nothing about what people report)
+    // The community's numbers: the newest version the database published, checked every minute (a
+    // version this instance already holds comes back without its payload), or, when that can't be
+    // read, the static snapshot.json, checked every ten. A snapshot that can't be read isn't kept as
+    // an empty one: the last good copy stands, and with none, the caller hears it failed (and says
+    // nothing about what people report)
     async snapshot(): Promise<Snapshot> {
-      return await cached(`${opts.snapshotUrl} snapshot`, 10 * 60_000, now(), async () => {
-        const s = await getJson(opts.snapshotUrl);
-        if (!s || typeof s.signals !== 'object' || !s.signals) throw new Error('The community snapshot is unavailable');
-        return { signals: s.signals, uses: s.uses || {}, community: (typeof s.community === 'object' && s.community) || {}, ok: true } as Snapshot;
+      const k = `${opts.snapshotUrl} snapshot`;
+      return await cached(k, opts.signal ? 60_000 : 10 * 60_000, now(), async () => {
+        if (opts.signal) {
+          const held = memo.get(k)?.value as Snapshot | undefined;
+          const row = await opts.signal(held?.version ?? null).catch(() => null);
+          if (row?.payload) return toSnapshot({ ...row.payload, version: row.version });
+          if (row && held && held.version === row.version) return held;
+        }
+        return toSnapshot(await getJson(opts.snapshotUrl));
       }, true);
     },
   };

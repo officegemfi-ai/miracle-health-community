@@ -7,7 +7,7 @@
 // can't be run up (migrations 20261030000100 and 20261030000300).
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 import { type ChatMessage, heldReply, type Models, runTurn, urgentKind } from './agents.ts';
-import { createLibrary, type Library } from './library.ts';
+import { createLibrary, type Library, type SignalRow } from './library.ts';
 import { clientAddress, sameKey, v6net } from '../_shared/address.ts';
 
 // The caller's address for the counts (the same rule as every other function): exported for the tests
@@ -220,6 +220,13 @@ if (import.meta.main) {
     effort: Deno.env.get('ASK_EFFORT') || 'low',
     library: createLibrary({
       base: Deno.env.get('LIBRARY_URL') || 'https://miraclehealth.us/library/data',
+      // The community's numbers: the version the signal function serves, read straight from the
+      // database (migration 20261107000100); the static copy when it can't be read
+      signal: async (known) => {
+        const { data, error } = await db.rpc('signal_latest', { p_known: known });
+        if (error) throw new Error(`signal_latest: ${error.message}`);
+        return data as SignalRow | null;
+      },
       snapshotUrl: Deno.env.get('SNAPSHOT_URL') || 'https://community.miraclehealth.us/snapshot.json',
     }),
     salt: service,

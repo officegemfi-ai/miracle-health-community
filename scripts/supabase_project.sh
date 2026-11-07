@@ -15,8 +15,9 @@
 #   admin     live only: makes the member with the handle given as the third argument an admin
 #   keys      prints SUPABASE_URL=... and SUPABASE_ANON_KEY=... (the public key) for the build
 #   advisors  prints Supabase's security advisor findings (never fails the deploy)
-#   snapshot  prints the public library's numbers as JSON (private.public_snapshot():
-#             aggregate totals only, no posts or names), for the site's snapshot.json
+#   snapshot  prints the public library's numbers as JSON: the newest version the database
+#             published (private.signal_publications, from private.public_snapshot(): aggregate
+#             totals only, no posts or names), for the site's snapshot.json
 #   fn-key    <texts|newsletter> prints the key the scheduled workflows call those functions with
 #   public-reports  prints the reports their authors made public, as JSON
 #             (private.public_reports()), for the pages at community.miraclehealth.us/r/
@@ -313,10 +314,16 @@ admin)
   ;;
 
 snapshot)
-  # One row, one column: the JSON itself; anything else (an error) fails the command. With how
-  # many founding-reporter spots are taken (miraclehealth.us/founders), once the database has it.
+  # The newest version the database published (migration 20261107000100), published first in case
+  # the minute job hasn't run, with its number and when it was last checked: the same numbers the
+  # Signal API serves. Before that migration, the snapshot itself, with how many founding-reporter
+  # spots are taken once the database has it. One row, one column: the JSON itself; anything else
+  # (an error) fails the command.
   pick='if type == "array" and (.[0].j | type) == "object" then .[0].j else error("no snapshot") end'
-  sql "select private.public_snapshot() || jsonb_build_object('founders', private.founding_progress()) as j" 2>/dev/null | jq -ce "$pick" \
+  sql "select private.publish_signal('deploy') as v" > /dev/null 2>&1 || true
+  sql "select p.payload || jsonb_build_object('version', p.version, 'published_at', p.published_at, 'checked_at', p.checked_at) as j
+       from private.signal_publications p order by p.version desc limit 1" 2>/dev/null | jq -ce "$pick" \
+    || sql "select private.public_snapshot() || jsonb_build_object('founders', private.founding_progress()) as j" 2>/dev/null | jq -ce "$pick" \
     || sql "select private.public_snapshot() as j" | jq -ce "$pick"
   ;;
 

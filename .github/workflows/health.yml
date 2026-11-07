@@ -5,6 +5,8 @@
 #     at busy times (the hourly site build has come every four to eight hours), so when they're
 #     over three hours old it starts the build (Pages) itself, with a note; it fails only when
 #     they're over twelve hours old, or when the last build failed
+#   - the Signal API (the signal function) answers, and the database's minute job checked its numbers
+#     in the last five minutes (when the job stops, the API publishes in its place and says so)
 #   - the evidence files the Library reads are there
 #   - Sig's chat and the weekly email sign-up answer from miraclehealth.us
 name: Health check
@@ -42,7 +44,7 @@ jobs:
 
           snap="$(curl -fsS --max-time 30 "$COMMUNITY/snapshot.json")" || bad "snapshot.json didn't answer"
           if [ -n "${snap:-}" ]; then
-            at="$(jq -r '.generated_at // empty' <<<"$snap")"
+            at="$(jq -r '.checked_at // .generated_at // empty' <<<"$snap")"
             if [ -z "$at" ]; then bad "snapshot.json has no generated_at"
             else
               age=$(( $(date -u +%s) - $(date -u -d "$at" +%s) ))
@@ -64,6 +66,21 @@ jobs:
             *) bad "The last site build didn't finish: ${last}" ;;
           esac
           curl -fsS --max-time 30 -o /dev/null "$COMMUNITY/evidence/bpc157.json" || bad "The evidence files (evidence/bpc157.json) aren't there"
+
+          # The Signal API: its numbers were checked lately, and by the database's minute job
+          sv="$(curl -sS --max-time 30 -w '\n%{http_code}' "$FUNCTIONS/signal/version" 2>/dev/null)" || sv=$'\n000'
+          code="${sv##*$'\n'}"; sv="${sv%$'\n'*}"
+          case "$code" in
+            200)
+              by="$(jq -r '.checked_by // empty' <<<"$sv")"
+              sage=$(( $(date -u +%s) - $(date -u -d "$(jq -r '.checked_at' <<<"$sv")" +%s) ))
+              echo "The Signal API: version $(jq -r '.version' <<<"$sv"), checked $((sage / 60)) minutes ago by $by"
+              [ "$sage" -lt 300 ] || bad "The Signal's numbers were last checked $((sage / 60)) minutes ago (the signal function and the database's minute job)"
+              [ "$by" != api ] || bad "The database's minute job (pg_cron, signal-publish) isn't running, so the Signal API is publishing in its place (Supabase > Integrations > Cron)"
+              ;;
+            404) echo "::notice title=Health check::The Signal API isn't on the live project yet: it comes with the next Promote to live." ;;
+            *) bad "The Signal API (the signal function) answered $code" ;;
+          esac
 
           for fn in ask newsletter; do
             code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 -X OPTIONS "$FUNCTIONS/$fn" \

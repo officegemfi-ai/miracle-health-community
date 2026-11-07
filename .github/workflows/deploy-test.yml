@@ -11,6 +11,8 @@
 # changes (scripts/ask_smoke.py), then its test set of about two hundred, graded automatically
 # (scripts/ask_eval.py, evals/questions.jsonl); answers and grades show on the run's summary page,
 # and the thirty most common questions with their answers come as a file for clinician review.
+# The Signal API (the signal function, the community's numbers for the website) is checked too:
+# it answers, caches, and the database's minute job keeps it current (scripts/signal_check.py).
 # Optional: REVIEW_SECRET (otherwise one is made and kept in the project's Vault),
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (texts to real phones;
 #   without them only the test numbers sign in), TURNSTILE_SECRET_KEY,
@@ -131,7 +133,8 @@ jobs:
             && supabase functions deploy delete-account --project-ref "$REF" \
             && supabase functions deploy ask --no-verify-jwt --project-ref "$REF" \
             && supabase functions deploy newsletter --no-verify-jwt --project-ref "$REF" \
-            && supabase functions deploy send-texts --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
+            && supabase functions deploy send-texts --no-verify-jwt --project-ref "$REF" \
+            && supabase functions deploy signal --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
             || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
       - name: Supabase's security advisor
         run: scripts/supabase_project.sh test advisors
@@ -263,3 +266,21 @@ jobs:
           name: test-app-screenshots
           path: tests/e2e/out
           if-no-files-found: ignore
+
+  signal:
+    name: The Signal API (test project)
+    needs: [check, backend]
+    runs-on: ubuntu-24.04
+    # Up to two and a half minutes for the database's minute job to run after the deploy
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+      - name: The public read API answers, caches and is current
+        env:
+          URL: https://${{ needs.check.outputs.ref }}.supabase.co/functions/v1/signal
+        run: |
+          set -o pipefail
+          python3 scripts/signal_check.py "$URL" --wait-cron 150 2>&1 | tee "$RUNNER_TEMP/signal.log" \
+            || { scripts/ci_annotate.sh "The Signal API" "$RUNNER_TEMP/signal.log"; exit 1; }
