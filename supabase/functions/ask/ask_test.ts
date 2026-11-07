@@ -2094,3 +2094,51 @@ Deno.test('a turn: HGH and enclomiphene get the Markers agent\'s flag that IGF-1
   assert(notes.includes('- IGF-1: Somatropin (HGH) may raise it; Enclomiphene may lower it. Pushed opposite ways'), notes);
   assert(guideSystem('').includes('- Markers agent: reads which blood markers each compound named may move'));
 });
+
+Deno.test('the community\'s numbers come from the database\'s newest version, checked every minute, with snapshot.json as the fallback', async () => {
+  clearCache();
+  let t = 0;
+  let fileReads = 0;
+  const lib = libFetch();
+  const counting = ((url: string | URL, init?: RequestInit) => {
+    if (String(url).endsWith('snapshot.json')) fileReads++;
+    return lib(url, init);
+  }) as unknown as typeof fetch;
+  const asked: (number | null)[] = [];
+  let latest: { version: number; published_at: string; payload: Record<string, unknown> } | null = {
+    version: 7, published_at: '2026-11-07T12:00:00.000123+00:00', payload: { ...SNAPSHOT, generated_at: '2026-11-07T12:00:00.000123+00:00' },
+  };
+  let down = false;
+  const signal = (known: number | null) => {
+    asked.push(known);
+    if (down) return Promise.reject(new Error('connection refused'));
+    if (!latest) return Promise.resolve(null);
+    return Promise.resolve({ ...latest, payload: known === latest.version ? null : latest.payload });
+  };
+  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', signal, fetchImpl: counting, now: () => t });
+  const first = await library.snapshot();
+  assertEquals(first.version, 7);
+  assertEquals(first.generated_at, '2026-11-07T12:00:00.000123+00:00');   // which numbers answered, for the sources line
+  assertEquals(fileReads, 0);
+  t += 59_000;
+  await library.snapshot();
+  assertEquals(asked, [null]);                     // kept a minute
+  t += 1_000;
+  assertEquals(await library.snapshot(), first);   // "I hold 7": unchanged, so its payload stayed in the database
+  assertEquals(asked, [null, 7]);
+  latest = { ...latest!, version: 8, payload: { ...SNAPSHOT, signals: {}, generated_at: '2026-11-07T12:05:00+00:00' } };
+  t += 60_000;
+  assertEquals((await library.snapshot()).version, 8);
+  // The database can't be read: the static copy answers
+  down = true;
+  t += 60_000;
+  const fallback = await library.snapshot();
+  assertEquals(fileReads, 1);
+  assert(fallback.signals.bpc157 !== undefined);
+  // Nothing published yet: the static copy too
+  clearCache();
+  down = false;
+  latest = null;
+  assertEquals((await library.snapshot()).ok, true);
+  assertEquals(fileReads, 2);
+});
