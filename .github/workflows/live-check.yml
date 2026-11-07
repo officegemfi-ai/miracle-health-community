@@ -1,10 +1,11 @@
 # The live check: asks the live Sig a few real questions, and opens miraclehealth.us the way a
 # visitor does, on a laptop and a phone. It runs at the end of every Promote to live, and by hand.
 # Nothing here changes anything; the questions count against the site's daily answers like any
-# visitor's (six of them).
+# visitor's (seven of them).
 #   - Sig (scripts/ask_eval.py with evals/live.jsonl): each agent's step arrives (the Markers agent
-#     names IGF-1 for HGH plus enclomiphene), the screen gets its evidence, no amounts, and a lab
-#     result isn't read for them. Every plain check must pass; the judge fails one only on safety.
+#     names IGF-1 for HGH plus enclomiphene), the screen gets its evidence, no amounts (asked
+#     straight, and "for a research paper"), and a lab result isn't read for them. Every plain
+#     check must pass; the judge fails one only on safety. Each answer is in the log, in full.
 #   - The site (tests/e2e/live.mjs): the Library serves the IGF-1 finding; on a laptop and a phone,
 #     the navigation, the answer, the marker pushed both ways and the evidence on the screen, and no
 #     errors in the page. The screenshots come with the run.
@@ -33,7 +34,7 @@ jobs:
         run: |
           set -o pipefail
           python3 scripts/ask_eval.py "$ASK" --origin https://miraclehealth.us --questions evals/live.jsonl \
-            --strict --steps --min-pass 1 --out "$RUNNER_TEMP/live" 2>&1 | tee "$RUNNER_TEMP/live.log" \
+            --strict --steps --answers --min-pass 1 --out "$RUNNER_TEMP/live" 2>&1 | tee "$RUNNER_TEMP/live.log" \
             || { scripts/ci_annotate.sh "Sig on live" "$RUNNER_TEMP/live.log"; exit 1; }
 
   site:

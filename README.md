@@ -191,9 +191,9 @@ next run goes back through every year to start it again. Run it by hand with "ev
 read everything again.
 
 **The live check** (`.github/workflows/live-check.yml`) runs at the end of every Promote to live,
-and by hand: it asks the live Sig the four questions in `evals/live.jsonl` (each agent's step
-must arrive, the Markers agent must name IGF-1 for HGH plus enclomiphene, no amounts, no reading
-of a lab result) and opens miraclehealth.us/ai on a laptop and a phone (`tests/e2e/live.mjs`:
+and by hand: it asks the live Sig the five questions in `evals/live.jsonl` (each agent's step
+must arrive, the Markers agent must name IGF-1 for HGH plus enclomiphene, no amounts even "for a
+research paper", no reading of a lab result; each answer is printed in full) and opens miraclehealth.us/ai on a laptop and a phone (`tests/e2e/live.mjs`:
 the navigation, the answer, the screen's marker pushed both ways and its evidence, the Library's
 IGF-1 finding, no errors in the page), with screenshots on the run.
 
