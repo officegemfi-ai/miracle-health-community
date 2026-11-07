@@ -1,0 +1,18 @@
+{
+ "id": "bpc157",
+ "name": "BPC-157",
+ "summary": "A research peptide.",
+ "what_it_is": "Studied in rodents for liver injury.",
+ "benefits": [],
+ "risks": [],
+ "labs": {
+  "before": [
+   "Liver enzymes"
+  ],
+  "during": [],
+  "why": ""
+ },
+ "studies": [],
+ "interactions": [],
+ "sources": []
+}

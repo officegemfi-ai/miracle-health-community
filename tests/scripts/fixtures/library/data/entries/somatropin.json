@@ -1,0 +1,24 @@
+{
+ "id": "somatropin",
+ "name": "Somatropin (HGH)",
+ "summary": "Growth hormone, made from outside.",
+ "what_it_is": "IGF-1 rises.",
+ "benefits": [],
+ "risks": [
+  {
+   "risk": "Higher blood sugar",
+   "how_common": "common"
+  }
+ ],
+ "labs": {
+  "before": [
+   "IGF-1",
+   "Fasting glucose"
+  ],
+  "during": [],
+  "why": ""
+ },
+ "studies": [],
+ "interactions": [],
+ "sources": []
+}

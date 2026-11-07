@@ -1,0 +1,44 @@
+{
+ "id": "enclomiphene",
+ "name": "Enclomiphene",
+ "summary": "Raises the body's own testosterone.",
+ "what_it_is": "A SERM: LH and FSH rise, and testosterone with them.",
+ "benefits": [
+  {
+   "claim": "Testosterone rose into the normal range",
+   "evidence": "moderate",
+   "sources": [
+    1
+   ]
+  }
+ ],
+ "risks": [
+  {
+   "risk": "IGF-1 falls",
+   "how_common": "common"
+  }
+ ],
+ "labs": {
+  "before": [
+   "Testosterone",
+   "Estradiol"
+  ],
+  "during": [
+   "IGF-1"
+  ],
+  "why": "What the trials measured."
+ },
+ "studies": [
+  {
+   "title": "Enclomiphene citrate stimulates serum testosterone in men"
+  }
+ ],
+ "interactions": [],
+ "sources": [
+  {
+   "n": 1,
+   "title": "An enclomiphene trial",
+   "url": "https://pubmed.ncbi.nlm.nih.gov/23875626/"
+  }
+ ]
+}

@@ -1,5 +1,6 @@
 # Runs on every change: the access tests, Supabase's security checks, the server
-# function tests and a real browser going through the whole community flow.
+# function tests, the script tests (tests/scripts) and a real browser going through the whole
+# community flow.
 # Once Supabase is up, every check runs even if an earlier one fails, and each
 # failure leaves a readable note (annotation) on the run's summary page.
 name: CI
@@ -41,6 +42,11 @@ jobs:
           set -o pipefail
           deno check scripts/build_evidence.ts 2>&1 | tee "$RUNNER_TEMP/evidence.log" \
             || { scripts/ci_annotate.sh "Evidence build" "$RUNNER_TEMP/evidence.log"; exit 1; }
+      - name: Script tests (the test set's grader, the Library watch, the shared clients)
+        run: |
+          set -o pipefail
+          python3 -W error::ResourceWarning -m unittest discover -s tests/scripts -v 2>&1 | tee "$RUNNER_TEMP/scripts.log" \
+            || { scripts/ci_annotate.sh "Script tests" "$RUNNER_TEMP/scripts.log"; exit 1; }
   database:
     name: Access tests, security lints, end-to-end
     runs-on: ubuntu-24.04

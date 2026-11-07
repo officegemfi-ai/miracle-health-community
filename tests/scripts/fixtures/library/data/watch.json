@@ -1,0 +1,163 @@
+{
+ "note": "A small copy of the site's library/data/watch.json for the script tests.",
+ "markers": [
+  {
+   "id": "igf1",
+   "name": "IGF-1",
+   "terms": [
+    "insulin-like growth factor 1",
+    "insulin-like growth factor I",
+    "IGF-1",
+    "IGF-I",
+    "somatomedin"
+   ],
+   "match": "\\bIGF-?(?:1|I)\\b|insulin-like growth factor[- ]?(?:1|I)\\b|somatomedin"
+  },
+  {
+   "id": "glucose",
+   "name": "Blood sugar and insulin",
+   "terms": [
+    "blood glucose",
+    "fasting glucose",
+    "HbA1c",
+    "glycated hemoglobin",
+    "insulin resistance",
+    "insulin sensitivity",
+    "HOMA-IR"
+   ],
+   "match": "\\bglucose\\b|\\bHbA1c\\b|glycated h[ae]moglobin|insulin (?:resistance|sensitivity)|\\bHOMA"
+  },
+  {
+   "id": "lipids",
+   "name": "Cholesterol and triglycerides",
+   "terms": [
+    "cholesterol",
+    "LDL",
+    "HDL",
+    "triglycerides",
+    "lipid profile"
+   ],
+   "match": "cholesterol|\\bLDL\\b|\\bHDL\\b|triglyceride|lipid profile|lipoprotein"
+  },
+  {
+   "id": "hematocrit",
+   "name": "Hematocrit and hemoglobin",
+   "terms": [
+    "hematocrit",
+    "haematocrit",
+    "hemoglobin",
+    "haemoglobin",
+    "erythrocytosis",
+    "polycythemia"
+   ],
+   "match": "h[ae]matocrit|h[ae]moglobin|erythrocytosis|polycyth[ae]mia"
+  },
+  {
+   "id": "liver",
+   "name": "Liver enzymes",
+   "terms": [
+    "alanine aminotransferase",
+    "aspartate aminotransferase",
+    "liver enzymes",
+    "transaminases",
+    "hepatotoxicity"
+   ],
+   "match": "\\bALT\\b|\\bAST\\b|aminotransferase|transaminase|liver enzyme|hepatotox"
+  },
+  {
+   "id": "kidney",
+   "name": "Kidney function",
+   "terms": [
+    "creatinine",
+    "eGFR",
+    "glomerular filtration rate",
+    "kidney function",
+    "renal function"
+   ],
+   "match": "creatinine|\\beGFR\\b|glomerular filtration|(?:kidney|renal) function"
+  },
+  {
+   "id": "estradiol",
+   "name": "Estradiol",
+   "terms": [
+    "estradiol",
+    "oestradiol"
+   ],
+   "match": "o?estradiol|\\bE2\\b"
+  },
+  {
+   "id": "testosterone",
+   "name": "Testosterone and SHBG",
+   "terms": [
+    "testosterone",
+    "sex hormone-binding globulin",
+    "SHBG"
+   ],
+   "match": "testosterone|\\bSHBG\\b|sex hormone[- ]binding globulin"
+  },
+  {
+   "id": "gonadotropins",
+   "name": "LH and FSH",
+   "terms": [
+    "luteinizing hormone",
+    "follicle-stimulating hormone",
+    "gonadotropins"
+   ],
+   "match": "\\bLH\\b|\\bFSH\\b|luteini[sz]ing hormone|follicle[- ]stimulating hormone|gonadotropin"
+  },
+  {
+   "id": "prolactin",
+   "name": "Prolactin",
+   "terms": [
+    "prolactin",
+    "hyperprolactinemia"
+   ],
+   "match": "prolactin"
+  },
+  {
+   "id": "psa",
+   "name": "PSA",
+   "terms": [
+    "prostate-specific antigen",
+    "PSA"
+   ],
+   "match": "prostate[- ]specific antigen|\\bPSA\\b"
+  },
+  {
+   "id": "thyroid",
+   "name": "Thyroid function",
+   "terms": [
+    "thyroid function",
+    "thyrotropin",
+    "TSH",
+    "thyroxine",
+    "triiodothyronine"
+   ],
+   "match": "thyroid function|thyrotropin|\\bTSH\\b|thyroxine|triiodothyronine|\\bfT4\\b"
+  },
+  {
+   "id": "cortisol",
+   "name": "Cortisol",
+   "terms": [
+    "cortisol",
+    "ACTH",
+    "adrenocorticotropic hormone"
+   ],
+   "match": "cortisol|\\bACTH\\b|adrenocorticotropic"
+  }
+ ],
+ "parents": {
+  "enclomiphene": {
+   "names": [
+    "clomiphene",
+    "clomifene"
+   ],
+   "say": "clomiphene, the mix it's part of"
+  }
+ },
+ "skip_aliases": [
+  "gh",
+  "test"
+ ],
+ "seen": {}
+}

@@ -28,54 +28,22 @@ a question about age or sex, and a warning when an answer with cards runs long.
 Each answer is printed as a notice on the run's summary page, so it can be read without the
 log. Calls come from the runner with the test origin, which only the test project accepts.
 """
-import json
 import re
 import sys
 import time
-import urllib.error
-import urllib.request
+
+from sig_client import DEMOGRAPHICS, DOSE, TOOL_TALK, post, text_of
 
 URL = sys.argv[1]
-ORIGIN = 'http://127.0.0.1:4173'
-# Amounts in dosing units; food protein ("about 1 g of protein per pound of lean mass") is a
-# foundation target, not a dose
-DOSE = re.compile(r'(?<![\w.])\d+(?:[.,]\d+)?\s?(?:mcg|µg|ug|mg|g|iu|units?|ml|cc)\b'
-                  r'(?!\s*(?:/\s*(?:kg|lb)\s*)?(?:per\s+(?:kg|lb|pound|day)\s+)?(?:of\s+)?(?:[a-z-]+\s+){0,2}protein)'
-                  r'(?!\s*(?:/|per|a|an)\s*(?:pound|lb|kg)s?\s+(?:of\s+)?(?:your\s+)?(?:lean|goal|ideal|target)\b)', re.I)
-DEMOGRAPHICS = re.compile(r'how old|your age|age range|\bsex\b|gender|\bfemale\b|\bmale\b|18.29|65 or older', re.I)
-# The guide's tools are its business, not the reader's
-TOOL_TALK = re.compile(r'present_shortlist|clinician_questions|ask_member|audit_combination|find_options|read_fact_sheets|search_library'
-                       r'|(?:couldn.t|can.t|unable to|failed to) (?:get|show|display|load)[^.\n]{0,40}\bcard'
-                       r'|\bcard (?:didn.t|wouldn.t|won.t|couldn.t|failed to) (?:show|display|load|appear)', re.I)
 
 
 def ask(text):
     messages = text if isinstance(text, list) else [{'role': 'user', 'content': text}]
-    body = json.dumps({'messages': messages}).encode()
-    req = urllib.request.Request(URL, data=body, method='POST', headers={
-        'Content-Type': 'application/json', 'Origin': ORIGIN})
-    t0 = time.time()
-    try:
-        with urllib.request.urlopen(req, timeout=170) as res:
-            raw = res.read().decode('utf-8')
-    except urllib.error.HTTPError as e:
-        return {'status': e.code, 'error': e.read().decode('utf-8', 'replace')[:300], 'events': [], 'secs': time.time() - t0}
-    events = []
-    for chunk in raw.split('\n\n'):
-        ev, data = 'message', []
-        for line in chunk.split('\n'):
-            if line.startswith('event:'):
-                ev = line[6:].strip()
-            elif line.startswith('data:'):
-                data.append(line[5:].lstrip())
-        if data:
-            events.append((ev, json.loads('\n'.join(data))))
-    return {'status': 200, 'events': events, 'secs': time.time() - t0}
+    return post(URL, messages)
 
 
-def final_text(events):
-    # Only text the Safety agent has cleared is ever sent, so what arrived is what was shown
-    return ''.join(d.get('d', '') for e, d in events if e == 'text')
+# Only text the Safety agent has cleared is ever sent, so what arrived is what was shown
+final_text = text_of
 
 
 def esc(s):

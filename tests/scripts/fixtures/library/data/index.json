@@ -1,0 +1,37 @@
+{
+ "items": [
+  {
+   "id": "enclomiphene",
+   "name": "Enclomiphene",
+   "aliases": [
+    "Androxal",
+    "Enclomiphene citrate"
+   ],
+   "sheet": true
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "aliases": [
+    "HGH",
+    "GH",
+    "Growth hormone"
+   ],
+   "sheet": true
+  },
+  {
+   "id": "bpc157",
+   "name": "BPC-157",
+   "aliases": [
+    "Body Protection Compound"
+   ],
+   "sheet": true
+  },
+  {
+   "id": "nosheet",
+   "name": "No Sheet Yet",
+   "aliases": [],
+   "sheet": false
+  }
+ ]
+}

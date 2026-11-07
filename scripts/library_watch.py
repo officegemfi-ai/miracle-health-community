@@ -34,6 +34,8 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
+from claude_call import tool_call
+
 EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
 TOOL = 'miracle-health-library-watch'
 ISSUE_TITLE = 'Library watch: studies to review'
@@ -223,28 +225,16 @@ def claude_read(art, compound, via, markers, key, model):
               'Record each marker it reports for this compound, which way it moved and in whom. Animal or lab studies, reviews that report no new '
               'measurement, and studies where the compound is only a comparator, a background treatment or a mention are not relevant: '
               'an effect of another drug in the same study is not this compound\'s. Read only what the abstract says.')
-    body = json.dumps({'model': model, 'max_tokens': 500, 'tools': [READ_TOOL], 'tool_choice': {'type': 'tool', 'name': 'read_study'},
-                       'messages': [{'role': 'user', 'content': prompt}]}).encode()
-    req = urllib.request.Request('https://api.anthropic.com/v1/messages', data=body, method='POST', headers={
-        'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01'})
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(req, timeout=90) as res:
-                data = json.loads(res.read().decode('utf-8'))
-            use = next((c for c in data.get('content', []) if c.get('type') == 'tool_use'), None)
-            if use:
-                ids = {m['id'] for m in markers}
-                g = use['input']
-                effects = [{'marker': e.get('marker'), 'direction': e.get('direction', 'mixed'), 'who': str(e.get('who', ''))[:120], 'design': str(e.get('design', ''))[:60]}
-                           for e in g.get('effects') or [] if e.get('marker') in ids]
-                return {'relevant': bool(g.get('relevant')) and g.get('given') is not False and bool(effects), 'effects': effects, 'by': 'Claude'}
-        except urllib.error.HTTPError as e:
-            if e.code in (400, 401, 403, 404):
-                break
-            time.sleep(5 * (attempt + 1))
-        except Exception:
-            time.sleep(5 * (attempt + 1))
-    return None
+    g = tool_call(key, model, READ_TOOL, prompt, max_tokens=500)
+    if g is None:
+        return None
+    ids = {m['id'] for m in markers}
+    try:
+        effects = [{'marker': e.get('marker'), 'direction': e.get('direction', 'mixed'), 'who': str(e.get('who', ''))[:120], 'design': str(e.get('design', ''))[:60]}
+                   for e in g.get('effects') or [] if e.get('marker') in ids]
+    except (AttributeError, TypeError):
+        return None   # not the shape asked for: the plain check reads it instead
+    return {'relevant': bool(g.get('relevant')) and g.get('given') is not False and bool(effects), 'effects': effects, 'by': 'Claude'}
 
 
 # ---------------------------------------------------------------------------
@@ -366,6 +356,11 @@ def write_issue(call, issue, body):
     return call('POST', '/issues', {'title': ISSUE_TITLE, 'body': body, 'labels': [LABEL]})['html_url']
 
 
+def read_json(path):
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
+
+
 def load_queue(path):
     """The open list from the last run, or None when there isn't one yet"""
     try:
@@ -396,11 +391,11 @@ def main():
         return
 
     data = os.path.join(args.site, 'library', 'data')
-    cfg = json.load(open(os.path.join(data, 'watch.json'), encoding='utf-8'))
+    cfg = read_json(os.path.join(data, 'watch.json'))
     markers, parents, seen = cfg['markers'], cfg.get('parents', {}), set(cfg.get('seen', {}))
     mk = {m['id']: m for m in markers}
     skip = {s.lower() for s in cfg.get('skip_aliases', [])}
-    library = {i['id']: i for i in json.load(open(os.path.join(data, 'index.json'), encoding='utf-8'))['items'] if i.get('sheet')}
+    library = {i['id']: i for i in read_json(os.path.join(data, 'index.json'))['items'] if i.get('sheet')}
     items = list(library.values())
     if args.only:
         want = set(args.only.split(','))
@@ -429,7 +424,7 @@ def main():
 
     def sheet_of(cid):
         if cid not in sheets:
-            sheets[cid] = json.load(open(os.path.join(data, 'entries', f'{cid}.json'), encoding='utf-8'))
+            sheets[cid] = read_json(os.path.join(data, 'entries', f'{cid}.json'))
         return sheets[cid]
 
     # 1. Search: each compound under its own names, and under its parent's
