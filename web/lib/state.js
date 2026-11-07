@@ -46,19 +46,24 @@ export async function loadReference() {
 // The API hands back at most 200 rows a request (the project's max_rows), so lists
 // that can be longer (the library has 300 entries and grows) come in pages
 const PAGE = 200;
-async function allRows(build, max = 20000) {
+// A list known to run past one page asks for `ahead` pages at a time, so its pages don't arrive one
+// round trip after another; it stops at the first short page.
+async function allRows(build, max = 20000, ahead = 1) {
   const rows = [];
-  for (let from = 0; from < max; from += PAGE) {
-    const { data, error } = await build().range(from, from + PAGE - 1);
-    if (error || !data) return rows.length ? rows : null;
-    rows.push(...data);
-    if (data.length < PAGE) break;
+  for (let from = 0; from < max; from += PAGE * ahead) {
+    const pages = await Promise.all(Array.from({ length: ahead }, (_, i) => build().range(from + i * PAGE, from + (i + 1) * PAGE - 1)));
+    for (const { data, error } of pages) {
+      if (error || !data) return rows.length ? rows : null;
+      rows.push(...data);
+      if (data.length < PAGE) return rows;
+    }
   }
   return rows;
 }
 
 export async function loadSpaces() {
-  const data = await allRows(() => sb.from('spaces').select('*').order('name').order('compound_id'));
+  // Over 300 spaces: two pages, asked for together
+  const data = await allRows(() => sb.from('spaces').select('*').order('name').order('compound_id'), 20000, 2);
   if (data) S.spaces = data;
   return S.spaces;
 }
