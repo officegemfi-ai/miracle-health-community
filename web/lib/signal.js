@@ -3,7 +3,7 @@
 import { h, icon, fmt1, fmtN, ago, tick, bar, reduceMotion, svg } from './ui.js';
 import { scale, sparkline, spaceTile, sig } from './art.js';
 import { S, sb, on, signalOf, spaceOf, nameOf, delta, loadSignal, loadHistory, loadPulse } from './state.js';
-import { render, setRail, railCards, sigSay } from './shell.js';
+import { render, fillRail, sigSay } from './shell.js';
 import { LEVELS, levelOf, levelAfter, shareAfter, sealSvg, flowSvg, takeoverSvg, splitBar } from './signalviz.js';
 
 export const OUTCOME = { better: ['Better', 'pos'], same: ['About the same', 'neu'], worse: ['Worse', 'neg'] };
@@ -308,7 +308,7 @@ export async function renderSignalPage() {
       h('h3', {}, 'How the number moves'),
       h('p', { class: 'small muted' }, '65% is what people report happened, 15% how much those reports agree, 10% how many independent voices there are and 10% how much there is to go on. Every first-hand report Sig reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
       h('a', { class: 'lnk small', href: '#/how' }, 'More on how it works')));
-  setRail(await railCards('signal'));
+  const rail = fillRail('signal');
   const [rows, pulse] = await Promise.all([loadSignal(), loadPulse(), loadHistory()]);
   const live = rows.filter((x) => x.score != null);
   const levels = Object.fromEntries(LEVELS.map((l) => [l.key, live.filter((x) => (x.certification || 'forum') === l.key).length]));
@@ -392,6 +392,7 @@ export async function renderSignalPage() {
   };
   draw();
   if (window.innerWidth > 860) sigSay('Every number here moves when someone shares how it went. Tap one to see its space.', 'watching', 4000);
+  await rail;
 }
 
 export function outcomeChip(p) {

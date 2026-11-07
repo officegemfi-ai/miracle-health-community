@@ -4,7 +4,7 @@
 import { h, icon, fmtN, fmt1, ago, bar, toast, modal, tick, friendly, plural } from './ui.js';
 import { sig, emblem, emblemRing, spaceTile, tierOf } from './art.js';
 import { S, sb, on, levelOf, nameOf, loadCard, loadPulse, loadSpaces, loadUnread, track } from './state.js';
-import { render, setRail, railCards, renderNav, renderTop, sigSay, refreshNav } from './shell.js';
+import { render, setRail, railCards, fillRail, renderNav, renderTop, sigSay, refreshNav } from './shell.js';
 import { OUTCOME } from './signal.js';
 
 // ---------------------------------------------------------------------------
@@ -240,10 +240,11 @@ export function bellButton() {
 export async function renderNotifications() {
   const list = h('div', { class: 'card' }, h('p', { class: 'muted' }, 'Loading…'));
   render(h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Your updates'), h('h1', {}, 'Notifications.'))), list);
-  setRail(await railCards('default'));
+  const rail = fillRail('default');
   const { data } = await sb.from('my_notifications').select('*').order('created_at', { ascending: false }).limit(60);
   list.replaceChildren(...((data || []).length ? data.map(notifRow) : [h('div', { class: 'empty' }, sig(72, 'sleepy'), h('p', {}, 'Nothing yet. Share how it went and I’ll tell you when people back you up.'))]));
   if (S.unread) { await sb.rpc('mark_notifications_read'); setUnread(0); }
+  await rail;
 }
 
 // The season's count follows every report the moment it counts, on every screen
