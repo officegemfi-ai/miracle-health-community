@@ -1,7 +1,10 @@
 # Health check: every six hours, checks what visitors and members rely on is up, and fails (so
-# GitHub emails you) when something isn't. Nothing here changes anything.
+# GitHub emails you) when something isn't. The only thing it may change: it starts the site build.
 #   - miraclehealth.us and its Library, and community.miraclehealth.us, answer
-#   - the community's public numbers (snapshot.json) are less than three hours old
+#   - the community's public numbers (snapshot.json) are current. GitHub runs scheduled jobs late
+#     at busy times (the hourly site build has come every four to eight hours), so when they're
+#     over three hours old it starts the build (Pages) itself, with a note; it fails only when
+#     they're over twelve hours old, or when the last build failed
 #   - the evidence files the Library reads are there
 #   - Sig's chat and the weekly email sign-up answer from miraclehealth.us
 name: Health check
@@ -11,6 +14,7 @@ on:
   workflow_dispatch: {}
 permissions:
   contents: read
+  actions: write   # to start the site build when the numbers are stale
 jobs:
   check:
     runs-on: ubuntu-24.04
@@ -19,6 +23,8 @@ jobs:
       SITE: https://miraclehealth.us
       COMMUNITY: https://community.miraclehealth.us
       FUNCTIONS: https://nerfymdslkhopsomwriv.supabase.co/functions/v1
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Check the sites and the server functions
         run: |
@@ -41,9 +47,22 @@ jobs:
             else
               age=$(( $(date -u +%s) - $(date -u -d "$at" +%s) ))
               echo "snapshot.json is $((age / 60)) minutes old, with $(jq '.signals | length' <<<"$snap") Signals"
-              [ "$age" -lt 10800 ] || bad "snapshot.json is $((age / 3600)) hours old: the hourly Pages build may be failing"
+              if [ "$age" -ge 10800 ]; then
+                # GitHub runs the hourly build late at busy times: start one now
+                if gh workflow run pages.yml --ref main; then
+                  echo "::notice title=Health check::The community's numbers were $((age / 3600)) hours old (GitHub ran the hourly build late), so a site build was started."
+                else
+                  bad "The community's numbers are $((age / 3600)) hours old, and the site build couldn't be started"
+                fi
+              fi
+              [ "$age" -lt 43200 ] || bad "snapshot.json is $((age / 3600)) hours old: the site build hasn't run in twelve hours (Actions > Pages)"
             fi
           fi
+          last="$(gh run list --workflow pages.yml --status completed --limit 1 --json conclusion,url --jq '.[0] | "\(.conclusion) \(.url)"' 2>/dev/null || true)"
+          case "$last" in
+            success*|cancelled*|"") ;;
+            *) bad "The last site build didn't finish: ${last}" ;;
+          esac
           curl -fsS --max-time 30 -o /dev/null "$COMMUNITY/evidence/bpc157.json" || bad "The evidence files (evidence/bpc157.json) aren't there"
 
           for fn in ask newsletter; do
