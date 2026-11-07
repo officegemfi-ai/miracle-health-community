@@ -116,7 +116,8 @@ jobs:
             && supabase functions deploy delete-account --project-ref "$REF" \
             && supabase functions deploy ask --no-verify-jwt --project-ref "$REF" \
             && supabase functions deploy newsletter --no-verify-jwt --project-ref "$REF" \
-            && supabase functions deploy send-texts --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
+            && supabase functions deploy send-texts --no-verify-jwt --project-ref "$REF" \
+            && supabase functions deploy signal --no-verify-jwt --project-ref "$REF"; } 2>&1 | tee "$RUNNER_TEMP/functions.log" \
             || { scripts/ci_annotate.sh "Functions" "$RUNNER_TEMP/functions.log"; exit 1; }
       - name: Make a member an admin
         if: inputs.admin != ''

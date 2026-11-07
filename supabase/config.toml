@@ -72,3 +72,8 @@ verify_jwt = false
 # The check-in texts, called by the hourly workflow with its own key
 [functions.send-texts]
 verify_jwt = false
+
+# The Community Signal's public read API: anyone may read it, with no key (aggregate numbers only,
+# the same miraclehealth.us shows; see supabase/functions/signal)
+[functions.signal]
+verify_jwt = false
