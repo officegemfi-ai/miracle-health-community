@@ -67,7 +67,7 @@ const AGE_OR_SEX_ANSWER = new RegExp([
   String.raw`^\d{2}\s*(?:\+|or\s+(?:older|over|above|more)|and\s+(?:up|over|older))(?:\s*(?:years?|yrs?)(?:\s+old)?)?$`,
   String.raw`^(?:in\s+)?(?:my|your|their)?\s*\d0s$`,
   String.raw`\b(?:wo)?m[ae]n\b`,
-  String.raw`\b(?:trans|cis)\b`,
+  String.raw`^(?:trans|cis)(?:gender)?$`,
   String.raw`^prefer\s+not\s+to\s+say$`,
 ].join('|'), 'i');
 // Compared as plain text: curly apostrophes straightened, spaces collapsed, an answer's end stop dropped

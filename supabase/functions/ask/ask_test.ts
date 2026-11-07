@@ -905,6 +905,7 @@ Deno.test('age or sex is caught however it is put, and history questions with th
     ['Which reference range applies to you?', ['Male (assigned at birth)', 'Female (assigned at birth)']],
     ['Which describes you?', ['Male.', 'Female.']],
     ['Which describes you?', ['Woman', 'Man', 'Non-binary']],
+    ['Which describes you?', ['Cis', 'Trans', 'Prefer not to say']],
     ['Roughly where are you?', ['Under 30', '30s', '40s', '50 or over']],
     ['Which group?', ['18–29', '30–49', '50–64', '65 or older']],
     ['Which group?', ['18 to 29', '30 to 49', '50+']],
@@ -922,6 +923,7 @@ Deno.test('age or sex is caught however it is put, and history questions with th
     ['Most days, do you get about 0.7 to 1 gram of protein per pound of lean body mass?', ['Yes', 'Not quite', 'No', 'Not sure']],
     ['Is this for you or for someone else?', ['For me', 'For someone else']],
     ['Which medicines do you take?', []],
+    ['Which fats do you mostly avoid?', ['Trans fats', 'Saturated fats', 'Neither']],
   ];
   for (const [q, o] of history) assert(!asksAgeOrSex(q, o), `should stay: ${q} ${o.join(' / ')}`);
 });
@@ -967,10 +969,10 @@ Deno.test('NAC is a special case at FDA, not on its safety-risk list, and not un
 });
 
 Deno.test('NAC can be on a shortlist with its own status, and stays off a pregnant member\'s', async () => {
-  const withNac = (f: typeof fetch) => (async (url: string | URL, init?: RequestInit) => {
+  const withNac = (f: typeof fetch) => ((url: string | URL, init?: RequestInit) => {
     const u = String(url);
-    if (u.endsWith('/index.json')) return new Response(JSON.stringify({ items: [...ITEMS, NAC] }));
-    if (u.endsWith('/entries/nac.json')) return new Response(JSON.stringify(SHEET_NAC));
+    if (u.endsWith('/index.json')) return Promise.resolve(new Response(JSON.stringify({ items: [...ITEMS, NAC] })));
+    if (u.endsWith('/entries/nac.json')) return Promise.resolve(new Response(JSON.stringify(SHEET_NAC)));
     return f(url, init);
   }) as unknown as typeof fetch;
   const run = async (screen: unknown) => {
