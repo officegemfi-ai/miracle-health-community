@@ -113,7 +113,10 @@ const AMBIGUOUS = new Set(['ai', 'same', 'salt', 'test', 'glow', 'dim', 'mag', '
 // ---------------------------------------------------------------------------
 type Cached = { at: number; value: unknown };
 const memo = new Map<string, Cached>();
-export function clearCache() { memo.clear(); }
+// Loads in progress: a turn that needs a file another turn is already fetching waits for that
+// fetch instead of starting its own (a cold start under several questions at once fetches once)
+const loading = new Map<string, Promise<unknown>>();
+export function clearCache() { memo.clear(); loading.clear(); }
 
 // A failed load: the stale copy stands (stale beats nothing), kept for a minute before trying
 // again. hold: for loads every turn waits on (the index, the snapshot), a failure with no stale
@@ -125,16 +128,24 @@ async function cached<T>(key: string, ttl: number, now: number, load: () => Prom
   if (hit && now - hit.at < ttl) return hit.value as T;
   const failed = hold ? memo.get(`failed:${key}`) : undefined;
   if (!hit && failed && now - failed.at < RETRY_AFTER) throw failed.value;
-  try {
-    const value = await load();
-    memo.set(key, { at: now, value });
-    memo.delete(`failed:${key}`);
-    return value;
-  } catch (e) {
-    if (hit) { memo.set(key, { at: now - ttl + RETRY_AFTER, value: hit.value }); return hit.value as T; }
-    if (hold) memo.set(`failed:${key}`, { at: now, value: e });
-    throw e;
-  }
+  const running = loading.get(key) as Promise<T> | undefined;
+  if (running) return await running;
+  const p = (async () => {
+    try {
+      const value = await load();
+      memo.set(key, { at: now, value });
+      memo.delete(`failed:${key}`);
+      return value;
+    } catch (e) {
+      if (hit) { memo.set(key, { at: now - ttl + RETRY_AFTER, value: hit.value }); return hit.value as T; }
+      if (hold) memo.set(`failed:${key}`, { at: now, value: e });
+      throw e;
+    } finally {
+      loading.delete(key);
+    }
+  })();
+  loading.set(key, p);
+  return await p;
 }
 
 import type { Body } from './markers.ts';
@@ -147,6 +158,8 @@ export type Axis = { id: string; name: string; hormone?: string; members: AxisMe
 export function createLibrary(opts: LibraryOpts) {
   const f = opts.fetchImpl ?? fetch;
   const now = () => (opts.now ? opts.now() : Date.now());
+  // The cache is shared by the process: each Library keeps its files under its own address
+  const key = (name: string) => `${opts.base} ${name}`;
   const getJson = async (url: string) => {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 8000);
@@ -161,7 +174,7 @@ export function createLibrary(opts: LibraryOpts) {
   };
   return {
     async items(): Promise<Item[]> {
-      return await cached('index', 10 * 60_000, now(), async () => {
+      return await cached(key('index'), 10 * 60_000, now(), async () => {
         const idx = await getJson(`${opts.base}/index.json`).catch(() => null);
         if (idx && Array.isArray(idx.items)) return (idx.items as Item[]).map(cleanItem);
         const cat = await getJson(`${opts.base}/catalog.json`);
@@ -171,19 +184,19 @@ export function createLibrary(opts: LibraryOpts) {
     },
     async sheet(id: string): Promise<Sheet | null> {
       if (!/^[a-z0-9]{1,40}$/.test(id)) return null;
-      return await cached(`sheet:${id}`, 15 * 60_000, now(), async () => (await getJson(`${opts.base}/entries/${id}.json`)) as Sheet | null);
+      return await cached(key(`sheet:${id}`), 15 * 60_000, now(), async () => (await getJson(`${opts.base}/entries/${id}.json`)) as Sheet | null);
     },
     // The body map (body.json): where each drawn compound acts and which markers it may move;
     // none when it can't be read
     async body(): Promise<Body | null> {
-      return await cached('body', 10 * 60_000, now(), async () => {
+      return await cached(key('body'), 10 * 60_000, now(), async () => {
         const b = await getJson(`${opts.base}/body.json`).catch(() => null);
         return b && typeof b.compounds === 'object' && typeof b.markers === 'object' ? { markers: b.markers, compounds: b.compounds } as Body : null;
       });
     },
     // The pathways; none when they can't be read (the agents that use them then say nothing)
     async axes(): Promise<Axis[]> {
-      return await cached('axes', 10 * 60_000, now(), async () => {
+      return await cached(key('axes'), 10 * 60_000, now(), async () => {
         const a = await getJson(`${opts.base}/axes.json`).catch(() => null);
         return (Array.isArray(a?.axes) ? a.axes : []).filter((x: Axis) => x && typeof x.id === 'string' && Array.isArray(x.members)).map((x: Axis) => ({
           id: String(x.id), name: String(x.name ?? x.id), ...(x.hormone ? { hormone: String(x.hormone) } : {}),
@@ -194,7 +207,7 @@ export function createLibrary(opts: LibraryOpts) {
     // A snapshot that can't be read isn't kept as an empty one: the last good copy stands, and with
     // none, the caller hears it failed (and says nothing about what people report)
     async snapshot(): Promise<Snapshot> {
-      return await cached('snapshot', 10 * 60_000, now(), async () => {
+      return await cached(`${opts.snapshotUrl} snapshot`, 10 * 60_000, now(), async () => {
         const s = await getJson(opts.snapshotUrl);
         if (!s || typeof s.signals !== 'object' || !s.signals) throw new Error('The community snapshot is unavailable');
         return { signals: s.signals, uses: s.uses || {}, community: (typeof s.community === 'object' && s.community) || {}, ok: true } as Snapshot;

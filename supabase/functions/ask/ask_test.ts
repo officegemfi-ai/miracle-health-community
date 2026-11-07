@@ -1351,6 +1351,28 @@ Deno.test('a snapshot that can\'t be read: the last good one stands, and with no
   assertEquals(ev.find((e) => e.event === 'step' && e.data.agent === 'community')!.data.title, 'Couldn’t read the community’s numbers just now');
 });
 
+Deno.test('turns that need the same file at once fetch it once; each Library keeps its own files', async () => {
+  const lib = libFetch();
+  let fetches = 0;
+  let release!: () => void;
+  const opened = new Promise<void>((r) => { release = r; });
+  const slow = (async (url: string | URL, init?: RequestInit) => {
+    if (String(url).endsWith('/entries/bpc157.json')) { fetches++; await opened; }
+    return lib(url, init);
+  }) as unknown as typeof fetch;
+  clearCache();
+  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: slow, now: () => 0 });
+  const three = Promise.all([library.sheet('bpc157'), library.sheet('bpc157'), library.sheet('bpc157')]);
+  release();
+  assert((await three).every((s) => s?.id === 'bpc157'));
+  assertEquals(fetches, 1);
+  // A Library at another address reads its own copy, never the first one's
+  const elsewhere = (async () => new Response(JSON.stringify({ ...SHEET_BPC, name: 'Elsewhere' }))) as unknown as typeof fetch;
+  const other = createLibrary({ base: 'https://elsewhere.example/data', snapshotUrl: 'https://elsewhere.example/snapshot.json', fetchImpl: elsewhere, now: () => 0 });
+  assertEquals((await other.sheet('bpc157'))?.name, 'Elsewhere');
+  assertEquals((await library.sheet('bpc157'))?.name, SHEET_BPC.name);
+});
+
 Deno.test('a blend with a part on FDA\'s safety-risk list: tagged as such, never shortlisted, never offered as an option', async () => {
   const byId = new Map(ITEMS.map((i) => [i.id, i]));
   assertEquals(tagFor(byId.get('riskmix')!, null, byId), { tag: 'Contains a compound on FDA’s safety-risk list', tone: 'warn' });
