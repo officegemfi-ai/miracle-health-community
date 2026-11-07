@@ -156,14 +156,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.check.outputs.sha }}
-          fetch-depth: 2
+          fetch-depth: 0   # every commit since the last test set that passed (the "tested" tag)
       - name: Ask eleven questions (only when the chat changed, or when run by hand)
         env:
           URL: https://${{ needs.check.outputs.ref }}.supabase.co/functions/v1/ask
           BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          if [ "$BY_HAND" != true ] && git diff --quiet HEAD~1 HEAD -- supabase/functions/ask scripts/ask_smoke.py supabase/migrations 2>/dev/null; then
-            echo "The chat didn't change in this commit; skipping (each check costs a few cents of Claude)."
+          # Changed since the last test set that passed, over every commit since (a push of several
+          # commits whose last one doesn't touch the chat still counts)
+          base="$(git rev-parse -q --verify 'refs/tags/tested^{commit}' || true)"
+          if [ "$BY_HAND" != true ] && [ -n "$base" ] && git diff --quiet "$base" HEAD -- supabase/functions scripts/ask_smoke.py scripts/sig_client.py supabase/migrations; then
+            echo "The chat didn't change since the last test set passed; skipping (each check costs a few cents of Claude)."
             exit 0
           fi
           set -o pipefail
@@ -176,11 +179,13 @@ jobs:
     runs-on: ubuntu-24.04
     # About two hundred questions, four at a time, each graded
     timeout-minutes: 60
+    permissions:
+      contents: write   # to move the "tested" tag once the test set passes
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.check.outputs.sha }}
-          fetch-depth: 2
+          fetch-depth: 0
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0
@@ -191,8 +196,9 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          if [ "$BY_HAND" != true ] && git diff --quiet HEAD~1 HEAD -- supabase/functions/ask evals scripts/ask_eval.py 2>/dev/null; then
-            echo "The chat didn't change in this commit; skipping (the test set costs a few dollars of Claude)."
+          base="$(git rev-parse -q --verify 'refs/tags/tested^{commit}' || true)"
+          if [ "$BY_HAND" != true ] && [ -n "$base" ] && git diff --quiet "$base" HEAD -- supabase/functions evals scripts/ask_eval.py scripts/sig_client.py scripts/claude_call.py; then
+            echo "The chat didn't change since the last test set passed ($(git rev-parse --short "$base")); skipping (the test set costs a few dollars of Claude)."
             exit 0
           fi
           # A key for this run only: it lifts the per-visitor limits on the test project's chat
@@ -204,6 +210,9 @@ jobs:
           set -o pipefail
           python3 scripts/ask_eval.py "$URL" --key "$key" --out "$RUNNER_TEMP/eval" 2>&1 | tee "$RUNNER_TEMP/eval.log" \
             || { scripts/ci_annotate.sh "Sig's test set" "$RUNNER_TEMP/eval.log"; exit 1; }
+          # Passed: the next deploy compares with this commit
+          git tag -f tested HEAD
+          git push -q -f origin refs/tags/tested
       - uses: actions/upload-artifact@v4
         if: always()
         with:
