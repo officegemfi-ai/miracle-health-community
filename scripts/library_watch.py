@@ -9,12 +9,18 @@ A study naming a marker its sheet doesn't mention at all comes first: that's a g
 IGF-1 was one), not just more evidence.
 
 Usage: scripts/library_watch.py --site <miraclehealth-site checkout> [--backfill] [--only id,id]
-       [--per 20] [--days 45] [--out DIR] [--issue]
+       [--per 20] [--days 45] [--out DIR] [--queue FILE [--list-url URL]] [--issue]
 
 Weekly, it looks at what PubMed added in the last --days; with --backfill, at every year, the --per
 most relevant studies per compound. With ANTHROPIC_API_KEY set, Claude (WATCH_MODEL, Haiku by
 default) reads each abstract and says which marker moved which way, in whom; without it, a plain
 check keeps abstracts that name a marker in a sentence that says it changed.
+
+--queue keeps the open list from run to run (the workflow keeps it on the library-watch branch):
+each run adds what it found, and a study leaves the list only once its fact sheet cites it, its
+PubMed id is in `seen`, or its box was ticked in the review issue. Without a list yet, the first
+run goes back through every year to start one. The issue shows the list; --list-url links the
+whole of it (queue.md, next to the list) when the issue can't hold it all.
 """
 import argparse
 import concurrent.futures as cf
@@ -32,6 +38,9 @@ EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
 TOOL = 'miracle-health-library-watch'
 ISSUE_TITLE = 'Library watch: studies to review'
 LABEL = 'library-watch'
+QUEUE_NOTE = ('The Library watch\'s open review list (scripts/library_watch.py in miracle-health-community), kept from run to run. '
+              'items: studies still to review. done: reviewed and left out (ticked in the review issue), never listed again. '
+              'not_relevant: read and found not to report a marker for that compound, so not read again (a full pass reads everything again).')
 # Names that are a class of drugs, not the compound: they'd bring in every other member's studies
 CLASSY = re.compile(r'\b(?:inhibitors?|analogs?|analogues?|agonists?|antagonists?|blockers?|modulators?|class|bioregulators?|supplements?|peptides?|compounds?|hormones?)\b', re.I)
 CHANGE = re.compile(r'\b(?:increas\w*|decreas\w*|reduc\w*|rais\w*|lower\w*|elevat\w*|declin\w*|fell|fall\w*|rose|rise|rising|drop\w*|suppress\w*|higher|improv\w*|worsen\w*|chang\w*|normali[sz]\w*)\b', re.I)
@@ -254,17 +263,19 @@ def strength(f):
     return design + (1 if any(e['marker'] in SAFETY for e in moved) else 0) + (0.5 if moved else 0) + (0.5 if (f['year'] or '0') >= '2015' else 0)
 
 
-def render(found, markers, mode, by, counts):
+def render(rows, markers, by, counts, today, list_url='', cap=True):
+    """The review issue (or, with cap=False, the whole list): the open studies, gaps first"""
     name = {m['id']: m['name'] for m in markers}
-    gaps = sorted([f for f in found if any(e['gap'] for e in f['effects'])], key=strength, reverse=True)
-    more = [f for f in found if not any(e['gap'] for e in f['effects'])]
+    gaps = sorted([f for f in rows if any(e['gap'] for e in f['effects'])], key=strength, reverse=True)
+    more = [f for f in rows if not any(e['gap'] for e in f['effects'])]
     first = [f for f in gaps if strength(f) >= 3.5][:30]
 
     def line(f):
         fx = ', '.join(f'**{name[e["marker"]]} {ARROW.get(e["direction"], "?")}**{" (not on its sheet)" if e["gap"] else ""}' for e in f['effects'])
         who = '; '.join(sorted({x for e in f['effects'] for x in (e.get('who'), e.get('design')) if x}))[:160]
         via = f' (via {f["via"]})' if f['via'] else ''
-        return f'- [ ] {fx} · {f["title"][:200]} ({f["journal"]}, {f["year"]}){f" · {who}" if who else ""} · [PubMed {f["pmid"]}](https://pubmed.ncbi.nlm.nih.gov/{f["pmid"]}/){via}'
+        new = ' · **new**' if f.get('first_seen') == today else ''
+        return f'- [ ] {fx} · {f["title"][:200]} ({f["journal"]}, {f["year"]}){f" · {who}" if who else ""}{new} · [PubMed {f["pmid"]}](https://pubmed.ncbi.nlm.nih.gov/{f["pmid"]}/){via}'
 
     def section(rows):
         out, cur = [], None
@@ -276,12 +287,18 @@ def render(found, markers, mode, by, counts):
         return out
 
     head = [
-        f'Studies in people that report an effect on a blood marker, found by the Library watch ({mode}; abstracts read by {by}), that the compound\'s fact sheet doesn\'t cite yet. '
-        'For each: add it to the fact sheet (and the body map) with what it found and who was studied, or add its PubMed id to `seen` in '
-        '[library/data/watch.json](https://github.com/officegemfi-ai/miraclehealth-site/blob/main/library/data/watch.json) with why it was left out. '
+        f'Studies in people that report an effect on a blood marker, found by the Library watch (abstracts read by {by}), that the compound\'s '
+        'fact sheet doesn\'t cite yet. The list carries over from week to week until each study is handled:',
+        '',
+        '- **Added to the fact sheet** (and the body map) with what it found and who was studied: it leaves the list once the sheet cites it.',
+        '- **Reviewed and left out**: tick its box in the review issue, or add its PubMed id to `seen` in '
+        '[library/data/watch.json](https://github.com/officegemfi-ai/miraclehealth-site/blob/main/library/data/watch.json) with why. It leaves the list on the next run.',
+        '',
         'Nothing reaches Sig or the screen until it\'s in a fact sheet.',
         '',
-        f'Searched {counts["compounds"]} compounds; {counts["new"]} studies not cited yet; {counts["kept"]} report an effect on a marker.',
+        f'**{counts["open"]} to review**, {counts["gaps"]} of them on a marker their sheet doesn\'t mention. '
+        f'Last run, {counts["when"]} ({counts["mode"]}): searched {counts["compounds"]} compounds, read {counts["read"]} studies their sheets don\'t cite, '
+        f'{counts["new"]} new to the list.' + (f' [The whole list]({list_url}).' if list_url else ''),
         '',
         f'### Review these first ({len(first)})',
         'Markers their sheets don\'t mention at all, from the strongest studies (meta-analyses and randomized trials first), on markers that matter most for safety.',
@@ -297,31 +314,66 @@ def render(found, markers, mode, by, counts):
         '</details>',
     ]
     body = '\n'.join(head)
-    return body if len(body) < 60000 else body[:59000] + '\n\n…cut here: the full list is in the run\'s summary and its saved results.'
+    if not cap or len(body) < 60000:
+        return body
+    return body[:59000].rsplit('\n', 1)[0] + '\n\n…cut here, as an issue holds only so much: ' + (
+        f'[the whole list]({list_url}).' if list_url else 'the whole list is in the run\'s summary and its saved results.')
 
 
-def upsert_issue(body):
+def ticked_in(body):
+    """The studies ticked in the review issue, as compound:PubMed id"""
+    out, cur = set(), None
+    for line in (body or '').splitlines():
+        if re.match(r'\s*- \[[ xX]\] ', line):
+            m = re.search(r'pubmed\.ncbi\.nlm\.nih\.gov/(\d+)', line)
+            if cur and m and re.match(r'\s*- \[[xX]\] ', line):
+                out.add(f'{cur}:{m.group(1)}')
+            continue
+        m = re.search(r'\]\(https://miraclehealth\.us/library/([a-z0-9-]+)/\)\*\*\s*$', line)
+        if m:
+            cur = m.group(1)
+    return out
+
+
+def github():
+    """A small REST caller for this repository (GH_REPO or GITHUB_REPOSITORY, with GITHUB_TOKEN)"""
     repo, token = os.environ.get('GH_REPO') or os.environ.get('GITHUB_REPOSITORY'), os.environ.get('GITHUB_TOKEN')
     if not repo or not token:
-        print('No GitHub repo or token: the issue was not written.', file=sys.stderr)
         return None
     api = f'https://api.github.com/repos/{repo}'
     hdr = {'authorization': f'Bearer {token}', 'accept': 'application/vnd.github+json', 'content-type': 'application/json'}
 
-    def call(method, url, data=None):
-        req = urllib.request.Request(url, data=json.dumps(data).encode() if data is not None else None, method=method, headers=hdr)
+    def call(method, path, data=None):
+        req = urllib.request.Request(api + path, data=json.dumps(data).encode() if data is not None else None, method=method, headers=hdr)
         with urllib.request.urlopen(req, timeout=60) as res:
             return json.loads(res.read().decode('utf-8') or 'null')
+    return call
+
+
+def find_issue(call):
+    issues = call('GET', f'/issues?labels={LABEL}&state=open&per_page=5') or []
+    return next((i for i in issues if i.get('title') == ISSUE_TITLE), None)
+
+
+def write_issue(call, issue, body):
     try:
-        call('POST', f'{api}/labels', {'name': LABEL, 'color': 'D8FF3D', 'description': 'Studies the Library watch found for review'})
+        call('POST', '/labels', {'name': LABEL, 'color': 'D8FF3D', 'description': 'Studies the Library watch found for review'})
     except urllib.error.HTTPError:
         pass   # it's there already
-    issues = call('GET', f'{api}/issues?labels={LABEL}&state=open&per_page=5') or []
-    issue = next((i for i in issues if i.get('title') == ISSUE_TITLE), None)
     if issue:
-        call('PATCH', f'{api}/issues/{issue["number"]}', {'body': body})
+        call('PATCH', f'/issues/{issue["number"]}', {'body': body})
         return issue['html_url']
-    return call('POST', f'{api}/issues', {'title': ISSUE_TITLE, 'body': body, 'labels': [LABEL]})['html_url']
+    return call('POST', '/issues', {'title': ISSUE_TITLE, 'body': body, 'labels': [LABEL]})['html_url']
+
+
+def load_queue(path):
+    """The open list from the last run, or None when there isn't one yet"""
+    try:
+        with open(path, encoding='utf-8') as f:
+            q = json.load(f)
+        return q if isinstance(q, dict) and isinstance(q.get('items'), list) else None
+    except (OSError, ValueError):
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -333,6 +385,8 @@ def main():
     ap.add_argument('--per', type=int, default=20, help='studies per compound and name group')
     ap.add_argument('--only', default='')
     ap.add_argument('--out', default='')
+    ap.add_argument('--queue', default='', help='the open review list (JSON), carried over from run to run; made if missing')
+    ap.add_argument('--list-url', default='', help='where the whole list (queue.md, next to --queue) can be read')
     ap.add_argument('--issue', action='store_true')
     ap.add_argument('--show', default='', help='print these PubMed ids\' abstracts, to check a study before it goes into a sheet')
     args = ap.parse_args()
@@ -342,22 +396,46 @@ def main():
         return
 
     data = os.path.join(args.site, 'library', 'data')
-    cfg = json.load(open(os.path.join(data, 'watch.json')))
+    cfg = json.load(open(os.path.join(data, 'watch.json'), encoding='utf-8'))
     markers, parents, seen = cfg['markers'], cfg.get('parents', {}), set(cfg.get('seen', {}))
+    mk = {m['id']: m for m in markers}
     skip = {s.lower() for s in cfg.get('skip_aliases', [])}
-    items = [i for i in json.load(open(os.path.join(data, 'index.json')))['items'] if i.get('sheet')]
+    library = {i['id']: i for i in json.load(open(os.path.join(data, 'index.json'), encoding='utf-8'))['items'] if i.get('sheet')}
+    items = list(library.values())
     if args.only:
         want = set(args.only.split(','))
         items = [i for i in items if i['id'] in want]
     key, model = os.environ.get('ANTHROPIC_API_KEY', ''), os.environ.get('WATCH_MODEL', 'claude-haiku-5-5')
     by = f'Claude ({model})' if key else 'a plain check'
+    today = time.strftime('%Y-%m-%d', time.gmtime())
+
+    # The open list so far; without one, a full pass starts it (a 45-day look would miss the backlog)
+    prev = load_queue(args.queue) if args.queue else None
+    if args.queue and prev is None and not args.backfill and not args.only:
+        print('No review list yet: going back through every year to start one.', flush=True)
+        args.backfill = True
+    prev = prev or {'items': [], 'done': {}, 'not_relevant': []}
+    # What was ticked in the review issue since the last run joins done: reviewed, never listed or read again
+    call = github() if args.issue else None
+    issue = find_issue(call) if call else None
+    done = dict(prev.get('done', {}))
+    for kid in ticked_in((issue or {}).get('body', '')):
+        done.setdefault(kid, {'date': today, 'how': 'ticked in the review issue'})
+    known = {f'{f["id"]}:{f["pmid"]}' for f in prev['items']} | set(prev.get('not_relevant', []))
     days = None if args.backfill else args.days
     mode = 'every year' if args.backfill else f'added to PubMed in the last {args.days} days'
+
+    sheets = {}
+
+    def sheet_of(cid):
+        if cid not in sheets:
+            sheets[cid] = json.load(open(os.path.join(data, 'entries', f'{cid}.json'), encoding='utf-8'))
+        return sheets[cid]
 
     # 1. Search: each compound under its own names, and under its parent's
     jobs = []
     for it in items:
-        sheet = json.load(open(os.path.join(data, 'entries', f'{it["id"]}.json')))
+        sheet = sheet_of(it['id'])
         groups = [(names_of(it, skip), '')]
         if it['id'] in parents:
             groups.append((parents[it['id']]['names'], parents[it['id']].get('say', '')))
@@ -374,49 +452,84 @@ def main():
     print(f'Searched {len(items)} compounds: {len(allp)} studies to look at.', flush=True)
     arts = {a['pmid']: a for a in efetch(allp)} if allp else {}
 
-    # 2. Leave out what each sheet already cites, and what was reviewed and left out
-    todo = []
+    # 2. Leave out what each sheet already cites, what was reviewed and left out, and (except on a
+    #    full pass) what an earlier run has read already; one study, one reading per compound
+    todo, queued = [], set()
     for it, sheet, via, pmids in jobs:
         ids, titles = cited(sheet)
         for p in pmids:
-            a = arts.get(p)
-            if a and p not in seen and not is_cited(a, ids, titles) and a['abstract']:
-                todo.append((it, sheet, via, a))
-    print(f'{len(todo)} not cited yet; reading them ({by}).', flush=True)
+            a, kid = arts.get(p), f'{it["id"]}:{p}'
+            if not a or p in seen or kid in done or kid in queued or is_cited(a, ids, titles) or not a['abstract']:
+                continue
+            if not args.backfill and kid in known:
+                continue
+            queued.add(kid)
+            todo.append((it, sheet, via, a))
+    print(f'{len(todo)} not cited yet and not read before; reading them ({by}).', flush=True)
 
     # 3. Read each one: which marker, which way, in whom
     def read(job):
         it, sheet, via, a = job
         r = claude_read(a, it['name'], via, markers, key, model) if key else None
         return job, r or plain_read(a, markers)
-    found = []
+    found, not_relevant = [], set(prev.get('not_relevant', []))
     with cf.ThreadPoolExecutor(max_workers=4 if key else 1) as pool:
         for (it, sheet, via, a), r in pool.map(read, todo):
-            if not r['relevant']:
+            kid = f'{it["id"]}:{a["pmid"]}'
+            effects = [e for e in r['effects'] if e['marker'] in mk] if r['relevant'] else []
+            if not effects:
+                not_relevant.add(kid)
                 continue
-            mk = {m['id']: m for m in markers}
-            effects = [{**e, 'gap': not sheet_mentions(sheet, mk[e['marker']])} for e in r['effects'] if e['marker'] in mk]
-            if effects:
-                found.append({'id': it['id'], 'name': it['name'], 'via': via, **{k: a[k] for k in ('pmid', 'title', 'journal', 'year')}, 'effects': effects, 'by': r['by']})
-    # One study, one line per compound
-    uniq = {}
-    for f in found:
-        uniq.setdefault((f['id'], f['pmid']), f)
-    found = list(uniq.values())
-    counts = {'compounds': len(items), 'new': len(todo), 'kept': len(found)}
-    body = render(found, markers, mode, by, counts)
-    print(f'{len(found)} report an effect on a marker; {sum(any(e["gap"] for e in f["effects"]) for f in found)} on a marker their sheet doesn\'t mention.', flush=True)
+            not_relevant.discard(kid)
+            found.append({'id': it['id'], 'name': it['name'], 'via': via, **{f: a[f] for f in ('pmid', 'title', 'journal', 'year', 'doi', 'pmc')},
+                          'effects': effects, 'by': r['by']})
 
+    # 4. The open list: last run's with this run's added. A study leaves it once its sheet cites it,
+    #    it's in seen, or it was ticked in the review issue (kept in done, so it doesn't come back)
+    merged = {}
+    for f in prev['items'] + found:          # this run's reading last, so it wins
+        kid = f'{f["id"]}:{f["pmid"]}'
+        merged[kid] = {**f, 'first_seen': merged.get(kid, {}).get('first_seen') or f.get('first_seen') or today}
+    rows = []
+    for kid, f in merged.items():
+        if f['id'] not in library or f['pmid'] in seen or kid in done:
+            continue
+        sheet = sheet_of(f['id'])
+        ids, titles = cited(sheet)
+        if is_cited({'pmid': f['pmid'], 'pmc': f.get('pmc', ''), 'doi': f.get('doi', ''), 'title': f['title']}, ids, titles):
+            continue
+        effects = [{**e, 'gap': not sheet_mentions(sheet, mk[e['marker']])} for e in f['effects'] if e['marker'] in mk]
+        if effects:
+            rows.append({**f, 'effects': effects})
+    rows.sort(key=lambda f: (f['id'], f['pmid']))
+    before = {f'{f["id"]}:{f["pmid"]}' for f in prev['items']}
+    counts = {'open': len(rows), 'gaps': sum(any(e['gap'] for e in f['effects']) for f in rows), 'compounds': len(items),
+              'read': len(todo), 'new': sum(f'{f["id"]}:{f["pmid"]}' not in before for f in rows), 'mode': mode, 'when': today}
+    body = render(rows, markers, by, counts, today, args.list_url)
+    print(f'{len(found)} report an effect on a marker. The list has {counts["open"]} to review: {counts["gaps"]} on a marker their '
+          f'sheet doesn\'t mention, {counts["new"]} new; {len(prev["items"]) + counts["new"] - counts["open"]} left it this run.', flush=True)
+
+    if args.queue:
+        folder = os.path.dirname(os.path.abspath(args.queue))
+        os.makedirs(folder, exist_ok=True)
+        with open(args.queue, 'w', encoding='utf-8') as fh:
+            json.dump({'note': QUEUE_NOTE, 'updated': today, 'items': rows, 'done': done, 'not_relevant': sorted(not_relevant)}, fh, indent=1, ensure_ascii=False)
+        with open(os.path.join(folder, 'queue.md'), 'w', encoding='utf-8') as fh:
+            fh.write(f'# {ISSUE_TITLE}\n\n{render(rows, markers, by, counts, today, cap=False)}\n')
     if args.out:
         os.makedirs(args.out, exist_ok=True)
-        json.dump({'mode': mode, 'by': by, 'counts': counts, 'found': found}, open(os.path.join(args.out, 'watch.json'), 'w'), indent=1, ensure_ascii=False)
-        open(os.path.join(args.out, 'watch.md'), 'w').write(body)
+        with open(os.path.join(args.out, 'watch.json'), 'w', encoding='utf-8') as fh:
+            json.dump({'mode': mode, 'by': by, 'counts': counts, 'found': found}, fh, indent=1, ensure_ascii=False)
+        with open(os.path.join(args.out, 'watch.md'), 'w', encoding='utf-8') as fh:
+            fh.write(body)
     if os.environ.get('GITHUB_STEP_SUMMARY'):
-        open(os.environ['GITHUB_STEP_SUMMARY'], 'a').write(f'## {ISSUE_TITLE}\n\n{body}\n')
+        with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as fh:
+            fh.write(f'## {ISSUE_TITLE}\n\n{body}\n')
     if args.issue:
-        url = upsert_issue(body)
-        if url:
-            print(f'Review issue: {url}')
+        if call:
+            print(f'Review issue: {write_issue(call, issue, body)}')
+        else:
+            print('No GitHub repo or token: the issue was not written.', file=sys.stderr)
 
 
 if __name__ == '__main__':

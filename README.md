@@ -45,11 +45,14 @@ so the public library on miraclehealth.us can use the same drawings.
 - `web/preview/`, `scripts/build_preview.mjs`: the preview: the same migrations running in the browser
   (PGlite) with a sample community (preview builds only)
 - `tests/e2e/`: real-browser tests (the whole flow with three people and live updates, the site
-  password, the preview) and a scripted spam attack
+  password, the preview, and `live.mjs`: miraclehealth.us/ai as a visitor finds it, after each
+  promote) and a scripted spam attack
 - `.github/workflows/`: tests on every change, deploy to test, promote to live; the site build every hour
   (`pages.yml`); **Check-in texts** (hourly, once the variable `CHECKIN_TEXTS` is `on`); **Weekly email**
   (by hand: send the confirm links, or send issue *n*); **Health check** (every six hours: both sites,
-  the snapshot's age, the evidence files and the server functions answer; a failure emails you)
+  the snapshot's age, the evidence files and the server functions answer; a failure emails you);
+  **Live check** (after every promote, and by hand: Sig and miraclehealth.us/ai as a visitor finds
+  them); **Library watch** (Mondays: new studies for the fact sheets to review)
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
 
 ## Ask Sig (`supabase/functions/ask`)
@@ -181,7 +184,18 @@ doesn't cite yet. Claude (Haiku) reads each abstract for which marker moved whic
 (a plain check does it when there's no API key). The results go to one issue, "Library watch:
 studies to review", markers a sheet doesn't mention at all first. Nothing reaches a fact sheet,
 Sig or the screen from there until an editor adds it with its source, or adds the study to
-`seen` with why it was left out. Run it by hand with "every year" to go back through everything.
+`seen` with why it was left out. The list carries over from week to week (`queue.json` and the
+whole list as `queue.md` on the `library-watch` branch): a study leaves it only once its sheet
+cites it, it's in `seen`, or its box is ticked in the issue; if the list is ever missing, the
+next run goes back through every year to start it again. Run it by hand with "every year" to
+read everything again.
+
+**The live check** (`.github/workflows/live-check.yml`) runs at the end of every Promote to live,
+and by hand: it asks the live Sig the four questions in `evals/live.jsonl` (each agent's step
+must arrive, the Markers agent must name IGF-1 for HGH plus enclomiphene, no amounts, no reading
+of a lab result) and opens miraclehealth.us/ai on a laptop and a phone (`tests/e2e/live.mjs`:
+the navigation, the answer, the screen's marker pushed both ways and its evidence, the Library's
+IGF-1 finding, no errors in the page), with screenshots on the run.
 
 ## Run it on your machine (no Docker needed)
 ```

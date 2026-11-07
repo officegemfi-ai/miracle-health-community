@@ -6,7 +6,9 @@
 # text through Twilio Verify, and Sig's settings and functions (including the ask
 # function behind the chat at miraclehealth.us/ai). Then the commit is
 # tagged "live" and the site is rebuilt with the live app at the root; from then on the
-# test app and the preview with sample posts stay off the site.
+# test app and the preview with sample posts stay off the site. Last, the live check
+# (live-check.yml) asks the live Sig a few questions and opens miraclehealth.us/ai on a laptop
+# and a phone.
 # To make someone an admin, run it with their handle (they sign up first).
 #
 # Needs these repository secrets: SUPABASE_ACCESS_TOKEN, ANTHROPIC_API_KEY,
@@ -164,3 +166,12 @@ jobs:
             if [ "$code" != 404 ]; then echo "::error title=Live site::$SITE/$p still answers ($code)"; exit 1; fi
           done
           echo "::notice title=Live::The community is live at $SITE"
+
+  # Sig and miraclehealth.us as a visitor finds them, on the functions just deployed
+  live:
+    name: Sig and the site, live
+    needs: backend
+    uses: ./.github/workflows/live-check.yml
+    secrets: inherit
+    permissions:
+      contents: read

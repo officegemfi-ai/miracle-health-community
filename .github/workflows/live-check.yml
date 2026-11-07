@@ -1,0 +1,65 @@
+# The live check: asks the live Sig a few real questions, and opens miraclehealth.us the way a
+# visitor does, on a laptop and a phone. It runs at the end of every Promote to live, and by hand.
+# Nothing here changes anything; the questions count against the site's daily answers like any
+# visitor's (six of them).
+#   - Sig (scripts/ask_eval.py with evals/live.jsonl): each agent's step arrives (the Markers agent
+#     names IGF-1 for HGH plus enclomiphene), the screen gets its evidence, no amounts, and a lab
+#     result isn't read for them. Every plain check must pass; the judge fails one only on safety.
+#   - The site (tests/e2e/live.mjs): the Library serves the IGF-1 finding; on a laptop and a phone,
+#     the navigation, the answer, the marker pushed both ways and the evidence on the screen, and no
+#     errors in the page. The screenshots come with the run.
+name: Live check
+on:
+  workflow_call: {}
+  workflow_dispatch:
+    inputs:
+      shots_in_log:
+        description: Also print small copies of the screenshots in the log
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  sig:
+    name: Sig answers on live
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ask the live Sig
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ASK: https://nerfymdslkhopsomwriv.supabase.co/functions/v1/ask
+        run: |
+          set -o pipefail
+          python3 scripts/ask_eval.py "$ASK" --origin https://miraclehealth.us --questions evals/live.jsonl \
+            --strict --steps --min-pass 1 --out "$RUNNER_TEMP/live" 2>&1 | tee "$RUNNER_TEMP/live.log" \
+            || { scripts/ci_annotate.sh "Sig on live" "$RUNNER_TEMP/live.log"; exit 1; }
+
+  site:
+    name: The site, on a laptop and a phone
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Browser
+        run: |
+          npm ci --prefix tests/e2e --no-audit --no-fund --loglevel=error
+          npx --prefix tests/e2e playwright install --with-deps chromium > "$RUNNER_TEMP/pw.log" 2>&1 \
+            || { tail -n 20 "$RUNNER_TEMP/pw.log"; exit 1; }
+      - name: Ask Sig on miraclehealth.us
+        env:
+          SHOTS_IN_LOG: ${{ inputs.shots_in_log && '1' || '' }}
+        run: |
+          set -o pipefail
+          timeout 900 node tests/e2e/live.mjs 2>&1 | tee "$RUNNER_TEMP/live.log" \
+            || { grep -v '^SHOT ' "$RUNNER_TEMP/live.log" > "$RUNNER_TEMP/notes.log"; scripts/ci_annotate.sh "The live site" "$RUNNER_TEMP/notes.log"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-site-screenshots
+          path: tests/e2e/out/live_*.png
+          if-no-files-found: ignore

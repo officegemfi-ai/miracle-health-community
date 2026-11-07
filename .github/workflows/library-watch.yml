@@ -3,8 +3,13 @@
 # sheet doesn't cite yet (scripts/library_watch.py, with the list in the site's
 # library/data/watch.json). Claude reads each abstract for which marker moved which way, in whom.
 # They go to one issue to review ("Library watch: studies to review"): nothing reaches a fact sheet,
-# Sig or the screen from here until an editor adds it. Run it by hand with "every year" to go back
-# through everything PubMed has, not just what it added lately.
+# Sig or the screen from here until an editor adds it.
+#
+# The list carries over from week to week (queue.json and queue.md on the library-watch branch):
+# each run adds what it found, and a study leaves the list only once its fact sheet cites it, its
+# PubMed id is in the site's `seen`, or its box is ticked in the issue. If the list is ever missing,
+# the next run goes back through every year to start it again. Run it by hand with "every year" to
+# read everything PubMed has again, not just what it added lately.
 name: Library watch
 
 on:
@@ -26,7 +31,7 @@ on:
         default: ''
 
 permissions:
-  contents: read
+  contents: write   # the list is kept on the library-watch branch
   issues: write
 
 concurrency: library-watch
@@ -42,6 +47,18 @@ jobs:
         with:
           repository: officegemfi-ai/miraclehealth-site
           path: site
+      - name: The list so far
+        if: ${{ !inputs.show }}
+        run: |
+          q="$RUNNER_TEMP/queue"
+          if git fetch --depth 1 origin library-watch; then
+            git worktree add -B library-watch "$q" FETCH_HEAD
+          else
+            echo "No list yet: this run starts one."
+            git worktree add --detach "$q" HEAD
+            git -C "$q" checkout -q --orphan library-watch
+            git -C "$q" rm -rfq .
+          fi
       - name: Search PubMed and read what's new
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -51,11 +68,22 @@ jobs:
           ONLY: ${{ inputs.only }}
           SHOW: ${{ inputs.show }}
         run: |
-          args=(--site site --out "$RUNNER_TEMP/watch" --issue)
+          args=(--site site --out "$RUNNER_TEMP/watch" --issue --queue "$RUNNER_TEMP/queue/queue.json"
+                --list-url "https://github.com/$GH_REPO/blob/library-watch/queue.md")
           if [ "$BACKFILL" = true ]; then args+=(--backfill); fi
           if [ -n "$ONLY" ]; then args+=(--only "$ONLY"); fi
           if [ -n "$SHOW" ]; then args=(--site site --show "$SHOW"); fi
           python3 scripts/library_watch.py "${args[@]}"
+      - name: Keep the list for next week
+        if: ${{ !inputs.show }}
+        run: |
+          cd "$RUNNER_TEMP/queue"
+          git add -A
+          if git diff --cached --quiet; then echo "The list didn't change."; exit 0; fi
+          git -c user.name='Library watch' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "The review list, $(date -u +%F)"
+          git push -q origin HEAD:refs/heads/library-watch
+          echo "::notice title=Library watch::The list is kept on the library-watch branch: https://github.com/${{ github.repository }}/blob/library-watch/queue.md"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
