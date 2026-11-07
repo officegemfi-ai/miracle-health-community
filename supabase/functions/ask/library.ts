@@ -78,15 +78,21 @@ const FAMILY_ONE: Record<string, string> = {
 };
 export const familyOne = (f: string) => FAMILY_ONE[f] ?? f;
 
+// What the Library's FDA statuses mean here. 'restricted' is neither of the two lists below: the
+// Library keeps it for a special case its note explains (today only NAC, an approved drug since 1963
+// whose sale as a supplement FDA tolerates), so Sig shows that compound's own label instead of
+// guessing a category. 'compounded' has its own wording too.
 // Not approved for any use in the US, one way or another
-export const UNAPPROVED = new Set(['not_approved', 'investigational', 'under_review', 'category2', 'restricted', 'unclear']);
-// Never on a shortlist: FDA's list of substances with significant safety risks, or other restrictions
-export const BLOCKED = new Set(['category2', 'restricted']);
+export const UNAPPROVED = new Set(['not_approved', 'investigational', 'under_review', 'category2', 'unclear']);
+// Never on a shortlist: FDA's list of substances with significant safety risks when compounded
+// (Category 2), the only status a card may call "FDA's safety-risk list"
+export const BLOCKED = new Set(['category2']);
 
 const GRADE_W: Record<string, number> = { strong: 1, moderate: 0.8, limited: 0.55, preclinical: 0.3, anecdotal: 0.15 };
 const STATUS_W: Record<string, number> = {
   approved: 1, otc: 1, supplement: 0.95, compounded: 0.7, under_review: 0.5, investigational: 0.5,
-  not_approved: 0.45, unclear: 0.4, category2: 0.1, restricted: 0.1,
+  // restricted: NAC's special case, an approved drug sold as a supplement, so weighed as a supplement
+  not_approved: 0.45, unclear: 0.4, category2: 0.1, restricted: 0.95,
 };
 // For compounds without a fact sheet yet: the goal their Library category belongs to
 const CATEGORY_GOAL: Record<string, Goal> = {
@@ -352,7 +358,7 @@ export function rank(items: Item[], signals: Record<string, Signal>, goal: Goal,
       const st = STATUS_W[it.status ?? ''] ?? 0.4;
       const lvl = sig?.certification;
       const bonus = sig && (lvl === 'backed' || lvl === 'verified' || lvl === 'certified') ? (Number(sig.score) / 100) * 0.08 : 0;
-      const gate = risky(it) ? 'Never on a shortlist (FDA safety-risk list or restricted, or contains such a compound)'
+      const gate = risky(it) ? 'Never on a shortlist (on FDA’s safety-risk list, or contains such a compound)'
         : it.status === 'investigational' ? 'Not for use outside a clinical trial'
         : it.family === 'Hormones' ? (it.status === 'supplement' ? 'A hormone sold as a supplement: test levels with a clinician first'
           : 'A prescription hormone: only after testing, with a clinician monitoring')

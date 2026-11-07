@@ -83,7 +83,7 @@ const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 const said = (s: string) => `"${lower(s).replace(/["\[\]{}]/g, '')}"`;
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-// On FDA's safety-risk list or restricted, or a blend with such a part (communityTop also keeps
+// On FDA's safety-risk list, or a blend with such a part (communityTop also keeps
 // off anything whose US status the Library hasn't worked out, or calls unclear)
 export function blockedItem(it: Item | undefined, byId: Map<string, Item>): boolean {
   if (!it) return true;

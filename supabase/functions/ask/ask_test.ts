@@ -1,12 +1,14 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { sse, stream, tuning, canForceTool } from './claude.ts';
-import { clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, type Signal, tidyBlends } from './library.ts';
+import { BLOCKED, clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, type Signal, tidyBlends, UNAPPROVED } from './library.ts';
 import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, dedupeSentences, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
 import { baselineFor, blockedItem, comboLine, communityOf, communityTitle, communityTop, leadOf, pulseLine, stackSignal, topText, useById, voiceLine, voiceOf } from './community.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
-import { AUDIT_SYSTEM, guideSystem } from './prompts.ts';
+import { AUDIT_SYSTEM, guideSystem, REVIEW_SYSTEM } from './prompts.ts';
+import { asksAgeOrSex } from './tools.ts';
+import { proven } from './items.ts';
 
 // ---------------------------------------------------------------------------
 // Fixtures: a tiny library, two fact sheets and a snapshot
@@ -879,11 +881,115 @@ Deno.test('Sig never asks someone\'s age or sex', async () => {
     { q: 'Roughly how old are you?', options: ['18–29', '30–49', '50–64', '65 or older'] },
     { q: 'Which best describes you?', options: ['Female', 'Male'] },
     { q: 'Do you strength train?', options: ['3+ times a week', '1 to 2 times a week', 'Not yet'] },
-    { q: 'What is your sex?' },
+    { q: 'Sex at birth?' },
   ] } } }] });
   const ev = await events(await handle(ask([{ role: 'user', content: 'How do I keep muscle on Ozempic?' }]), deps(f)));
   const intake = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
   assertEquals(intake.questions.map((q: { q: string }) => q.q), ['Do you strength train?']);
+});
+
+Deno.test('age or sex is caught however it is put, and history questions with the same words stay', () => {
+  const asks: [string, string[]][] = [
+    ['Roughly how old are you?', []],
+    ['What is your sex?', []],
+    ['What’s your age range?', []],
+    ['Sex at birth?', []],
+    ['Which sex is on your lab report?', []],
+    ['What is your biological sex?', []],
+    ['Gender?', []],
+    ['Are you male, female or intersex?', []],
+    ['Are you a man, a woman, or neither?', []],
+    ['What age are you?', []],
+    ['Age?', []],
+    ['What year were you born?', []],
+    ['Which reference range applies to you?', ['Male (assigned at birth)', 'Female (assigned at birth)']],
+    ['Which describes you?', ['Male.', 'Female.']],
+    ['Which describes you?', ['Woman', 'Man', 'Non-binary']],
+    ['Which describes you?', ['Cis', 'Trans', 'Prefer not to say']],
+    ['Roughly where are you?', ['Under 30', '30s', '40s', '50 or over']],
+    ['Which group?', ['18–29', '30–49', '50–64', '65 or older']],
+    ['Which group?', ['18 to 29', '30 to 49', '50+']],
+    ['Anything else?', ['Prefer not to say']],
+  ];
+  for (const [q, o] of asks) assert(asksAgeOrSex(q, o), `should be dropped: ${q} ${o.join(' / ')}`);
+  const history: [string, string[]][] = [
+    ['How’s your sex drive lately?', ['Normal', 'Lower than usual', 'Not sure']],
+    ['Has your SHBG (sex hormone-binding globulin) been checked?', ['Yes', 'No', 'Not sure']],
+    ['Any male-pattern hair loss in your family?', ['Yes', 'No']],
+    ['Any sexual side effects so far?', ['Yes', 'No']],
+    ['Are you pregnant, trying to conceive or breastfeeding?', ['Yes', 'No']],
+    ['How long are your workouts?', ['Under 30 minutes', '30–60 minutes', '60+ minutes']],
+    ['Do you strength train?', ['3+ times a week', '1 to 2 times a week', 'Not yet']],
+    ['Most days, do you get about 0.7 to 1 gram of protein per pound of lean body mass?', ['Yes', 'Not quite', 'No', 'Not sure']],
+    ['Is this for you or for someone else?', ['For me', 'For someone else']],
+    ['Which medicines do you take?', []],
+    ['Which fats do you mostly avoid?', ['Trans fats', 'Saturated fats', 'Neither']],
+  ];
+  for (const [q, o] of history) assert(!asksAgeOrSex(q, o), `should stay: ${q} ${o.join(' / ')}`);
+});
+
+Deno.test('the guide, the gate and the filter say the same thing about age and sex', () => {
+  assert(guideSystem('').includes('Never ask their age or sex'));
+  const rule7 = REVIEW_SYSTEM.split('\n').find((l) => l.startsWith('7. '))!;
+  assert(/their age or age range, their sex or gender/.test(rule7), rule7);
+  assert(!/age range, sex[^;]*is fine/.test(rule7), rule7);
+});
+
+// NAC: the Library's one special case today ('restricted': an approved drug whose sale as a
+// supplement FDA tolerates), which is neither on FDA's safety-risk list nor unapproved
+const NAC: Item = {
+  id: 'nac', name: 'NAC (N-acetylcysteine)', family: 'Supplements', category: 'Liver & detox', aliases: ['NAC'], kind: 'compound', parts: [],
+  sheet: true, status: 'restricted', status_label: 'Approved drug; supplement sales tolerated by FDA', grade: 'limited', goals: { recovery: 0.4 },
+  summary: 'An approved antidote, also sold as a supplement.',
+};
+const SHEET_NAC: Sheet = {
+  ...SHEET_CREATINE, id: 'nac', name: 'NAC (N-acetylcysteine)', what_it_is: 'A form of the amino acid cysteine.',
+  avoid_if: ['Pregnant or breastfeeding (clinician first; not well studied in pregnancy)'],
+  evidence: { grade: 'limited', why: 'Strong for its approved use, limited otherwise.' },
+  status_us: { key: 'restricted', label: 'Approved drug; supplement sales tolerated by FDA', note: 'Approved since 1963.' },
+};
+
+Deno.test('NAC is a special case at FDA, not on its safety-risk list, and not unapproved', () => {
+  assertEquals([...BLOCKED], ['category2']);
+  assert(!UNAPPROVED.has('restricted'));
+  assertEquals(tagFor(NAC, SHEET_NAC), { tag: 'Restricted', tone: 'warn' });
+  assertEquals(cautionFor(NAC, SHEET_NAC, false), 'Its FDA status is a special case: approved drug; supplement sales tolerated by FDA.');
+  // Without a fact sheet, the index's label; without either, the fact sheet is the place to look
+  assertEquals(cautionFor(NAC, null, false), 'Its FDA status is a special case: approved drug; supplement sales tolerated by FDA.');
+  assertEquals(cautionFor({ ...NAC, status_label: undefined }, null, false), 'Its FDA status is a special case: see its fact sheet.');
+  assertEquals(proven('restricted'), proven('supplement'));
+  const byId = new Map([['nac', NAC]]);
+  assert(!blockedItem(NAC, byId));
+  const blend = { ...NAC, id: 'mix', name: 'A blend with NAC', family: 'Blends', parts: ['nac'], status: 'supplement' } as Item;
+  byId.set('mix', blend);
+  assert(!blockedItem(blend, byId));
+  assertEquals(tagFor(blend, null, byId).tag, 'Supplement');
+  // FDA's safety-risk list itself is unchanged
+  assertEquals(tagFor(ITEMS.find((i) => i.id === 'mk677')!, null), { tag: 'On FDA’s safety-risk list', tone: 'warn' });
+});
+
+Deno.test('NAC can be on a shortlist with its own status, and stays off a pregnant member\'s', async () => {
+  const withNac = (f: typeof fetch) => ((url: string | URL, init?: RequestInit) => {
+    const u = String(url);
+    if (u.endsWith('/index.json')) return Promise.resolve(new Response(JSON.stringify({ items: [...ITEMS, NAC] })));
+    if (u.endsWith('/entries/nac.json')) return Promise.resolve(new Response(JSON.stringify(SHEET_NAC)));
+    return f(url, init);
+  }) as unknown as typeof fetch;
+  const run = async (screen: unknown) => {
+    const { f } = fakeWorld({ screen, rounds: [
+      { text: WORDS, tool: { name: 'present_shortlist', input: { title: 'Options', items: [{ id: 'nac', role: 'Antioxidant', why: 'Studied as an antioxidant' }, { id: 'creatine', role: 'Supports training', why: 'Strong evidence' }] } } },
+      { text: 'Done.' },
+    ] });
+    return events(await handle(ask([{ role: 'user', content: 'What helps recovery?' }]), deps(withNac(f))));
+  };
+  const ev = await run(NONE);
+  const short = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data;
+  const nac = short.items.find((i: { id: string }) => i.id === 'nac');
+  assertEquals([nac.tag, nac.role, nac.status.label], ['Restricted', 'Antioxidant', 'Approved drug; supplement sales tolerated by FDA']);
+  assert(!/safety-risk|removed by the Safety agent|research-stage/i.test(JSON.stringify(ev)));
+  const pregnant = await run({ ...NONE, pregnant: true });
+  const kept = pregnant.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data.items.map((i: { id: string }) => i.id);
+  assertEquals(kept, ['creatine']);
 });
 
 Deno.test('ask or answer, not both: no card of questions after a full answer', async () => {
