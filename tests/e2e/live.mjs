@@ -130,8 +130,14 @@ try {
   const peek = page.locator('.sc-peek');
   check('Phone: the peek bar shows', await peek.isVisible().catch(() => false));
   await peek.click();
-  await page.waitForTimeout(1000);
-  check('Phone: the screen opens as a sheet, with the evidence', await page.locator('#ai-screen').isVisible() && await page.locator('.sc-evtab').count() > 0);
+  await page.waitForTimeout(1200);
+  const opened = await page.locator('#ai-screen').isVisible();
+  const sheet = await page.evaluate(() => ({
+    tabs: [...document.querySelectorAll('#ai-screen .sc-file')].map((t) => t.textContent.trim()),
+    head: (document.querySelector('#ai-screen .sc-headline')?.textContent || '').trim().slice(0, 90),
+  }));
+  check('Phone: the screen opens as a sheet, with the evidence', opened && sheet.tabs.some((t) => /^evidence/.test(t)),
+    `${opened ? 'open' : 'not open'}; tabs: ${sheet.tabs.join(', ') || 'none'}; "${sheet.head}"`);
   await shot(page, 'phone_screen', null);
   check('Phone: no errors in the page', !errors.length, errors.slice(0, 3).join(' / '));
   await ctx.close();
