@@ -65,8 +65,10 @@ async function shot(page, name, target) {
   const path = `${OUT}live_${name}.png`;
   await (target ? page.locator(target).screenshot({ path }) : page.screenshot({ path }));
   if (process.env.SHOTS_IN_LOG) {
-    const small = await (target ? page.locator(target).screenshot({ type: 'jpeg', quality: 50 }) : page.screenshot({ type: 'jpeg', quality: 50 }));
-    console.log(`SHOT live_${name} ${small.toString('base64')}`);
+    // In short lines: GitHub leaves very long lines out of the log
+    const small = (await (target ? page.locator(target).screenshot({ type: 'jpeg', quality: 45 }) : page.screenshot({ type: 'jpeg', quality: 45 }))).toString('base64');
+    const n = Math.ceil(small.length / 4000);
+    for (let i = 0; i < n; i++) console.log(`SHOT live_${name} ${i + 1}/${n} ${small.slice(i * 4000, (i + 1) * 4000)}`);
   }
 }
 
