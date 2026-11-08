@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p web/kit
 cp shared/kit/kit.js shared/kit/kit.css web/kit/
-cp shared/kit/signalviz.js web/lib/signalviz.js
+cp shared/kit/signalviz.js web/kit/signalviz.js
 site="${1:-}"
 if [ -n "$site" ]; then
   mkdir -p "$site/kit"

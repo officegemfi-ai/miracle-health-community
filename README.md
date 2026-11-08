@@ -16,7 +16,7 @@ tools: how first-hand reports split, with a 95% interval for "better", the side 
 mention and where it sits on the takeover line. Each Signal is also rated by use (joint pain,
 injury healing, sleep...): Sig reads what each report was for (the list is
 `shared/uses.json`), and a use gets its own rating from members' reports once three name it, next
-to how often the public forums mention it. `web/lib/signalviz.js` draws these as plain SVG,
+to how often the public forums mention it. `web/kit/signalviz.js` draws these as plain SVG,
 so the public library on miraclehealth.us can use the same drawings.
 
 ## What's where
@@ -48,7 +48,11 @@ so the public library on miraclehealth.us can use the same drawings.
   `tests/scripts/` (CI runs them)
 - `scripts/build_public_reports.mjs`, `site/r.css`: the pages at community.miraclehealth.us/r/ for reports
   their authors chose to let anyone read, rebuilt every hour by the Pages workflow
-- `web/`: the app (plain HTML, CSS and JavaScript modules in `web/lib/`; no build step)
+- `web/`: the app (plain HTML, CSS and JavaScript modules; no build step), in four layers: `core/` (the
+  rules, pure functions), `data/` (the only code that reaches Supabase, the network and storage), `app/`
+  (the store and the use cases that fill it) and `ui/` (the frame, components, pages and the router);
+  `docs/web-architecture.md` explains them, `scripts/check_layers.mjs` checks them and `tests/web/`
+  tests the rules
 - `shared/rules.json`, `shared/uses.json`: the community rules and the list of uses, copied to the app and
   the AI reviewer by `scripts/sync_rules.sh`
 - `shared/kit/`: Miracle Health's design kit, the pieces the app and the website (miraclehealth.us) share
@@ -56,7 +60,7 @@ so the public library on miraclehealth.us can use the same drawings.
   Community, My Miracle), the evidence meter, the Community Signal number, compound tiles and chips, Sig,
   the Signal drawings (`signalviz.js`) and the links between places (a question for Sig, a check-in
   from a member's Miracle Plan drafted as a post). `scripts/sync_kit.sh [path/to/miraclehealth-site]`
-  copies it to `web/kit`, `web/lib/signalviz.js` and the website; CI checks every copy matches
+  copies it to `web/kit` and the website; CI checks every copy matches
   (`scripts/check_kit_sync.sh`), the website's on its main branch included
 - `shared/signal_baseline.json`: the Community Signal's public-forum starting point, loaded by a migration
   that `scripts/build_signal_baseline_sql.mjs` generates (CI checks they match)
