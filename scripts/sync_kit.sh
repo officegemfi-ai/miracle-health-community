@@ -5,12 +5,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p web/kit
-cp shared/kit/kit.js shared/kit/kit.css web/kit/
+cp shared/kit/kit.js shared/kit/kit.css shared/kit/bodymap.js web/kit/
 cp shared/kit/signalviz.js web/kit/signalviz.js
 site="${1:-}"
 if [ -n "$site" ]; then
   mkdir -p "$site/kit"
-  cp shared/kit/kit.js shared/kit/kit.css "$site/kit/"
+  cp shared/kit/kit.js shared/kit/kit.css shared/kit/bodymap.js "$site/kit/"
   cp shared/kit/signalviz.js "$site/library/signalviz.js"
   echo "kit copied to the app and to $site"
 else

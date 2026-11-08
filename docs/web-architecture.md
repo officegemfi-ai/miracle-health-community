@@ -74,11 +74,11 @@ web/
 │   ├── rail.js           which cards go beside which page
 │   ├── router.js  current.js  next.js  tips.js  enter.js  live.js
 │   ├── components/       pieces used on several pages: post, signal, moves, game, notifications,
-│   │                     checks, feed, spaces, picker, report
+│   │                     checks, feed, spaces, picker, report, bodymap (the kit's body map on a space)
 │   └── pages/            one module per page: home, space, explore, new-post, stack, post, signal,
 │                         profile, builders, quests, notifications, onboarding, moderation, info,
 │                         account, auth, gate
-└── kit/                  kit.js, kit.css, signalviz.js (copies of shared/kit)
+└── kit/                  kit.js, kit.css, signalviz.js, bodymap.js (copies of shared/kit)
 ```
 
 ## Adding something

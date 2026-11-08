@@ -58,8 +58,10 @@ so the public library on miraclehealth.us can use the same drawings.
 - `shared/kit/`: Miracle Health's design kit, the pieces the app and the website (miraclehealth.us) share
   so they look like one product and can't drift apart: the bar of the four places (Library, Ask Sig,
   Community, My Miracle), the evidence meter, the Community Signal number, compound tiles and chips, Sig,
-  the Signal drawings (`signalviz.js`) and the links between places (a question for Sig, a check-in
-  from a member's Miracle Plan drafted as a post). `scripts/sync_kit.sh [path/to/miraclehealth-site]`
+  the Signal drawings (`signalviz.js`), the body map (`bodymap.js`: how a compound works in the body,
+  place by place, from its fact sheet; one compound as a list, two to six as a table with where they
+  meet, with loading and error states; on every Library fact sheet and on the app's spaces) and the
+  links between places (a question for Sig, a check-in from a member's Miracle Plan drafted as a post). `scripts/sync_kit.sh [path/to/miraclehealth-site]`
   copies it to `web/kit` and the website; CI checks every copy matches
   (`scripts/check_kit_sync.sh`), the website's on its main branch included
 - `shared/signal_baseline.json`: the Community Signal's public-forum starting point, loaded by a migration

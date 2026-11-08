@@ -67,3 +67,70 @@ a.mh-chip:hover .mh-chip-name{text-decoration:underline;text-underline-offset:3p
 @media (prefers-reduced-motion:reduce){
   .sig *{animation:none!important}
 }
+
+/* The body map (bodymap.js): how a compound works in the body, place by place. Its colors come
+   from the text around it, so it reads on light and dark pages alike (set the --mh-bm-* properties
+   to change them), and it lays itself out by its own width (a container query), not the window's */
+.mh-bm{position:relative;container:mh-bm/inline-size;
+  --mh-bm-rule:color-mix(in srgb,currentColor 14%,transparent);
+  --mh-bm-soft:color-mix(in srgb,currentColor 68%,transparent);
+  --mh-bm-warn:color-mix(in srgb,#D9452B 72%,currentColor);
+  --mh-bm-watch:color-mix(in srgb,#C98A0B 70%,currentColor);
+  --mh-bm-meet:color-mix(in srgb,var(--mh-lime) 18%,transparent);
+  --mh-bm-lit:color-mix(in srgb,var(--mh-lime) 42%,transparent);
+  font:15px/1.5 var(--mh-body);overflow-wrap:break-word}
+.mh-bm-lead{margin:0 0 14px;font-weight:600}
+.mh-bm-route{display:inline-block;margin-left:6px;padding:1px 8px;border:1px solid var(--mh-bm-rule);border-radius:999px;font:500 12px/1.6 var(--mh-body);color:var(--mh-bm-soft);white-space:nowrap}
+.mh-bm-list{margin:0}
+.mh-bm-row{display:grid;gap:6px;padding:12px 0;border-top:1px solid var(--mh-bm-rule)}
+.mh-bm-row dt{font:600 12px/1.5 var(--mh-mono);color:var(--mh-bm-soft)}
+.mh-bm-row dd{margin:0}
+@container mh-bm (min-width:34rem){.mh-bm-row{grid-template-columns:10rem 1fr;gap:18px}.mh-bm-row dt{padding-top:2px}}
+.mh-bm-list ul,.mh-bm-table ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.mh-bm-ln{display:grid;grid-template-columns:1.1em 1fr;gap:8px;align-items:baseline;margin:0 -6px;padding:2px 6px;border-radius:6px}
+.mh-bm-op{font:600 12px/1 var(--mh-mono);color:var(--mh-bm-soft);text-align:center}
+.mh-bm-ln.op-warn .mh-bm-op,.mh-bm-key .op-warn .mh-bm-op{color:var(--mh-bm-warn)}
+.mh-bm-ln.op-watch .mh-bm-op,.mh-bm-key .op-watch .mh-bm-op{color:var(--mh-bm-watch)}
+.mh-bm-refs{white-space:nowrap}
+.mh-bm-src{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;margin-right:2px;padding:0 4px;border-radius:6px;background:var(--mh-bm-rule);color:inherit;font:600 11px/1 var(--mh-mono);text-decoration:none;vertical-align:middle}
+.mh-bm-src:hover{text-decoration:underline}
+.mh-bm-mks{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
+.mh-bm-mk{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 8px;border:1px solid var(--mh-bm-rule);border-radius:999px;background:none;color:inherit;font:500 12px/1 var(--mh-body)}
+button.mh-bm-mk{cursor:pointer}
+button.mh-bm-mk:hover{border-color:currentColor}
+button.mh-bm-mk[aria-pressed="true"]{border-color:currentColor;background:var(--mh-bm-lit);font-weight:600}
+.mh-bm-dir{font-size:10px}
+.mh-bm-mk.d-watch .mh-bm-dir{color:var(--mh-bm-watch)}
+.mh-bm-ln.lit{background:var(--mh-bm-lit);box-shadow:inset 3px 0 0 currentColor}
+/* Its own positioning context, so the words only screen readers hear can't stick out past it */
+.mh-bm-scroll{position:relative;overflow-x:auto;border-radius:8px}
+/* Fixed columns: the place, then one equal column per compound, drawn or not */
+.mh-bm-table{width:100%;min-width:calc(8rem + var(--n,2) * 13rem);border-collapse:collapse;table-layout:fixed}
+.mh-bm-table thead td{width:8rem}
+.mh-bm-table th,.mh-bm-table td{padding:12px;text-align:left;vertical-align:top;border-top:1px solid var(--mh-bm-rule)}
+.mh-bm-table thead th,.mh-bm-table thead td{border-top:0}
+.mh-bm-table thead th{font-weight:600}
+.mh-bm-table tbody th{font:600 12px/1.5 var(--mh-mono);color:var(--mh-bm-soft)}
+.mh-bm-table tr.meet{background:var(--mh-bm-meet)}
+.mh-bm-table tr.meet th{color:inherit}
+.mh-bm-name{display:block}
+.mh-bm-table .mh-bm-route{margin:4px 0 0}
+.mh-bm-note{display:block;margin-top:4px;font:500 12px/1.4 var(--mh-body);color:var(--mh-bm-soft)}
+.mh-bm-meet{display:block;margin-top:4px;font:600 11px/1.3 var(--mh-body)}
+.mh-bm-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:14px 0 0;padding:0;list-style:none;font:500 12px/1.4 var(--mh-body);color:var(--mh-bm-soft)}
+.mh-bm-key li{display:inline-flex;align-items:center;gap:6px}
+.mh-bm-msg{margin:0;color:var(--mh-bm-soft)}
+.mh-bm-retry{margin-top:12px;min-height:36px;padding:0 16px;border:1px solid currentColor;border-radius:999px;background:none;color:inherit;font:600 14px/1 var(--mh-body);cursor:pointer}
+.mh-bm-foot{margin:12px 0 0;font-size:12px;color:var(--mh-bm-soft)}
+.mh-bm-skel{display:grid;gap:14px}
+.mh-bm-skel span{display:grid;grid-template-columns:7rem 1fr;gap:16px}
+.mh-bm-skel i{display:block;height:12px;border-radius:6px;background:var(--mh-bm-rule)}
+.mh-bm-skel span:nth-child(2n) i:last-child{width:72%}
+.mh-bm :focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.mh-bm-scroll:focus-visible{outline-offset:4px}
+@media (prefers-reduced-motion:no-preference){
+  .mh-bm-skel i{animation:mh-bm-pulse 1.4s ease-in-out .4s infinite}
+  .mh-bm-ln{transition:background-color .15s}
+}
+@keyframes mh-bm-pulse{50%{opacity:.4}}
+@media (forced-colors:active){.mh-bm-ln.lit{outline:2px solid CanvasText}button.mh-bm-mk[aria-pressed="true"]{outline:2px solid CanvasText}}
