@@ -10,6 +10,7 @@ import { S, spaceOf, signalOf } from '../../app/store.js';
 import { render } from '../shell.js';
 import { fillRail } from '../rail.js';
 import { signalCard } from '../components/signal.js';
+import { bodyCard } from '../components/bodymap.js';
 import { sortbar, fillFeed, composerBar, newPostsPill } from '../components/feed.js';
 import { joinButton, partChips, askAbout, evidenceTag, LIBRARY } from '../components/spaces.js';
 import { askLink } from '../../kit/kit.js';
@@ -52,6 +53,7 @@ export async function renderSpace(cid, sort = 'hot', only = 'all') {
       spaceLinks(sp)),
     stack ? h('p', { class: 'msg note' }, 'This stack’s Signal comes only from reports of exactly this stack. Each compound’s own number counts only reports of it alone.') : null,
     signalCard(cid),
+    bodyCard(sp, { single }),
     x && x.themes && x.themes.length ? h('div', { class: 'post-chips mt12' }, h('span', { class: 'kick' }, 'What people mention'), x.themes.map((t) => h('span', { class: 'chip' }, `${t.theme} · ${t.label}`))) : null,
     inStacks.length ? h('div', { class: 'post-chips mt12' }, h('span', { class: 'kick' }, 'Also in'),
       inStacks.slice(0, 6).map((st) => h('a', { class: 'chip part', href: `#/s/${encodeURIComponent(st.compound_id)}` }, spaceTile(st, 16), st.name)),

@@ -21,7 +21,7 @@ const fs = require('fs'); const path = require('path'); const crypto = require('
 const out = process.argv[2];
 const walk = (d) => fs.readdirSync(path.join(out, d), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))
   .flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : e.name.endsWith('.js') ? [`${d}/${e.name}`] : []));
-const mods = ['app.js', ...['core', 'data', 'app', 'ui'].flatMap(walk), 'kit/kit.js', 'kit/signalviz.js'];
+const mods = ['app.js', ...['core', 'data', 'app', 'ui'].flatMap(walk), 'kit/kit.js', 'kit/signalviz.js', 'kit/bodymap.js'];
 const v = crypto.createHash('sha256').update(['styles.css', 'kit/kit.css', 'config.js', ...mods].map((f) => fs.readFileSync(path.join(out, f))).join('\n')).digest('hex').slice(0, 10);
 const edit = (f, fn) => { const p = path.join(out, f); fs.writeFileSync(p, fn(fs.readFileSync(p, 'utf8'))); };
 edit('index.html', (s) => s.replace('href="kit/kit.css"', `href="kit/kit.css?v=${v}"`).replace('href="styles.css"', `href="styles.css?v=${v}"`).replace('src="config.js"', `src="config.js?v=${v}"`).replace('src="app.js"', `src="app.js?v=${v}"`));

@@ -828,3 +828,6 @@ label.f.nm{margin:0}
 .use .num .rng{font:500 11px var(--mono);color:rgba(252,252,252,.5);margin-left:2px}
 .chip.fx.warn{text-transform:none;letter-spacing:0;font:500 12px var(--body);height:auto;min-height:24px;padding:3px 9px;white-space:normal;background:rgba(255,154,142,.14);border-color:rgba(255,154,142,.4);color:#FFD2CC}
 .tool.watch a{color:var(--on-ink);font-weight:600}
+
+/* How it works in the body: the kit's body map, on a space (ui/components/bodymap.js) */
+.body-card h2.kick{margin:0 0 12px}

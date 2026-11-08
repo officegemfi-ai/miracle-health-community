@@ -33,10 +33,37 @@ const total = async (handle) => Number((await db.query(
 const shown = async (handle) => Number((await db.query(
   `select s.total from public.member_scores s join public.profiles pr on pr.id = s.user_id where pr.handle = $1`, [handle])).rows[0]?.total ?? -1);
 
+// The body map's files come from the website's Library: served here from a small sample, so the
+// test doesn't depend on the live site, and a compound's file can be made to fail once
+const BODY_FILES = {
+  'index.json': {
+    updated: '2026-11-07',
+    places: [{ at: 'skin', say: 'the skin' }, { at: 'immune system', say: 'the immune system' }, { at: 'blood', say: 'the blood' }, { at: 'tendons', say: 'the tendons' }],
+    markers: { cbc: { name: 'Complete blood count', what: 'Red cells, white cells and platelets.' }, liver: { name: 'Liver tests', what: 'ALT and AST.' } },
+    drawn: { bpc157: 'e2e', ghkcu: 'e2e', tb500: 'e2e', kpv: 'e2e' },
+  },
+  'bpc157.json': { route: 'injection', lines: [{ at: 'tendons', op: 'is', say: 'tendon healing (rat studies)', src: [1] }, { at: 'blood', op: 'watch', say: 'liver enzymes rose (animal studies)', markers: ['liver'], src: [1] }], dirs: { liver: 'watch' } },
+  'ghkcu.json': { route: 'on the skin', lines: [{ at: 'skin', op: 'up', say: 'collagen rose in small skin studies', src: [1] }] },
+  'tb500.json': { route: 'injection', lines: [{ at: 'tendons', op: 'is', say: 'tissue repair (animal studies)', src: [1] }, { at: 'blood', op: 'watch', say: 'blood count checked', markers: ['cbc'], src: [1] }], dirs: { cbc: 'watch' } },
+  'kpv.json': { lines: [{ at: 'immune system', op: 'down', say: 'inflammation fell in mouse colitis', src: [1] }] },
+};
+const failOnce = new Set();
+async function bodyFiles(route) {
+  const name = new URL(route.request().url()).pathname.split('/').pop();
+  if (failOnce.delete(name.replace(/\.json$/, ''))) return route.fulfill({ status: 503, body: '' });
+  const json = BODY_FILES[name];
+  return route.fulfill(json
+    ? { status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(json) }
+    : { status: 404, headers: { 'access-control-allow-origin': '*' }, body: '' });
+}
+
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const errors = [];
 async function person(viewport = { width: 1280, height: 900 }) {
   const ctx = await browser.newContext({ viewport });
+  await ctx.route('https://miraclehealth.us/library/data/body/**', bodyFiles);
+  // Whatever the app's own security policy refuses, for the checks that care
+  await ctx.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) => { (window.__csp ||= []).push(`${e.violatedDirective} ${e.blockedURI || ''}`.trim()); }));
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('dialog', (d) => d.accept());
@@ -353,6 +380,34 @@ check('A space rates the compound by use: joint pain shows its first report and 
 check('A space shows its Signal’s measuring tools: the level, how first-hand reports went with a 95% interval, and the takeover line',
   /Forum data/.test(tools) && /How 1 first-hand report went/.test(tools) && /95% CI \d+–\d+%/.test(tools)
   && await B.isVisible('.sigcard .split') && await B.isVisible('.sigcard .viz-compact .takeover .tk-you'), tools.slice(0, 160));
+
+// How a blend's parts work in the body, side by side, under the app's own security policy
+await B.goto(`${BASE}#/s/glow`);
+await B.waitForSelector('.body-card [data-mh-bm][data-state="ready"]');
+const bm = await B.evaluate(() => {
+  const t = document.querySelector('.body-card .mh-bm-table');
+  return { cols: t ? t.querySelectorAll('thead th[scope="col"]').length : 0, minWidth: t ? getComputedStyle(t).minWidth : '',
+    meet: document.querySelectorAll('.body-card tr.meet').length, refused: (window.__csp || []).filter((v) => v.startsWith('style-src')) };
+});
+check('A blend’s space lines up how its parts work in the body, where they meet marked, with nothing the security policy refuses',
+  bm.cols === 3 && bm.minWidth === '752px' && bm.meet >= 1 && !bm.refused.length, JSON.stringify(bm));
+await B.click('.body-card button.mh-bm-mk');
+const litNow = await B.evaluate(() => ({ pressed: document.querySelectorAll('.body-card button.mh-bm-mk[aria-pressed="true"]').length,
+  lit: document.querySelectorAll('.body-card .mh-bm-ln.lit').length, said: document.querySelector('.body-card [data-mh-bm-say]')?.textContent || '' }));
+await B.keyboard.press('Escape');
+const litAfter = await B.evaluate(() => document.querySelectorAll('.body-card .mh-bm-ln.lit, .body-card [aria-pressed="true"]').length);
+check('A blood marker’s chip lights the lines naming it and says so; Escape clears it',
+  litNow.pressed === 1 && litNow.lit >= 1 && / lit$/.test(litNow.said) && litAfter === 0, JSON.stringify(litNow));
+// A part whose lines can't be loaded: said so, with Try again, which keeps the keyboard in the map
+failOnce.add('kpv');
+await B.goto(`${BASE}#/s/klow`);
+await B.waitForSelector('.body-card [data-mh-bm-retry]');
+const lostLead = (await B.textContent('.body-card .mh-bm-lead')) || '';
+await B.focus('.body-card [data-mh-bm-retry]');
+await B.keyboard.press('Enter');
+await B.waitForFunction(() => document.querySelectorAll('.body-card thead th[scope="col"]').length === 4 && !document.querySelector('.body-card [data-mh-bm-retry]'));
+check('A part that couldn’t be loaded says so and offers Try again, which brings it in and keeps the keyboard in the map',
+  /couldn’t be loaded just now/.test(lostLead) && await B.evaluate(() => !!document.activeElement?.closest('.body-card')), lostLead);
 
 await B.goto(`${BASE}#/signal`);
 await B.waitForSelector('.sig-row');
