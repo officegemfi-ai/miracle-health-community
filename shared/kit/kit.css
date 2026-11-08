@@ -106,6 +106,7 @@ button.mh-bm-mk[aria-pressed="true"]{border-color:currentColor;background:var(--
 .mh-bm-scroll{position:relative;overflow-x:auto;border-radius:8px}
 /* Fixed columns: the place, then one equal column per compound, drawn or not */
 .mh-bm-table{width:100%;min-width:calc(8rem + var(--n,2) * 13rem);border-collapse:collapse;table-layout:fixed}
+.mh-bm-table[data-n="3"]{--n:3}.mh-bm-table[data-n="4"]{--n:4}.mh-bm-table[data-n="5"]{--n:5}.mh-bm-table[data-n="6"]{--n:6}
 .mh-bm-table thead td{width:8rem}
 .mh-bm-table th,.mh-bm-table td{padding:12px;text-align:left;vertical-align:top;border-top:1px solid var(--mh-bm-rule)}
 .mh-bm-table thead th,.mh-bm-table thead td{border-top:0}

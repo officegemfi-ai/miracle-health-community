@@ -70,9 +70,11 @@ test('two to six: a table, one column each, with where they meet marked in words
 
 test('not drawn yet, and couldn’t be loaded', () => {
   assert.match(one(null), /How Somatropin \(HGH\) works in the body isn’t drawn yet\./);
-  assert.match(bodyMapHtml({ items: [{ id: 'ss31', name: 'SS-31', failed: true }] }), /How SS-31 works in the body couldn’t be loaded\./);
+  assert.match(bodyMapHtml({ items: [{ id: 'ss31', name: 'SS-31', failed: true }] }), /How SS-31 works in the body couldn’t be loaded just now\.<\/p><p class="mh-sr"/);
   const html = bodyMapHtml({ items: [{ id: 'somatropin', name: 'HGH', entry: hgh }, { id: 'nad', name: 'NAD+' }, { id: 'ss31', name: 'SS-31', failed: true }], places, markers });
-  assert.match(html, /Where they meet isn’t drawn yet: NAD\+ and SS-31 are still to come\./);
+  assert.match(html, /Where they meet isn’t drawn yet: NAD\+ is still to come, and SS-31 couldn’t be loaded just now\./);
+  const lost = bodyMapHtml({ items: [{ id: 'somatropin', name: 'HGH', entry: hgh }, { id: 'ss31', name: 'SS-31', failed: true }], places, markers });
+  assert.match(lost, /Where they meet can’t be shown yet: SS-31 couldn’t be loaded just now\./);
   assert.match(html, /<span class="mh-bm-note">not drawn yet<\/span>/);
   assert.match(html, /<span class="mh-bm-note">couldn’t be loaded<\/span>/);
 });
@@ -99,6 +101,28 @@ test('the compounds asked for are cleaned: known ids, each once, at most six', (
   assert.equal((html.match(/<th scope="col">/g) || []).length, BODY_MAX);
   assert.doesNotMatch(html, /again/);
   assert.match(bodyMapHtml({ items: [{ id: 'x', entry: hgh }], places, markers, id: 'my map<' }), /id="mymap"/);
+});
+
+test('a part that couldn’t be loaded offers Try again, when asked to, in the map itself', () => {
+  const items = [{ id: 'somatropin', name: 'HGH', entry: hgh }, { id: 'ss31', name: 'SS-31', failed: true }];
+  assert.doesNotMatch(bodyMapHtml({ items, places, markers }), /data-mh-bm-retry/);
+  assert.match(bodyMapHtml({ items, places, markers, retry: true }), /couldn’t be loaded just now\.<\/p><button type="button" class="mh-bm-retry" data-mh-bm-retry>Try again<\/button>\n<div class="mh-bm-scroll"/);
+  assert.match(bodyMapHtml({ items: [items[1]], retry: true }), /couldn’t be loaded just now\.<\/p><button type="button" class="mh-bm-retry" data-mh-bm-retry>Try again<\/button>/);
+  // Every part drawn: nothing to try again
+  assert.doesNotMatch(bodyMapHtml({ items: [items[0]], places, markers, retry: true }), /data-mh-bm-retry/);
+});
+
+test('no inline style anywhere: the table says how many columns it has, and the styles size it', () => {
+  const html = bodyMapHtml({ items: [{ id: 'a', name: 'A', entry: enclo }, { id: 'b', name: 'B', entry: hgh }, { id: 'c', name: 'C', entry: hgh }], places, markers });
+  assert.doesNotMatch(html, /style=/);
+  assert.match(html, /<table class="mh-bm-table" data-n="3">/);
+});
+
+test('names every object has are no op or direction', () => {
+  const odd = { lines: [{ at: 'liver', op: 'toString', say: 'x', markers: ['igf1'], src: [1] }, { at: 'liver', op: 'constructor', say: 'y', src: [1] }], dirs: { igf1: 'constructor' } };
+  const html = one(odd);
+  assert.equal((html.match(/class="mh-bm-ln op-is"/g) || []).length, 2);
+  assert.match(html, /class="mh-bm-mk d-watch"/);
 });
 
 test('the key lists only the marks the map uses, and none for a single kind', () => {
@@ -130,6 +154,10 @@ test('the loader: the index and each compound once, by version; undrawn null; fa
   assert.deepEqual(a.places, places);
   await load(['somatropin']);
   assert.deepEqual(calls, ['/b/index.json', '/b/index.json', '/b/somatropin.json?v=v1', '/b/broken.json?v=v2']);
+  // A file that couldn't be read is asked for again next time
+  files['/b/broken.json?v=v2'] = hgh;
+  assert.equal((await load(['broken'])).entries.broken, hgh);
+  assert.equal(calls.filter((u) => u.startsWith('/b/broken.json')).length, 2);
   // An index without its list of drawn compounds is an error, not an empty map
   await assert.rejects(bodyLoader(async () => ({}), '/c')(['x']), /unavailable/);
 });
