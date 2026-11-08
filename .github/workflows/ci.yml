@@ -29,6 +29,14 @@ jobs:
           set -o pipefail
           scripts/check_kit_sync.sh 2>&1 | tee "$RUNNER_TEMP/kit.log" \
             || { scripts/ci_annotate.sh "Design kit copies" "$RUNNER_TEMP/kit.log"; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The app's rules and layers (tests/web, docs/web-architecture.md)
+        run: |
+          set -o pipefail
+          { node --test tests/web/*.test.mjs && node scripts/check_layers.mjs; } 2>&1 | tee "$RUNNER_TEMP/web.log" \
+            || { scripts/ci_annotate.sh "App rules and layers" "$RUNNER_TEMP/web.log"; exit 1; }
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.5.6

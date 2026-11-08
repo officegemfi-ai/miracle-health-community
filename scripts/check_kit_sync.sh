@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# The design kit (shared/kit) and its copies must match: the community app's (web/kit and
-# web/lib/signalviz.js) and the website's (kit/ and library/signalviz.js in
+# The design kit (shared/kit) and its copies must match: the community app's (web/kit, with
+# signalviz.js) and the website's (kit/ and library/signalviz.js in
 # officegemfi-ai/miraclehealth-site, as published on its main branch). So the two can't drift.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -8,7 +8,7 @@ status=0
 same() { cmp -s "$1" "$2" || { echo "$2 differs from $1: run scripts/sync_kit.sh"; status=1; }; }
 same shared/kit/kit.js web/kit/kit.js
 same shared/kit/kit.css web/kit/kit.css
-same shared/kit/signalviz.js web/lib/signalviz.js
+same shared/kit/signalviz.js web/kit/signalviz.js
 # The app's top bar is written into web/index.html (so it's there before any script runs): it
 # must be exactly what the kit draws
 node --input-type=module -e "
