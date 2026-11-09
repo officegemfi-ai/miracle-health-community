@@ -1,6 +1,6 @@
 {
  "note": "The Library watch's open review list (scripts/library_watch.py in miracle-health-community), kept from run to run. items: studies still to review. done: reviewed and left out (ticked in the review issue), never listed again. not_relevant: read and found not to report a marker for that compound, so not read again (a full pass reads everything again).",
- "updated": "2026-11-07",
+ "updated": "2026-11-09",
  "items": [
   {
    "id": "afamelanotide",
@@ -604,6 +604,28 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "ashwagandha",
+   "name": "Ashwagandha",
+   "via": "",
+   "pmid": "42858054",
+   "title": "Efficacy and Safety of Saffron and Ashwagandha for Stress-Related Mental Health Outcomes: A Systematic Review of Randomized Controlled Trials.",
+   "journal": "J Vis Exp",
+   "year": "2026",
+   "doi": "10.3791/73092",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "cortisol",
+     "direction": "down",
+     "who": "people with stress or anxiety in ashwagandha RCTs (pooled)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "b12",
    "name": "Vitamin B12",
    "via": "",
@@ -675,6 +697,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "b12",
+   "name": "Vitamin B12",
+   "via": "",
+   "pmid": "42947737",
+   "title": "Masked Triple-Negative Polycythemia Vera Initially Presenting as Iron Deficiency and Pernicious Anemia.",
+   "journal": "Cureus",
+   "year": "2026",
+   "doi": "10.7759/cureus.116982",
+   "pmc": "PMC13710139",
+   "effects": [
+    {
+     "marker": "hematocrit",
+     "direction": "up",
+     "who": "68-year-old woman with pernicious anemia and iron deficiency after B12 and iron repletion",
+     "design": "case report",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "berberine",
@@ -923,6 +967,100 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "berberine",
+   "name": "Berberine",
+   "via": "",
+   "pmid": "42794540",
+   "title": "Coptidis Rhizoma for Obesity, Diabetes, and Dyslipidemia: An Integrated Meta-Analysis and In Silico Study.",
+   "journal": "Int J Mol Sci",
+   "year": "2026",
+   "doi": "10.3390/ijms27188109",
+   "pmc": "PMC13606907",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "people with obesity, diabetes, or dyslipidemia in 19 RCTs (n=1718)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "people with obesity, diabetes, or dyslipidemia in 19 RCTs (n=1718)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "berberine",
+   "name": "Berberine",
+   "via": "",
+   "pmid": "42941281",
+   "title": "Comparative Effects of Myo-Inositol, Metformin, Berberine, and Combination Therapy on Metabolic, Anthropometric and Hormonal Parameters in Women with Polycystic Ovary Syndrome: A 6-Month Observational Cohort Study.",
+   "journal": "J Clin Med",
+   "year": "2026",
+   "doi": "10.3390/jcm15207765",
+   "pmc": "PMC13705287",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "28 women with PCOS treated with berberine",
+     "design": "retrospective observational cohort study",
+     "gap": false
+    },
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "women with PCOS treated with berberine",
+     "design": "retrospective observational cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "28 women with PCOS treated with berberine (total cholesterol and triglycerides)",
+     "design": "retrospective observational cohort study",
+     "gap": false
+    },
+    {
+     "marker": "testosterone",
+     "direction": "down",
+     "who": "women with PCOS treated with berberine (androstenedione reduced)",
+     "design": "retrospective observational cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "berberine",
+   "name": "Berberine",
+   "via": "",
+   "pmid": "42978728",
+   "title": "Berberine improves lipid levels, vascular function, and gut microbial-dependent metabolites in stable coronary artery disease patients.",
+   "journal": "Front Nutr",
+   "year": "2026",
+   "doi": "10.3389/fnut.2026.1945710",
+   "pmc": "PMC13727732",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "23 stable CAD patients after PCI, 12-week berberine treatment",
+     "design": "parallel-controlled clinical trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "bpc157",
    "name": "BPC-157",
    "via": "",
@@ -1008,6 +1146,152 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "cabergoline",
+   "name": "Cabergoline",
+   "via": "",
+   "pmid": "42786758",
+   "title": "Prolactinomas in the transition from adolescence to young adulthood: A multicentre, retrospective study from the TALENT group.",
+   "journal": "J Neuroendocrinol",
+   "year": "2026",
+   "doi": "10.1111/jne.70275",
+   "pmc": "PMC13613006",
+   "effects": [
+    {
+     "marker": "prolactin",
+     "direction": "down",
+     "who": "110 patients with prolactinomas aged 15-25 treated with cabergoline",
+     "design": "multicentre retrospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "cabergoline",
+   "name": "Cabergoline",
+   "via": "",
+   "pmid": "42814380",
+   "title": "Predictors of prolonged hypogonadism in men with prolactinomas despite biochemical remission: the role of baseline luteinizing hormone.",
+   "journal": "J Endocrinol Invest",
+   "year": "2026",
+   "doi": "10.1007/s40618-026-03043-7",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "prolactin",
+     "direction": "down",
+     "who": "men with prolactinomas treated with cabergoline achieving normoprolactinemia",
+     "design": "retrospective cohort study",
+     "gap": false
+    },
+    {
+     "marker": "gonadotropins",
+     "direction": "up",
+     "who": "men with prolactinomas on cabergoline, LH rose over first 12 months",
+     "design": "retrospective cohort study",
+     "gap": true
+    },
+    {
+     "marker": "testosterone",
+     "direction": "up",
+     "who": "men with prolactinomas on cabergoline, testosterone rose over first 12 months but recovery incomplete in prolonged hypog",
+     "design": "retrospective cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "cabergoline",
+   "name": "Cabergoline",
+   "via": "",
+   "pmid": "42816952",
+   "title": "Nadir Prolactin-guided Individualized Cabergoline Therapy Achieves Durable Remission and Safe Pregnancy in Prolactinomas.",
+   "journal": "J Clin Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.1210/clinem/dgag406",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "prolactin",
+     "direction": "down",
+     "who": "310 women with prolactinomas treated with individualized cabergoline",
+     "design": "prospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "cabergoline",
+   "name": "Cabergoline",
+   "via": "",
+   "pmid": "42878120",
+   "title": "Pediatric prolactinoma-associated pituitary apoplexy presenting with acute visual loss: a case report, literature review, and management strategy.",
+   "journal": "J Pediatr Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.1515/jpem-2026-0379",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "prolactin",
+     "direction": "down",
+     "who": "one 11-year-old girl with prolactinoma-associated pituitary apoplexy",
+     "design": "case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "cabergoline",
+   "name": "Cabergoline",
+   "via": "",
+   "pmid": "42935153",
+   "title": "Baseline Predictors of Incomplete Biochemical and Radiological Outcomes During Cabergoline Treatment of Prolactinomas: A Retrospective Cohort From a Tertiary Referral Center.",
+   "journal": "Clin Endocrinol (Oxf)",
+   "year": "2026",
+   "doi": "10.1111/cen.70223",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "prolactin",
+     "direction": "down",
+     "who": "226 adults with prolactinomas treated with cabergoline",
+     "design": "retrospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "cabergoline",
+   "name": "Cabergoline",
+   "via": "",
+   "pmid": "42996583",
+   "title": "Dose-related depressive symptoms and suicidal ideation during cabergoline therapy in an adolescent with macroprolactinoma.",
+   "journal": "JCEM Case Rep",
+   "year": "2026",
+   "doi": "10.1210/jcemcr/luag351",
+   "pmc": "PMC13740507",
+   "effects": [
+    {
+     "marker": "prolactin",
+     "direction": "no change",
+     "who": "one adolescent girl with macroprolactinoma on cabergoline",
+     "design": "case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "cagrilintide",
@@ -1176,6 +1460,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "cagrilintide",
+   "name": "Cagrilintide",
+   "via": "",
+   "pmid": "42803913",
+   "title": "New Amylin-Based Agonists for the Treatment of Obesity and Type 2 Diabetes Mellitus.",
+   "journal": "Diabetes Ther",
+   "year": "2026",
+   "doi": "10.1007/s13300-026-01921-0",
+   "pmc": "PMC13728081",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "people with type 2 diabetes receiving CagriSema (cagrilintide-semaglutide)",
+     "design": "narrative review of phase 3a trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "cagrilintide",
@@ -1687,6 +1993,57 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "clomiphene",
+   "name": "Clomiphene",
+   "via": "",
+   "pmid": "42803080",
+   "title": "Longitudinal Ocular Surface Changes in Women with Polycystic Ovary Syndrome Receiving Hormonal or Ovulation-Induction Therapy: A Prospective Cohort Study.",
+   "journal": "Semin Ophthalmol",
+   "year": "2026",
+   "doi": "10.1080/08820538.2026.2740661",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "mixed",
+     "who": "60 women with PCOS receiving clomiphene citrate or hormone therapy",
+     "design": "prospective cohort study",
+     "gap": false
+    },
+    {
+     "marker": "testosterone",
+     "direction": "mixed",
+     "who": "60 women with PCOS receiving clomiphene citrate or hormone therapy",
+     "design": "prospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "clomiphene",
+   "name": "Clomiphene",
+   "via": "",
+   "pmid": "42978013",
+   "title": "Effects of progestin-primed ovarian stimulation protocol plus clomiphene citrate in patients with low basal LH levels: a randomized controlled trial.",
+   "journal": "Reprod Biol Endocrinol",
+   "year": "2026",
+   "doi": "10.1186/s12958-026-01601-5",
+   "pmc": "PMC13729595",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "up",
+     "who": "230 infertile patients with low basal LH levels receiving hMG+MPA+clomiphene",
+     "design": "randomized controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "collagen",
    "name": "Collagen peptides",
    "via": "",
@@ -1996,6 +2353,35 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "coq10",
+   "name": "CoQ10",
+   "via": "",
+   "pmid": "42806611",
+   "title": "Additive and Dose-Dependent Effects of Coenzyme Q10 Combined With Myoinositol on Insulin Resistance and Hyperandrogenism in Women With Polycystic Ovary Syndrome: A Retrospective Controlled Study.",
+   "journal": "J Obstet Gynaecol Res",
+   "year": "2026",
+   "doi": "10.1111/jog.70502",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "women with PCOS given myoinositol plus CoQ10 100 or 200 mg",
+     "design": "retrospective controlled study",
+     "gap": true
+    },
+    {
+     "marker": "testosterone",
+     "direction": "down",
+     "who": "women with PCOS given myoinositol plus CoQ10 100 or 200 mg",
+     "design": "retrospective controlled study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "creatine",
@@ -2547,6 +2933,49 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "curcumin",
+   "name": "Curcumin",
+   "via": "",
+   "pmid": "42892340",
+   "title": "Comparative effectiveness of turmeric and curcumin formulations on glycemic, lipid, and inflammatory markers in people with prediabetes: a systematic review and network meta-analysis.",
+   "journal": "Complement Ther Med",
+   "year": "2026",
+   "doi": "10.1016/j.ctim.2026.103453",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with prediabetes receiving turmeric/curcumin formulations vs placebo (network meta-analysis)",
+     "design": "systematic review and network meta-analysis",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "adults with prediabetes receiving whole turmeric with other compounds (LDL-C reduction)",
+     "design": "systematic review and network meta-analysis",
+     "gap": true
+    },
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with prediabetes receiving turmeric extract (HbA1c reduction, E formulation)",
+     "design": "systematic review and network meta-analysis",
+     "gap": true
+    },
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with prediabetes receiving turmeric extract with other compounds (HOMA-IR reduction)",
+     "design": "systematic review and network meta-analysis",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "dapagliflozin",
    "name": "Dapagliflozin",
    "via": "",
@@ -2955,6 +3384,252 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42787830",
+   "title": "Efficacy of Dapagliflozin vs. Saroglitazar on Hepatic Steatosis and Fibrosis in Patients of Type 2 Diabetes Mellitus and Metabolic-Associated Steatotic Liver Disease (MASLD).",
+   "journal": "Indian J Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.4103/ijem.ijem_848_25",
+   "pmc": "PMC13609917",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "mixed",
+     "who": "101 patients with T2DM and MASLD randomised to dapagliflozin or saroglitazar",
+     "design": "randomised controlled open-label trial",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "101 patients with T2DM and MASLD randomised to dapagliflozin or saroglitazar",
+     "design": "randomised controlled open-label trial",
+     "gap": true
+    },
+    {
+     "marker": "liver",
+     "direction": "mixed",
+     "who": "101 patients with T2DM and MASLD randomised to dapagliflozin or saroglitazar",
+     "design": "randomised controlled open-label trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42802824",
+   "title": "Dapagliflozin Alone or Combined With Semaglutide: Cardiovascular and Renal Outcomes Among Patients With Type 2 Diabetes Mellitus in a 6-Month Real-World Retrospective Cohort Study in Saudi Arabia.",
+   "journal": "J ASEAN Fed Endocr Soc",
+   "year": "2026",
+   "doi": "10.15605/jafes.041.02.6171",
+   "pmc": "PMC13616068",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "539 adults with type 2 diabetes receiving dapagliflozin alone or with semaglutide",
+     "design": "retrospective cohort study, 6 months",
+     "gap": false
+    },
+    {
+     "marker": "kidney",
+     "direction": "mixed",
+     "who": "539 adults with type 2 diabetes receiving dapagliflozin alone or with semaglutide",
+     "design": "retrospective cohort study, 6 months",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "539 adults with type 2 diabetes receiving dapagliflozin alone or with semaglutide",
+     "design": "retrospective cohort study, 6 months",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42854065",
+   "title": "Short-term clinical efficacy and recorded adverse events of semaglutide combined with dapagliflozin in patients with type 2 diabetes mellitus and chronic kidney disease.",
+   "journal": "Medicine (Baltimore)",
+   "year": "2026",
+   "doi": "10.1097/md.0000000000051019",
+   "pmc": "PMC13657616",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "126 patients with T2DM and CKD, dapagliflozin group (42) vs baseline",
+     "design": "retrospective observational study, 8 weeks",
+     "gap": false
+    },
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "126 patients with T2DM and CKD, dapagliflozin group (42) vs baseline",
+     "design": "retrospective observational study, 8 weeks",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42874781",
+   "title": "Dapagliflozin and 54-week kidney function in kidney transplant recipients with post-transplant diabetes mellitus: a randomized controlled trial.",
+   "journal": "Diabetes Res Clin Pract",
+   "year": "2026",
+   "doi": "10.1016/j.diabres.2026.113605",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "kidney transplant recipients with post-transplant diabetes receiving dapagliflozin plus standard care",
+     "design": "randomized controlled trial",
+     "gap": false
+    },
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "kidney transplant recipients with post-transplant diabetes receiving dapagliflozin plus standard care",
+     "design": "randomized controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42881387",
+   "title": "Effects of SGLT-2 inhibitors on thyroid-stimulating hormone and systemic immune-inflammation index in type 2 diabetes: a retrospective study.",
+   "journal": "BMC Endocr Disord",
+   "year": "2026",
+   "doi": "10.1186/s12902-026-02483-9",
+   "pmc": "PMC13670596",
+   "effects": [
+    {
+     "marker": "thyroid",
+     "direction": "no change",
+     "who": "T2DM patients using empagliflozin or dapagliflozin 6+ months vs matched controls",
+     "design": "retrospective comparative study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42940159",
+   "title": "Real-World Renal Effects of Dapagliflozin in Bulgarian Patients with Chronic Kidney Disease of Predominantly Glomerular Origin: A Two-Year Comparative Cohort Study with Historical Controls.",
+   "journal": "Biomedicines",
+   "year": "2026",
+   "doi": "10.3390/biomedicines14102353",
+   "pmc": "PMC13701937",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "147 patients with glomerular CKD given dapagliflozin 10 mg",
+     "design": "retrospective cohort with historical controls",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42941589",
+   "title": "Real-World Renal and Metabolic Outcomes of SGLT-2 Inhibitor Therapy in Patients with Type 2 Diabetes Mellitus.",
+   "journal": "J Clin Med",
+   "year": "2026",
+   "doi": "10.3390/jcm15208076",
+   "pmc": "PMC13705703",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with type 2 diabetes starting empagliflozin or dapagliflozin",
+     "design": "retrospective cohort, paired 12-month values",
+     "gap": false
+    },
+    {
+     "marker": "hematocrit",
+     "direction": "up",
+     "who": "adults with type 2 diabetes starting empagliflozin or dapagliflozin",
+     "design": "retrospective cohort, paired 12-month values",
+     "gap": true
+    },
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "adults with type 2 diabetes starting empagliflozin or dapagliflozin",
+     "design": "retrospective cohort, paired 12-month values",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42967591",
+   "title": "Comparative Efficacy and Safety of Saroglitazar and Dapagliflozin on Hepatic Steatosis and Glycemic Control in Patients With Metabolic Dysfunction-Associated Steatotic Liver Disease: A 25-Week Prospective Multicenter Comparative Cohort Study.",
+   "journal": "Endocrinol Diabetes Metab",
+   "year": "2026",
+   "doi": "10.1002/edm2.70377",
+   "pmc": "PMC13724227",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "54 adults with MASLD, 27 given dapagliflozin 10 mg",
+     "design": "prospective multicentre open-label comparative cohort",
+     "gap": false
+    },
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "54 adults with MASLD, 27 given dapagliflozin 10 mg",
+     "design": "prospective multicentre open-label comparative cohort",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "54 adults with MASLD, 27 given dapagliflozin 10 mg",
+     "design": "prospective multicentre open-label comparative cohort",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "dsip",
    "name": "DSIP",
    "via": "",
@@ -3232,6 +3907,101 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "dulaglutide",
+   "name": "Dulaglutide",
+   "via": "",
+   "pmid": "42798476",
+   "title": "Dose-response and time-course effects of ecnoglutide in type 2 diabetes: a systematic review and meta-analysis of efficacy.",
+   "journal": "Front Endocrinol (Lausanne)",
+   "year": "2026",
+   "doi": "10.3389/fendo.2026.1934027",
+   "pmc": "PMC13612292",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with type 2 diabetes receiving ecnoglutide vs placebo",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dulaglutide",
+   "name": "Dulaglutide",
+   "via": "",
+   "pmid": "42871656",
+   "title": "Glycemic Outcomes Associated With GLP-1 Receptor Agonist Shortages in Type 2 Diabetes.",
+   "journal": "PRiMER",
+   "year": "2026",
+   "doi": "10.22454/primer.2026.826203",
+   "pmc": "PMC13659001",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "up",
+     "who": "177 patients with type 2 diabetes prescribed dulaglutide or semaglutide",
+     "design": "retrospective pre-post cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dulaglutide",
+   "name": "Dulaglutide",
+   "via": "",
+   "pmid": "42934184",
+   "title": "Glucagon-like Peptide-1 Receptor Agonists in Heart Transplant Recipients With Type 2 Diabetes: A Multicenter Study.",
+   "journal": "Transplantation",
+   "year": "2026",
+   "doi": "10.1097/tp.0000000000005945",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "108 heart transplant recipients with type 2 diabetes on GLP-1 RAs (mixed agents)",
+     "design": "retrospective multicenter cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "108 heart transplant recipients with type 2 diabetes on GLP-1 RAs (mixed agents)",
+     "design": "retrospective multicenter cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "dulaglutide",
+   "name": "Dulaglutide",
+   "via": "",
+   "pmid": "42985994",
+   "title": "Effects of glucagon-like peptide-1 analogs on prolactin levels: A secondary analysis of a randomized, double-blind, placebo-controlled crossover trial.",
+   "journal": "J Neuroendocrinol",
+   "year": "2026",
+   "doi": "10.1111/jne.70308",
+   "pmc": "PMC13737440",
+   "effects": [
+    {
+     "marker": "prolactin",
+     "direction": "down",
+     "who": "24 healthy eugonadal men of normal weight, dulaglutide vs placebo crossover",
+     "design": "randomized double-blind placebo-controlled crossover seconda",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "dutasteride",
    "name": "Dutasteride",
    "via": "",
@@ -3318,6 +4088,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "dutasteride",
+   "name": "Dutasteride",
+   "via": "",
+   "pmid": "42966554",
+   "title": "Effects of 5α-reductase inhibitor co-administration with testosterone undecanoate on urinary steroid profiles and isotope ratio mass spectrometry markers.",
+   "journal": "Steroids",
+   "year": "2026",
+   "doi": "10.1016/j.steroids.2026.109858",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "testosterone",
+     "direction": "mixed",
+     "who": "people given testosterone undecanoate with dutasteride co-administration",
+     "design": "urine sampling, controlled co-administration study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "empagliflozin",
@@ -3508,6 +4300,225 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42792758",
+   "title": "Metabolic and Lipoprotein Changes in Type 2 Diabetes Patients Treated with Empagliflozin.",
+   "journal": "Biomedicines",
+   "year": "2026",
+   "doi": "10.3390/biomedicines14092016",
+   "pmc": "PMC13604816",
+   "effects": [
+    {
+     "marker": "hematocrit",
+     "direction": "up",
+     "who": "42 type 2 diabetes patients treated with empagliflozin for 1 month",
+     "design": "observational cohort study",
+     "gap": true
+    },
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "type 2 diabetes patients treated with empagliflozin for 3 months",
+     "design": "observational cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42834642",
+   "title": "Kidney function decline, heart failure hospitalization, and the effect of empagliflozin in heart failure: an EMPEROR-pooled analysis.",
+   "journal": "Eur J Heart Fail",
+   "year": "2026",
+   "doi": "10.1093/ejhf/xuag295",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "9554 HF patients in EMPEROR-Reduced and Preserved trials, empagliflozin vs placebo",
+     "design": "pooled analysis of randomized trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42870974",
+   "title": "SGLT2 inhibitors as a strategy for volume management in peritoneal dialysis: a case series.",
+   "journal": "Front Nephrol",
+   "year": "2026",
+   "doi": "10.3389/fneph.2026.1942462",
+   "pmc": "PMC13657984",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "patients with preserved diuresis on PD receiving SGLT2i (dapagliflozin or empagliflozin)",
+     "design": "case series of seven patients",
+     "gap": false
+    },
+    {
+     "marker": "hematocrit",
+     "direction": "down",
+     "who": "patients treated with SGLT2i on peritoneal dialysis",
+     "design": "case series of seven patients",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42881387",
+   "title": "Effects of SGLT-2 inhibitors on thyroid-stimulating hormone and systemic immune-inflammation index in type 2 diabetes: a retrospective study.",
+   "journal": "BMC Endocr Disord",
+   "year": "2026",
+   "doi": "10.1186/s12902-026-02483-9",
+   "pmc": "PMC13670596",
+   "effects": [
+    {
+     "marker": "thyroid",
+     "direction": "no change",
+     "who": "139 empagliflozin users with type 2 diabetes vs matched controls",
+     "design": "retrospective study, comparison with matched controls",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42898280",
+   "title": "Impact of Empagliflozin on mRNA Levels of Cardiotrophin-1 and GDF-15 in Patients with Type 2 Diabetes and ST-Segment Elevation Myocardial Infarction Undergoing PCI: A Double-Blind Pilot Trial.",
+   "journal": "J Cardiovasc Thorac Res",
+   "year": "2026",
+   "doi": "10.34172/jcvtr.33675",
+   "pmc": "PMC13677614",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "33 type 2 diabetic post-MI patients given empagliflozin vs placebo",
+     "design": "randomized double-blind placebo-controlled trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42902215",
+   "title": "Clinical similarity, economic divergence: cost-effectiveness and population health implications of dietary, pharmacological, and exercise interventions in older adults with type 2 diabetes: a secondary analysis of a randomized controlled trial.",
+   "journal": "BMC Geriatr",
+   "year": "2026",
+   "doi": "10.1186/s12877-026-07994-7",
+   "pmc": "PMC13685177",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "older adults aged 65+ with type 2 diabetes receiving empagliflozin",
+     "design": "secondary analysis of randomized controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42925875",
+   "title": "Empagliflozin Therapy in Autosomal Dominant Polycystic Kidney Disease: A Feasibility Randomized Controlled Trial.",
+   "journal": "J Am Soc Nephrol",
+   "year": "2026",
+   "doi": "10.1681/asn.0000001271",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "adults with ADPKD at high risk of progression receiving empagliflozin 25 mg for 12 months",
+     "design": "randomized controlled trial",
+     "gap": false
+    },
+    {
+     "marker": "kidney",
+     "direction": "no change",
+     "who": "adults with ADPKD randomized to empagliflozin vs placebo, eGFR slope 1-12 months",
+     "design": "randomized controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42954923",
+   "title": "Impact of Altitude on Hemoglobin Response to Sodium-Glucose Cotransporter 2 Inhibitors in CKD: The SGaLTItude Study.",
+   "journal": "Kidney360",
+   "year": "2026",
+   "doi": "10.34067/kid.0000001305",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "hematocrit",
+     "direction": "up",
+     "who": "206 CKD patients on SGLT2 inhibitors (15% empagliflozin, 85% dapagliflozin), by altitude",
+     "design": "retrospective study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "empagliflozin",
+   "name": "Empagliflozin",
+   "via": "",
+   "pmid": "42969364",
+   "title": "Changes in liver steatosis and liver stiffness following Empagliflozin treatment in patients with MASLD and type 2 diabetes: A single-arm pre-post study.",
+   "journal": "J Diabetes Investig",
+   "year": "2026",
+   "doi": "10.1111/jdi.70484",
+   "pmc": "PMC13726360",
+   "effects": [
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "30 patients with T2DM and MASLD given empagliflozin 25 mg/day",
+     "design": "single-arm pre-post interventional study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "enclomiphene",
@@ -3872,6 +4883,57 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "enclomiphene",
+   "name": "Enclomiphene",
+   "via": "clomiphene, the mix it's part of",
+   "pmid": "42803080",
+   "title": "Longitudinal Ocular Surface Changes in Women with Polycystic Ovary Syndrome Receiving Hormonal or Ovulation-Induction Therapy: A Prospective Cohort Study.",
+   "journal": "Semin Ophthalmol",
+   "year": "2026",
+   "doi": "10.1080/08820538.2026.2740661",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "mixed",
+     "who": "60 women with PCOS treated with clomiphene citrate or hormone therapy",
+     "design": "prospective cohort study",
+     "gap": false
+    },
+    {
+     "marker": "testosterone",
+     "direction": "mixed",
+     "who": "60 women with PCOS treated with clomiphene citrate or hormone therapy",
+     "design": "prospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "enclomiphene",
+   "name": "Enclomiphene",
+   "via": "clomiphene, the mix it's part of",
+   "pmid": "42978013",
+   "title": "Effects of progestin-primed ovarian stimulation protocol plus clomiphene citrate in patients with low basal LH levels: a randomized controlled trial.",
+   "journal": "Reprod Biol Endocrinol",
+   "year": "2026",
+   "doi": "10.1186/s12958-026-01601-5",
+   "pmc": "PMC13729595",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "up",
+     "who": "230 infertile patients with low basal LH receiving hMG+MPA+clomiphene",
+     "design": "randomized controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "estradiol",
    "name": "Estradiol",
    "via": "",
@@ -4183,6 +5245,28 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "exenatide",
+   "name": "Exenatide",
+   "via": "",
+   "pmid": "42851342",
+   "title": "Gut-kidney signaling is impaired in individuals with type 2 diabetes.",
+   "journal": "Clin Kidney J",
+   "year": "2026",
+   "doi": "10.1093/ckj/sfag315",
+   "pmc": "PMC13645654",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "no change",
+     "who": "11 men with type 2 diabetes in randomized crossover trial",
+     "design": "randomized double-blind placebo-controlled crossover",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "finasteride",
    "name": "Finasteride",
    "via": "",
@@ -4244,6 +5328,50 @@
    "id": "finasteride",
    "name": "Finasteride",
    "via": "",
+   "pmid": "42889389",
+   "title": "Pharmacologically altered androgens, brain activation and response inhibition in a stop-signal task in male heavy drinkers.",
+   "journal": "Front Syst Neurosci",
+   "year": "2026",
+   "doi": "10.3389/fnsys.2026.1907416",
+   "pmc": "PMC13669173",
+   "effects": [
+    {
+     "marker": "testosterone",
+     "direction": "no change",
+     "who": "50 males with heavy episodic drinking given finasteride or placebo",
+     "design": "randomized placebo-controlled crossover fMRI trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "finasteride",
+   "name": "Finasteride",
+   "via": "",
+   "pmid": "42966554",
+   "title": "Effects of 5α-reductase inhibitor co-administration with testosterone undecanoate on urinary steroid profiles and isotope ratio mass spectrometry markers.",
+   "journal": "Steroids",
+   "year": "2026",
+   "doi": "10.1016/j.steroids.2026.109858",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "testosterone",
+     "direction": "down",
+     "who": "people given testosterone undecanoate plus topical finasteride spray, urine analysis",
+     "design": "urine steroid profile study with co-administration",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "finasteride",
+   "name": "Finasteride",
+   "via": "",
    "pmid": "8575497",
    "title": "Proscar: five-year experience.",
    "journal": "Eur Urol",
@@ -4283,6 +5411,64 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "fsh",
+   "name": "FSH",
+   "via": "",
+   "pmid": "42874833",
+   "title": "Recombinant human follicle-stimulating hormone injection versus Gonal-f® in controlled ovarian stimulation for assisted reproductive technology: A multicenter, randomized, assessor-blind, active-controlled phase III trial.",
+   "journal": "Exp Cell Res",
+   "year": "2026",
+   "doi": "10.1016/j.yexcr.2026.115192",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "no change",
+     "who": "379 Chinese women with infertility undergoing ART, randomized to LZ-B-01 or Gonal-f",
+     "design": "randomized assessor-blind active-controlled trial",
+     "gap": false
+    },
+    {
+     "marker": "estradiol",
+     "direction": "no change",
+     "who": "379 Chinese women with infertility undergoing ART, randomized to LZ-B-01 or Gonal-f",
+     "design": "randomized assessor-blind active-controlled trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "fsh",
+   "name": "FSH",
+   "via": "",
+   "pmid": "42903388",
+   "title": "The progestin anchor: salvaging mature oocyte yield after an unplanned six-day gonadotropin pause in oncofertility-a case report.",
+   "journal": "F S Rep",
+   "year": "2026",
+   "doi": "10.1016/j.xfre.2026.07.001",
+   "pmc": "PMC13681267",
+   "effects": [
+    {
+     "marker": "estradiol",
+     "direction": "no change",
+     "who": "one 22-year-old woman undergoing oncofertility ovarian stimulation",
+     "design": "case report",
+     "gap": true
+    },
+    {
+     "marker": "gonadotropins",
+     "direction": "no change",
+     "who": "one 22-year-old woman undergoing oncofertility ovarian stimulation",
+     "design": "case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "ghrp2",
@@ -4810,6 +5996,28 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "hcg",
+   "name": "hCG",
+   "via": "",
+   "pmid": "42953635",
+   "title": "Complex 45,X/46,XY Isochromosome Yp Mosaicism Presenting With Atypical Genitalia and an Incidental CYP21A2 Mutation: A Case Report.",
+   "journal": "Cureus",
+   "year": "2026",
+   "doi": "10.7759/cureus.117061",
+   "pmc": "PMC13714865",
+   "effects": [
+    {
+     "marker": "testosterone",
+     "direction": "up",
+     "who": "neonate with 45,X/46,XY mosaicism and atypical genitalia",
+     "design": "case report, hCG stimulation test",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "hexarelin",
    "name": "Hexarelin",
    "via": "",
@@ -4982,6 +6190,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "hmg",
+   "name": "hMG",
+   "via": "",
+   "pmid": "42861169",
+   "title": "Effectiveness and Patient Compliance of a Needle-Free Injection System in Controlled Ovarian Stimulation in IVF Cycles: A Real-World, Investigator-Initiated, Retrospective, Multicenter, Observational Study.",
+   "journal": "Cureus",
+   "year": "2026",
+   "doi": "10.7759/cureus.116084",
+   "pmc": "PMC13654078",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "up",
+     "who": "43 women undergoing IVF; hMG plus r-FSH group (18) vs r-FSH alone (25)",
+     "design": "retrospective multicenter observational study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "iron",
@@ -5311,6 +6541,78 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "letrozole",
+   "name": "Letrozole",
+   "via": "",
+   "pmid": "42866660",
+   "title": "Persistently elevated estradiol after bilateral salpingo-oophorectomy in recurrent low-grade endometrial stromal sarcoma: a case report.",
+   "journal": "Gynecol Oncol Rep",
+   "year": "2026",
+   "doi": "10.1016/j.gore.2026.102227",
+   "pmc": "PMC13657205",
+   "effects": [
+    {
+     "marker": "estradiol",
+     "direction": "down",
+     "who": "one woman with recurrent LGESS after BSO, treated with letrozole plus leuprolide",
+     "design": "case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "letrozole",
+   "name": "Letrozole",
+   "via": "",
+   "pmid": "42959104",
+   "title": "Effects of combined GnRHa and letrozole on serum steroid profiles in girls with advanced bone age.",
+   "journal": "Front Endocrinol (Lausanne)",
+   "year": "2026",
+   "doi": "10.3389/fendo.2026.1984633",
+   "pmc": "PMC13716571",
+   "effects": [
+    {
+     "marker": "estradiol",
+     "direction": "down",
+     "who": "28 girls with advanced bone age, add-on letrozole group (Group B)",
+     "design": "prospective cohort, 6 months",
+     "gap": false
+    },
+    {
+     "marker": "estradiol",
+     "direction": "down",
+     "who": "13 girls starting GnRHa plus letrozole from baseline (Group A)",
+     "design": "prospective cohort, 6 months",
+     "gap": false
+    },
+    {
+     "marker": "testosterone",
+     "direction": "down",
+     "who": "13 girls starting GnRHa plus letrozole from baseline (Group A), gonadal androgens",
+     "design": "prospective cohort, 6 months",
+     "gap": false
+    },
+    {
+     "marker": "testosterone",
+     "direction": "no change",
+     "who": "15 girls receiving add-on letrozole after GnRHa (Group B), most androgens stable",
+     "design": "prospective cohort, 6 months",
+     "gap": false
+    },
+    {
+     "marker": "gonadotropins",
+     "direction": "no change",
+     "who": "girls with advanced bone age receiving GnRHa plus letrozole",
+     "design": "prospective cohort, 6 months",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "leuprolide",
    "name": "Leuprolide",
    "via": "",
@@ -5585,6 +6887,86 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "leuprolide",
+   "name": "Leuprolide",
+   "via": "",
+   "pmid": "42835373",
+   "title": "Prostatic Adenosquamous Carcinoma With a Minute Squamous Component in the Initial Biopsy and Early Liver Metastasis: A Case Report.",
+   "journal": "IJU Case Rep",
+   "year": "2026",
+   "doi": "10.1002/iju5.70262",
+   "pmc": "PMC13635683",
+   "effects": [
+    {
+     "marker": "psa",
+     "direction": "down",
+     "who": "72-year-old man with metastatic prostate cancer treated with leuprolide, abiraterone, radiotherapy",
+     "design": "case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "leuprolide",
+   "name": "Leuprolide",
+   "via": "",
+   "pmid": "42866660",
+   "title": "Persistently elevated estradiol after bilateral salpingo-oophorectomy in recurrent low-grade endometrial stromal sarcoma: a case report.",
+   "journal": "Gynecol Oncol Rep",
+   "year": "2026",
+   "doi": "10.1016/j.gore.2026.102227",
+   "pmc": "PMC13657205",
+   "effects": [
+    {
+     "marker": "estradiol",
+     "direction": "down",
+     "who": "one woman with recurrent LGESS after BSO, treated with leuprolide plus letrozole",
+     "design": "case report",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "leuprolide",
+   "name": "Leuprolide",
+   "via": "",
+   "pmid": "42992452",
+   "title": "Leuprorelin Acetate for Spinal and Bulbar Muscular Atrophy: A Systematic Review of Clinical Efficacy, Long-Term Outcomes, and Safety Considerations.",
+   "journal": "Muscle Nerve",
+   "year": "2026",
+   "doi": "10.1002/mus.70454",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "no change",
+     "who": "patients with spinal and bulbar muscular atrophy treated with leuprorelin",
+     "design": "systematic review of studies",
+     "gap": true
+    },
+    {
+     "marker": "testosterone",
+     "direction": "no change",
+     "who": "patients with spinal and bulbar muscular atrophy treated with leuprorelin",
+     "design": "systematic review of studies",
+     "gap": false
+    },
+    {
+     "marker": "gonadotropins",
+     "direction": "no change",
+     "who": "patients with spinal and bulbar muscular atrophy treated with leuprorelin",
+     "design": "systematic review of studies",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "leuprolide",
@@ -6077,6 +7459,354 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42830876",
+   "title": "Comparative Efficacy and Safety of Liraglutide Versus Metformin in Women With Polyendocrine Metabolic Ovarian Syndrome (PMOS): A Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+   "journal": "Cureus",
+   "year": "2026",
+   "doi": "10.7759/cureus.115758",
+   "pmc": "PMC13634180",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "women with PMOS in randomized trials comparing liraglutide and metformin",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    },
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "women with PMOS in randomized trials comparing liraglutide and metformin",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42840192",
+   "title": "Liraglutide use in congenital generalized lipodystrophy: glycemic and metabolic outcomes.",
+   "journal": "Front Endocrinol (Lausanne)",
+   "year": "2026",
+   "doi": "10.3389/fendo.2026.1912138",
+   "pmc": "PMC13638587",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "5 patients with congenital generalized lipodystrophy who completed 12 weeks",
+     "design": "case series, prospective, 12-week treatment",
+     "gap": false
+    },
+    {
+     "marker": "glucose",
+     "direction": "up",
+     "who": "5 patients with congenital generalized lipodystrophy after 12 weeks off treatment",
+     "design": "case series, post-treatment follow-up",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "5 patients with congenital generalized lipodystrophy; triglycerides not significantly reduced on treatment, then rose in",
+     "design": "case series, prospective, 12-week treatment",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42857180",
+   "title": "Real-world treatment-transition pathways and dosing patterns of insulin degludec/liraglutide in Chinese adults with type 2 diabetes.",
+   "journal": "Metabol Open",
+   "year": "2026",
+   "doi": "10.1016/j.metop.2026.100497",
+   "pmc": "PMC13651640",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "480 Chinese adults with T2D starting IDegLira (insulin degludec/liraglutide), paired baseline and week-12 HbA1c",
+     "design": "retrospective observational registry, no comparator",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42862661",
+   "title": "GLP-1 Receptor Agonists and Insulin Versus Insulin for Perioperative Glycemic Control in Patients with Type 2 Diabetes Undergoing Cardiac Surgery: A Systematic Review.",
+   "journal": "Ann Card Anaesth",
+   "year": "2026",
+   "doi": "10.4103/aca.aca_307_25",
+   "pmc": "PMC13743104",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "168 patients with type 2 diabetes undergoing cardiac surgery (pooled from 3 RCTs)",
+     "design": "systematic review of randomized controlled trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42867191",
+   "title": "Recovery from liraglutide-induced acute liver injury assessed for causality using the updated RUCAM as global gold standard: A case report and literature review.",
+   "journal": "Int J Clin Pharmacol Ther",
+   "year": "2026",
+   "doi": "10.5414/cp205028",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "liver",
+     "direction": "up",
+     "who": "40-year-old Chinese woman with T2DM after 2 weeks of liraglutide",
+     "design": "case report with literature review",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42920001",
+   "title": "Efficacy and safety of GLP-1 receptor agonists for antipsychotic-related overweight and metabolic dysregulation: a systematic review and meta-analysis.",
+   "journal": "Eur J Clin Pharmacol",
+   "year": "2026",
+   "doi": "10.1007/s00228-026-04206-4",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "antipsychotic-treated adults with overweight or metabolic dysregulation in pooled RCTs",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "antipsychotic-treated adults in pooled RCTs (LDL-C only; total cholesterol unchanged)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42920458",
+   "title": "Effects of liraglutide on blood pressure and renal function in patients with type 2 diabetic nephropathy: a meta-analysis of randomized controlled trials.",
+   "journal": "Front Med (Lausanne)",
+   "year": "2026",
+   "doi": "10.3389/fmed.2026.1921737",
+   "pmc": "PMC13690535",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "patients with type 2 diabetic nephropathy in 23 RCTs (meta-analysis)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "patients with type 2 diabetic nephropathy in 23 RCTs (meta-analysis)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": true
+    },
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "patients with type 2 diabetic nephropathy in 23 RCTs (meta-analysis)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42924324",
+   "title": "Pharmacological therapy and dietary intervention for obesity management: A one-year prospective cohort study in Baghdad.",
+   "journal": "J Educ Health Promot",
+   "year": "2026",
+   "doi": "10.4103/jehp.jehp_2134_25",
+   "pmc": "PMC13690105",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "120 adults with obesity in Baghdad clinics, liraglutide vs diet",
+     "design": "prospective cohort study",
+     "gap": true
+    },
+    {
+     "marker": "glucose",
+     "direction": "mixed",
+     "who": "120 adults with obesity in Baghdad clinics, liraglutide vs diet",
+     "design": "prospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42934184",
+   "title": "Glucagon-like Peptide-1 Receptor Agonists in Heart Transplant Recipients With Type 2 Diabetes: A Multicenter Study.",
+   "journal": "Transplantation",
+   "year": "2026",
+   "doi": "10.1097/tp.0000000000005945",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "108 heart transplant recipients with type 2 diabetes treated with GLP-1 RAs (mostly semaglutide)",
+     "design": "retrospective multicenter study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "108 heart transplant recipients with type 2 diabetes treated with GLP-1 RAs (mostly semaglutide)",
+     "design": "retrospective multicenter study",
+     "gap": true
+    },
+    {
+     "marker": "hematocrit",
+     "direction": "no change",
+     "who": "108 heart transplant recipients with type 2 diabetes treated with GLP-1 RAs (mostly semaglutide)",
+     "design": "retrospective multicenter study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42936196",
+   "title": "Real-world effectiveness of liraglutide in children with type 2 diabetes.",
+   "journal": "J Endocr Soc",
+   "year": "2026",
+   "doi": "10.1210/jendso/bvag230",
+   "pmc": "PMC13696829",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adolescents with type 2 diabetes taking liraglutide for 26 weeks",
+     "design": "retrospective cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "adolescents with type 2 diabetes on liraglutide, small subset with lipid data",
+     "design": "retrospective cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42937793",
+   "title": "Efficacy and safety of GLP-1 receptor agonists in patients with metabolic dysfunction-associated steatotic liver disease (MASLD) and metabolic dysfunction-associated steatohepatitis (MASH): A systematic review and meta-analysis.",
+   "journal": "Medicine (Baltimore)",
+   "year": "2026",
+   "doi": "10.1097/md.0000000000051306",
+   "pmc": "PMC13706190",
+   "effects": [
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "Adults with MASLD or MASH treated with GLP-1 RAs (pooled, 9 studies, 795 participants)",
+     "design": "systematic review and meta-analysis",
+     "gap": true
+    },
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "Adults with MASLD or MASH treated with GLP-1 RAs (pooled, 9 studies, 795 participants)",
+     "design": "systematic review and meta-analysis",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "42941312",
+   "title": "Real-World Effectiveness, Documented Adverse Events, and Treatment Adherence of Semaglutide and Liraglutide in Omani Patients: A Retrospective Observational Study.",
+   "journal": "J Clin Med",
+   "year": "2026",
+   "doi": "10.3390/jcm15207797",
+   "pmc": "PMC13705067",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "257 Omani adults treated with liraglutide or semaglutide (HbA1c change, no difference between groups)",
+     "design": "retrospective cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "Omani adults on liraglutide or semaglutide; only total cholesterol at 3 months significant between groups",
+     "design": "retrospective cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "ltheanine",
@@ -6836,6 +8566,35 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "melatonin",
+   "name": "Melatonin",
+   "via": "",
+   "pmid": "42997745",
+   "title": "Intervention with Exogenous Melatonin Has No Adverse Effects on Cardiometabolic Parameters of Overweight Night Workers without Cardiometabolic Abnormalities.",
+   "journal": "Sleep Sci",
+   "year": "2026",
+   "doi": "10.1055/s-0046-1829852",
+   "pmc": "PMC13743272",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "27 overweight night workers taking melatonin or placebo",
+     "design": "randomized double-blind placebo-controlled crossover",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "27 overweight night workers taking melatonin or placebo",
+     "design": "randomized double-blind placebo-controlled crossover",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "metformin",
    "name": "Metformin",
    "via": "",
@@ -7116,6 +8875,57 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "metformin",
+   "name": "Metformin",
+   "via": "",
+   "pmid": "42965204",
+   "title": "Treatment outcomes and safety of metformin versus insulin in gestational diabetes mellitus: A systematic review and meta-analysis.",
+   "journal": "J Family Med Prim Care",
+   "year": "2026",
+   "doi": "10.4103/jfmpc.jfmpc_2277_25",
+   "pmc": "PMC13722223",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "pregnant women with gestational diabetes mellitus across RCTs",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    },
+    {
+     "marker": "hematocrit",
+     "direction": "no change",
+     "who": "pregnant women with gestational diabetes mellitus across RCTs",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "methyleneblue",
+   "name": "Methylene blue",
+   "via": "",
+   "pmid": "42982414",
+   "title": "Congenital Methemoglobinemia in a Vietnamese Adolescent: A Dyshemoglobinemia with Diagnostic Challenges, Literature Review, and Diagnostic Algorithm.",
+   "journal": "Hemoglobin",
+   "year": "2026",
+   "doi": "10.1080/03630269.2026.2753446",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "hematocrit",
+     "direction": "mixed",
+     "who": "15-year-old Vietnamese boy with congenital methemoglobinemia treated with IV and oral methylene blue",
+     "design": "single case report with literature review",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "minoxidil",
    "name": "Minoxidil",
    "via": "",
@@ -7143,6 +8953,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "minoxidil",
+   "name": "Minoxidil",
+   "via": "",
+   "pmid": "42866572",
+   "title": "Exploratory Identification of Multidimensional Treatment-Response Profiles in Androgenetic Alopecia Treated with Combined Scalp Microneedling and Topical Minoxidil Using Unsupervised Clustering.",
+   "journal": "Clin Cosmet Investig Dermatol",
+   "year": "2026",
+   "doi": "10.2147/ccid.s636889",
+   "pmc": "PMC13656931",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "no change",
+     "who": "156 patients with androgenetic alopecia on microneedling plus 5% topical minoxidil",
+     "design": "prospective cohort study, 24 weeks",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "minoxidil",
@@ -7722,6 +9554,57 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "nac",
+   "name": "NAC (N-acetylcysteine)",
+   "via": "",
+   "pmid": "42832780",
+   "title": "Intravenous N-Acetylcysteine in Patients With Dengue Fever With Marked Aminotransferase Elevation: Prospective Comparative Study.",
+   "journal": "Interact J Med Res",
+   "year": "2026",
+   "doi": "10.2196/97990",
+   "pmc": "PMC13680906",
+   "effects": [
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "128 adults with dengue fever and marked aminotransferase elevation",
+     "design": "prospective nonrandomized comparative study",
+     "gap": true
+    },
+    {
+     "marker": "hematocrit",
+     "direction": "no change",
+     "who": "128 adults with dengue fever and marked aminotransferase elevation",
+     "design": "prospective nonrandomized comparative study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "nac",
+   "name": "NAC (N-acetylcysteine)",
+   "via": "",
+   "pmid": "42983348",
+   "title": "Biomarker-dependent detection of contrast-associated acute kidney injury after intra-arterial contrast procedures: an exploratory randomized trial.",
+   "journal": "BMC Nephrol",
+   "year": "2026",
+   "doi": "10.1186/s12882-026-05342-w",
+   "pmc": "PMC13737526",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "no change",
+     "who": "76 patients with peripheral arterial disease undergoing intra-arterial contrast procedures",
+     "design": "randomized single-blind exploratory trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "nad",
@@ -8355,6 +10238,50 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "omega3",
+   "name": "Omega-3 fish oil",
+   "via": "",
+   "pmid": "42904712",
+   "title": "[Safety of diet therapy using ϖ-3 polyunsaturated fatty acids].",
+   "journal": "Probl Sotsialnoi Gig Zdravookhranenniiai Istor Med",
+   "year": "2026",
+   "doi": "10.32687/0869-866x-2026-34-s2-1066-1070",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "patients with cardiovascular diseases receiving omega-3 PUFA diets (300-3000 mg/day)",
+     "design": "open single-center prospective study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "omega3",
+   "name": "Omega-3 fish oil",
+   "via": "",
+   "pmid": "42920971",
+   "title": "Effect of flaxseed oil supplementation on lipid profile in adults: A systematic review and dose-response meta-analysis of randomized controlled trials.",
+   "journal": "Avicenna J Phytomed",
+   "year": "2026",
+   "doi": "10.22038/ajp.2025.26733",
+   "pmc": "PMC13691367",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "adults in 36 RCTs (1,959 participants) given flaxseed oil",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "orforglipron",
    "name": "Orforglipron",
    "via": "",
@@ -8735,6 +10662,116 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "orforglipron",
+   "name": "Orforglipron",
+   "via": "",
+   "pmid": "42815506",
+   "title": "Cardiovascular safety of orforglipron versus insulin glargine in adults with type 2 diabetes at increased cardiovascular risk (ACHIEVE-4): a phase 3, event-driven, randomised, open-label, non-inferiority, active comparator trial.",
+   "journal": "Lancet",
+   "year": "2026",
+   "doi": "10.1016/s0140-6736(26)01865-9",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "adults with type 2 diabetes at increased CV risk on orforglipron",
+     "design": "randomised open-label active-comparator trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "orforglipron",
+   "name": "Orforglipron",
+   "via": "",
+   "pmid": "42888373",
+   "title": "Qualitative Exit Interviews to Characterize the Positive Treatment Experiences of Patients in the Phase III Trial of Orforglipron Versus Oral Semaglutide for the Treatment of Type 2 Diabetes.",
+   "journal": "Patient",
+   "year": "2026",
+   "doi": "10.1007/s40271-026-00847-w",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "60 patients with type 2 diabetes in ACHIEVE-3 trial",
+     "design": "qualitative exit interviews after trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "orforglipron",
+   "name": "Orforglipron",
+   "via": "",
+   "pmid": "42936354",
+   "title": "Efficacy and safety of orforglipron in adults with body mass index of 27 to less than 30 kg/m2 and adiposity-related complications: A post hoc analysis of the ATTAIN-1 trial.",
+   "journal": "Obes Pillars",
+   "year": "2026",
+   "doi": "10.1016/j.obpill.2026.100346",
+   "pmc": "PMC13697276",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "adults with BMI 27 to <30 and adiposity complications, orforglipron 17.2 mg vs placebo",
+     "design": "post hoc analysis of randomized trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "orforglipron",
+   "name": "Orforglipron",
+   "via": "",
+   "pmid": "42970798",
+   "title": "In T2D inadequately controlled with metformin, orforglipron reduced HbA1c more than dapagliflozin at 40 wk.",
+   "journal": "Ann Intern Med",
+   "year": "2026",
+   "doi": "10.7326/annals-26-04099-jc",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "people with type 2 diabetes inadequately controlled on metformin",
+     "design": "randomized trial vs dapagliflozin",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "orforglipron",
+   "name": "Orforglipron",
+   "via": "",
+   "pmid": "42983568",
+   "title": "Reported cardiovascular events and cardiometabolic risk markers with orforglipron and danuglipron in adults with type 2 diabetes or obesity: a systematic review and meta-analysis of randomized trials.",
+   "journal": "Diabetol Metab Syndr",
+   "year": "2026",
+   "doi": "10.1186/s13098-026-02264-3",
+   "pmc": "PMC13733062",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with type 2 diabetes or obesity in randomized trials of orforglipron/danuglipron",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "oxytocin",
    "name": "Oxytocin",
    "via": "",
@@ -8755,6 +10792,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "oxytocin",
+   "name": "Oxytocin",
+   "via": "",
+   "pmid": "42931765",
+   "title": "Preoperative Intranasal Oxytocin and Probable Acute Stress Disorder After Traumatic Fracture Surgery: A Randomized Clinical Trial.",
+   "journal": "JAMA Intern Med",
+   "year": "2026",
+   "doi": "10.1001/jamainternmed.2026.5326",
+   "pmc": "PMC13711227",
+   "effects": [
+    {
+     "marker": "cortisol",
+     "direction": "down",
+     "who": "328 adults undergoing traumatic fracture surgery, intranasal oxytocin vs saline",
+     "design": "randomized clinical trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "pemvidutide",
@@ -9429,6 +11488,64 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "probiotic",
+   "name": "Probiotics",
+   "via": "",
+   "pmid": "42797074",
+   "title": "More than Hormones? Metabolic Effects of Twelve-Week Probiotic Supplementation in Women with Polycystic Ovary Syndrome: A Secondary Analysis of a Randomized Double-Blind Placebo-Controlled Study.",
+   "journal": "Nutrients",
+   "year": "2026",
+   "doi": "10.3390/nu18183090",
+   "pmc": "PMC13610117",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "50 women with PCOS randomized to probiotic or placebo (43 completers)",
+     "design": "randomized double-blind placebo-controlled secondary analysi",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "50 women with PCOS randomized to probiotic or placebo (43 completers)",
+     "design": "randomized double-blind placebo-controlled secondary analysi",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "probiotic",
+   "name": "Probiotics",
+   "via": "",
+   "pmid": "42875750",
+   "title": "Integrating probiotics into a one-day diabetes clinic: outcomes in gestational diabetes.",
+   "journal": "BMC Pregnancy Childbirth",
+   "year": "2026",
+   "doi": "10.1186/s12884-026-09866-9",
+   "pmc": "PMC13670578",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "682 women with gestational diabetes, probiotic vs control group (PSM)",
+     "design": "observational cohort with propensity score matching",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "682 women with gestational diabetes, probiotic vs control group (PSM)",
+     "design": "observational cohort with propensity score matching",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "raloxifene",
    "name": "Raloxifene",
    "via": "",
@@ -9587,6 +11704,35 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "rapamycin",
+   "name": "Rapamycin",
+   "via": "",
+   "pmid": "42986447",
+   "title": "Sirolimus-induced improvement of immune dysregulation associated hepatosplenomegaly in common variable immunodeficiency: a case-based review.",
+   "journal": "Rheumatol Int",
+   "year": "2026",
+   "doi": "10.1007/s00296-026-06329-4",
+   "pmc": "PMC13740097",
+   "effects": [
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "one 50-year-old woman with CVID and hepatosplenomegaly on sirolimus",
+     "design": "case report",
+     "gap": true
+    },
+    {
+     "marker": "hematocrit",
+     "direction": "no change",
+     "who": "one 50-year-old woman with CVID and hepatosplenomegaly on sirolimus",
+     "design": "case report",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "retatrutide",
@@ -10041,6 +12187,35 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "rhodiola",
+   "name": "Rhodiola rosea",
+   "via": "",
+   "pmid": "42973831",
+   "title": "Effects of Rhodiola rosea and caffeine, alone and in combination, on Wingate performance and physiological stress responses in soccer players.",
+   "journal": "Front Physiol",
+   "year": "2026",
+   "doi": "10.3389/fphys.2026.1964904",
+   "pmc": "PMC13724577",
+   "effects": [
+    {
+     "marker": "cortisol",
+     "direction": "mixed",
+     "who": "10 trained male soccer players, placebo vs caffeine+Rhodiola combination",
+     "design": "randomized crossover placebo-controlled trial",
+     "gap": true
+    },
+    {
+     "marker": "estradiol",
+     "direction": "no change",
+     "who": "placeholder",
+     "design": "placeholder",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "semaglutide",
    "name": "Semaglutide",
    "via": "",
@@ -10373,6 +12548,276 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42802824",
+   "title": "Dapagliflozin Alone or Combined With Semaglutide: Cardiovascular and Renal Outcomes Among Patients With Type 2 Diabetes Mellitus in a 6-Month Real-World Retrospective Cohort Study in Saudi Arabia.",
+   "journal": "J ASEAN Fed Endocr Soc",
+   "year": "2026",
+   "doi": "10.15605/jafes.041.02.6171",
+   "pmc": "PMC13616068",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "539 adults with type 2 diabetes receiving dapagliflozin plus semaglutide or dapagliflozin alone",
+     "design": "retrospective cohort study, 6 months",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "539 adults with type 2 diabetes receiving dapagliflozin plus semaglutide or dapagliflozin alone",
+     "design": "retrospective cohort study, 6 months",
+     "gap": true
+    },
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "539 adults with type 2 diabetes receiving dapagliflozin plus semaglutide or dapagliflozin alone",
+     "design": "retrospective cohort study, 6 months",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42803913",
+   "title": "New Amylin-Based Agonists for the Treatment of Obesity and Type 2 Diabetes Mellitus.",
+   "journal": "Diabetes Ther",
+   "year": "2026",
+   "doi": "10.1007/s13300-026-01921-0",
+   "pmc": "PMC13728081",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "people with T2DM receiving CagriSema (HbA1c reduced up to 2.0%)",
+     "design": "narrative review of phase 3a trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42806711",
+   "title": "Potential bone marrow-driven reduction of circulating inflammatory monocytes by semaglutide in Type 2 diabetes.",
+   "journal": "Eur Heart J",
+   "year": "2026",
+   "doi": "10.1093/eurheartj/ehag627",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "16 individuals with type 2 diabetes receiving semaglutide for 6 months",
+     "design": "prospective cohort, before-after study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42808550",
+   "title": "Real-world treatment patterns and cost per patient achieving treatment targets among tirzepatide and semaglutide initiators in US patients with type 2 diabetes.",
+   "journal": "J Manag Care Spec Pharm",
+   "year": "2026",
+   "doi": "10.18553/jmcp.2026.32.10.1173",
+   "pmc": "PMC13621902",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with type 2 diabetes initiating semaglutide (Ozempic), naive and non-naive to GLP-1 RA",
+     "design": "retrospective cohort study, propensity matched claims",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42823485",
+   "title": "Effects of semaglutide on kidney disease in type 2 diabetes: a randomized placebo-controlled trial.",
+   "journal": "Nat Med",
+   "year": "2026",
+   "doi": "10.1038/s41591-026-04674-2",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "106 people with type 2 diabetes and CKD on semaglutide vs placebo",
+     "design": "randomized placebo-controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42854065",
+   "title": "Short-term clinical efficacy and recorded adverse events of semaglutide combined with dapagliflozin in patients with type 2 diabetes mellitus and chronic kidney disease.",
+   "journal": "Medicine (Baltimore)",
+   "year": "2026",
+   "doi": "10.1097/md.0000000000051019",
+   "pmc": "PMC13657616",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "126 patients with T2DM and CKD, semaglutide alone or with dapagliflozin",
+     "design": "retrospective observational study, 8 weeks",
+     "gap": false
+    },
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "126 patients with T2DM and CKD, semaglutide alone or with dapagliflozin",
+     "design": "retrospective observational study, 8 weeks",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42871656",
+   "title": "Glycemic Outcomes Associated With GLP-1 Receptor Agonist Shortages in Type 2 Diabetes.",
+   "journal": "PRiMER",
+   "year": "2026",
+   "doi": "10.22454/primer.2026.826203",
+   "pmc": "PMC13659001",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "up",
+     "who": "patients with type 2 diabetes prescribed semaglutide or dulaglutide, affected by shortage",
+     "design": "retrospective pre-post cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42890523",
+   "title": "CagriSema versus Semaglutide 2.4 mg monotherapy for weight management in adults with overweight or obesity, with or without type 2 diabetes: a systematic review, meta-analysis, and trial sequential analysis.",
+   "journal": "Front Endocrinol (Lausanne)",
+   "year": "2026",
+   "doi": "10.3389/fendo.2026.1903335",
+   "pmc": "PMC13673521",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "adults with overweight or obesity, with or without type 2 diabetes, in trials comparing CagriSema with semaglutide 2.4 m",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42890838",
+   "title": "GLP-1 receptor agonists in Alzheimer's disease and MCI: a meta-analysis.",
+   "journal": "Alzheimers Dement (N Y)",
+   "year": "2026",
+   "doi": "10.1002/trc2.70334",
+   "pmc": "PMC13672454",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "",
+     "design": "",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42899606",
+   "title": "Effectiveness of Weekly Semaglutide Treatment (0.5 or 1 mg) in Chilean Patients with Type 2 Diabetes Mellitus.",
+   "journal": "Rev Med Chil",
+   "year": "2026",
+   "doi": "10.4067/s0034-98872026000801150",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "104 Chilean adults with type 2 diabetes on standard treatment",
+     "design": "phase 4 multicenter interventional study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42934184",
+   "title": "Glucagon-like Peptide-1 Receptor Agonists in Heart Transplant Recipients With Type 2 Diabetes: A Multicenter Study.",
+   "journal": "Transplantation",
+   "year": "2026",
+   "doi": "10.1097/tp.0000000000005945",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "108 heart transplant recipients with type 2 diabetes on GLP-1 RAs (59% semaglutide)",
+     "design": "retrospective multicenter cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "108 heart transplant recipients with type 2 diabetes on GLP-1 RAs (59% semaglutide)",
+     "design": "retrospective multicenter cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "semax",
@@ -10789,6 +13234,261 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42788125",
+   "title": "Growth Outcomes and Safety of Recombinant Growth Hormone in Noonan Syndrome: A Systematic Review and Meta-Analysis.",
+   "journal": "Indian J Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.4103/ijem.ijem_49_26",
+   "pmc": "PMC13609925",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "no change",
+     "who": "children with Noonan syndrome treated with rhGH",
+     "design": "systematic review and meta-analysis",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42794655",
+   "title": "Circulating Asprosin Declines During 24 Months of Growth Hormone Replacement and Is Associated with IGF-1 and Metabolic Remodeling in Adults with Growth Hormone Deficiency.",
+   "journal": "Int J Mol Sci",
+   "year": "2026",
+   "doi": "10.3390/ijms27188225",
+   "pmc": "PMC13607142",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "19 adults with severe GH deficiency on rhGH",
+     "design": "prospective longitudinal cohort study",
+     "gap": false
+    },
+    {
+     "marker": "glucose",
+     "direction": "mixed",
+     "who": "19 adults with severe GH deficiency on rhGH",
+     "design": "prospective longitudinal cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "19 adults with severe GH deficiency on rhGH",
+     "design": "prospective longitudinal cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42827605",
+   "title": "Near-final adult height after GnRHa plus growth hormone in central precocious puberty: a single-center cohort study and predicted adult height validation audit.",
+   "journal": "Front Endocrinol (Lausanne)",
+   "year": "2026",
+   "doi": "10.3389/fendo.2026.1885575",
+   "pmc": "PMC13630612",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "no change",
+     "who": "children with central precocious puberty on GnRHa with or without rhGH",
+     "design": "retrospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42832458",
+   "title": "Clinical Features and Short-Term Growth Hormone Outcomes in Maternal Uniparental Disomy of Chromosome 20: Five Chinese Patients and a Literature Review.",
+   "journal": "Horm Res Paediatr",
+   "year": "2026",
+   "doi": "10.1159/hrp/adaag033",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "no change",
+     "who": "5 Chinese children with UPD(20)mat, low baseline IGF-1 noted",
+     "design": "retrospective case series with review",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42834496",
+   "title": "A comparative analysis of treatment responses across three etiologies of short stature.",
+   "journal": "Ann Pediatr Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.6065/apem.2652068.034",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "no change",
+     "who": "15 children with stage 3-5 CKD treated with rhGH",
+     "design": "prospective observational cohort study",
+     "gap": false
+    },
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "20 children born small for gestational age treated with rhGH",
+     "design": "prospective observational cohort study",
+     "gap": false
+    },
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "51 children with idiopathic GH deficiency treated with rhGH",
+     "design": "prospective observational cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42856902",
+   "title": "Up to 5 years of weekly somatrogon in children with growth hormone deficiency: final data from the global phase 3 study.",
+   "journal": "J Endocr Soc",
+   "year": "2026",
+   "doi": "10.1210/jendso/bvag175",
+   "pmc": "PMC13650485",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "212 children with growth hormone deficiency in open-label extension",
+     "design": "open-label extension study, up to 5 years",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42860242",
+   "title": "Somatrogon versus somatropin in children with growth hormone deficiency: a real-world matched-cohort study.",
+   "journal": "Ann Pediatr Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.6065/apem.2652382.191",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "15 children with GH deficiency on once-weekly somatrogon",
+     "design": "retrospective matched-cohort study",
+     "gap": false
+    },
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "children with GH deficiency on somatrogon vs daily somatropin",
+     "design": "retrospective matched-cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42958081",
+   "title": "Recombinant human growth hormone exposure preceding multisystem manifestations in a patient with MT-TL1 m.3243 A > G-related mitochondrial disease: a ten-year case report.",
+   "journal": "BMC Neurol",
+   "year": "2026",
+   "doi": "10.1186/s12883-026-05197-6",
+   "pmc": "PMC13721489",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "up",
+     "who": "one 24-year-old male with MT-TL1 mitochondrial disease after rhGH",
+     "design": "single case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42976408",
+   "title": "Once-weekly somatrogon versus daily somatropin in pediatric growth hormone deficiency: A systematic review and meta-analysis.",
+   "journal": "Growth Horm IGF Res",
+   "year": "2026",
+   "doi": "10.1016/j.ghir.2026.101732",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "prepubertal children with GH deficiency treated with weekly somatrogon",
+     "design": "systematic review and meta-analysis of RCTs and cohorts",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "somatropin",
+   "name": "Somatropin (HGH)",
+   "via": "",
+   "pmid": "42992838",
+   "title": "Long-acting growth hormone therapy in Chinese children with idiopathic short stature: efficacy evaluation and influencing factors.",
+   "journal": "J Pediatr Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.1515/jpem-2026-0214",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "180 Chinese children with idiopathic short stature treated with long-acting GH",
+     "design": "retrospective cohort study with propensity matching",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "spironolactone",
    "name": "Spironolactone",
    "via": "",
@@ -10874,6 +13574,64 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "spironolactone",
+   "name": "Spironolactone",
+   "via": "",
+   "pmid": "42965115",
+   "title": "Dose-Specific Network Meta-Analysis of Mineralocorticoid Receptor Antagonists in CKD.",
+   "journal": "Kidney Int Rep",
+   "year": "2026",
+   "doi": "10.1016/j.ekir.2026.107084",
+   "pmc": "PMC13721858",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "patients with chronic kidney disease in RCTs of spironolactone 25 mg",
+     "design": "network meta-analysis of randomized trials",
+     "gap": false
+    },
+    {
+     "marker": "kidney",
+     "direction": "down",
+     "who": "CKD patients; mild reduction in eGFR across MRA treatments",
+     "design": "network meta-analysis of randomized trials",
+     "gap": false
+    },
+    {
+     "marker": "hematocrit",
+     "direction": "no change",
+     "who": "CKD patients; hyperkalemia risk increased with MRAs",
+     "design": "network meta-analysis of randomized trials",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "spironolactone",
+   "name": "Spironolactone",
+   "via": "",
+   "pmid": "42993172",
+   "title": "When Less is More: A Physiology-Driven Approach to a 17-Hydroxylase Deficiency Case Series.",
+   "journal": "Horm Res Paediatr",
+   "year": "2026",
+   "doi": "10.1159/hrp/adaag058",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "psa",
+     "direction": "no change",
+     "who": "",
+     "design": "case series",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "survodutide",
@@ -11232,6 +13990,50 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "tamoxifen",
+   "name": "Tamoxifen",
+   "via": "",
+   "pmid": "42829331",
+   "title": "Mediterranean Diet, Physical Activity, and Metabolic Syndrome in Breast Cancer Survivors on Adjuvant Endocrine Therapy: A Cross-Sectional Study From North Africa.",
+   "journal": "J Am Nutr Assoc",
+   "year": "2026",
+   "doi": "10.1080/27697061.2026.2731004",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "up",
+     "who": "150 women with breast cancer on endocrine therapy, tamoxifen users (n=73) vs aromatase inhibitors",
+     "design": "cross-sectional study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tamoxifen",
+   "name": "Tamoxifen",
+   "via": "",
+   "pmid": "42892237",
+   "title": "Combined pharmacologic and lifestyle intervention for breast cancer prevention: Results of the randomized phase II TOLERANT trial in high-risk women.",
+   "journal": "Eur J Cancer",
+   "year": "2026",
+   "doi": "10.1016/j.ejca.2026.117784",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "down",
+     "who": "110 high-risk women randomized to tamoxifen with or without caloric restriction",
+     "design": "randomized phase II trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "taurine",
@@ -12019,6 +14821,268 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42803597",
+   "title": "Tirzepatide Initiation in Lithium-Treated Bipolar Disorder: Renal Biomarker Trajectories and Lithium Safety Signals Over 12 Months in a Real-World Cohort.",
+   "journal": "Hum Psychopharmacol",
+   "year": "2026",
+   "doi": "10.1002/hup.70066",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "mixed",
+     "who": "23 adults with bipolar disorder on lithium starting tirzepatide",
+     "design": "retrospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42805130",
+   "title": "Real-world effectiveness of 6-month tirzepatide therapy on body weight and composition in adults with overweight and obesity.",
+   "journal": "J Diabetes Complications",
+   "year": "2026",
+   "doi": "10.1016/j.jdiacomp.2026.109419",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "122 adults with overweight or obesity, without diabetes, on tirzepatide",
+     "design": "retrospective observational real-world cohort",
+     "gap": false
+    },
+    {
+     "marker": "igf1",
+     "direction": "no change",
+     "who": "122 adults with overweight or obesity, without diabetes, on tirzepatide",
+     "design": "retrospective observational real-world cohort",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42808550",
+   "title": "Real-world treatment patterns and cost per patient achieving treatment targets among tirzepatide and semaglutide initiators in US patients with type 2 diabetes.",
+   "journal": "J Manag Care Spec Pharm",
+   "year": "2026",
+   "doi": "10.18553/jmcp.2026.32.10.1173",
+   "pmc": "PMC13621902",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with type 2 diabetes initiating tirzepatide, naive and non-naive to GLP-1 RA",
+     "design": "retrospective cohort study, propensity matched claims",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42842950",
+   "title": "Kidney Outcomes With GLP-1 Receptor Agonists and Tirzepatide Versus Finerenone in Type 2 Diabetes and Chronic Kidney Disease: A Real-World Cohort Study.",
+   "journal": "Diabetes Obes Metab",
+   "year": "2026",
+   "doi": "10.1111/dom.71402",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "mixed",
+     "who": "4554 adults with type 2 diabetes and CKD stages 3-4 starting GLP-1/GIP RAs or finerenone",
+     "design": "retrospective propensity-matched cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42867450",
+   "title": "Effects of tirzepatide (GIP/GLP-1 dual receptor agonist) on cardiorenal biomarkers and functional capacity in heart failure: a systematic review and meta-analysis.",
+   "journal": "J Clin Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.1210/clinem/dgag284",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "hematocrit",
+     "direction": "no change",
+     "who": "",
+     "design": "not reported in abstract",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42880879",
+   "title": "A Retrospective Chart Review of Tirzepatide and Semaglutide Use in Prediabetes Management and Cardiometabolic Outcomes in a Rural Primary Care Setting.",
+   "journal": "J Dr Nurs Pract",
+   "year": "2026",
+   "doi": "10.1891/jdnp-2025-0064",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "40 rural adults with prediabetes and overweight or obesity treated with tirzepatide or semaglutide",
+     "design": "retrospective chart review",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "40 rural adults with prediabetes and overweight or obesity treated with tirzepatide or semaglutide",
+     "design": "retrospective chart review",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "40 rural adults with prediabetes and overweight or obesity treated with tirzepatide or semaglutide",
+     "design": "retrospective chart review",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42888249",
+   "title": "Real-world, digital-first delivery of GLP-1 receptor agonist therapy in women.",
+   "journal": "Nat Med",
+   "year": "2026",
+   "doi": "10.1038/s41591-026-04687-x",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "8,127 women starting GLP-1RA (99.8% tirzepatide), paired biomarker subset",
+     "design": "observational prospective implementation cohort",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "8,127 women starting GLP-1RA (99.8% tirzepatide), paired biomarker subset",
+     "design": "observational prospective implementation cohort",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42959996",
+   "title": "Treatment-Induced Neuropathy Presenting as Thoracic Radiculopathy and Abdominal Wall Protrusion After Marked Glycemic Improvement With Tirzepatide.",
+   "journal": "Cureus",
+   "year": "2026",
+   "doi": "10.7759/cureus.117153",
+   "pmc": "PMC13719001",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "67-year-old man with type 2 diabetes started on tirzepatide",
+     "design": "single case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42978782",
+   "title": "Increased Levothyroxine Requirement After Tirzepatide Initiation.",
+   "journal": "AACE Endocrinol Diabetes",
+   "year": "2026",
+   "doi": "10.1016/j.aed.2026.04.007",
+   "pmc": "PMC13728236",
+   "effects": [
+    {
+     "marker": "thyroid",
+     "direction": "up",
+     "who": "one 48-year-old woman with primary hypothyroidism starting tirzepatide",
+     "design": "single case report",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "42979558",
+   "title": "Clinical outcomes of tirzepatide in a real-world follow-up cohort of patients with type 2 diabetes.",
+   "journal": "touchREV Endocrinol",
+   "year": "2026",
+   "doi": "10.17925/ee.2026.22.2.1",
+   "pmc": "PMC13730170",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "295 adults with type 2 diabetes starting tirzepatide in secondary care",
+     "design": "retrospective observational cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "295 adults with type 2 diabetes starting tirzepatide in secondary care",
+     "design": "retrospective observational cohort study",
+     "gap": true
+    },
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "295 adults with type 2 diabetes starting tirzepatide in secondary care",
+     "design": "retrospective observational cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "tongkatali",
    "name": "Tongkat ali",
    "via": "",
@@ -12162,6 +15226,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "tretinoin",
+   "name": "Tretinoin",
+   "via": "",
+   "pmid": "42796232",
+   "title": "Real-World Effectiveness and Safety of Oral Alitretinoin in Chronic Hand Eczema with Exploratory Off-Label Indications: A 10-Year Single-Center Korean Study.",
+   "journal": "Medicina (Kaunas)",
+   "year": "2026",
+   "doi": "10.3390/medicina62091625",
+   "pmc": "PMC13609635",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "up",
+     "who": "99 patients with chronic hand eczema or off-label indications treated with oral alitretinoin",
+     "design": "retrospective single-center cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "triptorelin",
@@ -12411,6 +15497,28 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "triptorelin",
+   "name": "Triptorelin",
+   "via": "",
+   "pmid": "43000826",
+   "title": "Triptorelin-stimulated gonadotropin concentrations for precocious puberty.",
+   "journal": "Ann Pediatr Endocrinol Metab",
+   "year": "2026",
+   "doi": "10.6065/apem.2550394.197",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "up",
+     "who": "186 girls under 8 with breast development, subcutaneous triptorelin test",
+     "design": "retrospective study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
+  },
+  {
    "id": "turkesterone",
    "name": "Turkesterone",
    "via": "",
@@ -12582,6 +15690,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "vitd3",
+   "name": "Vitamin D3",
+   "via": "",
+   "pmid": "42828562",
+   "title": "Interaction between vitamin D and the growth hormone/insulin-like growth factor 1 axis in children: a systematic review and meta-analysis.",
+   "journal": "Osteoporos Int",
+   "year": "2026",
+   "doi": "10.1007/s00198-026-08225-w",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "igf1",
+     "direction": "up",
+     "who": "children receiving vitamin D supplementation (pooled studies)",
+     "design": "systematic review and meta-analysis",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-09"
   },
   {
    "id": "zinc",
@@ -12814,6 +15944,8 @@
   "anastrozole:38021712",
   "anastrozole:40973715",
   "anastrozole:41234758",
+  "anastrozole:42968162",
+  "anastrozole:42996232",
   "aod9604:15834452",
   "aod9604:24906629",
   "aod9604:25382550",
@@ -12848,6 +15980,25 @@
   "b12:39336575",
   "b12:41402393",
   "b12:42130936",
+  "b12:42796299",
+  "b12:42797002",
+  "b12:42797008",
+  "b12:42803804",
+  "b12:42825811",
+  "b12:42859488",
+  "b12:42882033",
+  "b12:42890991",
+  "b12:42900397",
+  "b12:42901726",
+  "b12:42917973",
+  "b12:42924156",
+  "b12:42924176",
+  "b12:42941271",
+  "b12:42953739",
+  "b12:42958026",
+  "b12:42968241",
+  "b12:42978426",
+  "b12:42998864",
   "berberine:28317482",
   "berberine:30637820",
   "berberine:30644763",
@@ -12859,6 +16010,20 @@
   "berberine:38659110",
   "berberine:39065511",
   "berberine:41062796",
+  "berberine:42797275",
+  "berberine:42797458",
+  "berberine:42818898",
+  "berberine:42834458",
+  "berberine:42836929",
+  "berberine:42839965",
+  "berberine:42852760",
+  "berberine:42868743",
+  "berberine:42871100",
+  "berberine:42872668",
+  "berberine:42923173",
+  "berberine:42943244",
+  "berberine:42943269",
+  "berberine:42983185",
   "bpc157:28641541",
   "bpc157:39909207",
   "bpc157:41471311",
@@ -12884,6 +16049,14 @@
   "cabergoline:39078526",
   "cabergoline:39312063",
   "cabergoline:41489578",
+  "cabergoline:42828437",
+  "cabergoline:42851757",
+  "cabergoline:42863587",
+  "cabergoline:42878664",
+  "cabergoline:42912446",
+  "cabergoline:42973552",
+  "cabergoline:42978565",
+  "cabergoline:42992517",
   "cagrilintide:38184193",
   "cagrilintide:38286487",
   "cagrilintide:39868309",
@@ -12907,6 +16080,10 @@
   "canagliflozin:34248838",
   "canagliflozin:37547306",
   "canagliflozin:39576469",
+  "canagliflozin:42791398",
+  "canagliflozin:42802719",
+  "canagliflozin:42872647",
+  "canagliflozin:42953914",
   "cerebrolysin:10523962",
   "cerebrolysin:24777546",
   "cerebrolysin:29782737",
@@ -12932,6 +16109,10 @@
   "clomiphene:32396844",
   "clomiphene:36325242",
   "clomiphene:37806813",
+  "clomiphene:42833154",
+  "clomiphene:42877633",
+  "clomiphene:42933627",
+  "clomiphene:42962534",
   "collagen:18385903",
   "collagen:19386527",
   "collagen:28740282",
@@ -12962,6 +16143,16 @@
   "coq10:39350827",
   "coq10:39581576",
   "coq10:40058977",
+  "coq10:42794580",
+  "coq10:42795525",
+  "coq10:42796552",
+  "coq10:42797366",
+  "coq10:42812771",
+  "coq10:42854880",
+  "coq10:42893208",
+  "coq10:42905438",
+  "coq10:42943255",
+  "coq10:42943601",
   "creatine:17430086",
   "creatine:22141211",
   "creatine:29396939",
@@ -12975,6 +16166,26 @@
   "creatine:37049565",
   "creatine:37713053",
   "creatine:39396212",
+  "creatine:42796331",
+  "creatine:42802791",
+  "creatine:42807769",
+  "creatine:42814674",
+  "creatine:42822048",
+  "creatine:42824606",
+  "creatine:42826236",
+  "creatine:42832037",
+  "creatine:42837742",
+  "creatine:42844553",
+  "creatine:42851989",
+  "creatine:42858621",
+  "creatine:42859185",
+  "creatine:42860736",
+  "creatine:42872583",
+  "creatine:42885127",
+  "creatine:42891273",
+  "creatine:42899287",
+  "creatine:42913221",
+  "creatine:42929050",
   "curcumin:28485496",
   "curcumin:28884496",
   "curcumin:31398884",
@@ -12983,10 +16194,41 @@
   "curcumin:33003518",
   "curcumin:34252530",
   "curcumin:37424347",
+  "curcumin:42792232",
+  "curcumin:42794784",
+  "curcumin:42797275",
+  "curcumin:42797458",
+  "curcumin:42814403",
+  "curcumin:42839965",
+  "curcumin:42849307",
+  "curcumin:42857652",
+  "curcumin:42862418",
+  "curcumin:42883484",
+  "curcumin:42906463",
+  "curcumin:42917198",
+  "curcumin:42934363",
+  "curcumin:42935917",
+  "curcumin:42940078",
+  "curcumin:42942889",
+  "curcumin:42943255",
+  "curcumin:42944098",
+  "curcumin:42947920",
   "dapagliflozin:32403420",
   "dapagliflozin:32862232",
   "dapagliflozin:34139987",
   "dapagliflozin:38367893",
+  "dapagliflozin:42791398",
+  "dapagliflozin:42798693",
+  "dapagliflozin:42801001",
+  "dapagliflozin:42882031",
+  "dapagliflozin:42899606",
+  "dapagliflozin:42927625",
+  "dapagliflozin:42928725",
+  "dapagliflozin:42935495",
+  "dapagliflozin:42951286",
+  "dapagliflozin:42969229",
+  "dapagliflozin:42975136",
+  "dapagliflozin:42994903",
   "dhea:12007895",
   "dhea:12088188",
   "dhea:133709",
@@ -13007,6 +16249,26 @@
   "dhea:39055422",
   "dhea:39978319",
   "dhea:40235665",
+  "dhea:42794241",
+  "dhea:42807012",
+  "dhea:42812157",
+  "dhea:42814583",
+  "dhea:42841432",
+  "dhea:42847895",
+  "dhea:42858188",
+  "dhea:42859185",
+  "dhea:42863140",
+  "dhea:42907211",
+  "dhea:42914596",
+  "dhea:42914938",
+  "dhea:42915226",
+  "dhea:42939962",
+  "dhea:42941220",
+  "dhea:42946068",
+  "dhea:42954111",
+  "dhea:42958542",
+  "dhea:42985898",
+  "dhea:42999718",
   "dihexa:41490200",
   "dsip:1285360",
   "dsip:1336202",
@@ -13035,6 +16297,9 @@
   "dulaglutide:41406444",
   "dulaglutide:41903177",
   "dulaglutide:42100257",
+  "dulaglutide:42897592",
+  "dulaglutide:42932003",
+  "dulaglutide:42959190",
   "dutasteride:19341939",
   "dutasteride:20383346",
   "dutasteride:26714360",
@@ -13047,6 +16312,8 @@
   "dutasteride:37432644",
   "dutasteride:37890853",
   "dutasteride:38540126",
+  "dutasteride:42825925",
+  "dutasteride:42993878",
   "empagliflozin:26513131",
   "empagliflozin:27299675",
   "empagliflozin:28105986",
@@ -13058,6 +16325,17 @@
   "empagliflozin:39400108",
   "empagliflozin:39453837",
   "empagliflozin:39916475",
+  "empagliflozin:42791398",
+  "empagliflozin:42832816",
+  "empagliflozin:42860337",
+  "empagliflozin:42882031",
+  "empagliflozin:42899606",
+  "empagliflozin:42914747",
+  "empagliflozin:42927657",
+  "empagliflozin:42953914",
+  "empagliflozin:42959236",
+  "empagliflozin:42978827",
+  "empagliflozin:42986123",
   "enclomiphene:133709",
   "enclomiphene:14596653",
   "enclomiphene:15672123",
@@ -13076,6 +16354,10 @@
   "enclomiphene:36325242",
   "enclomiphene:37806813",
   "enclomiphene:41522318",
+  "enclomiphene:42833154",
+  "enclomiphene:42877633",
+  "enclomiphene:42933627",
+  "enclomiphene:42962534",
   "enclomiphene:6439216",
   "epithalon:12374906",
   "epithalon:38430634",
@@ -13096,6 +16378,24 @@
   "estradiol:38393627",
   "estradiol:39382458",
   "estradiol:40235665",
+  "estradiol:42793228",
+  "estradiol:42812299",
+  "estradiol:42816507",
+  "estradiol:42825638",
+  "estradiol:42843705",
+  "estradiol:42860281",
+  "estradiol:42863140",
+  "estradiol:42864889",
+  "estradiol:42866660",
+  "estradiol:42868722",
+  "estradiol:42883785",
+  "estradiol:42918571",
+  "estradiol:42929847",
+  "estradiol:42942573",
+  "estradiol:42946859",
+  "estradiol:42949673",
+  "estradiol:42954750",
+  "estradiol:42954951",
   "exemestane:10514021",
   "exemestane:10572233",
   "exemestane:10731118",
@@ -13112,6 +16412,7 @@
   "exemestane:32192389",
   "exemestane:32647869",
   "exemestane:42229584",
+  "exemestane:42996232",
   "exenatide:16341288",
   "exenatide:17128544",
   "exenatide:19703814",
@@ -13126,6 +16427,12 @@
   "exenatide:34248838",
   "exenatide:35422660",
   "exenatide:41498523",
+  "exenatide:42801380",
+  "exenatide:42846711",
+  "exenatide:42869605",
+  "exenatide:42915765",
+  "exenatide:42953685",
+  "exenatide:42962966",
   "finasteride:11702316",
   "finasteride:15361986",
   "finasteride:19341939",
@@ -13139,6 +16446,11 @@
   "finasteride:39066530",
   "finasteride:39498260",
   "finasteride:41226747",
+  "finasteride:42797523",
+  "finasteride:42906367",
+  "finasteride:42943155",
+  "finasteride:42989303",
+  "finasteride:42993878",
   "finasteride:7679063",
   "follistatin:27579164",
   "follistatin:29695980",
@@ -13160,6 +16472,8 @@
   "follistatin:41279648",
   "follistatin:41355050",
   "follistatin:41476993",
+  "follistatin:42925003",
+  "follistatin:42942139",
   "fsh:12534318",
   "fsh:18627209",
   "fsh:19627705",
@@ -13176,6 +16490,9 @@
   "fsh:38528991",
   "fsh:39490735",
   "fsh:40898961",
+  "fsh:42804686",
+  "fsh:42877143",
+  "fsh:42904410",
   "ghkcu:25745767",
   "ghkcu:32983753",
   "ghkcu:41490200",
@@ -13192,6 +16509,7 @@
   "ghrp2:35758863",
   "ghrp2:40277822",
   "ghrp2:40677481",
+  "ghrp2:42862021",
   "ghrp2:9186261",
   "ghrp6:10193871",
   "ghrp6:10427162",
@@ -13207,6 +16525,7 @@
   "ghrp6:32257855",
   "ghrp6:35760980",
   "ghrp6:38564940",
+  "ghrp6:42862021",
   "ghrp6:9186261",
   "ghrp6:9667794",
   "glutathione:11396699",
@@ -13228,7 +16547,27 @@
   "glutathione:39555222",
   "glutathione:39765626",
   "glutathione:39975607",
+  "glutathione:42797013",
+  "glutathione:42816875",
+  "glutathione:42822859",
+  "glutathione:42825034",
+  "glutathione:42829037",
+  "glutathione:42854880",
+  "glutathione:42868851",
+  "glutathione:42874826",
+  "glutathione:42880641",
+  "glutathione:42883106",
+  "glutathione:42887900",
+  "glutathione:42901442",
+  "glutathione:42908454",
+  "glutathione:42924122",
+  "glutathione:42924413",
+  "glutathione:42925003",
+  "glutathione:42927511",
+  "glutathione:42927732",
+  "glutathione:42937553",
   "glutathione:42958331",
+  "glutathione:42995927",
   "glycine:17713414",
   "glycine:19936667",
   "glycine:33268508",
@@ -13247,6 +16586,25 @@
   "glycine:39525048",
   "glycine:40260914",
   "glycine:40926122",
+  "glycine:42793137",
+  "glycine:42827952",
+  "glycine:42829037",
+  "glycine:42832037",
+  "glycine:42836304",
+  "glycine:42845514",
+  "glycine:42853489",
+  "glycine:42856903",
+  "glycine:42878460",
+  "glycine:42917973",
+  "glycine:42933648",
+  "glycine:42941228",
+  "glycine:42949621",
+  "glycine:42952919",
+  "glycine:42968817",
+  "glycine:42981445",
+  "glycine:42992880",
+  "glycine:43001251",
+  "glycine:43001726",
   "gonadorelin:1709853",
   "gonadorelin:1724398",
   "gonadorelin:19013720",
@@ -13257,6 +16615,7 @@
   "gonadorelin:36336621",
   "gonadorelin:38197510",
   "gonadorelin:40871041",
+  "gonadorelin:42862021",
   "hcg:10447009",
   "hcg:12112963",
   "hcg:24365330",
@@ -13273,6 +16632,24 @@
   "hcg:37240364",
   "hcg:40460853",
   "hcg:40879404",
+  "hcg:42796410",
+  "hcg:42801029",
+  "hcg:42802581",
+  "hcg:42804686",
+  "hcg:42823675",
+  "hcg:42829713",
+  "hcg:42846018",
+  "hcg:42851757",
+  "hcg:42856119",
+  "hcg:42882377",
+  "hcg:42935803",
+  "hcg:42952624",
+  "hcg:42964183",
+  "hcg:42974274",
+  "hcg:42977513",
+  "hcg:42987309",
+  "hcg:42987542",
+  "hcg:42997202",
   "hcg:492636",
   "hexarelin:10193871",
   "hexarelin:10226781",
@@ -13303,6 +16680,19 @@
   "hmg:41184190",
   "hmg:41729769",
   "hmg:42724652",
+  "hmg:42793184",
+  "hmg:42804682",
+  "hmg:42806178",
+  "hmg:42831293",
+  "hmg:42834219",
+  "hmg:42839006",
+  "hmg:42844473",
+  "hmg:42855964",
+  "hmg:42872678",
+  "hmg:42904410",
+  "hmg:42958722",
+  "hmg:42961645",
+  "hmg:42978013",
   "humanin:12391601",
   "humanin:25738459",
   "humanin:27082450",
@@ -13322,6 +16712,8 @@
   "humanin:39823439",
   "humanin:41050739",
   "humanin:42492881",
+  "humanin:42880137",
+  "humanin:42994705",
   "igf1des:11145572",
   "igf1des:11348998",
   "igf1des:15322112",
@@ -13365,6 +16757,24 @@
   "iron:41120110",
   "iron:41902804",
   "iron:42399135",
+  "iron:42792685",
+  "iron:42792758",
+  "iron:42794294",
+  "iron:42794599",
+  "iron:42808897",
+  "iron:42812771",
+  "iron:42817261",
+  "iron:42830765",
+  "iron:42836035",
+  "iron:42867271",
+  "iron:42874826",
+  "iron:42885127",
+  "iron:42891064",
+  "iron:42911878",
+  "iron:42920799",
+  "iron:42923651",
+  "iron:42927732",
+  "iron:42933380",
   "kisspeptin:18193176",
   "kisspeptin:24782009",
   "kisspeptin:28531286",
@@ -13384,6 +16794,17 @@
   "kisspeptin:38866494",
   "kisspeptin:38978171",
   "kisspeptin:39111089",
+  "kisspeptin:42794587",
+  "kisspeptin:42802581",
+  "kisspeptin:42802656",
+  "kisspeptin:42809619",
+  "kisspeptin:42821307",
+  "kisspeptin:42862021",
+  "kisspeptin:42863441",
+  "kisspeptin:42880183",
+  "kisspeptin:42888352",
+  "kisspeptin:42936012",
+  "kisspeptin:42958239",
   "kpv:15102092",
   "kpv:22178636",
   "kpv:35496263",
@@ -13408,6 +16829,9 @@
   "ldn:41039116",
   "ldn:41212412",
   "ldn:42406571",
+  "ldn:42838712",
+  "ldn:42871841",
+  "ldn:42986262",
   "letrozole:33466886",
   "letrozole:34171379",
   "letrozole:35072927",
@@ -13418,6 +16842,24 @@
   "letrozole:39701735",
   "letrozole:39781076",
   "letrozole:40193219",
+  "letrozole:42787272",
+  "letrozole:42807300",
+  "letrozole:42833841",
+  "letrozole:42837857",
+  "letrozole:42848250",
+  "letrozole:42877633",
+  "letrozole:42887483",
+  "letrozole:42892420",
+  "letrozole:42893310",
+  "letrozole:42912446",
+  "letrozole:42921373",
+  "letrozole:42929028",
+  "letrozole:42933627",
+  "letrozole:42968162",
+  "letrozole:42970458",
+  "letrozole:42973360",
+  "letrozole:42982288",
+  "letrozole:42996232",
   "leuprolide:15783246",
   "leuprolide:15801868",
   "leuprolide:15966561",
@@ -13426,6 +16868,11 @@
   "leuprolide:26513436",
   "leuprolide:32926454",
   "leuprolide:37151158",
+  "leuprolide:42889864",
+  "leuprolide:42897111",
+  "leuprolide:42920467",
+  "leuprolide:42937421",
+  "leuprolide:42962532",
   "leuprolide:9951575",
   "lions:24959591",
   "lions:25960751",
@@ -13445,6 +16892,14 @@
   "liraglutide:34248838",
   "liraglutide:40378625",
   "liraglutide:40444045",
+  "liraglutide:42794805",
+  "liraglutide:42796084",
+  "liraglutide:42816429",
+  "liraglutide:42855378",
+  "liraglutide:42860337",
+  "liraglutide:42901472",
+  "liraglutide:42953685",
+  "liraglutide:42986362",
   "ll37:18389157",
   "ll37:24441102",
   "ll37:26291576",
@@ -13465,6 +16920,7 @@
   "ll37:40285744",
   "ll37:41614884",
   "ll37:41843625",
+  "ll37:42980169",
   "ltheanine:29482046",
   "ltheanine:30175254",
   "ltheanine:31412272",
@@ -13478,6 +16934,8 @@
   "ltheanine:40714509",
   "ltheanine:41016812",
   "ltheanine:41796839",
+  "ltheanine:42880595",
+  "ltheanine:42948303",
   "mag:22141211",
   "mag:24050159",
   "mag:31149066",
@@ -13494,6 +16952,26 @@
   "mag:39179936",
   "mag:40027047",
   "mag:41212650",
+  "mag:42788340",
+  "mag:42792232",
+  "mag:42792758",
+  "mag:42798526",
+  "mag:42810313",
+  "mag:42812376",
+  "mag:42813156",
+  "mag:42816355",
+  "mag:42844945",
+  "mag:42874781",
+  "mag:42880713",
+  "mag:42884753",
+  "mag:42894630",
+  "mag:42901980",
+  "mag:42940464",
+  "mag:42948529",
+  "mag:42953862",
+  "mag:42987542",
+  "mag:42989221",
+  "mag:42998118",
   "mazdutide:40081498",
   "mazdutide:40479843",
   "mazdutide:41025406",
@@ -13515,6 +16993,25 @@
   "melatonin:37651673",
   "melatonin:38440074",
   "melatonin:40512292",
+  "melatonin:42787377",
+  "melatonin:42793189",
+  "melatonin:42813623",
+  "melatonin:42831261",
+  "melatonin:42850611",
+  "melatonin:42861008",
+  "melatonin:42865244",
+  "melatonin:42880585",
+  "melatonin:42883720",
+  "melatonin:42884728",
+  "melatonin:42891900",
+  "melatonin:42895006",
+  "melatonin:42899059",
+  "melatonin:42933736",
+  "melatonin:42934231",
+  "melatonin:42950758",
+  "melatonin:42955299",
+  "melatonin:42958239",
+  "melatonin:42965931",
   "metformin:10400405",
   "metformin:23628280",
   "metformin:27923166",
@@ -13528,6 +17025,25 @@
   "metformin:39881036",
   "metformin:40360648",
   "metformin:40855964",
+  "metformin:42794492",
+  "metformin:42809004",
+  "metformin:42815506",
+  "metformin:42822210",
+  "metformin:42823563",
+  "metformin:42823960",
+  "metformin:42830876",
+  "metformin:42835662",
+  "metformin:42836929",
+  "metformin:42856833",
+  "metformin:42872583",
+  "metformin:42880161",
+  "metformin:42893679",
+  "metformin:42899606",
+  "metformin:42920943",
+  "metformin:42939624",
+  "metformin:42941621",
+  "metformin:42961875",
+  "metformin:42978981",
   "methyleneblue:12845393",
   "methyleneblue:2658373",
   "methyleneblue:30956100",
@@ -13546,6 +17062,14 @@
   "methyleneblue:38640175",
   "methyleneblue:38777656",
   "methyleneblue:39932087",
+  "methyleneblue:42813919",
+  "methyleneblue:42871933",
+  "methyleneblue:42898592",
+  "methyleneblue:42930008",
+  "methyleneblue:42930092",
+  "methyleneblue:42946819",
+  "methyleneblue:42964912",
+  "methyleneblue:42998624",
   "mgf:12023866",
   "mgf:17354613",
   "mgf:17822355",
@@ -13582,6 +17106,10 @@
   "minoxidil:41226747",
   "minoxidil:41614932",
   "minoxidil:42290527",
+  "minoxidil:42801746",
+  "minoxidil:42953162",
+  "minoxidil:42989303",
+  "minoxidil:42993878",
   "minoxidil:6985752",
   "mk677:10427162",
   "mk677:10790589",
@@ -13591,6 +17119,7 @@
   "mk677:36303408",
   "mk677:39145153",
   "mk677:42578445",
+  "mk677:42862021",
   "modafinil:15753235",
   "modafinil:16370918",
   "modafinil:19752841",
@@ -13626,6 +17155,8 @@
   "motsc:40872612",
   "motsc:41945630",
   "motsc:42278864",
+  "motsc:42880137",
+  "motsc:42918312",
   "mt2:16166222",
   "mt2:34440144",
   "mt2:42862021",
@@ -13646,6 +17177,24 @@
   "nac:38455596",
   "nac:38615060",
   "nac:39415242",
+  "nac:42792209",
+  "nac:42792564",
+  "nac:42793131",
+  "nac:42814674",
+  "nac:42818246",
+  "nac:42826829",
+  "nac:42857347",
+  "nac:42876470",
+  "nac:42883291",
+  "nac:42888314",
+  "nac:42909700",
+  "nac:42922261",
+  "nac:42940208",
+  "nac:42943255",
+  "nac:42947727",
+  "nac:42956824",
+  "nac:42985323",
+  "nac:42995927",
   "nad:17554232",
   "nad:26215259",
   "nad:27651178",
@@ -13661,6 +17210,25 @@
   "nad:38919254",
   "nad:39129450",
   "nad:39391060",
+  "nad:42793029",
+  "nad:42797591",
+  "nad:42807121",
+  "nad:42819301",
+  "nad:42842032",
+  "nad:42843881",
+  "nad:42849766",
+  "nad:42863735",
+  "nad:42866010",
+  "nad:42873891",
+  "nad:42874828",
+  "nad:42890960",
+  "nad:42892420",
+  "nad:42927019",
+  "nad:42945822",
+  "nad:42959468",
+  "nad:42967035",
+  "nad:42968242",
+  "nad:42971571",
   "nmn:34326206",
   "nmn:35173682",
   "nmn:35276741",
@@ -13674,6 +17242,8 @@
   "nmn:40166461",
   "nmn:41256548",
   "nmn:42232307",
+  "nmn:42892420",
+  "nmn:42959468",
   "nr:30990964",
   "nr:31240235",
   "nr:34056649",
@@ -13688,6 +17258,7 @@
   "nr:40754032",
   "nr:41419644",
   "nr:42232307",
+  "nr:42843881",
   "omega3:16672684",
   "omega3:25242435",
   "omega3:27819772",
@@ -13697,10 +17268,28 @@
   "omega3:33465804",
   "omega3:38252923",
   "omega3:38376536",
+  "omega3:42796958",
+  "omega3:42799394",
+  "omega3:42814674",
+  "omega3:42817086",
+  "omega3:42818559",
+  "omega3:42822582",
+  "omega3:42846020",
+  "omega3:42846170",
+  "omega3:42848298",
+  "omega3:42850276",
+  "omega3:42883551",
+  "omega3:42889744",
+  "omega3:42894748",
+  "omega3:42964645",
+  "omega3:42994692",
+  "omega3:42997117",
   "orforglipron:38242040",
   "orforglipron:40042613",
   "orforglipron:41683830",
   "orforglipron:42556625",
+  "orforglipron:42830762",
+  "orforglipron:42871841",
   "oxytocin:12672376",
   "oxytocin:27681116",
   "oxytocin:31866881",
@@ -13715,6 +17304,23 @@
   "oxytocin:38306878",
   "oxytocin:39067972",
   "oxytocin:39096452",
+  "oxytocin:42797431",
+  "oxytocin:42797483",
+  "oxytocin:42800435",
+  "oxytocin:42800436",
+  "oxytocin:42828790",
+  "oxytocin:42850565",
+  "oxytocin:42853507",
+  "oxytocin:42855957",
+  "oxytocin:42871348",
+  "oxytocin:42878299",
+  "oxytocin:42907989",
+  "oxytocin:42914679",
+  "oxytocin:42941820",
+  "oxytocin:42946552",
+  "oxytocin:42960442",
+  "oxytocin:42976030",
+  "oxytocin:42996146",
   "oxytocin:9551709",
   "pegmgf:42395176",
   "pemvidutide:20383346",
@@ -13740,6 +17346,7 @@
   "phentermine:39834714",
   "phentermine:41025003",
   "phentermine:41039116",
+  "phentermine:42871841",
   "pramlintide:11220287",
   "pramlintide:15765626",
   "pramlintide:16492555",
@@ -13756,6 +17363,7 @@
   "pramlintide:33153424",
   "pramlintide:39481742",
   "pramlintide:39998445",
+  "pramlintide:42983241",
   "pregnenolone:10418987",
   "pregnenolone:135817",
   "pregnenolone:17142999",
@@ -13773,11 +17381,29 @@
   "pregnenolone:41138917",
   "pregnenolone:41233927",
   "pregnenolone:42318209",
+  "pregnenolone:42985898",
+  "pregnenolone:42997272",
   "pregnenolone:6213544",
   "probiotic:26869611",
   "probiotic:31465625",
   "probiotic:36196014",
   "probiotic:39834364",
+  "probiotic:42792544",
+  "probiotic:42811197",
+  "probiotic:42825372",
+  "probiotic:42826147",
+  "probiotic:42829422",
+  "probiotic:42832303",
+  "probiotic:42834262",
+  "probiotic:42840755",
+  "probiotic:42856976",
+  "probiotic:42884751",
+  "probiotic:42915814",
+  "probiotic:42927909",
+  "probiotic:42943599",
+  "probiotic:42947886",
+  "probiotic:42953211",
+  "probiotic:42961005",
   "progesterone:10768143",
   "progesterone:133709",
   "progesterone:2187004",
@@ -13796,6 +17422,26 @@
   "progesterone:38093496",
   "progesterone:39978319",
   "progesterone:40971478",
+  "progesterone:42792789",
+  "progesterone:42793228",
+  "progesterone:42794683",
+  "progesterone:42804680",
+  "progesterone:42807242",
+  "progesterone:42811967",
+  "progesterone:42843705",
+  "progesterone:42858887",
+  "progesterone:42859185",
+  "progesterone:42866660",
+  "progesterone:42868722",
+  "progesterone:42892180",
+  "progesterone:42905934",
+  "progesterone:42918571",
+  "progesterone:42926936",
+  "progesterone:42942573",
+  "progesterone:42952955",
+  "progesterone:42956973",
+  "progesterone:42957463",
+  "progesterone:42969678",
   "pt141:15349141",
   "pt141:15672123",
   "pt141:16179960",
@@ -13816,6 +17462,7 @@
   "pt141:38767282",
   "pt141:39846877",
   "pt141:42144994",
+  "pt141:42862021",
   "raloxifene:10983739",
   "raloxifene:12099668",
   "raloxifene:12549992",
@@ -13831,6 +17478,7 @@
   "raloxifene:37864676",
   "raloxifene:38972312",
   "raloxifene:40742784",
+  "raloxifene:42792641",
   "rapamycin:23764390",
   "rapamycin:28263222",
   "rapamycin:28704095",
@@ -13848,12 +17496,36 @@
   "rapamycin:39771045",
   "rapamycin:40145088",
   "rapamycin:40902851",
+  "rapamycin:42786826",
+  "rapamycin:42789715",
+  "rapamycin:42792823",
+  "rapamycin:42805933",
+  "rapamycin:42810129",
+  "rapamycin:42823563",
+  "rapamycin:42839800",
+  "rapamycin:42850593",
+  "rapamycin:42850666",
+  "rapamycin:42870959",
+  "rapamycin:42872583",
+  "rapamycin:42893199",
+  "rapamycin:42902025",
+  "rapamycin:42914890",
+  "rapamycin:42942953",
+  "rapamycin:42950248",
+  "rapamycin:42964130",
+  "rapamycin:42982232",
+  "rapamycin:42982303",
   "retatrutide:38471571",
   "retatrutide:38687506",
   "retatrutide:39335551",
   "retatrutide:40042613",
   "retatrutide:40563436",
   "retatrutide:41025003",
+  "retatrutide:42811393",
+  "retatrutide:42907720",
+  "retatrutide:42947668",
+  "retatrutide:42959190",
+  "retatrutide:42978208",
   "rhodiola:10439485",
   "rhodiola:20378318",
   "rhodiola:23093983",
@@ -13878,6 +17550,15 @@
   "semaglutide:38639997",
   "semaglutide:39455729",
   "semaglutide:40156846",
+  "semaglutide:42796084",
+  "semaglutide:42805933",
+  "semaglutide:42806285",
+  "semaglutide:42817202",
+  "semaglutide:42838477",
+  "semaglutide:42866418",
+  "semaglutide:42942386",
+  "semaglutide:42962966",
+  "semaglutide:42969445",
   "semax:10741256",
   "semax:11517472",
   "semax:16996699",
@@ -13903,6 +17584,7 @@
   "sermorelin:41880199",
   "sermorelin:42395176",
   "sermorelin:42465868",
+  "sermorelin:42862021",
   "sermorelin:8772599",
   "sildenafil:11284421",
   "sildenafil:12508460",
@@ -13922,6 +17604,8 @@
   "sildenafil:39210934",
   "sildenafil:39364726",
   "sildenafil:42052798",
+  "sildenafil:42937178",
+  "sildenafil:42943255",
   "slupp332:37717940",
   "slupp332:41688415",
   "somatropin:1498008",
@@ -13934,6 +17618,10 @@
   "somatropin:34830636",
   "somatropin:34936049",
   "somatropin:41912296",
+  "somatropin:42828562",
+  "somatropin:42834489",
+  "somatropin:42834495",
+  "somatropin:42939530",
   "somatropin:8075475",
   "spironolactone:11702316",
   "spironolactone:14704263",
@@ -13950,6 +17638,14 @@
   "spironolactone:38739064",
   "spironolactone:39656736",
   "spironolactone:41473651",
+  "spironolactone:42807481",
+  "spironolactone:42840604",
+  "spironolactone:42847224",
+  "spironolactone:42851567",
+  "spironolactone:42912472",
+  "spironolactone:42914747",
+  "spironolactone:42924373",
+  "spironolactone:42958624",
   "ss31:15341391",
   "ss31:24860647",
   "ss31:26633327",
@@ -13984,6 +17680,7 @@
   "survodutide:41216778",
   "survodutide:42777696",
   "survodutide:42792628",
+  "survodutide:42947668",
   "ta1:10202264",
   "ta1:10459506",
   "ta1:10928121",
@@ -14019,6 +17716,7 @@
   "tadalafil:38922362",
   "tadalafil:39771560",
   "tadalafil:40610841",
+  "tadalafil:42894824",
   "tamoxifen:11850211",
   "tamoxifen:15255840",
   "tamoxifen:18983216",
@@ -14033,6 +17731,16 @@
   "tamoxifen:36581817",
   "tamoxifen:37592101",
   "tamoxifen:40973715",
+  "tamoxifen:42794648",
+  "tamoxifen:42832731",
+  "tamoxifen:42837956",
+  "tamoxifen:42885369",
+  "tamoxifen:42891558",
+  "tamoxifen:42893310",
+  "tamoxifen:42932003",
+  "tamoxifen:42957243",
+  "tamoxifen:42958296",
+  "tamoxifen:42996232",
   "tamoxifen:8283927",
   "taurine:26695545",
   "taurine:26918249",
@@ -14052,6 +17760,10 @@
   "taurine:39930218",
   "taurine:39943197",
   "taurine:40963025",
+  "taurine:42834262",
+  "taurine:42868873",
+  "taurine:42941758",
+  "taurine:42995410",
   "tb4:10202264",
   "tb4:1591344",
   "tb4:16186340",
@@ -14101,6 +17813,7 @@
   "tesamorelin:38416754",
   "tesamorelin:38716080",
   "tesamorelin:41490200",
+  "tesamorelin:42862021",
   "testosterone:27168810",
   "testosterone:27923166",
   "testosterone:30925463",
@@ -14118,11 +17831,39 @@
   "testosterone:38393627",
   "testosterone:40235665",
   "testosterone:42207626",
+  "testosterone:42792685",
+  "testosterone:42802656",
+  "testosterone:42838795",
+  "testosterone:42841334",
+  "testosterone:42847916",
+  "testosterone:42853567",
+  "testosterone:42855957",
+  "testosterone:42863140",
+  "testosterone:42864396",
+  "testosterone:42867946",
+  "testosterone:42875728",
+  "testosterone:42897091",
+  "testosterone:42899007",
+  "testosterone:42900350",
+  "testosterone:42907385",
+  "testosterone:42918571",
+  "testosterone:42942573",
+  "testosterone:42948131",
   "tirzepatide:35807558",
   "tirzepatide:36498958",
   "tirzepatide:36751934",
   "tirzepatide:37758044",
   "tirzepatide:41406444",
+  "tirzepatide:42792628",
+  "tirzepatide:42796084",
+  "tirzepatide:42860281",
+  "tirzepatide:42866418",
+  "tirzepatide:42881794",
+  "tirzepatide:42907053",
+  "tirzepatide:42907720",
+  "tirzepatide:42934184",
+  "tirzepatide:42946946",
+  "tirzepatide:42958899",
   "tongkatali:22924057",
   "tongkatali:22966245",
   "tongkatali:24386995",
@@ -14154,6 +17895,17 @@
   "tretinoin:39640010",
   "tretinoin:40696162",
   "tretinoin:40851940",
+  "tretinoin:42791791",
+  "tretinoin:42793013",
+  "tretinoin:42799197",
+  "tretinoin:42807741",
+  "tretinoin:42825640",
+  "tretinoin:42891060",
+  "tretinoin:42926064",
+  "tretinoin:42928505",
+  "tretinoin:42942106",
+  "tretinoin:42961127",
+  "tretinoin:42979074",
   "tretinoin:8972247",
   "triptorelin:19747011",
   "triptorelin:20964453",
@@ -14165,6 +17917,8 @@
   "triptorelin:31500470",
   "triptorelin:35068132",
   "triptorelin:37387211",
+  "triptorelin:42804682",
+  "triptorelin:42831293",
   "vitd3:25729686",
   "vitd3:31581477",
   "vitd3:35713809",
@@ -14180,6 +17934,25 @@
   "vitd3:39519317",
   "vitd3:40895625",
   "vitd3:41063306",
+  "vitd3:42797008",
+  "vitd3:42798093",
+  "vitd3:42810406",
+  "vitd3:42811862",
+  "vitd3:42814674",
+  "vitd3:42824698",
+  "vitd3:42847046",
+  "vitd3:42847618",
+  "vitd3:42854971",
+  "vitd3:42867271",
+  "vitd3:42904183",
+  "vitd3:42909752",
+  "vitd3:42910315",
+  "vitd3:42923651",
+  "vitd3:42939530",
+  "vitd3:42939650",
+  "vitd3:42942352",
+  "vitd3:42968241",
+  "vitd3:42979150",
   "zinc:2407097",
   "zinc:25729686",
   "zinc:28618722",
@@ -14192,6 +17965,26 @@
   "zinc:39218697",
   "zinc:39280063",
   "zinc:40027047",
+  "zinc:42789313",
+  "zinc:42792837",
+  "zinc:42797002",
+  "zinc:42809395",
+  "zinc:42831895",
+  "zinc:42839965",
+  "zinc:42849539",
+  "zinc:42854971",
+  "zinc:42867271",
+  "zinc:42877617",
+  "zinc:42884598",
+  "zinc:42884696",
+  "zinc:42921218",
+  "zinc:42923651",
+  "zinc:42926740",
+  "zinc:42948535",
+  "zinc:42953602",
+  "zinc:42989177",
+  "zinc:42993160",
+  "zinc:42998631",
   "zinc:8829089"
  ]
 }
