@@ -25,7 +25,7 @@ export function levelAfter(n, w = 50) {
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const LIME = '#D8FF3D';
-const FORUM = '#9FB3C8';
+const FORUM = '#A3A198';
 let uidN = 0;
 const uid = (p) => `${p}${(uidN += 1)}`;
 

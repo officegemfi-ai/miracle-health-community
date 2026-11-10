@@ -64,11 +64,11 @@ export const libraryLink = (id, { site = SITE } = {}) => `${site}/library/${enco
 // How strong the evidence is: four bars, from the Library's grade
 // ---------------------------------------------------------------------------
 export const GRADES = {
-  strong: [4, 'Strong evidence', 'Several randomized trials in people, or an approved drug for this use'],
-  moderate: [3, 'Moderate evidence', 'At least one good randomized trial in people, or several smaller ones'],
-  limited: [2, 'Limited evidence', 'Small, short or uncontrolled studies in people'],
-  preclinical: [1, 'Animal and lab studies', 'Studied in animals or cells, not in people'],
-  anecdotal: [0, 'Anecdotal', 'User reports only'],
+  strong: [4, 'Strong evidence', 'Several good trials in people, or approved for this use'],
+  moderate: [3, 'Moderate evidence', 'At least one good trial in people, or several smaller ones'],
+  limited: [2, 'Limited evidence', 'Small or short studies in people, or ones with no comparison group'],
+  preclinical: [1, 'Animal and lab studies', 'Tested in animals or cells, not in people'],
+  anecdotal: [0, 'Anecdotal', 'People’s reports only, no studies'],
 };
 export const gradeLabel = (grade) => GRADES[grade]?.[1] || '';
 // words: the grade's name beside the bars (otherwise it's the bars' label); bare: only the bars,
@@ -97,19 +97,22 @@ export function signalHtml(score, { seal = '', level = '', big = false } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Compound tiles (initials on ink, in the category's color) and chips
+// Compound tiles (initials on a plate, in the category's tint) and chips
 // ---------------------------------------------------------------------------
+// Six quiet tints of bone, not a colour per category: lime is the Signal's alone, and the
+// category is always written beside the tile.
+const BONE = '#F0ECE0', SAND = '#E8DCC4', STONE = '#CED6D2', SAGE = '#DAE2CA', MIST = '#C9D3DC', CLAY = '#E6CFC0';
 const CAT = {
-  'Metabolic & weight': '#D8FF3D', 'Growth-hormone axis': '#7DD3FC', 'Healing & recovery': '#6EE7B7', 'Gut & digestion': '#BEF264',
-  'Immune & inflammation': '#5EEAD4', 'Cognition & focus': '#C4B5FD', 'Mood & stress': '#A5B4FC', Sleep: '#93C5FD',
-  'Sexual health': '#FB7185', 'Skin & hair': '#FDA4AF', Longevity: '#FCD34D', 'Hormone balance': '#F9A8D4',
-  'Muscle & performance': '#FCA5A5', 'Heart & circulation': '#F87171', 'Energy & mitochondria': '#FDE68A',
-  'Vitamins & minerals': '#FDBA74', 'Liver & detox': '#A3E635', 'Joints & bones': '#D6D3D1', Stacks: '#D8FF3D',
+  'Metabolic & weight': BONE, 'Growth-hormone axis': STONE, 'Healing & recovery': SAGE, 'Gut & digestion': SAGE,
+  'Immune & inflammation': SAGE, 'Cognition & focus': MIST, 'Mood & stress': MIST, Sleep: STONE,
+  'Sexual health': CLAY, 'Skin & hair': SAND, Longevity: SAND, 'Hormone balance': SAND,
+  'Muscle & performance': CLAY, 'Heart & circulation': STONE, 'Energy & mitochondria': SAND,
+  'Vitamins & minerals': BONE, 'Liver & detox': SAGE, 'Joints & bones': STONE, Stacks: BONE,
   // older names, for anything saved before the library grew
-  Metabolic: '#D8FF3D', 'Cognition & mood': '#C4B5FD', Supplements: '#E5E7EB', 'Skin & appearance': '#FDA4AF',
-  Immune: '#5EEAD4', 'Gut & inflammation': '#BEF264',
+  Metabolic: BONE, 'Cognition & mood': MIST, Supplements: BONE, 'Skin & appearance': SAND,
+  Immune: SAGE, 'Gut & inflammation': SAGE,
 };
-export const catColor = (cat) => CAT[cat] || '#D8FF3D';
+export const catColor = (cat) => CAT[cat] || BONE;
 export function initials(name) {
   const clean = String(name || '?').replace(/[’'().]/g, '').replace(/\band\b/gi, ' ');
   const m = clean.match(/^([A-Za-z]+)[- ]?(\d+)/);
@@ -125,7 +128,7 @@ export function tileSvg(space, size = 32) {
     // A stack: layered plates, with how many compounds are in it
     const n = (space.part_ids || []).length || '';
     return `<svg class="tile mh-tile" viewBox="0 0 32 32" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
-      <rect width="32" height="32" rx="9" fill="#121E1D"/><rect x=".5" y=".5" width="31" height="31" rx="8.5" fill="none" stroke="${color}" stroke-opacity=".45"/>
+      <rect width="32" height="32" rx="5" fill="#0E1615"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".45"/>
       <path d="M9 13.5 16 10l7 3.5-7 3.5z" fill="${color}"/><path d="m9 17.5 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
       <path d="m9 21 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/>
       ${n ? `<circle cx="25" cy="7" r="5" fill="${color}"/><text x="25" y="9.6" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="7.5" fill="#121E1D">${Number(n)}</text>` : ''}</svg>`;
@@ -133,7 +136,7 @@ export function tileSvg(space, size = 32) {
   const txt = initials(space?.name || space?.compound_name || space?.id).replace(/[^A-Z0-9]/g, '');
   const fs = txt.length > 2 ? 11 : 13;
   return `<svg class="tile mh-tile" viewBox="0 0 32 32" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
-    <rect width="32" height="32" rx="9" fill="#121E1D"/><rect x=".5" y=".5" width="31" height="31" rx="8.5" fill="none" stroke="${color}" stroke-opacity=".35"/>
+    <rect width="32" height="32" rx="5" fill="#0E1615"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".35"/>
     <text x="16" y="20.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="${fs}" fill="${color}">${txt}</text></svg>`;
 }
 // A compound: its tile, name, evidence meter and Signal, and a short line about its part in a

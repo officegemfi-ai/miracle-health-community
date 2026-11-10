@@ -22,7 +22,7 @@ export async function renderMod(tab = 'queue') {
   const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['held', 'Held and serious'], ['library', 'Library'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
   const body = h('div', {}, h('div', { class: 'skel' }));
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Keeping it safe'), h('h1', {}, 'Moderation.'))),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'Keeping it safe'), h('h1', {}, 'Moderation.'))),
     h('nav', { class: 'tabs', 'aria-label': 'Moderation' }, tabs.map(([k, l]) => h('a', { href: `#/mod/${k}`, 'aria-current': k === tab ? 'page' : null }, l))),
     body);
   setRail([]);

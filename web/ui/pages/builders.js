@@ -11,7 +11,7 @@ import { lbRow } from '../components/game.js';
 export async function renderBuilders() {
   const box = h('div', {}, h('div', { class: 'skel' }));
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `// ${monthName()} ${new Date().getFullYear()}`), h('h1', {}, 'Signal Builders.')),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `${monthName()} ${new Date().getFullYear()}`), h('h1', {}, 'Signal Builders.')),
       h('p', { class: 'cap' }, 'Ranked by Signal points this month. Points go to taking part, never to results.')),
     box);
   setRail(await railCards('builders'));

@@ -47,7 +47,7 @@ export function renderNew(param = '', d = '') {
   const updateHint = () => { hint.classList.toggle('hide', kindQ.checked); pubBox.classList.toggle('hide', kindQ.checked); };
   kindExp.addEventListener('change', updateHint); kindQ.addEventListener('change', updateHint);
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// New post'), h('h1', {}, 'What have you taken, and how did it go?'))),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'New post'), h('h1', {}, 'What have you taken, and how did it go?'))),
     draft ? h('div', { class: 'msg note from-plan' }, sig(32, 'happy'),
       h('span', {}, h('b', {}, 'Drafted for you on miraclehealth.us. '), 'It’s yours to change: add side effects or anything else, check what you took, and nothing is posted until you press Post.')) : null,
     !draft && fromGuest?.body ? h('div', { class: 'msg note from-plan' }, sig(32, 'happy'),

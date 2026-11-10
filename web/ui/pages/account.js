@@ -17,7 +17,7 @@ export function renderAccount() {
   const lv = levelOf(S.card?.level || 1);
   const texts = textsChoice();
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Settings'), h('h1', {}, 'Account.'))),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'Settings'), h('h1', {}, 'Account.'))),
     h('section', { class: 'card row nw' },
       emblem(S.card?.level || 1, 56, false, lv.name),
       h('div', { class: 'grow' }, h('b', {}, `u/${S.me.handle}`), S.me.role !== 'member' ? h('span', { class: 'chip ink' }, S.me.role) : null,

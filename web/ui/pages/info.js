@@ -12,7 +12,7 @@ export function renderRules(standalone = false) {
   const R = S.rules;
   if (!R) { render(h('p', { class: 'pad' }, 'The rules couldn’t load. Refresh to try again.')); return; }
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `// Version ${R.version}`), h('h1', {}, 'Community rules.'))),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `Version ${R.version}`), h('h1', {}, 'Community rules.'))),
     h('section', { class: 'card' },
       h('p', {}, R.intro),
       ...R.rules.map((r) => h('div', { class: 'rule' },
@@ -30,7 +30,7 @@ export async function renderHow() {
   const lv = S.levels;
   render(
     h('section', { class: 'hero' },
-      h('div', { class: 'kick' }, '// How it works'),
+      h('div', { class: 'kick' }, 'How it works'),
       h('h1', {}, 'Built by the people who take it.'),
       h('p', { class: 'lede' }, 'Members share what happened when they took something: what for, how long, and whether things were better, the same or worse than before. Sig reads each report into the Community Signal, one number per compound. The more people share, the more accurate it gets.')),
     h('h2', {}, 'The Community Signal'),

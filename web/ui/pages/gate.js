@@ -27,7 +27,7 @@ function askPassword(g, slot) {
     const go = h('button', { class: 'btn lime block', type: 'submit' }, 'Enter');
     render(h('section', { class: 'gate' }, h('div', { class: 'inner' },
       sig(88, 'watching'),
-      h('div', { class: 'kick mt16' }, '// Private beta'),
+      h('div', { class: 'kick mt16' }, 'Private beta'),
       h('h1', {}, 'Almost open.'),
       h('p', { class: 'lede' }, 'The Miracle Health community is open to invited testers for now. Enter the beta password to continue.'),
       h('form', {

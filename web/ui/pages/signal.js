@@ -23,7 +23,7 @@ export async function renderSignalPage() {
   const sortbar = h('div', { class: 'sortbar' });
   render(
     h('section', { class: 'hero signal-hero' },
-      h('div', { class: 'kick' }, '// The Community Signal'),
+      h('div', { class: 'kick' }, 'The Community Signal'),
       h('h1', {}, 'The Signal.'),
       h('p', { class: 'lede' }, 'A certificate of human experience. Every number starts from what people say on public forums, then gets rewritten, report by report, by members who took it themselves. One number per compound, blend and stack, 0 to 100.'),
       flow,

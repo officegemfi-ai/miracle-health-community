@@ -9,7 +9,7 @@ import { questBox, seasonCard, refreshQuests, goalRow } from '../components/game
 export async function renderQuests() {
   const weekly = questBox(99);
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Build the Signal'), h('h1', {}, 'Quests.')),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'Build the Signal'), h('h1', {}, 'Quests.')),
       h('p', { class: 'cap' }, 'Every report, “same for me” and reply makes the numbers more accurate.')),
     seasonCard(true),
     h('h2', {}, 'Your quests'), h('section', { class: 'card' }, weekly),
