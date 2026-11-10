@@ -23,7 +23,7 @@ export async function renderHome(sort = 'hot') {
       h('div', {},
         h('div', { class: 'kick' }, joined.length ? `${joined.length} space${joined.length === 1 ? '' : 's'} you follow` : 'Everything, until you join spaces'),
         h('h1', {}, 'Your feed.'),
-        h('p', { class: 'feed-hero-cap' }, 'First-hand reports, read by Sig into the Community Signal.'))),
+        h('p', { class: 'feed-hero-cap' }, 'What members took and how it went. Sig reads each report into the Community Signal.'))),
     due, composerBar(), sortbar('#/home', sort),
     newPostsPill(list, (row) => !joined.length || partsOf(row).some((id) => joined.some((s) => s.compound_id === id)), reload),
     list);
