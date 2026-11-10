@@ -12,7 +12,7 @@ const nextId = (p) => `${p}${++uid}`;
 // Sig, from Miracle Health's design kit (the website draws the same Sig)
 // ---------------------------------------------------------------------------
 export function sig(size = 56, mood = 'idle', cls = '') {
-  return svg(sigSvg(size, mood, { cls }));
+  return svg(sigSvg(size, mood, { cls, dark: true }));
 }
 
 export const STICKERS = [

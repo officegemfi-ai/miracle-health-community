@@ -537,7 +537,7 @@ dialog.modal h2{margin-top:0}
 .sigsay.in{opacity:1;transform:none;pointer-events:auto}
 .sigsay b{color:#FFFFFF}
 /* Sig's moves come from the design kit (kit/kit.css); stickers stand still */
-.sig.stk .sig-body,.sig.stk .sig-shadow{animation:none}
+.sig.stk *{animation:none}
 
 /* ---------------------------------------------------------------- moderation */
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
