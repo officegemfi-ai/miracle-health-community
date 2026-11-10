@@ -26,7 +26,7 @@ export async function renderExplore(family = '') {
     h('div', { class: 'meta' }, h('span', {}, `${plural(s.members_count, 'member')} · ${plural(s.reports, 'report')}`), joinButton(s)));
   const suggest = h('p', { class: 'small muted mt16' }, 'Missing something? ', h('button', { class: 'lnk', type: 'button', onclick: () => suggestCompound(filter.value.trim()) }, 'Suggest it for the library'), '.');
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `// ${fmtN(lib.length)} in the library · ${plural(stacks.length, 'stack')}`), h('h1', {}, 'Explore spaces.')),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `${fmtN(lib.length)} in the library · ${plural(stacks.length, 'stack')}`), h('h1', {}, 'Explore spaces.')),
       h('p', { class: 'cap' }, 'One space per compound, blend and stack. Join the ones you care about.')),
     h('div', { class: 'row nw explore-bar' }, filter, h('a', { class: 'btn ink sm', href: '#/stack' }, icon('layers', 16), 'Find your stack')),
     tabs, box, suggest);

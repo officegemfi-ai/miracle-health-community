@@ -12,7 +12,7 @@ export function renderRules(standalone = false) {
   const R = S.rules;
   if (!R) { render(h('p', { class: 'pad' }, 'The rules couldn’t load. Refresh to try again.')); return; }
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `// Version ${R.version}`), h('h1', {}, 'Community rules.'))),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `Version ${R.version}`), h('h1', {}, 'Community rules.'))),
     h('section', { class: 'card' },
       h('p', {}, R.intro),
       ...R.rules.map((r) => h('div', { class: 'rule' },
@@ -30,17 +30,17 @@ export async function renderHow() {
   const lv = S.levels;
   render(
     h('section', { class: 'hero' },
-      h('div', { class: 'kick' }, '// How it works'),
+      h('div', { class: 'kick' }, 'How it works'),
       h('h1', {}, 'Built by the people who take it.'),
       h('p', { class: 'lede' }, 'Members share what happened when they took something: what for, how long, and whether things were better, the same or worse than before. Sig reads each report into the Community Signal, one number per compound. The more people share, the more accurate it gets.')),
     h('h2', {}, 'The Community Signal'),
     h('section', { class: 'card' },
       h('p', {}, 'Each compound gets a number from 0 to 100:'),
       h('div', { class: 'ledger' },
-        h('div', {}, h('span', {}, 'Reported efficacy: how often people report things got better'), h('b', {}, '65%')),
-        h('div', {}, h('span', {}, 'Consistency: how much the reports agree'), h('b', {}, '15%')),
-        h('div', {}, h('span', {}, 'Diversity: how many independent voices there are'), h('b', {}, '10%')),
-        h('div', {}, h('span', {}, 'Confidence: how much there is to go on'), h('b', {}, '10%'))),
+        h('div', {}, h('span', {}, 'What happened: how often people report things got better'), h('b', {}, '65%')),
+        h('div', {}, h('span', {}, 'Agreement: how much the reports agree'), h('b', {}, '15%')),
+        h('div', {}, h('span', {}, 'Voices: how many independent voices there are'), h('b', {}, '10%')),
+        h('div', {}, h('span', {}, 'Volume: how much there is to go on'), h('b', {}, '10%'))),
       h('p', { class: 'small muted mt12' }, 'It starts from what people say on public forums, and moves toward this community’s own first-hand reports as they add up. New accounts count half, so a wave of fresh accounts can’t push a number around. Every change is kept as a new version, and the math runs in the database, never in this page.')),
     h('h2', {}, 'Rated by use'),
     h('section', { class: 'card' },

@@ -31,16 +31,15 @@ async function mountTurnstile(box) {
   });
 }
 
-// Signed out: the same photo, words and three steps as the "Took something?" band on
-// miraclehealth.us, so joining from there lands where it left off
+// Signed out: the same words and three steps as the "Took something?" band on miraclehealth.us,
+// so joining from there lands where it left off. No photograph: Sig's ring, and rings around it.
 function authLayout(...formKids) {
   document.body.classList.add('auth');
   render(h('section', { class: 'auth-wrap' },
     h('div', { class: 'auth-art' },
-      h('img', { class: 'auth-photo', src: 'img/join-1600.webp', srcset: 'img/join-960.webp 960w, img/join-1600.webp 1600w', sizes: '(max-width: 860px) 100vw, 55vw', alt: '', width: 1600, height: 1066, decoding: 'async' }),
       h('div', { class: 'sig-hero' }, sig(132, 'happy')),
-      h('div', { class: 'kick' }, '// The Miracle Health community'),
-      h('h1', {}, 'Took something? Say how it went.'),
+      h('div', { class: 'kick' }, 'The Miracle Health community'),
+      h('h1', {}, 'Took something? ', h('em', {}, 'Say how it went.')),
       h('p', { class: 'lede' }, 'Your report moves the number for the next person, even if it did nothing. Free, for adults 18 and over.'),
       h('ol', { class: 'auth-steps' },
         h('li', {}, h('span', { class: 'n' }, '01'), h('b', {}, 'Share how it went'), h('span', {}, 'What you took it for, for how long, and whether things got better, stayed the same or got worse.')),
@@ -66,7 +65,7 @@ export function renderGuestDraft(cid = '', d = '', route = () => {}) {
     placeholder: 'What you took it for, for how long, and whether things got better, stayed the same or got worse. Side effects too.' });
   body.value = (saved && (!cid || saved.cid === cid) ? saved.body : '') || linked?.body || '';
   authLayout(
-    h('div', { class: 'kick' }, '// Share how it went'),
+    h('div', { class: 'kick' }, 'Share how it went'),
     head,
     h('p', { class: 'muted' }, 'Write it first. Then we text you a code to sign in, and nothing is posted until you press Post.'),
     h('form', {
@@ -90,7 +89,7 @@ export function renderSignIn(route) {
   const ts = h('div', { class: 'turnstile' });
   const send = h('button', { class: 'btn lime block', type: 'submit' }, 'Text me a code');
   authLayout(
-    h('div', { class: 'kick' }, '// Free to join, 18 and over'),
+    h('div', { class: 'kick' }, 'Free to join, 18 and over'),
     h('h2', {}, 'Sign in.'),
     h('p', { class: 'muted' }, 'We text you a code. Your number is never shown to anyone.'),
     h('form', {
@@ -115,7 +114,7 @@ function renderCode(phone, route) {
   const code = h('input', { class: 'input', inputmode: 'numeric', autocomplete: 'one-time-code', id: 'code', maxlength: 8, required: true });
   const go = h('button', { class: 'btn lime block', type: 'submit' }, 'Sign in');
   authLayout(
-    h('div', { class: 'kick' }, '// Check your messages'),
+    h('div', { class: 'kick' }, 'Check your messages'),
     h('h2', {}, 'Enter the code.'),
     h('p', { class: 'muted' }, `We texted a code to ${phone}.`),
     h('form', {
@@ -145,7 +144,7 @@ export function renderSignup(route) {
   const health = h('input', { type: 'checkbox', id: 'health-ok' });
   const go = h('button', { class: 'btn lime block', type: 'submit' }, 'Join the community');
   authLayout(
-    h('div', { class: 'kick' }, '// Almost there'),
+    h('div', { class: 'kick' }, 'Almost there'),
     h('h2', {}, 'Pick your handle.'),
     h('p', { class: 'muted' }, 'It’s the only name anyone sees, so don’t use your real name. You’ll show up as u/handle.'),
     h('form', {

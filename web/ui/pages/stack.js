@@ -70,7 +70,7 @@ export async function renderStack(param = '', sort = 'new') {
       h('p', {}, 'No posts with these yet.'), h('a', { class: 'btn lime sm', href: share }, 'Be the first')));
   };
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, '// Find your stack'), h('h1', {}, 'Search the stack you run.')),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'Find your stack'), h('h1', {}, 'Search the stack you run.')),
       h('p', { class: 'cap' }, 'Peptides, hormones, supplements and blends: add yours, see what people report.')),
     h('div', { class: 'card' }, h('label', { class: 'f nm', for: 'stack-search' }, h('span', {}, 'What you take'), picker),
       h('p', { class: 'xs muted' }, 'Can’t find something? ', h('button', { class: 'lnk', type: 'button', onclick: () => suggestCompound() }, 'Suggest it for the library'), '.')),

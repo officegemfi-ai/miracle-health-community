@@ -98,7 +98,7 @@ function commentNode(c, p, reload) {
   node.append(
     h('div', { class: 'cm-head' }, toggle, emblem(c.author_level || 1, 22), h('a', { href: `#/u/${encodeURIComponent(c.author_handle)}` }, `u/${c.author_handle}`),
       c.author_id === p.author_id ? h('span', { class: 'chip ink' }, 'OP') : null, h('span', {}, `· ${ago(c.created_at)}`), c.edited_at ? h('span', {}, '· edited') : null, statusChip(c)),
-    body, c.serious && c.status === 'visible' ? safetyNote({ read_serious: true, is_mine: c.is_mine }) : null, acts, msg);
+    body, ...(c.serious && c.status === 'visible' ? [safetyNote({ read_serious: true, is_mine: c.is_mine })] : []), acts, msg);
   if (c.kids.length) node.append(h('div', { class: 'cm-kids' }, c.kids.map((k) => commentNode(k, p, reload))));
   return node;
 }
