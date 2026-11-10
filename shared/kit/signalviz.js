@@ -41,7 +41,7 @@ function sealInner(key) {
     verified: `<circle cx="16" cy="16" r="12.5" fill="none" stroke="${LIME}" stroke-width="2.4"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="${LIME}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`,
     certified: `<path d="M16 2.5l3.1 2.4 3.9-.5 1.5 3.6 3.6 1.5-.5 3.9 2.4 3.1-2.4 3.1.5 3.9-3.6 1.5-1.5 3.6-3.9-.5L16 29.5l-3.1-2.4-3.9.5-1.5-3.6-3.6-1.5.5-3.9L2.5 16l2.4-3.1-.5-3.9 3.6-1.5 1.5-3.6 3.9.5z" fill="${LIME}"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="#121E1D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
   }[k];
-  const inner = k === 'forum' ? `<text x="16" y="20" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="10.5" fill="${FORUM}">F</text>`
+  const inner = k === 'forum' ? `<text x="16" y="20" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="10.5" fill="${FORUM}">F</text>`
     : k === 'early' ? `<circle cx="16" cy="16" r="3.2" fill="${LIME}"/>` : k === 'backed' ? `<circle cx="16" cy="16" r="4" fill="${LIME}"/>` : '';
   return ring + inner;
 }

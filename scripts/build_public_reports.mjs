@@ -27,7 +27,7 @@ if (!src || !outDir) { console.error('Usage: node scripts/build_public_reports.m
 // commit is tagged "live". So they bring their own stylesheet, design kit and fonts (all in /r/)
 // and never borrow the app's: a new look can't reach them half way.
 const STYLES = [['kit.css', path.join(ROOT, 'shared', 'kit', 'kit.css')], ['r.css', path.join(ROOT, 'site', 'r.css')]];
-const FONTS = ['newsreader.woff2', 'jakarta.woff2', 'plexmono-500.woff2'];
+const FONTS = ['mona-sans.woff2', 'monaspace-neon-400.woff2'];
 // Each new version of the styles gets its own address, so a browser never pairs an old stylesheet with a new page
 const V = crypto.createHash('sha256').update(STYLES.map(([, f]) => fs.readFileSync(f)).join('\n')).digest('hex').slice(0, 10);
 
@@ -74,8 +74,7 @@ function shell({ title, description, url, body, noindex = false }) {
 <meta property="og:image" content="${SITE}/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="/r/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/r/fonts/jakarta.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/r/fonts/mona-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/r/kit.css?v=${V}">
 <link rel="stylesheet" href="/r/r.css?v=${V}">
 </head>
