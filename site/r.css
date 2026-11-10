@@ -1,59 +1,63 @@
-/* The public report pages (scripts/build_public_reports.mjs): the community's look, on its own,
-   for pages anyone can read without the app. Loaded after the design kit (kit/kit.css). */
-@font-face{font-family:'Inter';src:url('/fonts/inter.woff2') format('woff2');font-weight:100 900;font-display:swap}
-@font-face{font-family:'Plus Jakarta Sans';src:url('/fonts/jakarta.woff2') format('woff2');font-weight:200 800;font-display:swap}
-:root{--line:rgba(18,30,29,.12);--soft:#F4F6F5}
+/* The public report pages (scripts/build_public_reports.mjs): Plate, the look of miraclehealth.us
+   and the community app, for pages anyone can read without the app. They stand on their own: every
+   build puts this file, the design kit it was written against (kit.css) and its fonts side by side
+   in /r/, so these pages never depend on which version of the app is live. Loaded after kit.css. */
+@font-face{font-family:'Newsreader';src:url('fonts/newsreader.woff2') format('woff2');font-weight:400 500;font-style:normal;font-display:swap}
+@font-face{font-family:'Plus Jakarta Sans';src:url('fonts/jakarta.woff2') format('woff2');font-weight:200 800;font-display:swap}
+@font-face{font-family:'IBM Plex Mono';src:url('fonts/plexmono-500.woff2') format('woff2');font-weight:500;font-display:swap}
+:root{--line:var(--mh-line);--line-2:rgba(240,236,224,.32);--plate:var(--mh-ink-2);color-scheme:dark}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:#FCFCFC;color:var(--mh-text);font:400 16px/1.6 var(--mh-body)}
-a{color:inherit}
+html{-webkit-text-size-adjust:100%;background:var(--mh-ink)}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--mh-ink);color:var(--mh-text);font:400 16px/1.6 var(--mh-body);-webkit-font-smoothing:antialiased}
+main{flex:1 0 auto}
+a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
 .wrap{width:min(100% - 32px,760px);margin-inline:auto}
 .skip{position:absolute;left:-9999px}
-.skip:focus{left:16px;top:12px;z-index:10;padding:10px 14px;border-radius:10px;background:var(--mh-lime);color:var(--mh-ink)}
-:focus-visible{outline:2px solid var(--mh-ink);outline-offset:3px}
+.skip:focus{left:16px;top:12px;z-index:10;padding:10px 14px;border-radius:8px;background:var(--mh-text);color:#121E1D}
+:focus-visible{outline:2px solid var(--mh-text);outline-offset:3px}
 
-.top{background:var(--mh-ink-3);color:var(--mh-on-ink)}
+.top{border-bottom:1px solid var(--line);background:var(--mh-ink-3);color:var(--mh-on-ink)}
 .top-in{display:flex;align-items:center;gap:24px;min-height:64px;width:min(100% - 32px,1120px)}
 .logo{display:inline-flex;flex:none}
 .logo img{display:block;height:28px;width:auto}
 .top-nav{flex:1;justify-content:center}
-.top :focus-visible{outline-color:var(--mh-lime)}
 @media (max-width:760px){.top-nav{display:none}.top-in{justify-content:space-between}}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 22px;border-radius:40px;border:1px solid transparent;font:500 13px/1 var(--mh-head);letter-spacing:.08em;text-transform:uppercase;text-decoration:none;text-align:center}
-.btn.sm{min-height:38px;padding:0 16px;font-size:12px}
-.btn.lime{background:var(--mh-lime);color:var(--mh-ink)}
-.btn.lime:hover{background:var(--mh-lime-2)}
-.btn.ghost{border-color:var(--line);color:var(--mh-ink)}
-.btn.ghost:hover{border-color:rgba(18,30,29,.3)}
+/* Lime is the one action in the bar (Join). On the page, the main action is bone and the other a hairline. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 20px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--mh-text);font:600 14px/1.2 var(--mh-body);text-decoration:none;text-align:center;transition:border-color .15s,background .15s,color .15s}
+.btn:hover{border-color:var(--mh-text);color:#FFFFFF}
+.btn.sm{min-height:38px;padding:0 14px;font-size:13px}
+.btn.lime{border-color:var(--mh-lime);background:var(--mh-lime);color:#121E1D}
+.btn.lime:hover{border-color:var(--mh-lime-2);background:var(--mh-lime-2);color:#121E1D}
+.btn.bone{border-color:var(--mh-text);background:var(--mh-text);color:#121E1D}
+.btn.bone:hover{border-color:#FFFFFF;background:#FFFFFF;color:#121E1D}
 
-.report{padding:48px 0 56px}
-.kick{margin:0 0 14px;color:var(--mh-muted);font:500 12px/1.4 var(--mh-head);letter-spacing:.1em;text-transform:uppercase}
+.report{padding:56px 0 64px}
+.kick{margin:0 0 16px;color:var(--mh-muted);font:500 11.5px/1.4 var(--mh-mono);letter-spacing:.12em;text-transform:uppercase}
 .kick a{text-decoration:none}
-.kick a:hover{text-decoration:underline;text-underline-offset:3px}
-h1{margin:0 0 12px;font:600 clamp(28px,5vw,40px)/1.12 var(--mh-head);letter-spacing:-.025em;text-wrap:balance;overflow-wrap:anywhere}
-.by{margin:0 0 14px;color:var(--mh-muted);font-size:14px}
+.kick a:hover{color:var(--mh-text);text-decoration:underline}
+h1{margin:0 0 14px;font:500 clamp(32px,5.6vw,46px)/1.06 var(--mh-head);letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere}
+.by{margin:0 0 16px;color:var(--mh-muted);font-size:14px}
 .lede{max-width:62ch;margin:0 0 28px;color:var(--mh-text-2);font-size:18px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:20px;background:var(--soft);font:500 12.5px/1 var(--mh-body)}
-.chip.pos{background:#EAF7C8;color:#2F5200}
-.chip.neu{background:#FBF1D2;color:#7A5C00}
-.chip.neg{background:#F8E1DE;color:#8E2F28}
-.words{margin:28px 0;padding:24px 26px;border:1px solid var(--line);border-radius:18px;background:#fff;font-size:17px;line-height:1.7;overflow-wrap:anywhere}
+.chip{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border:1px solid var(--line-2);border-radius:5px;font:500 10.5px/1 var(--mh-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mh-text-2)}
+.chip.pos{border-color:rgba(216,255,61,.42);color:#C9F25B}
+.chip.neu{border-color:rgba(232,183,90,.5);color:#F0CC6A}
+.chip.neg{border-color:rgba(255,154,142,.5);color:#FF9A8E}
+.words{margin:28px 0;padding:26px 28px;border:1px solid var(--line);border-radius:6px;background:var(--plate);font-size:17px;line-height:1.7;overflow-wrap:anywhere}
 .words p{margin:0 0 1em;max-width:68ch}
 .words p:last-child{margin-bottom:0}
 .note{max-width:62ch;color:var(--mh-text-2);font-size:14.5px}
-.acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
-@media (max-width:520px){.acts .btn{width:100%}.words{padding:18px}}
+.acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+@media (max-width:520px){.acts .btn{width:100%}.words{padding:20px 18px}}
 
 .list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-.list a{display:grid;gap:6px;padding:18px 4px;border-bottom:1px solid var(--line);text-decoration:none}
-.list a:hover .t{text-decoration:underline;text-underline-offset:3px}
-.list .t{font:600 18px/1.3 var(--mh-head);letter-spacing:-.01em;overflow-wrap:anywhere}
+.list a{display:grid;gap:8px;padding:20px 4px;border-bottom:1px solid var(--line);text-decoration:none}
+.list a:hover .t{text-decoration:underline}
+.list .t{font:500 21px/1.25 var(--mh-head);letter-spacing:-.01em;overflow-wrap:anywhere}
 .list .m{color:var(--mh-muted);font-size:14px}
-.empty{padding:22px 24px;border-radius:16px;background:var(--soft);color:var(--mh-text-2)}
+.empty{padding:22px 24px;border:1px solid var(--line);border-radius:6px;background:var(--plate);color:var(--mh-text-2)}
 
-.foot{padding:28px 0 40px;background:var(--mh-ink-3);color:var(--mh-on-ink-2);font-size:13.5px}
+.foot{padding:28px 0 40px;border-top:1px solid var(--line);background:var(--mh-ink-3);color:var(--mh-on-ink-2);font-size:13.5px}
 .foot p{margin:0 0 10px;max-width:72ch}
 .foot a{color:var(--mh-on-ink)}
-.foot :focus-visible{outline-color:var(--mh-lime)}

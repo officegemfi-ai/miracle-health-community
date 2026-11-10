@@ -15,12 +15,21 @@
 // Also writes sitemap.xml and robots.txt at the site's root.
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { barHtml, esc, SITE, COMMUNITY } from '../shared/kit/kit.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [src, outDir] = process.argv.slice(2);
 if (!src || !outDir) { console.error('Usage: node scripts/build_public_reports.mjs <reports.json | -> <site_dir>'); process.exit(2); }
+
+// These pages are made from this checkout every hour, while the app at the site's root is whatever
+// commit is tagged "live". So they bring their own stylesheet, design kit and fonts (all in /r/)
+// and never borrow the app's: a new look can't reach them half way.
+const STYLES = [['kit.css', path.join(ROOT, 'shared', 'kit', 'kit.css')], ['r.css', path.join(ROOT, 'site', 'r.css')]];
+const FONTS = ['newsreader.woff2', 'jakarta.woff2', 'plexmono-500.woff2'];
+// Each new version of the styles gets its own address, so a browser never pairs an old stylesheet with a new page
+const V = crypto.createHash('sha256').update(STYLES.map(([, f]) => fs.readFileSync(f)).join('\n')).digest('hex').slice(0, 10);
 
 let reports = null;
 if (src !== '-') {
@@ -52,7 +61,7 @@ function shell({ title, description, url, body, noindex = false }) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <meta name="robots" content="${noindex ? 'noindex' : 'index, follow'}, noarchive">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0C1413">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -65,9 +74,10 @@ function shell({ title, description, url, body, noindex = false }) {
 <meta property="og:image" content="${SITE}/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/kit/kit.css">
-<link rel="stylesheet" href="/r/r.css">
+<link rel="preload" href="/r/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/r/fonts/jakarta.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/r/kit.css?v=${V}">
+<link rel="stylesheet" href="/r/r.css?v=${V}">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -112,7 +122,7 @@ ${paras(r.body)}
   </div>
   <p class="note">Shared by its author for anyone to read. Members see the conversation under it, and every report like this one counts in ${esc(r.compound_name)}’s Community Signal.</p>
   <div class="acts">
-    <a class="btn lime" href="${COMMUNITY}/#/new?c=${encodeURIComponent(r.compound)}">Took it too? Share how it went</a>
+    <a class="btn bone" href="${COMMUNITY}/#/new?c=${encodeURIComponent(r.compound)}">Took it too? Share how it went</a>
     ${lib ? `<a class="btn ghost" href="${esc(lib)}">What the studies say about ${esc(r.compound_name)}</a>` : ''}
   </div>
 </article>`;
@@ -140,14 +150,16 @@ function listPage() {
     description: 'Reports Miracle Health members chose to let anyone read: what they took, for what, for how long, and how it went, in their own words.',
     url: '/r/', noindex: reports === null || !reports?.length,
     body: `<div class="report"><p class="kick">Miracle Health community</p><h1>Public reports</h1>${intro}${inner}
-  <div class="acts"><a class="btn lime" href="${COMMUNITY}/#/new">Share how it went</a><a class="btn ghost" href="${SITE}/library/">Look up a compound</a></div></div>`,
+  <div class="acts"><a class="btn bone" href="${COMMUNITY}/#/new">Share how it went</a><a class="btn ghost" href="${SITE}/library/">Look up a compound</a></div></div>`,
   });
 }
 
 const rDir = path.join(outDir, 'r');
 fs.rmSync(rDir, { recursive: true, force: true });
 fs.mkdirSync(rDir, { recursive: true });
-fs.copyFileSync(path.join(ROOT, 'site', 'r.css'), path.join(rDir, 'r.css'));
+for (const [name, from] of STYLES) fs.copyFileSync(from, path.join(rDir, name));
+fs.mkdirSync(path.join(rDir, 'fonts'));
+for (const f of FONTS) fs.copyFileSync(path.join(ROOT, 'web', 'fonts', f), path.join(rDir, 'fonts', f));
 fs.writeFileSync(path.join(rDir, 'index.html'), listPage());
 for (const r of reports || []) {
   fs.mkdirSync(path.join(rDir, r.id), { recursive: true });
