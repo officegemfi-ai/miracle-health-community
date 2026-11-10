@@ -759,7 +759,7 @@ label.f.nm{margin:0}
   .pick-grid{grid-template-columns:1fr}
   .podium{gap:6px}
   .ladder-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .explore-bar{flex-wrap:wrap}
+  .row.nw.explore-bar{flex-wrap:wrap}
   .explore-bar .btn{width:100%}
   .stack-hit .row.nw{flex-wrap:wrap}
 }
