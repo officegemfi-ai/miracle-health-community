@@ -39,7 +39,7 @@ function sealInner(key) {
     early: `<circle cx="16" cy="16" r="12.5" fill="none" stroke="${LIME}" stroke-width="2" stroke-dasharray="3 3.5"/>`,
     backed: `<circle cx="16" cy="16" r="12.5" fill="none" stroke="${LIME}" stroke-opacity=".35" stroke-width="2"/><path d="M16 3.5a12.5 12.5 0 0 1 0 25" fill="none" stroke="${LIME}" stroke-width="2.4" stroke-linecap="round"/>`,
     verified: `<circle cx="16" cy="16" r="12.5" fill="none" stroke="${LIME}" stroke-width="2.4"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="${LIME}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`,
-    certified: `<path d="M16 2.5l3.1 2.4 3.9-.5 1.5 3.6 3.6 1.5-.5 3.9 2.4 3.1-2.4 3.1.5 3.9-3.6 1.5-1.5 3.6-3.9-.5L16 29.5l-3.1-2.4-3.9.5-1.5-3.6-3.6-1.5.5-3.9L2.5 16l2.4-3.1-.5-3.9 3.6-1.5 1.5-3.6 3.9.5z" fill="${LIME}"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="#121E1D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+    certified: `<path d="M16 2.5l3.1 2.4 3.9-.5 1.5 3.6 3.6 1.5-.5 3.9 2.4 3.1-2.4 3.1.5 3.9-3.6 1.5-1.5 3.6-3.9-.5L16 29.5l-3.1-2.4-3.9.5-1.5-3.6-3.6-1.5.5-3.9L2.5 16l2.4-3.1-.5-3.9 3.6-1.5 1.5-3.6 3.9.5z" fill="${LIME}"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="#0B0F11" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
   }[k];
   const inner = k === 'forum' ? `<text x="16" y="20" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="10.5" fill="${FORUM}">F</text>`
     : k === 'early' ? `<circle cx="16" cy="16" r="3.2" fill="${LIME}"/>` : k === 'backed' ? `<circle cx="16" cy="16" r="4" fill="${LIME}"/>` : '';
@@ -48,7 +48,7 @@ function sealInner(key) {
 // disc: on a dark disc, for light backgrounds (the lime would wash out on white)
 export function sealSvg(key, size = 28, disc = false) {
   const k = levelOf(key).key;
-  const inner = disc ? `<circle cx="16" cy="16" r="16" fill="#121E1D"/><g transform="translate(4.5 4.5) scale(.72)">${sealInner(k)}</g>` : sealInner(k);
+  const inner = disc ? `<circle cx="16" cy="16" r="16" fill="#0B0F11"/><g transform="translate(4.5 4.5) scale(.72)">${sealInner(k)}</g>` : sealInner(k);
   return `<svg class="seal seal-${k}" viewBox="0 0 32 32" width="${size}" height="${size}" role="img" aria-label="${esc(levelOf(k).name)}">${inner}</svg>`;
 }
 // A seal placed inside a bigger drawing, at (x, y), size px wide
@@ -91,22 +91,22 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
 
   // An input: a slim row with an initial tile, the name, how many Signals use it, and a port
   const chip = (x, y, w, name, n, portX, portY) => `<g>
-      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="#121B19"/>
+      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="#12171A"/>
       <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="${WHITE}" fill-opacity=".035" stroke="${WHITE}" stroke-opacity=".1"/>
       <rect x="${x + 8}" y="${y + 8}" width="24" height="24" rx="7" fill="${FORUM}" fill-opacity=".14"/>
       <text x="${x + 20}" y="${y + 24}" text-anchor="middle" class="t-mono" font-size="11" font-weight="600" fill="${FORUM}">${esc((name || ' ')[0])}</text>
       <text x="${x + 42}" y="${y + 18}" class="t-head" font-size="13.5" fill="${WHITE}">${esc(name)}</text>
       <text x="${x + 42}" y="${y + 31}" class="t-mono" font-size="9" letter-spacing=".5" fill="${WHITE}" fill-opacity=".55">IN ${fmt(n)} SIGNAL${n === 1 ? '' : 'S'}</text>
-      <circle cx="${portX}" cy="${portY}" r="3" fill="#0C1413" stroke="${FORUM}" stroke-width="1.4"/>
+      <circle cx="${portX}" cy="${portY}" r="3" fill="#0B0F11" stroke="${FORUM}" stroke-width="1.4"/>
     </g>`;
   const member = (x, y, w, portX, portY) => `<g>
-      <rect x="${x}" y="${y}" width="${w}" height="48" rx="13" fill="#121B19"/>
+      <rect x="${x}" y="${y}" width="${w}" height="48" rx="13" fill="#12171A"/>
       <rect x="${x}" y="${y}" width="${w}" height="48" rx="13" fill="${LIME}" fill-opacity=".07" stroke="${LIME}" stroke-opacity=".5"/>
       <circle cx="${x + 24}" cy="${y + 24}" r="11" fill="none" stroke="${LIME}" stroke-width="1.6"/>
       <circle cx="${x + 24}" cy="${y + 24}" r="4.2" fill="${LIME}"/>
       <text x="${x + 44}" y="${y + 21}" class="t-head" font-size="14" fill="${WHITE}">${fmt(reports)} first-hand report${reports === 1 ? '' : 's'}</text>
       <text x="${x + 44}" y="${y + 36}" class="t-mono" font-size="9" letter-spacing=".5" fill="${LIME}" fill-opacity=".85">+ ${fmt(sames)} “SAME FOR ME”</text>
-      <circle cx="${portX}" cy="${portY}" r="3" fill="#0C1413" stroke="${LIME}" stroke-width="1.4"/>
+      <circle cx="${portX}" cy="${portY}" r="3" fill="#0B0F11" stroke="${LIME}" stroke-width="1.4"/>
     </g>`;
 
   // The dial: the members' share in lime, the forums' in blue-grey, a tick ring, a slow orbit
@@ -206,7 +206,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
       ${formula(cx, 283, 200)}
       <g transform="translate(${cardX} ${cardY})">
         <rect width="${cardW}" height="${cardH}" rx="16" fill="url(#${id}-card)" stroke="${LIME}" stroke-opacity=".38"/>
-        <circle cx="0" cy="${cardH / 2}" r="3" fill="#0C1413" stroke="${LIME}" stroke-width="1.4"/>
+        <circle cx="0" cy="${cardH / 2}" r="3" fill="#0B0F11" stroke="${LIME}" stroke-width="1.4"/>
         ${head(16, 25, 'THE SIGNAL', LIME)}${liveDot(cardW - 18, 21.5)}
         <text x="16" y="68" class="t-head" font-size="40" fill="${WHITE}">${fmt(signals)}</text>
         <text x="16" y="86" class="t-mono" font-size="8.5" letter-spacing=".8" fill="${WHITE}" fill-opacity=".6">LIVE SIGNALS, 0–100</text>
@@ -247,7 +247,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
     ${dial(cx, cy, r, false)}
     <g transform="translate(${cx - cardW / 2} ${oy})">
       <rect width="${cardW}" height="${cardH}" rx="16" fill="url(#${id}-card)" stroke="${LIME}" stroke-opacity=".38"/>
-      <circle cx="${cardW / 2}" cy="0" r="3" fill="#0C1413" stroke="${LIME}" stroke-width="1.4"/>
+      <circle cx="${cardW / 2}" cy="0" r="3" fill="#0B0F11" stroke="${LIME}" stroke-width="1.4"/>
       ${head(16, 24, 'THE SIGNAL', LIME)}${liveDot(98, 20.5)}
       <text x="16" y="60" class="t-head" font-size="32" fill="${WHITE}">${fmt(signals)}</text>
       <text x="16" y="76" class="t-mono" font-size="8" letter-spacing=".6" fill="${WHITE}" fill-opacity=".6">LIVE SIGNALS</text>
@@ -298,7 +298,7 @@ export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {},
     const n = (w * sh) / (100 - sh);
     const x = X(n); const y = Y(sh);
     const many = list.length > 1;
-    return `<g class="tk-dot"><circle class="pulse" cx="${x}" cy="${y}" r="${many ? 9 : 6}" fill="${LIME}" fill-opacity=".25"/><circle cx="${x}" cy="${y}" r="${many ? 5.5 : 4}" fill="${LIME}" stroke="#0C1413" stroke-width="1.5"/>${many ? `<text x="${x + 12}" y="${y - 10}" class="t-mono" font-size="9.5" fill="#FCFCFC">${list.length} SIGNALS</text>` : ''}</g>`;
+    return `<g class="tk-dot"><circle class="pulse" cx="${x}" cy="${y}" r="${many ? 9 : 6}" fill="${LIME}" fill-opacity=".25"/><circle cx="${x}" cy="${y}" r="${many ? 5.5 : 4}" fill="${LIME}" stroke="#0B0F11" stroke-width="1.5"/>${many ? `<text x="${x + 12}" y="${y - 10}" class="t-mono" font-size="9.5" fill="#FCFCFC">${list.length} SIGNALS</text>` : ''}</g>`;
   }).join('');
   // The point to call out, labelled below and to the right (under the curve, off the line)
   const youMark = you ? (() => {
@@ -310,7 +310,7 @@ export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {},
     const tw = text.length * (compact ? 5.6 : 6.2);
     const tx = x + 14 + tw > W - R ? x - 14 - tw : x + 14;
     return `<g class="tk-you">${byN ? `<line x1="${x}" x2="${x}" y1="${y}" y2="${Y(0)}" stroke="${LIME}" stroke-width="1.4" stroke-dasharray="3 3"/>` : ''}
-      <circle class="pulse" cx="${x}" cy="${y}" r="11" fill="${LIME}" fill-opacity=".3"/><circle cx="${x}" cy="${y}" r="6" fill="${LIME}" stroke="#0C1413" stroke-width="2"/>
+      <circle class="pulse" cx="${x}" cy="${y}" r="11" fill="${LIME}" fill-opacity=".3"/><circle cx="${x}" cy="${y}" r="6" fill="${LIME}" stroke="#0B0F11" stroke-width="2"/>
       <text x="${tx}" y="${Math.min(y + 20, Y(0) - 8)}" class="t-mono" font-size="${compact ? 9 : 10}" font-weight="600" fill="${LIME}">${text}</text></g>`;
   })() : '';
   const yTicks = [0, 25, 50, 75, 100].map((t) => `<text x="${L - 8}" y="${Y(t) + 3}" text-anchor="end" class="t-mono" font-size="${compact ? 8 : 9}" fill="#FCFCFC" fill-opacity=".5">${t}%</text>`).join('');

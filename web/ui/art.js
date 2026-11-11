@@ -58,7 +58,7 @@ export function emblem(level = 1, size = 40, locked = false, label = '') {
     <radialGradient id="${g}r" cx=".35" cy=".25" r=".8"><stop offset="0" stop-color="#fff" stop-opacity="${locked ? 0.06 : 0.3}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
     <path d="${hex}" fill="url(#${g})" opacity="${locked ? 0.14 : 0.26}"/>
     <path d="${hex}" fill="none" stroke="url(#${g})" stroke-width="2.6" stroke-linejoin="round"/>
-    <path d="M32 9.5 L51.5 20.8 L51.5 43.2 L32 54.5 L12.5 43.2 L12.5 20.8 Z" fill="#0C1413" fill-opacity="${locked ? 0.55 : 0.82}"/>
+    <path d="M32 9.5 L51.5 20.8 L51.5 43.2 L32 54.5 L12.5 43.2 L12.5 20.8 Z" fill="#0B0F11" fill-opacity="${locked ? 0.55 : 0.82}"/>
     <path d="${hex}" fill="url(#${g}r)"/>
     <g transform="translate(16 16)" fill="none" stroke="url(#${g})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="${ca}">${GLYPH[i]}</g>
     ${locked ? '<g transform="translate(46 46)"><circle r="7.5" fill="#1B2725" stroke="#5E6664"/><path d="M-2.8 -.4v-1.8a2.8 2.8 0 0 1 5.6 0v1.8M-3.8 -.4h7.6v4.8h-7.6z" fill="none" stroke="#A9B1AE" stroke-width="1.3" stroke-linejoin="round"/></g>' : ''}
