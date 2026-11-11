@@ -976,6 +976,9 @@ Deno.test('their stack is laid out with the answer, checked with what they menti
   assert(notes.includes('end the safety line with the check with their clinician before adding anything'), notes);
   const g = guideSystem('');
   assert(g.includes('one or two short sentences for the whole answer') && g.includes('Never write what you assume or what a check left out'));
+  // Sig doesn't ask what they take, so every answer that names something to add says to check first, prescriber included
+  assert(g.includes('Check with your clinician before starting any of these, and with your prescriber if you take a prescribed medicine.'));
+  assert(g.includes('say right there, before its details, that it\'s prescription-only'));
 });
 
 Deno.test('"never studied together" is no finding: the card says no known clashes instead', async () => {
