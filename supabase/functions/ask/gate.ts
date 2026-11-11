@@ -52,7 +52,7 @@ export function unsourcedNumbers(text: string, known: Set<string>): string[] {
   return out.slice(0, 6);
 }
 type Verdict = { ok: boolean; revised?: string; broken?: number[]; fixes?: Fix[] };
-// Disclaimers belong in the reply's one caution line. A change that only adds one to a part that
+// Disclaimers belong in the reply's one safety line. A change that only adds one to a part that
 // describes benefits (and makes no strong claim) isn't made; a claim that goes too far is softened.
 const CAVEAT = /\bnot\s+(?:been\s+)?(?:fda[- ])?(?:approved|established|proven)\b|\bunproven\b|\black(?:s|ing)?\b|\blittle\s+(?:or\s+no\s+)?(?:human\s+)?(?:data|evidence)\b|\bno\s+(?:good\s+|real\s+)?human\b|\bsafety\s+(?:is|are)\s+(?:unknown|not)\b|\bresearch[- ]stage\b|\b(?:isn|aren)'?t\s+approved\b|\b(?:talk|speak|check)\s+(?:to|with)\s+(?:your|a)\s+(?:clinician|doctor|prescriber)\b|\bnot\s+medical\s+advice\b|\bnot\s+a\s+measure\b|\bunverified\b|\b(?:isn|aren)'?t\s+(?:evidence|proof)\b|\bnot\s+(?:evidence|proof)\b/i;
 const STRONG = /\b(?:cures?|cured|prevents?|reverses?|safe(?:ly)?|proven|guarantee\w*|definitely|will\s+(?:heal|fix|cure|build|burn|work|repair))\b/i;
@@ -125,7 +125,7 @@ const WORDS_FIRST = 200;
 // it can put back a finding the reply left out (rule 9)
 export const DENIES = /\bno\s+(?:good\s+|real\s+|solid\s+|clear\s+|direct\s+|strong\s+|human\s+|clinical\s+|scientific\s+)?(?:evidence|proof|data|studies|research|trials?)\b|\bnothing\s+(?:shows|suggests|proves|is\s+known)\b|\b(?:hasn.t|has\s+not|haven.t|have\s+not|isn.t|is\s+not|aren.t|are\s+not|wasn.t|weren.t|never)\s+(?:been\s+)?(?:studied|tested|shown|proven)\b|\bunstudied\b|\bunproven\b/i;
 // An answer that names compounds and never says anything about their risks or status gets the
-// Library's own caution line at the end
+// Library's own safety line at the end
 export const FULL_ANSWER = 400;
 export const CAUTIONED = /\b(?:cautions?|risks?|risky|side[- ]effects?|warnings?|warns?|watch\s+for|careful|not\s+(?:fda[- ])?approved|unapproved|illegal|prescriptions?|prescriber|clinician|doctor|physician|monitor(?:ed|ing)?|safety|unsafe|dangerous|clots?)\b/i;
 
@@ -133,11 +133,16 @@ export class Gate {
   released = '';
   cards = 0;
   checked = 0; edited = 0; held = 0; unchecked = 0;
+  // Paragraphs of the guide's own words that reached the member (not Sig's fixed lines)
+  shown = 0;
   // Numbers flagged to the check as not found in Sig's sources (for the log)
   unsourced = 0;
   private known = new Set<string>();
   // Everything Sig was given this turn: the numbers in it are the ones a reply may use
   sources(text: string) { sourceNumbers(text, this.known); }
+  // The numbers in a card's words that aren't in any of it (card labels skip rule 8, so a card
+  // that states findings, like the Interpretation agent's, checks its own)
+  unsourcedIn(text: string): string[] { return unsourcedNumbers(text, this.known); }
   // What the fact sheets this turn show was studied, for rule 9
   private studied: string[] = [];
   findings(lines: string[]) { this.studied = [...new Set([...this.studied, ...lines.map((l) => l.slice(0, 320))])].slice(0, 12); }
@@ -267,7 +272,7 @@ export class Gate {
           const m = masked.get(i)!;
           const { out, edited } = settle(m.text, v);
           if (out == null) this.held++;
-          else { if (edited) this.edited++; this.release(unmaskTargets(out, m.targets)); }
+          else { if (edited) this.edited++; this.shown++; this.release(unmaskTargets(out, m.targets)); }
         } else {
           const ok = new Set<string>();
           let missed = 0;

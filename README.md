@@ -40,8 +40,8 @@ so the public library on miraclehealth.us can use the same drawings.
   guide's loop and the closing steps), `readers.ts` (the agents that read before the guide writes),
   `screen.ts` (the Safety agent's first read), `evidence.ts`, `outcomes.ts`, `relatives.ts`,
   `mechanism.ts`, `markers.ts` (the evidence agents), `audit.ts` (the Synergy auditor), `tools.ts`
-  (the guide's tools), `cards.ts` and `items.ts` (the cards), `gate.ts` (the Safety agent's check on
-  every part), `context.ts` and `types.ts` (a turn's shared state and shapes), `library.ts`,
+  (the guide's tools), `cards.ts` and `items.ts` (the cards), `interpret.ts` (the Interpretation
+  agent), `gate.ts` (the Safety agent's check on every part), `context.ts` and `types.ts` (a turn's shared state and shapes), `library.ts`,
   `community.ts`, `prompts.ts`, `guard.ts`, `claude.ts`, `index.ts` (the HTTP handler)
 - `scripts/`: the checks on a deployed Sig (`ask_smoke.py`, `ask_eval.py`, sharing `sig_client.py`),
   the Library watch (`library_watch.py`; Claude calls through `claude_call.py`), and their tests in
@@ -99,7 +99,7 @@ Anyone can talk with Sig on miraclehealth.us/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
 for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
 community (the Community Signal: members' first-hand reports and public forum data). Each message
-goes through ten agents and the community's numbers, and the page shows each step as it happens:
+goes through eleven agents and the community's numbers, and the page shows each step as it happens:
 
 1. **Safety agent** (Claude Haiku) reads the message first: emergencies (911), signs of crisis
    (988), under-18s, pregnancy, medicines and conditions, and requests for doses or sellers.
@@ -111,12 +111,10 @@ goes through ten agents and the community's numbers, and the page shows each ste
 3. **Recommender** (Claude Sonnet, the voice of the chat) works from the public Library
    (`miraclehealth.us/library/data/index.json` and each fact sheet) and the Community Signal
    (the database's newest published version, or `snapshot.json` when it can't be read), with tools to rank options for a goal, open fact sheets and search. It
-   talks like a caring clinician, briefly: it asks or answers, never both. When it doesn't yet
-   know what would change its answer, it first asks 2 to 4 questions, the way a clinician takes
-   a history (what's going on, what they've tried, their foundations, medicines and conditions;
-   never their age or sex), on a card the visitor
-   answers by tapping or typing; past a full answer, it can only end with one question in prose.
-   It never asks for names, contact details, birthdays, amounts taken or where things come from.
+   talks like a caring clinician, briefly, in an educational, scientific way, and it never asks
+   the visitor questions: it answers with what they've told it, and when something they haven't
+   said would change the answer (a medicine, a condition, pregnancy), it says so as a statement.
+   Safety notes are one calm, informative line, never alarm.
    Warning signs are never worded by the model: it picks them from a fixed table
    (`urgency.ts`, drafted from public medical guidance, not yet reviewed by a clinician), and
    the page shows each under its level: call 911 now, same day, or this week. Someone who
@@ -173,16 +171,24 @@ goes through ten agents and the community's numbers, and the page shows each ste
 7. **Stack builder** shows a shortlist card "to discuss with a clinician"; anything on FDA's
    safety-risk list is never on it, and the auditor checks every shortlist. When someone names
    compounds they take or weigh together, it also lays out "Your stack", with the auditor's check
-   on it (shown as it is, safety-risk items plainly marked rather than hidden). If the
-   Recommender asks about their medicines first, the stack waits for their answers. Pairs never
+   on it (shown as it is, safety-risk items plainly marked rather than hidden); with no medicines
+   mentioned, Sig says the check covers the compounds together. Pairs never
    studied together are marked "unknown", not "good to know". The visitor can keep their stack
    on their own device (never sent anywhere).
-8. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
+8. **Interpretation agent** (Claude Opus by default, thinking at length: `interpret.ts`) runs last,
+   once the answer is out: it reasons through everything the other agents found, strictly about
+   efficacy (how likely it is to work for what was asked, how big the effect could be, how sure
+   anyone can be, and what evidence would change that), and its read shows as a card under the
+   answer after the Safety agent has checked every line of it. Its numbers must come from the
+   turn's notes. Not for comparisons, a crisis, an emergency, someone under 18, pregnancy, a
+   reaction happening now or anything on FDA's safety-risk list. It has its own time limit inside
+   the turn's two minutes, and a model the key can't use falls back to the guide's.
+9. **Safety agent, before anything is shown**: every paragraph of the reply, and every label on
    its cards, is read by Claude (Haiku) against the rules and released only once it's cleared,
    rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
    dosing units, supplement-extract brands and outside links are always taken out as well.
-   Sig lists questions for the visitor's own clinician, who decides what's right for them (no
-   one at Miracle Health reviews chats); the page copies them in one tap.
+   Sig lists points to discuss with the visitor's own clinician, who decides what's right for
+   them (no one at Miracle Health reviews chats); the page copies them in one tap.
 
 No doses, no sellers, no diagnosis, ever. Flags that matter for the rest of a chat (under 18,
 pregnancy, an earlier crisis) carry over through Sig's own replies, which the page sends
@@ -195,7 +201,8 @@ deleted after two days; never the address) and for the whole site: 8 per ten min
 A limit or a pause never turns away someone in crisis or describing an emergency: they get a
 reply written in advance (988, or 911) with no AI call, and the message is still counted.
 Models and effort can be changed with the GitHub variables `ASK_MODEL`, `ASK_FAST_MODEL`,
-`ASK_FALLBACK_MODEL` and `ASK_EFFORT`. When the chat changes, "Deploy to test" asks the test
+`ASK_FALLBACK_MODEL` and `ASK_EFFORT`, and the Interpretation agent's with `ASK_REASON_MODEL`
+(`claude-opus-5-5` when unset) and `ASK_REASON_EFFORT` (`high`). When the chat changes, "Deploy to test" asks the test
 project eleven real questions (`scripts/ask_smoke.py`) and shows the answers on the run's page.
 
 **The Library watch** (`.github/workflows/library-watch.yml`, `scripts/library_watch.py`) keeps

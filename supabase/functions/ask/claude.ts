@@ -175,16 +175,18 @@ export async function call(req: Record<string, unknown>, opts: CallOpts): Promis
 }
 
 // An agent that answers by filling in a form (a tool's input). Falls back to JSON in the
-// text if the model wrote it out instead. Null if there's nothing readable.
+// text if the model wrote it out instead. Null if there's nothing readable. effort: how hard a
+// 5.x model thinks first (the Interpretation agent reasons at length; the others stay quick).
 export async function form<T>(
   tool: Tool,
-  req: { model: string; system: string; messages: Message[]; max_tokens: number },
+  req: { model: string; system: string; messages: Message[]; max_tokens: number; effort?: string },
   opts: CallOpts,
 ): Promise<T | null> {
-  const force = canForceTool(req.model);
+  const { effort, ...body } = req;
+  const force = canForceTool(body.model);
   const r = await call({
-    ...req,
-    ...tuning(req.model, { form: true }),
+    ...body,
+    ...tuning(body.model, { form: true, effort }),
     tools: [tool],
     tool_choice: force ? { type: 'tool', name: tool.name } : { type: 'auto' },
   }, opts);

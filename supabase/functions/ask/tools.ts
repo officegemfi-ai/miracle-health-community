@@ -18,68 +18,11 @@ import { strs } from './fence.ts';
 const FOOD_LIKE = new Set(['whey', 'eaa', 'bcaa', 'hmb', 'electrolytes', 'psyllium', 'prebiotic', 'multivitamin', 'vitc', 'calcium', 'magcitrate',
   'magmalate', 'magtaurate', 'betaalanine', 'lcitrulline', 'tartcherry', 'bcomplex', 'chondroitin', 'hyaluronic', 'msm', 'uc2']);
 // Tools that put a card on the member's screen
-const CARD_TOOLS = new Set(['present_shortlist', 'present_plan', 'clinician_questions', 'warning_signs', 'ask_member', 'audit_combination']);
+const CARD_TOOLS = new Set(['present_shortlist', 'present_plan', 'clinician_questions', 'warning_signs', 'audit_combination']);
 const TOOL_LIMITS: Record<string, number> = {
-  find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2, ask_member: 2,
+  find_options: 3, read_fact_sheets: 4, search_library: 4, audit_combination: 2, present_shortlist: 2, clinician_questions: 2,
   warning_signs: 1, present_plan: 1,
 };
-// A card of questions comes before a full answer, never after one: past this many characters of
-// answer, the guide ends with one question in prose instead
-const ASK_AFTER = 700;
-// A question as the member sees it: if it runs long, it ends at its last question mark rather
-// than mid-sentence
-function question(raw: unknown): string {
-  const t = cleanField(raw, 400);
-  if (t.length <= 160) return t;
-  const cut = t.lastIndexOf('?', 160);
-  return cut >= 40 ? t.slice(0, cut + 1) : cleanField(t, 160);
-}
-// What Sig never asks a member: who they are or how to reach them, amounts they take,
-// or where they get things
-const NOT_TO_ASK = /\byour\s+(?:full\s+|first\s+|last\s+)?name\b|\be-?mail\b|\b(?:phone|cell)\s+number\b|\b(?:home|street|mailing)\s+address\b|\byour\s+address\b|\bzip\s*code\b|\bpostal\s+code\b|\bdate\s+of\s+birth\b|\bbirth\s?day\b|\bsocial\s+security\b|\binsurance\s+(?:id|number)\b|\bhow\s+(?:much|many)\b[^?]*\b(?:take|taking|use|using|inject|injecting|run|running)\b|\bdos(?:e|es|age|ing)\b|\bwhere\s+(?:do|did|would|will|can|could)\s+you\s+(?:get|buy|order|source)\b|\b(?:buy|purchase|vendor|seller|supplier|pharmac(?:y|ies))\b/i;
-// Sig never asks someone's age or sex (they can say if they like). A question goes if it asks either,
-// in its words or in its answers to tap, however it's put ("Sex at birth?", "Gender?", "Are you male,
-// female or intersex?", "Male (assigned at birth)", "40s"). It errs wide on purpose: a question dropped
-// by mistake costs one question, one let through breaks a rule. Words that only look alike stay: sex
-// drive, sex life and sex hormones (SHBG), male- or female-pattern hair loss, and a range or a "60+"
-// that carries its unit ("30–60 minutes"). The gate's rule 7 checks the same rule by meaning.
-const NOT_SEX = String.raw`(?!\s+(?:drive|life|hormones?))`;
-const AGE_OR_SEX = new RegExp([
-  String.raw`\bhow\s+old\b`,
-  String.raw`\b(?:your|what(?:'s|\s+is))\s+(?:age|gender|sex${NOT_SEX})\b`,
-  String.raw`\bwhat\s+age\b`,
-  String.raw`\bage\s+(?:range|group|bracket)\b`,
-  String.raw`\byears?\s+old\b`,
-  String.raw`\b(?:in\s+)?your\s+\d0s\b`,
-  String.raw`^age\s*(?:\?|:|\(|$)`,
-  String.raw`\b(?:year\s+of\s+birth|birth\s*year|(?:year|decade)\s+(?:were\s+)?you\s+(?:were\s+)?born)\b`,
-  String.raw`\bsex\b${NOT_SEX}`,
-  String.raw`\bgender\b`,
-  String.raw`\b(?:fe)?males?\b(?![\s-]pattern)`,
-  String.raw`\b(?:wo)?man\b[^?]{0,24}\b(?:wo)?man\b`,
-  String.raw`\b(?:non-?binary|intersex|transgender|cisgender)\b`,
-  String.raw`\bassigned\b[^?]{0,24}\bbirth\b`,
-].join('|'), 'i');
-// An answer to tap that is itself an age or a sex: a bare age range, a decade, a man or a woman
-const AGE_OR_SEX_ANSWER = new RegExp([
-  String.raw`^(?:under|below|less\s+than|over|above|older\s+than|younger\s+than)\s+\d{2}(?:\s*(?:years?|yrs?)(?:\s+old)?)?$`,
-  String.raw`^\d{2}\s*(?:[–—-]|to)\s*\d{2}(?:\s*(?:years?|yrs?)(?:\s+old)?)?$`,
-  String.raw`^\d{2}\s*(?:\+|or\s+(?:older|over|above|more)|and\s+(?:up|over|older))(?:\s*(?:years?|yrs?)(?:\s+old)?)?$`,
-  String.raw`^(?:in\s+)?(?:my|your|their)?\s*\d0s$`,
-  String.raw`\b(?:wo)?m[ae]n\b`,
-  String.raw`^(?:trans|cis)(?:gender)?$`,
-  String.raw`^prefer\s+not\s+to\s+say$`,
-].join('|'), 'i');
-// Compared as plain text: curly apostrophes straightened, spaces collapsed, an answer's end stop dropped
-const plainWords = (s: string) => s.normalize('NFKC').replace(/[‘’ʼ]/g, "'").replace(/\s+/g, ' ').trim();
-export function asksAgeOrSex(q: string, options: string[] = []): boolean {
-  if (AGE_OR_SEX.test(plainWords(q))) return true;
-  return options.some((o) => {
-    const a = plainWords(o).replace(/[.!?,;:]+$/, '');
-    return AGE_OR_SEX.test(a) || AGE_OR_SEX_ANSWER.test(a);
-  });
-}
-
 export async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): Promise<string> {
   const s = ctx.screen;
   ctx.uses[name] = (ctx.uses[name] ?? 0) + 1;
@@ -310,13 +253,20 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
         : `Shown to the member as their Miracle Plan: ${summary}.${auditLine}\nIn a line or two, point them to where they start and the first step if you haven't yet (the card lists the rest), then call clinician_questions.`;
     }
     case 'clinician_questions': {
-      const qs = strs(input.questions, 4, 400).map((q) => cleanField(q, 160))
+      // Points to discuss with their clinician, each a topic: Sig asks no questions, not even on
+      // the member's behalf, so one written as a question isn't shown
+      const all = strs(input.questions, 4, 400).map((q) => cleanField(q, 160))
         .filter((q) => q && !/\b(buy|purchase|order|vendor|seller|supplier|source|pharmac(?:y|ies)|purity|pure|vial|reconstitut\w*|where (?:can|do|to) (?:i )?get)\b/i.test(q));
-      if (!qs.length) return 'No questions shown.';
+      const qs = all.filter((q) => !/\?\W*$/.test(q));
+      if (!qs.length) {
+        return all.length
+          ? 'Not shown: write each as a point to discuss, not a question (for example "Checking IGF-1 before starting, and how often after"), and call clinician_questions again.'
+          : 'Nothing shown.';
+      }
       ctx.questions++;
       ctx.gate.card(qs.map((q, i) => ({ key: `q${i}`, text: q })), (ok) => {
         const kept = qs.filter((_, i) => ok.has(`q${i}`));
-        if (kept.length) ctx.memo.push('questions for a clinician');
+        if (kept.length) ctx.memo.push('points to discuss with a clinician');
         return kept.length ? { type: 'questions', items: kept } : null;
       });
       return ctx.gate.waiting ? 'They\'ll be shown right after your answer in words. Write it now.' : 'Shown.';
@@ -335,38 +285,6 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
         return card;
       }, { first: true });
       return 'Shown to the member as a "When to get help" card, each sign at its fixed level. Don\'t repeat these signs or when to get seen in your words.';
-    }
-    case 'ask_member': {
-      // Ask or answer, not both: after a full answer, one question in prose is enough
-      if (ctx.gate.written > ASK_AFTER) {
-        return 'Not shown: you have already answered in full, so don\'t add a card of questions. If one thing would sharpen your answer, end with one short question in prose.';
-      }
-      const raw = (Array.isArray(input.questions) ? input.questions : []) as Record<string, unknown>[];
-      const qs = raw.slice(0, 4).map((r) => ({
-        q: question(r?.q),
-        options: [...new Set(strs(r?.options, 6, 80).map((o) => cleanField(o, 40)).filter(Boolean))],
-        multi: r?.multi === true,
-      })).filter((x) => x.q && !NOT_TO_ASK.test(x.q) && !x.options.some((o) => NOT_TO_ASK.test(o)) && !asksAgeOrSex(x.q, x.options));
-      if (!qs.length) return 'No questions shown. Don\'t ask for names, contact details, birthdays, age or sex, amounts or where they get things.';
-      ctx.asked++;
-      // Their stack is checked once they've said what else they take, not before; the studies and
-      // the community on what they named come with the full answer
-      ctx.gate.dropWaiting('voices');
-      ctx.gate.dropWaiting('crowd');
-      ctx.gate.dropWaiting('compare');
-      if (ctx.gate.dropWaiting('stack')) {
-        step(ctx, { id: 'synergy', agent: 'synergy', status: 'done', title: 'Will check your stack with your answers' });
-      }
-      const card = `card${++ctx.stepN}`;
-      step(ctx, { id: nextId(ctx, 'ask'), agent: 'recommender', status: 'done', title: `Asked ${qs.length} question${qs.length === 1 ? '' : 's'} to tailor this` });
-      ctx.gate.card(qs.map((x, i) => ({ key: `q${i}`, text: x.options.length ? `${x.q} Answers to tap: ${x.options.join(' | ')}` : x.q })), (ok) => {
-        const kept = qs.filter((_, i) => ok.has(`q${i}`));
-        if (kept.length) ctx.memo.push(`questions for the member: ${kept.map((x) => x.q).join(' / ')}`);
-        return kept.length ? { type: 'intake', id: card, questions: kept } : null;
-      });
-      return ctx.gate.waiting
-        ? 'The questions will be shown right after your words. If you have said what you need to, end your reply here.'
-        : 'Shown. Your reply ends here; their answers come back as their next message.';
     }
   }
   return 'Unknown tool.';

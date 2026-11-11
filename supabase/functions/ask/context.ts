@@ -12,7 +12,7 @@ import type { Emit, Screen, TurnDeps } from './types.ts';
 export type Ctx = {
   items: Item[]; byId: Map<string, Item>; snap: Snapshot; screen: Screen; st: Standing; ownMeds: Set<string>;
   sheets: Map<string, Sheet | null>; emit: Emit; deps: TurnDeps; gate: Gate; shortlistsOn: boolean;
-  opened: Set<string>; stepN: number; memo: string[]; shortlists: number; stacks: number; questions: number; asked: number; uses: Record<string, number>;
+  opened: Set<string>; stepN: number; memo: string[]; shortlists: number; stacks: number; questions: number; uses: Record<string, number>;
   wordsOnly?: boolean;
   plans: number;
   mine: Set<string>;      // compounds the member named anywhere in this chat: theirs

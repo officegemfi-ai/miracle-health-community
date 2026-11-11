@@ -102,6 +102,8 @@ jobs:
           ASK_FAST_MODEL: ${{ vars.ASK_FAST_MODEL }}
           ASK_FALLBACK_MODEL: ${{ vars.ASK_FALLBACK_MODEL }}
           ASK_EFFORT: ${{ vars.ASK_EFFORT }}
+          ASK_REASON_MODEL: ${{ vars.ASK_REASON_MODEL }}
+          ASK_REASON_EFFORT: ${{ vars.ASK_REASON_EFFORT }}
         run: |
           set -o pipefail
           # The review secret lives only in the live project's Vault (made on the first run)
