@@ -25,7 +25,7 @@
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
 #   ANTHROPIC_API_KEY, REVIEW_SECRET, MODERATION_MODEL, APP_ORIGINS, SITE_URL, ASK_ORIGINS,
-#   ASK_MODEL, ASK_FAST_MODEL, ASK_FALLBACK_MODEL, ASK_EFFORT,
+#   ASK_MODEL, ASK_FAST_MODEL, ASK_FALLBACK_MODEL, ASK_EFFORT, ASK_REASON_MODEL, ASK_REASON_EFFORT,
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID,
 #   TURNSTILE_SECRET_KEY
 # Secret values are masked in the GitHub log and never printed.
@@ -255,7 +255,7 @@ setup)
   fi
   args+=("ASK_ORIGINS=$ask_origins")
   # Optional: other models or effort for the chat (GitHub variables of the same names)
-  for v in ASK_MODEL ASK_FAST_MODEL ASK_FALLBACK_MODEL ASK_EFFORT; do
+  for v in ASK_MODEL ASK_FAST_MODEL ASK_FALLBACK_MODEL ASK_EFFORT ASK_REASON_MODEL ASK_REASON_EFFORT; do
     if [ -n "${!v:-}" ]; then args+=("$v=${!v}"); fi
   done
   if [ -n "${ANTHROPIC_API_KEY:-}" ]; then

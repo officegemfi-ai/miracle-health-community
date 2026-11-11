@@ -51,7 +51,7 @@ export async function begin(messages: ChatMessage[], deps: TurnDeps, emit: Emit)
   const ctx: Ctx = {
     items, byId: new Map(items.map((it) => [it.id, it])), snap, screen, st: { ...st, minor }, ownMeds: new Set(resolve(items, screen.medications)),
     sheets: new Map(), emit, deps, gate, shortlistsOn: !held && !st.crisis && screen.ok,
-    opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, asked: 0, uses: {}, plans: 0, mine: new Set(), audited: new Set(),
+    opened: new Set(), stepN: 0, memo: [], shortlists: 0, stacks: 0, questions: 0, uses: {}, plans: 0, mine: new Set(), audited: new Set(),
     injectShown: !!st.injectShown,
     signs: new Set(),
     goal: screen.goals[0], use, heard: new Map(), unread: new Set(), plan: NO_PLAN,
@@ -194,7 +194,7 @@ export function communityStage(turn: Turn, named: string[], comparing: boolean):
       // Two or more taken together: what the community has on that exact combination, first
       !comparing && voices.length >= 2 && !asksInPregnancy ? comboLine(voices.map((v) => v.name), stackSignal(voices.map((v) => v.name), snap.signals), listUse, snap.uses) : '',
       voices.length ? 'What the studies show and what the community reports on each compound they named, and which leads for this question, come with its fact sheet below.' : '',
-      showVoices ? `After your opening words the member sees a card with the studies and the community side by side on ${voices.map((v) => v.name).join(', ')} (if you ask them questions first, it comes with your full answer instead). Don't read its numbers out one by one: say what they mean for their question, starting with the voice your notes say leads.` : '',
+      showVoices ? `After your opening words the member sees a card with the studies and the community side by side on ${voices.map((v) => v.name).join(', ')}. Don't read its numbers out one by one: say what they mean for their question, starting with the voice your notes say leads.` : '',
       showCrowd ? `After your opening words the member sees a card of what the community reports most for ${listUse!.label.toLowerCase()}, each with its US status. Say what stands out and how the studies compare; don't list it again.` : '',
       comparing && ctx.shortlistsOn ? `They're comparing ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}. After your opening words they see a card with them side by side${use ? ` for ${use.label.toLowerCase()}` : ''}: what the studies show, what the community reports, US status and the one caution for each. Don't pick a winner, and never rank them by what people report: say how they differ for their goal (evidence in people, what people report, status, risks), proven options first, and what to ask a clinician. Don't read the card's numbers out.` : '',
     ].filter(Boolean).join('\n');
@@ -221,9 +221,9 @@ export async function synergyStage(turn: Turn, named: string[], comparing: boole
     named.forEach((id) => ctx.audited.add(id));
     synNote = auditText(a, ctx.byId);
     if (comparing) {
-      synNote += '\nThey\'re comparing these, not taking them together: what the auditor found about their own medicines, conditions or pregnancy goes in your caution line, naming the compound it applies to.';
+      synNote += '\nThey\'re comparing these, not taking them together: what the auditor found about their own medicines, conditions or pregnancy goes in your safety line, naming the compound it applies to.';
     } else if (ctx.shortlistsOn) {
-      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with what the studies show (evidence, US status, cautions) beside what the community reports, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what the community reports, how they fit together. Don't repeat the card's status and cautions, and don't present these same compounds again with present_shortlist. Their plan (present_plan) puts them in its peptides and medicines layer (supplements in its supplements layer).${!screen.medications.length && !screen.conditions.length ? ' You don\'t know their medicines or conditions yet: if you ask about them first (ask_member), the card waits and is shown with the full check once they\'ve answered, so don\'t refer to it in an ask-first reply.' : ''}`;
+      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with what the studies show (evidence, US status, safety notes) beside what the community reports, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what the community reports, how they fit together. Don't repeat the card's status and safety notes, and don't present these same compounds again with present_shortlist. Their plan (present_plan) puts them in its peptides and medicines layer (supplements in its supplements layer).${!screen.medications.length && !screen.conditions.length ? ' They haven\'t mentioned medicines or conditions: say in a few words that the check covers the compounds together, not medicines they haven\'t named.' : ''}`;
     }
   }
   return { synNote, upfront };

@@ -4,11 +4,13 @@ import type { Goal, Library } from './library.ts';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export type Emit = (event: string, data: Record<string, unknown>) => void;
-export type Models = { guide: string; fast: string; fallback: string };
+// reason: the model the Interpretation agent thinks with (the guide's when left out)
+export type Models = { guide: string; fast: string; fallback: string; reason?: string };
 export type TurnDeps = {
   apiKey: string;
   models: Models;
   effort?: string;
+  reasonEffort?: string;   // how hard the Interpretation agent thinks ("high" when left out)
   library: Library;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;

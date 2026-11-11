@@ -8,7 +8,10 @@
 //   4. The guide writes, with the Library tools and the Stack builder's cards   tools.ts, cards.ts
 //      -> the gate: the Safety agent checks every part of the reply, text and cards alike,
 //         before the member sees it                                           gate.ts
+//   4b. The Interpretation agent reasons it all through, strictly for efficacy,
+//      and its read goes through the gate too                                interpret.ts
 //   5. Where the answer came from, and 6. the Safety agent's tally
+// Sig answers and never asks: there are no questions for the member in a turn.
 // Every step is announced to the page as it happens. Nothing the member writes is stored.
 import { ApiError, type Block, type Message, retry, stream, tuning } from './claude.ts';
 import { indexText } from './library.ts';
@@ -23,6 +26,7 @@ import { ladderOf } from './evidence.ts';
 import { auditCard, compareCard, crowdCard, stackCard, voicesCard } from './cards.ts';
 import { runTool } from './tools.ts';
 import { begin, combinationStage, communityStage, markerStage, studies, synergyStage, type Turn } from './readers.ts';
+import { INTERPRET_NOTE, interpretStage, interprets } from './interpret.ts';
 
 // What this module exported before it was split, from where it lives now
 export type { Audit, ChatMessage, Emit, Finding, Models, Screen, TurnDeps } from './types.ts';
@@ -34,7 +38,7 @@ export { benefitsOf, type CardItem, cautionFor, PILLAR_STATES, PILLARS, studiesO
 const MAX_ROUNDS = 6;
 // A reply with cards but fewer characters of words than this gets written again, once
 const FEW_WORDS = 240;
-const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the bottom line of what they asked (two sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, the one caution line, and at most one short question at the end. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
+const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the bottom line of what they asked (two sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, and the one safety line, in calm words. No questions. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
 
 // The last message gets the cache mark (so each round of the loop reuses the one before)
@@ -64,15 +68,29 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const { synNote, upfront } = await synergyStage(turn, named, comparing);
 
   // 4. The guide writes, with the Library tools; every part goes through the gate
-  const notes = { recNote, evNote, communityNote: heard.communityNote, comboNote, markNote, synNote, sheetsForTurn };
+  const interpreting = interprets(turn, named, comparing);
+  const notes = { recNote, evNote, communityNote: heard.communityNote, comboNote, markNote, synNote, sheetsForTurn, interpretNote: interpreting ? INTERPRET_NOTE : '' };
   const written = await guide(turn, notes, { named, comparing, upfront, ...heard });
   await closingWords(turn, named, written.wrote);
+  // 4b. The Interpretation agent: everything above, weighed for efficacy, last
+  const efficacy = interpreting && written.wrote !== 'refusal' && turn.gate.shown > 0
+    ? await interpretStage(turn, named, briefOf(notes), t0) : null;
   // 5. Where the answer came from, and 6. the Safety agent's tally
   const signals = sources(turn);
-  return tally(turn, { t0, ...written, signals, comparing });
+  return tally(turn, { t0, ...written, signals, comparing, efficacy: efficacy?.verdict ?? null });
 }
 
-type Notes = { recNote: string; evNote: string; communityNote: string; comboNote: string; markNote: string; synNote: string; sheetsForTurn: string[] };
+type Notes = { recNote: string; evNote: string; communityNote: string; comboNote: string; markNote: string; synNote: string; sheetsForTurn: string[]; interpretNote: string };
+// What the Interpretation agent weighs: the other agents' notes and the fact sheets, as the guide had them
+function briefOf(n: Notes): string {
+  return [
+    `Recommender's lookup: ${n.recNote}`,
+    n.evNote, n.comboNote, n.markNote,
+    n.communityNote ? `The community (members' first-hand reports and public forum data, in totals):\n${n.communityNote}` : '',
+    n.synNote ? `Synergy auditor: ${n.synNote}` : '',
+    n.sheetsForTurn.length ? `## Fact sheets opened for this turn\n${n.sheetsForTurn.join('\n\n')}` : '',
+  ].filter(Boolean).join('\n\n').slice(0, 40_000);
+}
 type Laid = { named: string[]; comparing: boolean; upfront: Audit | null; voices: Voice[]; top: TopRow[]; listUse: Use | null };
 type Written = { wrote: string; rounds: number; model: string; usage: { in: number; out: number; cacheRead: number; cacheWrite: number } };
 
@@ -80,11 +98,11 @@ type Written = { wrote: string; rounds: number; model: string; usage: { in: numb
 // rounds of writing and tool calls
 async function guide(turn: Turn, notes: Notes, laid: Laid): Promise<Written> {
   const { messages, deps, emit, screen, items, snap, minor, held, pregnant, gate, ctx } = turn;
-  const { recNote, evNote, communityNote, comboNote, markNote, synNote, sheetsForTurn } = notes;
+  const { recNote, evNote, communityNote, comboNote, markNote, synNote, sheetsForTurn, interpretNote } = notes;
   const { named, comparing, upfront, voices, top, listUse } = laid;
   const system = [
     { type: 'text', text: guideSystem(indexText(items)), cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, combination: comboNote, markers: markNote, synergy: synNote, sheets: sheetsForTurn }) },
+    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, combination: comboNote, markers: markNote, synergy: synNote, interpretation: interpretNote, sheets: sheetsForTurn }) },
   ];
   gate.sources(system.map((b) => b.text).join('\n'));
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
@@ -144,7 +162,7 @@ async function guide(turn: Turn, notes: Notes, laid: Laid): Promise<Written> {
     const last = r.stop !== 'tool_use' || !uses.length;
     // Words first and words that carry the answer: a reply that came out as cards and a line
     // gets one more go (what it wrote isn't shown, unless it already went out)
-    const again = last && !rewrote && tools.length > 0 && r.stop !== 'refusal' && !ctx.asked
+    const again = last && !rewrote && tools.length > 0 && r.stop !== 'refusal'
       && gate.offered > 0 && wrote.trim().length < FEW_WORDS && rounds < MAX_ROUNDS - 1;
     if (again) { gate.dropPending(); rewrote = true; wrote = ''; } else gate.endText();
     usage.in += Number(r.usage.input_tokens ?? 0);
@@ -181,18 +199,15 @@ async function guide(turn: Turn, notes: Notes, laid: Laid): Promise<Written> {
     for (const out of outs.values()) gate.sources(out);
     const results: Block[] = uses.map((u) => ({ type: 'tool_result', tool_use_id: String(u.id), content: outs.get(String(u.id)) ?? 'Skipped: too many tool calls at once.' }));
     convo.push({ role: 'user', content: results });
-    // Questions for the member end the reply (once there are words before them): the answers
-    // come back as their next message, so nothing more is written after the card
-    if (ctx.asked && !gate.waiting) break;
   }
   return { wrote, rounds, model, usage };
 }
 
 // After the guide: help that must be there (a crisis, an emergency), why nothing was shown when
-// nothing was, and the Library's caution line when a full answer never got to the risks
+// nothing was, and the Library's safety line when a full answer never got to the risks
 async function closingWords(turn: Turn, named: string[], wrote: string) {
   const { emit, screen, held, pregnant, gate, ctx } = turn;
-  if (!wrote.trim()) gate.trusted('I couldn’t put an answer together just now. Could you ask that again, maybe in other words?');
+  if (!wrote.trim()) gate.trusted('I couldn’t put an answer together just now. Please ask again, maybe in other words.');
   if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'done', title: 'Answer written' });
   await gate.drain();
   if (screen.red_flag === 'self_harm' && !gate.released.trim()) {
@@ -205,17 +220,18 @@ async function closingWords(turn: Turn, named: string[], wrote: string) {
       : 'The Safety agent couldn’t check this answer just now, so it isn’t shown. Please try again in a moment.');
   } else if (!gate.released.trim() && !gate.cards) {
     gate.trusted('The Safety agent held this answer back because it broke Miracle Health’s rules. Try asking in a different way, for example about the evidence, the risks or what to ask a clinician.');
-  } else if (!held && named.length && !ctx.asked && !screen.asks_dose && !screen.asks_source
+  } else if (!held && named.length && !screen.asks_dose && !screen.asks_source
     && gate.released.trim().length >= FULL_ANSWER && !CAUTIONED.test(gate.released)) {
-    // A full answer about compounds that never got to their risks or status: the Library's own line
+    // A full answer about compounds that never got to their risks or status: the Library's own
+    // line, as information
     const lines = named.slice(0, 3).map((id) => {
       const it = ctx.byId.get(id);
       const c = it ? cautionFor(it, ctx.sheets.get(id), pregnant) : '';
       return c ? `${it!.name}: ${c}` : '';
     }).filter(Boolean);
     if (lines.length) {
-      gate.trusted(`**Caution:** ${lines.join(' ')}`);
-      ctx.memo.push('a caution line from the Library');
+      gate.trusted(`**Good to know:** ${lines.join(' ')}`);
+      ctx.memo.push('a safety line from the Library');
     }
   }
   await gate.drain();
@@ -247,9 +263,9 @@ function sources(turn: Turn): number {
 }
 
   // 6. The Safety agent's tally
-function tally(turn: Turn, run: Written & { t0: number; signals: number; comparing: boolean }): { memo: string; text: string } {
+function tally(turn: Turn, run: Written & { t0: number; signals: number; comparing: boolean; efficacy: string | null }): { memo: string; text: string } {
   const { deps, emit, st, screen, minor, pregnant, use, gate, ctx } = turn;
-  const { t0, rounds, model, usage, signals, comparing } = run;
+  const { t0, rounds, model, usage, signals, comparing, efficacy } = run;
   const notShown = gate.held + gate.unchecked;
   const title = notShown || gate.edited
     ? `Every part checked before you saw it · ${[gate.edited ? `edited ${gate.edited}` : '', notShown ? `held back ${notShown}` : ''].filter(Boolean).join(' · ')}`
@@ -267,7 +283,7 @@ function tally(turn: Turn, run: Written & { t0: number; signals: number; compari
     + gate.released).slice(0, 6000);
   deps.log?.({
     ask: {
-      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, signals, use: use?.id ?? null, shortlists: ctx.shortlists, stacks: ctx.stacks, asked: ctx.asked,
+      ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, signals, use: use?.id ?? null, shortlists: ctx.shortlists, stacks: ctx.stacks, efficacy,
       parts: { checked: gate.checked, edited: gate.edited, held: gate.held, unchecked: gate.unchecked, unsourced: gate.unsourced }, tokens: usage, compare: comparing,
     },
   });

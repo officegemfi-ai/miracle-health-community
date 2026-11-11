@@ -22,6 +22,7 @@ export type HttpDeps = {
   apiKey: string;
   models: Models;
   effort?: string;
+  reasonEffort?: string;
   library: Library;
   salt: string;
   // evalRun: a test-set run (see evalKey): counted against the site's daily budget only
@@ -165,7 +166,7 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
       send('meta', { v: 1, left: q.left ?? null, ...(evalRun ? { eval: true } : {}) });
       try {
         const { memo } = held ? { memo: heldReply(held, messages, send) } : await runTurn(messages, {
-          apiKey: deps.apiKey, models: deps.models, effort: deps.effort, library: deps.library,
+          apiKey: deps.apiKey, models: deps.models, effort: deps.effort, reasonEffort: deps.reasonEffort, library: deps.library,
           fetchImpl: deps.fetchImpl, signal: abort.signal, log: deps.log,
         }, send);
         if (held) deps.log?.({ ask_held: { kind: held, reason: q.reason ?? 'unavailable' } });
@@ -216,8 +217,11 @@ if (import.meta.main) {
       guide: Deno.env.get('ASK_MODEL') || 'claude-sonnet-5-5',
       fast: Deno.env.get('ASK_FAST_MODEL') || 'claude-haiku-5-5',
       fallback: Deno.env.get('ASK_FALLBACK_MODEL') || 'claude-haiku-5-5',
+      // The Interpretation agent's: the strongest model, thinking at length
+      reason: Deno.env.get('ASK_REASON_MODEL') || 'claude-opus-5-5',
     },
     effort: Deno.env.get('ASK_EFFORT') || 'low',
+    reasonEffort: Deno.env.get('ASK_REASON_EFFORT') || 'high',
     library: createLibrary({
       base: Deno.env.get('LIBRARY_URL') || 'https://miraclehealth.us/library/data',
       // The community's numbers: the version the signal function serves, read straight from the

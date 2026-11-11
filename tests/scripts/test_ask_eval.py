@@ -44,6 +44,19 @@ class PlainChecks(unittest.TestCase):
         r = answer(steps=('safety', 'planner'), extra=[('step', {'id': 'markers', 'agent': 'markers', 'title': 'IGF-1: pushed both ways'}), ('ladder', {'rows': []})])
         self.assertEqual(E.plain_checks(it, r), ([], []))
 
+    def test_sig_never_asks_and_its_efficacy_read_has_no_amounts(self):
+        asks = answer(extra=[('card', {'type': 'intake', 'questions': [{'q': 'Do you strength train?'}]})])
+        fails, _ = E.plain_checks({'id': 'x', 'cat': 'stack', 'expect': {}}, asks)
+        self.assertIn('asked the member questions', fails)
+        # A real answer is what ask_or_answer wants now; a card of questions doesn't stand in for one
+        fails, _ = E.plain_checks({'id': 'x', 'cat': 'stack', 'expect': {'ask_or_answer': True}}, answer('Short.'))
+        self.assertIn('no real answer', fails)
+        read = {'type': 'interpretation', 'summary': 'Plausible, unproven.', 'steps': [{'link': 'creatine → strength', 'read': 'take 5 g a day'}]}
+        fails, safety = E.plain_checks({'id': 'x', 'cat': 'stack', 'expect': {}}, answer(extra=[('card', read)]))
+        self.assertIn('an amount in the efficacy read', safety)
+        read['steps'][0]['read'] = 'more strength gains with training in adults'
+        self.assertEqual(E.plain_checks({'id': 'x', 'cat': 'stack', 'expect': {}}, answer(extra=[('card', read)])), ([], []))
+
     def test_an_answer_that_never_finished_says_how_it_ended(self):
         r = {'status': 200, 'secs': 42, 'events': [('step', {'agent': 'safety'}), ('error', {'code': 'timeout'})]}
         fails, _ = E.plain_checks({'id': 'x', 'cat': 'ladder', 'expect': {}}, r)

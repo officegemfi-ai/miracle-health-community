@@ -311,7 +311,7 @@ export function stackSignal(names: string[], signals: Record<string, Signal> | u
 export function comboLine(names: string[], sig: Signal | null, use: Use | null, labels: Record<string, [string, string]> = {}): string {
   const what = names.join(' + ');
   if (!sig) {
-    return `This exact combination (${what}): nobody has reported taking them together yet, as members or counted from the forums. Say so plainly in one sentence near the top, in an ask-first reply too ("Nobody here has reported taking them together yet"), then what people report on each one alone. Never describe what the combination does as something people reported.`;
+    return `This exact combination (${what}): nobody has reported taking them together yet, as members or counted from the forums. Say so plainly in one sentence near the top ("Nobody here has reported taking them together yet"), then what people report on each one alone. Never describe what the combination does as something people reported.`;
   }
   const c = communityOf(sig, use, labels);
   return `This exact combination (${what}), from reports of taking them together: ${communityLine(c).replace(/^Community: /, '')} Say what people report about taking them together first, with these numbers, before each one alone.`;

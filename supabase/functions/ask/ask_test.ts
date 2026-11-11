@@ -6,8 +6,8 @@ import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, dedupeSentences, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
 import { baselineFor, blockedItem, comboLine, communityOf, communityTitle, communityTop, leadOf, pulseLine, stackSignal, topText, useById, voiceLine, voiceOf } from './community.ts';
 import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
-import { AUDIT_SYSTEM, guideSystem, REVIEW_SYSTEM } from './prompts.ts';
-import { asksAgeOrSex } from './tools.ts';
+import { AUDIT_SYSTEM, GUIDE_TOOLS, guideSystem, INTERPRET_SYSTEM, REVIEW_SYSTEM } from './prompts.ts';
+import { tidyRead, verdictLabel } from './interpret.ts';
 import { proven } from './items.ts';
 
 // ---------------------------------------------------------------------------
@@ -104,6 +104,8 @@ function sseBody(round: Round): string {
 type Part = { id: string; text: string };
 type Script = {
   screen?: unknown; audit?: unknown; rounds: Round[]; failGuide?: number;
+  // The Interpretation agent's read (none: it answers with no form); failReason: a model it can't use
+  interpret?: unknown; failReason?: string;
   // The final check: by default every part is fine; a function judges each part; null is unreadable
   review?: ((p: Part) => { ok: boolean; revised?: string; broken?: number[]; fixes?: { find: string; replace: string }[] }) | null;
 };
@@ -123,6 +125,13 @@ function fakeWorld(script: Script) {
     const form = (name: string, input: unknown) => new Response(JSON.stringify({ content: [{ type: 'tool_use', id: 't', name, input }], stop_reason: 'tool_use', usage: {} }));
     if (tools.some((t) => t.name === 'screen')) { calls.push({ kind: 'screen', body }); return form('screen', script.screen); }
     if (tools.some((t) => t.name === 'audit')) { calls.push({ kind: 'audit', body }); return form('audit', script.audit ?? { findings: [], summary: 'Nothing known.' }); }
+    if (tools.some((t) => t.name === 'interpret')) {
+      calls.push({ kind: 'interpret', body });
+      if (script.failReason && body.model === script.failReason) return new Response(JSON.stringify({ error: { type: 'not_found_error', message: 'model: nope' } }), { status: 404 });
+      return script.interpret === undefined
+        ? new Response(JSON.stringify({ content: [{ type: 'text', text: 'No read.' }], stop_reason: 'end_turn', usage: {} }))
+        : form('interpret', script.interpret);
+    }
     if (tools.some((t) => t.name === 'review')) {
       calls.push({ kind: 'review', body });
       if (script.review === null) return form('review', null);
@@ -435,13 +444,13 @@ Deno.test('a limit or a pause never turns away someone in crisis: a reply writte
   assert(crisis.calls.length > 0);
 });
 
-Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with its audit, questions, final check', async () => {
+Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with its audit, points for a clinician, final check', async () => {
   const { f, calls } = fakeWorld({
     screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'], medications: ['sertraline'] },
     audit: { findings: [{ ids: ['bpc157', 'creatine'], kind: 'additive', level: 'caution', note: 'Little is known about them together.' }], summary: 'One caution.' },
     rounds: [
       { text: 'Here is what the Library says about [BPC-157](lib:bpc157). ' + WORDS, tool: { name: 'present_shortlist', input: { title: 'For tendon recovery', items: [{ id: 'creatine', role: 'Best-studied supplement', why: 'Strong evidence for strength; take 5 g daily' }, { id: 'bpc157', role: 'Research stage', why: 'Rodent data only' }, { id: 'mk677', role: 'x', why: 'y' }, { id: 'nope', role: 'x', why: 'y' }] } } },
-      { tool: { name: 'clinician_questions', input: { questions: ['Is BPC-157 worth the unknowns for my tendon?', 'Where can I buy it?'] } } },
+      { tool: { name: 'clinician_questions', input: { questions: ['Whether BPC-157 is worth the unknowns for your tendon', 'Where to buy it'] } } },
       { text: 'The auditor flagged one caution.' },
     ],
   });
@@ -480,7 +489,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   const audits = ev.filter((e) => e.event === 'card' && e.data.type === 'audit');
   assert(audits.some((a) => a.data.for === short.id) && audits.some((a) => a.data.for === stack.id));
   const qs = ev.find((e) => e.event === 'card' && e.data.type === 'questions')!.data.items;
-  assertEquals(qs, ['Is BPC-157 worth the unknowns for my tendon?']);                             // no sourcing questions
+  assertEquals(qs, ['Whether BPC-157 is worth the unknowns for your tendon']);                   // nothing about sourcing
   assertEquals(ev.find((e) => e.event === 'review')!.data.ok, true);
   // Nothing was sent before the Safety agent's check had cleared it
   const firstText = ev.findIndex((e) => e.event === 'text');
@@ -493,7 +502,7 @@ Deno.test('a full turn: screen, lookup, audit, streamed answer, shortlist with i
   assertEquals(g.length, 3);
   const sys = g[0].body.system as { text: string; cache_control?: unknown }[];
   assert(sys[0].cache_control && sys[1].text.includes('medicines they take, in their words: "sertraline"') && sys[1].text.includes('### BPC-157 (id bpc157)'));
-  assertEquals((g[0].body.tools as unknown[]).length, 9);
+  assertEquals((g[0].body.tools as unknown[]).length, 8);
   assertEquals(g[0].body.output_config, { effort: 'low' });
   const round2 = g[1].body.messages as { role: string; content: { type: string; signature?: string; cache_control?: unknown }[] }[];
   assertEquals(round2[1].content[0], { type: 'thinking', thinking: '', signature: 'sig123' });        // sent back unchanged
@@ -602,20 +611,20 @@ Deno.test('if the check can\'t run, the reply is held back, never shown unchecke
   assertEquals(ev.find((e) => e.event === 'review')!.data.ok, false);
 });
 
-Deno.test('a card label the check flags is replaced, and a flagged question is dropped', async () => {
+Deno.test('a card label the check flags is replaced, and a flagged point is dropped', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, goals: ['muscle'] },
     review: (p) => ({ ok: !/twice|supplier/.test(p.text) }),
     rounds: [
       { text: WORDS, tool: { name: 'present_shortlist', input: { title: 'For strength', items: [{ id: 'creatine', role: 'Best-studied', why: 'Strong evidence; forums take it twice daily' }] } } },
-      { tool: { name: 'clinician_questions', input: { questions: ['Is creatine fine with my kidneys?', 'Is a supplier safer than a store?'] } } },
+      { tool: { name: 'clinician_questions', input: { questions: ['Whether creatine fits with your kidneys', 'Whether a supplier is safer than a store'] } } },
       { text: 'That is the list.' },
     ],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'build muscle' }]), deps(f)));
   const short = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data;
   assertEquals(short.items[0].why, '');
-  assertEquals(ev.find((e) => e.event === 'card' && e.data.type === 'questions')!.data.items, ['Is creatine fine with my kidneys?']);
+  assertEquals(ev.find((e) => e.event === 'card' && e.data.type === 'questions')!.data.items, ['Whether creatine fits with your kidneys']);
 });
 
 Deno.test('pregnancy: research peptides and hormones come off a shortlist; proven options go first', async () => {
@@ -737,17 +746,17 @@ Deno.test('a reply that came out as cards and a line is written again, once, in 
   const { f, calls } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'], injects: true }, rounds: [
     { tools: [
       { name: 'warning_signs', input: { ids: ['injection_site', 'breathing'] } },
-      { name: 'clinician_questions', input: { questions: ['Could this spot be infected?'] } },
+      { name: 'clinician_questions', input: { questions: ['Whether this spot could be infected'] } },
     ] },
-    { text: 'Have you noticed a fever?' },
+    { text: 'A fever with it changes things.' },
     { text: 'Short version: **get that spot seen today**. ' + WORDS, tool: { name: 'present_shortlist', input: { items: [{ id: 'creatine', role: 'Supports training', why: 'Strength' }] } } },
-    { text: 'Is anything else going on?' },
+    { text: 'Anything else going on changes this too.' },
   ] });
   const ev = await events(await handle(ask([{ role: 'user', content: 'I inject BPC-157 and the spot is red and warm. What should I do?' }]), deps(f)));
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
-  assert(!text.includes('Have you noticed a fever?'));                       // the line on its own isn't shown
+  assert(!text.includes('A fever with it changes things.'));                       // the line on its own isn't shown
   assert(text.startsWith('Short version: **get that spot seen today**.'));
-  assert(text.endsWith('Is anything else going on?'));
+  assert(text.endsWith('Anything else going on changes this too.'));
   assert(ev.findIndex((e) => e.event === 'text') < ev.findIndex((e) => e.event === 'card'));   // words first
   const types = ev.filter((e) => e.event === 'card').map((e) => e.data.type);
   assertEquals(types.filter((t) => t === 'warn' || t === 'questions').length, 2);
@@ -755,7 +764,7 @@ Deno.test('a reply that came out as cards and a line is written again, once, in 
   const guide = calls.filter((c) => c.kind === 'guide');
   assertEquals(guide.length, 4);
   const asked = JSON.stringify(guide[2].body.messages);
-  assert(asked.includes('That reply isn') && asked.includes('Have you noticed a fever?'));
+  assert(asked.includes('That reply isn') && asked.includes('A fever with it changes things.'));
   // A short plain answer with no cards stays as it is, with no second go
   const plain = fakeWorld({ screen: NONE, rounds: [{ text: 'No. It isn\'t FDA-approved for any use.' }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'Is BPC-157 approved?' }]), deps(plain.f)));
@@ -876,63 +885,28 @@ Deno.test('a plan starts with exactly one pillar', async () => {
   assertEquals(strong.first, null);
 });
 
-Deno.test('Sig never asks someone\'s age or sex', async () => {
-  const { f } = fakeWorld({ screen: NONE, rounds: [{ text: 'A few quick questions so this fits you. '.repeat(2), tool: { name: 'ask_member', input: { questions: [
-    { q: 'Roughly how old are you?', options: ['18–29', '30–49', '50–64', '65 or older'] },
-    { q: 'Which best describes you?', options: ['Female', 'Male'] },
-    { q: 'Do you strength train?', options: ['3+ times a week', '1 to 2 times a week', 'Not yet'] },
-    { q: 'Sex at birth?' },
-  ] } } }] });
-  const ev = await events(await handle(ask([{ role: 'user', content: 'How do I keep muscle on Ozempic?' }]), deps(f)));
-  const intake = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
-  assertEquals(intake.questions.map((q: { q: string }) => q.q), ['Do you strength train?']);
-});
-
-Deno.test('age or sex is caught however it is put, and history questions with the same words stay', () => {
-  const asks: [string, string[]][] = [
-    ['Roughly how old are you?', []],
-    ['What is your sex?', []],
-    ['What’s your age range?', []],
-    ['Sex at birth?', []],
-    ['Which sex is on your lab report?', []],
-    ['What is your biological sex?', []],
-    ['Gender?', []],
-    ['Are you male, female or intersex?', []],
-    ['Are you a man, a woman, or neither?', []],
-    ['What age are you?', []],
-    ['Age?', []],
-    ['What year were you born?', []],
-    ['Which reference range applies to you?', ['Male (assigned at birth)', 'Female (assigned at birth)']],
-    ['Which describes you?', ['Male.', 'Female.']],
-    ['Which describes you?', ['Woman', 'Man', 'Non-binary']],
-    ['Which describes you?', ['Cis', 'Trans', 'Prefer not to say']],
-    ['Roughly where are you?', ['Under 30', '30s', '40s', '50 or over']],
-    ['Which group?', ['18–29', '30–49', '50–64', '65 or older']],
-    ['Which group?', ['18 to 29', '30 to 49', '50+']],
-    ['Anything else?', ['Prefer not to say']],
-  ];
-  for (const [q, o] of asks) assert(asksAgeOrSex(q, o), `should be dropped: ${q} ${o.join(' / ')}`);
-  const history: [string, string[]][] = [
-    ['How’s your sex drive lately?', ['Normal', 'Lower than usual', 'Not sure']],
-    ['Has your SHBG (sex hormone-binding globulin) been checked?', ['Yes', 'No', 'Not sure']],
-    ['Any male-pattern hair loss in your family?', ['Yes', 'No']],
-    ['Any sexual side effects so far?', ['Yes', 'No']],
-    ['Are you pregnant, trying to conceive or breastfeeding?', ['Yes', 'No']],
-    ['How long are your workouts?', ['Under 30 minutes', '30–60 minutes', '60+ minutes']],
-    ['Do you strength train?', ['3+ times a week', '1 to 2 times a week', 'Not yet']],
-    ['Most days, do you get about 0.7 to 1 gram of protein per pound of lean body mass?', ['Yes', 'Not quite', 'No', 'Not sure']],
-    ['Is this for you or for someone else?', ['For me', 'For someone else']],
-    ['Which medicines do you take?', []],
-    ['Which fats do you mostly avoid?', ['Trans fats', 'Saturated fats', 'Neither']],
-  ];
-  for (const [q, o] of history) assert(!asksAgeOrSex(q, o), `should stay: ${q} ${o.join(' / ')}`);
-});
-
-Deno.test('the guide, the gate and the filter say the same thing about age and sex', () => {
-  assert(guideSystem('').includes('Never ask their age or sex'));
+Deno.test('Sig asks no questions: no tool for them, and the guide, the gate and the clinician points say so', async () => {
+  assert(!GUIDE_TOOLS.some((t) => t.name === 'ask_member'));
+  const g = guideSystem('');
+  assert(g.includes('Sig never asks the member questions') && g.includes('No questions to the member anywhere in a reply'));
+  assert(!/at most one short question|ask_member|ask-first|ask about them first/.test(g));
   const rule7 = REVIEW_SYSTEM.split('\n').find((l) => l.startsWith('7. '))!;
-  assert(/their age or age range, their sex or gender/.test(rule7), rule7);
-  assert(!/age range, sex[^;]*is fine/.test(rule7), rule7);
+  assert(rule7.includes('asks the member a question of any kind'), rule7);
+  // Points for a clinician written as questions aren't shown: the guide is told to write topics
+  const { f, calls } = fakeWorld({ screen: { ...NONE, goals: ['muscle'] }, rounds: [
+    { text: WORDS, tool: { name: 'clinician_questions', input: { questions: ['Is creatine right for me?'] } } },
+    { tool: { name: 'clinician_questions', input: { questions: ['Whether creatine fits your kidney function', 'Is it fine long term?'] } } },
+    { text: 'That is it.' },
+  ] });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'build muscle' }]), deps(f)));
+  assertEquals(ev.filter((e) => e.event === 'card' && e.data.type === 'questions').map((e) => e.data.items), [['Whether creatine fits your kidney function']]);
+  assert(JSON.stringify(calls.filter((c) => c.kind === 'guide')[1].body.messages).includes('write each as a point to discuss, not a question'));
+  assert(ev[ev.length - 1].data.memo.includes('points to discuss with a clinician'));
+  // A model that asks anyway gets no card of questions
+  const asks = fakeWorld({ screen: NONE, rounds: [{ text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'Do you strength train?' }] } } }, { text: 'Done.' }] });
+  const ev2 = await events(await handle(ask([{ role: 'user', content: 'What helps sleep?' }]), deps(asks.f)));
+  assert(!ev2.some((e) => e.event === 'card' && e.data.type === 'intake'));
+  assert(JSON.stringify(asks.calls.filter((c) => c.kind === 'guide')[1].body.messages).includes('Unknown tool.'));
 });
 
 // NAC: the Library's one special case today ('restricted': an approved drug whose sale as a
@@ -992,37 +966,14 @@ Deno.test('NAC can be on a shortlist with its own status, and stays off a pregna
   assertEquals(kept, ['creatine']);
 });
 
-Deno.test('ask or answer, not both: no card of questions after a full answer', async () => {
-  const long = 'This is the full answer. '.repeat(40);
-  const { f } = fakeWorld({ screen: NONE, rounds: [
-    { text: long, tool: { name: 'ask_member', input: { questions: [{ q: 'How is your sleep most nights?', options: ['7+ hours, solid', 'Short or broken'] }] } } },
-    { text: 'What have you tried so far?' },
-  ] });
-  const ev = await events(await handle(ask([{ role: 'user', content: 'What helps sleep?' }]), deps(f)));
-  assert(!ev.some((e) => e.event === 'card' && e.data.type === 'intake'));
-  assert(ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('').endsWith('What have you tried so far?'));
-  // A short opening, then questions: shown
-  const short = fakeWorld({ screen: NONE, rounds: [{ text: 'Sleep trouble wears you down. A few questions first, so this fits you. '.repeat(3), tool: { name: 'ask_member', input: { questions: [{ q: 'How is your sleep most nights?', options: ['7+ hours, solid', 'Short or broken'] }] } } }] });
-  const ev2 = await events(await handle(ask([{ role: 'user', content: 'What helps sleep?' }]), deps(short.f)));
-  assert(ev2.some((e) => e.event === 'card' && e.data.type === 'intake'));
-});
-
-Deno.test('asking about their medicines first holds their stack until they have answered', async () => {
-  const { f } = fakeWorld({
-    screen: { ...NONE, compounds: ['BPC-157', 'TB-500', 'creatine'] },
-    rounds: [{ text: 'Creatine is well studied; the two peptides are not, in people. Before I check them together, a few questions about you. '.repeat(2), tool: { name: 'ask_member', input: { questions: [{ q: 'Which medicines do you take?' }] } } }],
-  });
-  const ev = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(f)));
-  assert(ev.some((e) => e.event === 'card' && e.data.type === 'intake'));
-  assert(!ev.some((e) => e.event === 'card' && (e.data.kind === 'yours' || e.data.type === 'audit')));
-  assert(!ev.some((e) => e.event === 'step' && e.data.agent === 'builder'));
-  assertEquals(ev.filter((e) => e.event === 'step' && e.data.id === 'synergy').pop()!.data.title, 'Will check your stack with your answers');
-  assert(!ev[ev.length - 1].data.memo.includes('their stack'));
-  // When it answers without asking, the stack is laid out as before
+Deno.test('their stack is laid out with the answer, checked with what they mentioned', async () => {
   const full = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157', 'TB-500', 'creatine'] }, rounds: [{ text: 'Short version. ' + WORDS }] });
-  const ev2 = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(full.f)));
-  assert(ev2.some((e) => e.event === 'card' && e.data.kind === 'yours'));
-  assert(ev2.some((e) => e.event === 'step' && e.data.agent === 'builder' && /Laid out your stack of 3/.test(e.data.title)));
+  const ev = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(full.f)));
+  assert(ev.some((e) => e.event === 'card' && e.data.kind === 'yours'));
+  assert(ev.some((e) => e.event === 'step' && e.data.agent === 'builder' && /Laid out your stack of 3/.test(e.data.title)));
+  // No medicines mentioned: the guide says what the check covers, rather than asking
+  const notes = String((full.calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
+  assert(notes.includes('the check covers the compounds together, not medicines they haven\'t named'), notes);
 });
 
 Deno.test('"never studied together" is no finding: the card says no known clashes instead', async () => {
@@ -1108,7 +1059,7 @@ Deno.test('cards asked for before the answer is explained wait, and follow the w
     screen: NONE,
     rounds: [
       { tool: { name: 'present_shortlist', input: { title: 't', items: [{ id: 'creatine', role: 'r', why: 'w' }] } } },
-      { tool: { name: 'clinician_questions', input: { questions: ['Is creatine right for me?'] } } },
+      { tool: { name: 'clinician_questions', input: { questions: ['Whether creatine is right for you'] } } },
       { text: WORDS + '\n\nOne more thing.' },
     ],
   });
@@ -1124,80 +1075,13 @@ Deno.test('cards asked for after the words go out where they were asked for', as
     screen: NONE,
     rounds: [
       { text: WORDS, tool: { name: 'present_shortlist', input: { title: 't', items: [{ id: 'creatine', role: 'r', why: 'w' }] } } },
-      { text: 'Ask about these.', tool: { name: 'clinician_questions', input: { questions: ['Is creatine right for me?'] } } },
+      { text: 'Worth going over.', tool: { name: 'clinician_questions', input: { questions: ['Whether creatine is right for you'] } } },
       { text: 'Done.' },
     ],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'what helps strength?' }]), deps(f)));
   const order = ev.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text'));
   assertEquals(order, ['text', 'shortlist', 'text', 'questions', 'text']);
-});
-
-Deno.test('the guide asks the member questions they can answer by tapping, never for who they are', async () => {
-  const { f } = fakeWorld({
-    screen: NONE,
-    rounds: [
-      { text: 'Poor sleep wears you down. ' + WORDS, tool: { name: 'ask_member', input: { questions: [
-        { q: 'What keeps you up?', options: ['Falling asleep', 'Waking in the night', 'Waking too early', 'Not sure', 'Waking in the night'] },
-        { q: 'Which medicines do you take?' },
-        { q: 'What is your email, so I can follow up?' },
-        { q: 'Which of these apply to you?', options: ['Heart condition', 'Kidney problems', 'None', 'Take 5 mg nightly'], multi: true },
-        { q: 'How much melatonin are you taking now?' },
-      ] } } },
-      { text: '' },
-    ],
-  });
-  const ev = await events(await handle(ask([{ role: 'user', content: 'What should I take to sleep better?' }]), deps(f)));
-  const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
-  assertEquals(card.questions.map((q: { q: string }) => q.q), ['What keeps you up?', 'Which medicines do you take?', 'Which of these apply to you?']);
-  assertEquals(card.questions[0].options, ['Falling asleep', 'Waking in the night', 'Waking too early', 'Not sure']);
-  assertEquals(card.questions[2].multi, true);
-  assert(!card.questions[2].options.some((o: string) => /\bmg\b|\d/.test(o)));
-  assert(ev.some((e) => e.event === 'step' && /Asked 3 questions/.test(e.data.title ?? '')));
-  const done = ev.find((e) => e.event === 'done')!.data;
-  assert(done.memo.includes('questions for the member: What keeps you up?'));
-});
-
-Deno.test('questions for the member end the reply; asked too early, they wait for the words', async () => {
-  const later = { text: 'Something written after the questions.' };
-  const { f, calls } = fakeWorld({
-    screen: NONE,
-    rounds: [{ text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'What have you tried so far?' }] } } }, later],
-  });
-  const ev = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(f)));
-  assertEquals(calls.filter((c) => c.kind === 'guide').length, 1);
-  const order = ev.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text'));
-  assertEquals(order, ['text', 'intake']);
-  // Asked before any words: the guide writes them, then the card follows
-  const early = fakeWorld({
-    screen: NONE,
-    rounds: [{ tool: { name: 'ask_member', input: { questions: [{ q: 'What have you tried so far?' }] } } }, { text: WORDS }, later],
-  });
-  const ev2 = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(early.f)));
-  assertEquals(early.calls.filter((c) => c.kind === 'guide').length, 2);
-  assertEquals(ev2.filter((e) => e.event === 'text' || e.event === 'card').map((e) => (e.event === 'card' ? e.data.type : 'text')), ['text', 'intake']);
-});
-
-Deno.test('a long question ends at its question mark, not mid-sentence', async () => {
-  const long = 'Do you take any medicines or supplements, or have any health conditions (heart, thyroid, kidney, mental health, anemia, bleeding)? Also, are you pregnant, trying to conceive or breastfeeding right now?';
-  const { f } = fakeWorld({ screen: NONE, rounds: [{ text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: long }] } } }] });
-  const ev = await events(await handle(ask([{ role: 'user', content: 'more energy?' }]), deps(f)));
-  const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
-  assertEquals(card.questions[0].q, 'Do you take any medicines or supplements, or have any health conditions (heart, thyroid, kidney, mental health, anemia, bleeding)?');
-});
-
-Deno.test('a question the check flags is dropped from the card', async () => {
-  const { f } = fakeWorld({
-    screen: NONE,
-    rounds: [
-      { text: WORDS, tool: { name: 'ask_member', input: { questions: [{ q: 'Do you strength train?', options: ['3+ times a week', 'Not yet'] }, { q: 'Which pharmacy-grade product?' }, { q: 'Anything you have tried already?' }] } } },
-      { text: '' },
-    ],
-    review: (p) => ({ ok: !/tried already/.test(p.text) }),
-  });
-  const ev = await events(await handle(ask([{ role: 'user', content: 'help me sleep' }]), deps(f)));
-  const card = ev.find((e) => e.event === 'card' && e.data.type === 'intake')!.data;
-  assertEquals(card.questions.map((q: { q: string }) => q.q), ['Do you strength train?']);
 });
 
 Deno.test('tools are capped per turn', async () => {
@@ -1412,12 +1296,7 @@ Deno.test('something happening now: no studies-and-community card or list beside
   const notes = ((one.calls.find((c) => c.kind === 'guide')!.body.system) as { text: string }[])[1].text;
   assert(!notes.includes('1. TB-500 [tb500]') && !notes.includes('What the community reports most'));
   assertEquals(ev2.find((e) => e.event === 'step' && e.data.agent === 'community')!.data.title, 'Listened for what the community reports');
-  // Asking questions first holds the list for the full answer, and a card with a line is written again
-  const asked = fakeWorld({ screen: { ...NONE, uses: ['injury'], asks_community: true }, rounds: [
-    { text: 'A few questions first.', tool: { name: 'ask_member', input: { questions: [{ q: 'Which medicines do you take?' }] } } },
-  ] });
-  const ev3 = await events(await handle(ask([{ role: 'user', content: 'What do members use for injuries?' }]), deps(asked.f)));
-  assert(!ev3.some((e) => e.event === 'card' && e.data.type === 'community') && ev3.some((e) => e.event === 'card' && e.data.type === 'intake'));
+  // A card with a line is written again
   const short = fakeWorld({ screen: { ...NONE, uses: ['injury'], asks_community: true }, rounds: [{ text: 'Sure.' }, { text: WORDS }] });
   await events(await handle(ask([{ role: 'user', content: 'What do members use for injuries?' }]), deps(short.f)));
   assertEquals(short.calls.filter((c) => c.kind === 'guide').length, 2);
@@ -1790,7 +1669,7 @@ Deno.test('the final check is given what the fact sheets show when a reply says 
   assert(prompts.length && !prompts.some((p) => p.includes('fact sheet findings for this question')));
 });
 
-Deno.test('an answer about compounds that never gets to their risks or status ends with the Library\'s caution line', async () => {
+Deno.test('an answer about compounds that never gets to their risks or status ends with the Library\'s safety line, as information', async () => {
   const plain = ['BPC-157 is a short peptide first found in stomach juice.', 'In rodents, cut tendons healed faster with it.',
     'It is thought to boost blood flow and repair signaling in injured tissue.', 'On the forums, people most often describe quicker soft-tissue recovery.',
     'There are no studies in people for tendon healing yet.', 'Its effects in people are still a question for research.',
@@ -1798,11 +1677,11 @@ Deno.test('an answer about compounds that never gets to their risks or status en
   const { f } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'] }, rounds: [{ text: plain }] });
   const ev = await events(await handle(ask([{ role: 'user', content: 'What does BPC-157 do?' }]), deps(f)));
   const text = ev.filter((e) => e.event === 'text').map((e) => String(e.data.d)).join('');
-  assert(/\*\*Caution:\*\* BPC-157: Not approved by FDA/.test(text), text.slice(-300));
+  assert(/\*\*Good to know:\*\* BPC-157: Not approved by FDA/.test(text), text.slice(-300));
   // One that already says something about its risks or status gets nothing added
   const w2 = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'] }, rounds: [{ text: plain + 'Talk to a clinician before trying it.' }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: 'What does BPC-157 do?' }]), deps(w2.f)));
-  assert(!ev2.filter((e) => e.event === 'text').map((e) => String(e.data.d)).join('').includes('**Caution:**'));
+  assert(!ev2.filter((e) => e.event === 'text').map((e) => String(e.data.d)).join('').includes('**Good to know:**'));
 });
 
 // ---------------------------------------------------------------------------
@@ -2141,4 +2020,121 @@ Deno.test('the community\'s numbers come from the database\'s newest version, ch
   latest = null;
   assertEquals((await library.snapshot()).ok, true);
   assertEquals(fileReads, 2);
+});
+
+// ---------------------------------------------------------------------------
+// The Interpretation agent
+// ---------------------------------------------------------------------------
+const READ = {
+  subject: 'BPC-157 with creatine, for tendon recovery',
+  steps: [
+    { link: 'the pair, for tendons', read: 'no study of the two together', rung: 'none' },
+    { link: 'BPC-157 → tendon healing', read: 'faster healing of cut tendons in rodents', rung: 'own' },
+    { link: 'creatine → training', read: 'more strength gains with resistance training in adults', rung: 'own' },
+  ],
+  verdict: 'plausible', proven: true, size: 'small', size_note: 'rodent results give no size for people',
+  confidence: 'low', confidence_note: 'BPC-157 has animal studies only', would_change: 'a trial in people with tendon injuries',
+  summary: 'Creatine is well studied for training, not for tendons, and BPC-157 helped tendons heal in rodents: a benefit for your tendon is plausible, not shown.',
+};
+const REASONING = { guide: 'claude-sonnet-5-5', fast: 'claude-haiku-5-5', fallback: 'claude-haiku-5-5', reason: 'claude-opus-5-5' };
+
+Deno.test('the Interpretation agent reasons last, strictly for efficacy, and its read goes through the gate', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'] },
+    rounds: [{ text: 'Here is what the studies show. ' + WORDS }],
+    interpret: READ,
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Will BPC-157 and creatine help my tendon heal?' }]), deps(f, { models: REASONING })));
+  // It thinks with the strongest model, at length, with the agents' notes and the answer as data
+  const call = calls.find((c) => c.kind === 'interpret')!;
+  assertEquals([call.body.model, call.body.output_config, call.body.system], ['claude-opus-5-5', { effort: 'high' }, INTERPRET_SYSTEM]);
+  const prompt = String((call.body.messages as { content: string }[])[0].content);
+  assert(prompt.includes('Here is what the studies show.') && prompt.includes('### BPC-157 (id bpc157)') && prompt.includes('Will BPC-157 and creatine help my tendon heal?'), prompt.slice(0, 400));
+  // The guide knew it was coming, and leaves the verdict to it
+  const notes = String((calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
+  assert(notes.includes('Interpretation agent: after your answer, it reasons through everything above'), notes);
+  // Every line of the read is checked like any other part
+  const checked = calls.filter((c) => c.kind === 'review').flatMap((c) => partsOf(String((c.body.messages as { content: string }[])[0].content)).map((p) => p.text));
+  assert(checked.includes('Efficacy for BPC-157 with creatine, for tendon recovery: plausible, unproven. How big: small. How sure: low.'), checked.join(' | '));
+  assert(checked.includes('BPC-157 → tendon healing: faster healing of cut tendons in rodents'));
+  // Then it shows under the answer, before the Safety agent's tally; "proven" only goes with "likely"
+  const card = ev.find((e) => e.event === 'card' && e.data.type === 'interpretation')!.data;
+  assertEquals([card.verdict, card.label, card.proven, card.size, card.confidence, card.steps.length], ['plausible', 'plausible, unproven', false, 'small', 'low', 3]);
+  assertEquals(card.would_change, 'a trial in people with tendon injuries');
+  const at = (p: (e: { event: string; data: Record<string, any> }) => boolean) => ev.findIndex(p);
+  assert(at((e) => e.event === 'card' && e.data.type === 'interpretation') > at((e) => e.event === 'text'));
+  const done = (id: string) => at((e) => e.event === 'step' && e.data.id === id && e.data.status === 'done');
+  assert(done('write') < done('interpretation') && done('interpretation') < done('review'));
+  assertEquals(ev[done('interpretation')].data.title, 'Reasoned it all through for efficacy: plausible, unproven');
+  // The next turn knows what it said
+  assert(ev[ev.length - 1].data.memo.includes('the Interpretation agent\'s efficacy read: plausible, unproven, small effect, low confidence'));
+});
+
+Deno.test('the Interpretation agent stays out where efficacy isn\'t the point', async () => {
+  const run = async (screen: unknown, text = 'Will these help?') => {
+    const w = fakeWorld({ screen, rounds: [{ text: WORDS }], interpret: READ });
+    const ev = await events(await handle(ask([{ role: 'user', content: text }]), deps(w.f)));
+    return { ev, n: w.calls.filter((c) => c.kind === 'interpret').length };
+  };
+  assertEquals((await run({ ...NONE, compounds: ['creatine'], goals: ['muscle'] })).n, 1);
+  // Nothing named, nothing wanted, a comparison, pregnancy, a reaction now, someone under 18, a compound on FDA's safety-risk list
+  assertEquals((await run({ ...NONE, goals: ['muscle'] })).n, 0);
+  assertEquals((await run({ ...NONE, compounds: ['creatine'] })).n, 0);
+  assertEquals((await run({ ...NONE, compounds: ['creatine', 'HMB'], goals: ['muscle'], compare: true }, 'Creatine vs HMB for strength?')).n, 0);
+  assertEquals((await run({ ...NONE, compounds: ['creatine'], goals: ['muscle'], pregnant: true })).n, 0);
+  assertEquals((await run({ ...NONE, compounds: ['creatine'], goals: ['muscle'], reaction: true })).n, 0);
+  assertEquals((await run({ ...NONE, compounds: ['creatine'], goals: ['muscle'], red_flag: 'minor' })).n, 0);
+  const risk = await run({ ...NONE, compounds: ['MK-677'], goals: ['muscle'] });
+  assertEquals(risk.n, 0);
+  assert(!risk.ev.some((e) => e.event === 'step' && e.data.agent === 'interpretation'));
+});
+
+Deno.test('the read keeps only numbers its notes have, and shows only what the Safety agent cleared', async () => {
+  const run = async (interpret: unknown, over: Partial<Script> = {}) => {
+    const w = fakeWorld({ screen: { ...NONE, compounds: ['creatine'], goals: ['muscle'] }, rounds: [{ text: WORDS }], interpret, ...over });
+    const ev = await events(await handle(ask([{ role: 'user', content: 'Will creatine help me get stronger?' }]), deps(w.f, { models: REASONING })));
+    const card = ev.find((e) => e.event === 'card' && e.data.type === 'interpretation')?.data ?? null;
+    const title = ev.filter((e) => e.event === 'step' && e.data.agent === 'interpretation').pop()?.data.title;
+    return { card, title, calls: w.calls };
+  };
+  // A step with a number nobody gave it goes; the rest stay
+  const odd = await run({ ...READ, steps: [...READ.steps, { link: 'creatine → strength', read: 'about 483% stronger in a trial', rung: 'own' }] });
+  assertEquals(odd.card?.steps.length, 3);
+  // A summary with one: no card at all
+  const made = await run({ ...READ, summary: 'Creatine makes you about 483% stronger.' });
+  assertEquals([made.card, made.title], [null, 'The efficacy read used a number its sources don’t have, so it isn’t shown']);
+  // The check holds the verdict back: no card
+  const held = await run(READ, { review: (p) => ({ ok: !p.text.startsWith('Efficacy for') }) });
+  assertEquals([held.card, held.title], [null, 'The efficacy read wasn’t cleared by the Safety agent, so it isn’t shown']);
+  // No read came back
+  const none = await run(undefined);
+  assertEquals([none.card, none.title], [null, 'Couldn’t finish the efficacy read just now']);
+  // A key without the strongest model: the guide's model reasons instead
+  const fallback = await run(READ, { failReason: 'claude-opus-5-5' });
+  assert(fallback.card);
+  assertEquals(fallback.calls.filter((c) => c.kind === 'interpret').map((c) => c.body.model), ['claude-opus-5-5', 'claude-sonnet-5-5']);
+});
+
+Deno.test('a read without a verdict, a summary or a step is no read; its words are the member\'s to read', () => {
+  assertEquals(tidyRead(null), null);
+  assertEquals(tidyRead({ ...READ, verdict: 'definitely' }), null);
+  assertEquals(tidyRead({ ...READ, summary: '' }), null);
+  assertEquals(tidyRead({ ...READ, steps: [{ link: '', read: 'x', rung: 'own' }] }), null);
+  const r = tidyRead({ ...READ, verdict: 'likely', proven: true, size: 'huge', confidence: 'certain', steps: [{ link: 'a → b', read: 'take 5 mg daily, it works', rung: 'weird' }] })!;
+  assertEquals([r.proven, r.size, r.confidence, r.steps[0].rung, verdictLabel(r)], [true, 'unclear', 'low', 'none', 'likely']);
+  assert(!/5 mg/.test(r.steps[0].read), r.steps[0].read);
+  assertEquals(verdictLabel({ verdict: 'plausible' }), 'plausible, unproven');
+  assert(INTERPRET_SYSTEM.includes('Strictly efficacy') && INTERPRET_SYSTEM.includes('never give doses') && INTERPRET_SYSTEM.includes('no questions'));
+});
+
+Deno.test('no efficacy read under an answer the Safety agent held back', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['creatine'], goals: ['muscle'] },
+    rounds: [{ text: WORDS }],
+    review: () => ({ ok: false, broken: [1] }),
+    interpret: READ,
+  });
+  const ev = await events(await handle(ask([{ role: 'user', content: 'Will creatine help me get stronger?' }]), deps(f)));
+  assert(!ev.some((e) => e.event === 'card' && e.data.type === 'interpretation'));
+  assertEquals(calls.filter((c) => c.kind === 'interpret').length, 0);
 });

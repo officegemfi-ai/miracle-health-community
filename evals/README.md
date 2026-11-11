@@ -24,7 +24,7 @@ answer that contradicts them or drops a safety point they name fails the run.
 
 `expect` can hold: `cards_any` (one of these cards must show), `cards_none`, `first_card`,
 `must` and `must_not` (regular expressions on the words), `steps_any` (agents that must take a
-step, such as `community`), `ask_or_answer` (questions first, or a real answer) and, for two-turn
+step, such as `community`), `ask_or_answer` (a real answer: Sig never asks questions) and, for two-turn
 questions (`q` is a list), `cards_none_last`. Add a question whenever Sig gets one wrong.
 
 Run it by hand against the test project: `python3 scripts/ask_eval.py <ask URL> --limit 20`.

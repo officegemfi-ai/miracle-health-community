@@ -17,7 +17,7 @@
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID (texts to real phones;
 #   without them only the test numbers sign in), TURNSTILE_SECRET_KEY,
 #   variables MODERATION_MODEL, APP_ORIGINS, ASK_ORIGINS, ASK_MODEL, ASK_FAST_MODEL,
-#   ASK_FALLBACK_MODEL and ASK_EFFORT.
+#   ASK_FALLBACK_MODEL, ASK_EFFORT, ASK_REASON_MODEL and ASK_REASON_EFFORT.
 # Each failing step leaves a readable note on the run's summary page.
 name: Deploy to test
 on:
@@ -122,6 +122,8 @@ jobs:
           ASK_FAST_MODEL: ${{ vars.ASK_FAST_MODEL }}
           ASK_FALLBACK_MODEL: ${{ vars.ASK_FALLBACK_MODEL }}
           ASK_EFFORT: ${{ vars.ASK_EFFORT }}
+          ASK_REASON_MODEL: ${{ vars.ASK_REASON_MODEL }}
+          ASK_REASON_EFFORT: ${{ vars.ASK_REASON_EFFORT }}
         run: |
           set -o pipefail
           scripts/supabase_project.sh test setup 2>&1 | tee "$RUNNER_TEMP/setup.log" \
