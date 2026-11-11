@@ -7,7 +7,7 @@ import { connected } from '../data/client.js';
 import { saveInvite } from '../data/storage.js';
 import { track } from '../data/telemetry.js';
 import { S, isMod } from '../app/store.js';
-import { render, renderNav, renderTabbar, closeDrawer } from './shell.js';
+import { render, renderNav, renderTabbar, closeDrawer, setWindow } from './shell.js';
 import { current } from './current.js';
 import { rememberNext } from './next.js';
 import { renderGuestDraft, renderSignIn, renderSignup } from './pages/auth.js';
@@ -35,12 +35,13 @@ export async function route() {
   if (r.name === 'join' && r.arg) {
     saveInvite(r.arg.toUpperCase());
   }
-  if (r.name === 'rules' && !S.me) { document.body.classList.add('auth'); return renderRules(true); }
+  if (r.name === 'rules' && !S.me) { setWindow(r); document.body.classList.add('auth'); return renderRules(true); }
   if (!S.session || !S.me) rememberNext();
-  if (!S.session && r.name === 'new') return renderGuestDraft(r.q.get('c') || '', r.q.get('d') || '', route);
-  if (!S.session) return renderSignIn(route);
-  if (!S.me) return renderSignup(route);
+  if (!S.session && r.name === 'new') { setWindow(r); return renderGuestDraft(r.q.get('c') || '', r.q.get('d') || '', route); }
+  if (!S.session) { setWindow(r, 'sign-in'); return renderSignIn(route); }
+  if (!S.me) { setWindow(r, 'join'); return renderSignup(route); }
   document.body.classList.remove('auth');
+  setWindow(r);
 
   // Old links
   if (r.name === 'feed') { location.replace(r.q.get('c') ? `#/s/${encodeURIComponent(r.q.get('c'))}` : '#/home'); return; }

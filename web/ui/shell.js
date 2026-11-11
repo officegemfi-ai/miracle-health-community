@@ -1,6 +1,8 @@
-// The frame around every page: the left menu (never removed; a drawer on phones), the top bar, the
-// phone tab bar, search, the footer, and Sig in the corner. Pages draw into it with render() and
-// setRail(); the rail's cards are chosen in ui/rail.js.
+// The frame around every page, a window in Sig's terminal as on every page of miraclehealth.us: the
+// side panel with the four places and the menu (never removed; a drawer on phones), the title bar
+// with the tab of what's open, search and your things, the path, the phone tab bar, the footer,
+// and Sig in the corner. Pages draw into it with render() and setRail(); the rail's cards are
+// chosen in ui/rail.js.
 import { h, icon, bar } from './dom.js';
 import { sig, emblem, spaceTile } from './art.js';
 import { fmtN, fmt1 } from '../core/format.js';
@@ -11,7 +13,6 @@ import * as Posts from '../data/posts.js';
 import * as Members from '../data/members.js';
 import { S, isMod, levelOf, claimable } from '../app/store.js';
 import { bellButton } from './components/notifications.js';
-import { placeHref } from '../kit/kit.js';
 
 const app = document.getElementById('app');
 const rail = document.getElementById('rail');
@@ -29,6 +30,30 @@ export function render(...nodes) {
 export function setRail(nodes) { rail.replaceChildren(...[nodes].flat().filter(Boolean)); }
 
 export function setWide(on) { document.body.classList.toggle('wide', !!on); }
+
+// The window's tab and path: what's open, named like a file in Sig's terminal (the feed, the
+// Signal as top, a space as s/…), and where it sits, from ~ (Home)
+const TAB = {
+  home: 'home.feed', popular: 'popular.feed', signal: 'signal.top', explore: 'spaces', stack: 'stack.find', builders: 'builders.board',
+  quests: 'quests.season', notifications: 'inbox', new: 'new-post.md', how: 'how-it-works.md', rules: 'rules.md', account: 'account', mod: 'mod.queue',
+};
+const UNDER = { s: '#/explore', u: '', post: '' };
+const winTabs = document.getElementById('win-tabs');
+const winPath = document.getElementById('win-path');
+const clip = (x, n = 24) => (x.length > n ? `${x.slice(0, n - 1)}…` : x);
+export function setWindow(r, step = '') {
+  if (!winTabs || !winPath) return;
+  const name = step || (r.name in TAB || r.name in UNDER ? r.name : 'home');
+  const arg = step ? '' : String(r.arg || '');
+  const tab = step || (name in UNDER ? `${name}/${name === 'post' ? arg.slice(0, 8) : clip(arg)}` : arg && name === 'mod' ? `mod/${clip(arg)}` : TAB[name]);
+  winTabs.replaceChildren(h('a', { class: 'win-tab on', href: location.hash || '#/home', 'aria-current': 'page' },
+    h('i', { 'aria-hidden': 'true' }), h('span', { class: 'win-tabname' }, tab)));
+  const sep = () => h('span', { 'aria-hidden': 'true' }, '/');
+  const segs = name in UNDER && arg
+    ? [UNDER[name] ? h('a', { href: UNDER[name] }, name) : h('span', {}, name), sep(), h('b', {}, clip(arg, 40))]
+    : [h('b', {}, step || name)];
+  winPath.replaceChildren(h('span', { class: 'wp-crumbs' }, h('a', { href: '#/home', 'aria-label': 'Home' }, '~'), sep(), ...segs));
+}
 
 // The left menu
 const MAIN = [
@@ -55,11 +80,7 @@ export function renderNav(current = '', cid = '') {
       ? joined.map((s) => h('a', { class: 'nav-space', href: `#/s/${encodeURIComponent(s.compound_id)}`, 'aria-current': cid === s.compound_id ? 'page' : null },
         spaceTile(s, 24), h('span', { class: 'grow' }, s.name), h('span', { class: 's', 'data-sig-of': s.compound_id }, s.score != null ? fmt1(s.score) : '')))
       : [h('p', { class: 'nav-empty' }, 'You haven’t joined any yet. ', h('a', { href: '#/explore' }, 'Explore spaces'))]),
-    // The rest of Miracle Health, the same places as the bar at the top of every page
-    h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Miracle Health')),
-    h('a', { class: 'nav-i', href: placeHref('library') }, icon('flask', 20), 'The Library'),
-    h('a', { class: 'nav-i', href: placeHref('ai') }, icon('sparkle', 20), 'Ask Sig'),
-    h('a', { class: 'nav-i', href: placeHref('my') }, icon('layers', 20), 'My Miracle'),
+    // The rest of Miracle Health is at the top of this panel: the four places, as on every page
     h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Resources')),
     h('a', { class: 'nav-i', href: '#/how', 'aria-current': current === 'how' ? 'page' : null }, icon('info', 20), 'How it works'),
     h('a', { class: 'nav-i', href: '#/rules', 'data-nav': 'rules', 'aria-current': current === 'rules' ? 'page' : null }, icon('book', 20), 'Community rules'),
@@ -134,13 +155,16 @@ export function renderFooter() {
   if (C.contactEmail) foot.append(' Contact the moderators: ', h('a', { href: `mailto:${C.contactEmail}` }, C.contactEmail));
 }
 
-// The phone drawer for the left menu
+// The side panel slides in as a drawer on phones
 const burger = document.getElementById('burger');
+const side = document.getElementById('side');
 let scrim = null;
-export function closeDrawer() {
+export function closeDrawer(back = false) {
+  if (!document.body.classList.contains('drawer')) return;
   document.body.classList.remove('drawer');
   burger?.setAttribute('aria-expanded', 'false');
   scrim?.remove(); scrim = null;
+  if (back) burger?.focus();
 }
 
 // Sig, in the corner: tips, reactions and news
@@ -182,13 +206,16 @@ export function sigSay(content, mood = 'happy', ms = 4200, important = false) {
 export function mountShell() {
   burger?.addEventListener('click', () => {
     const open = !document.body.classList.contains('drawer');
-    if (!open) return closeDrawer();
+    if (!open) return closeDrawer(true);
     document.body.classList.add('drawer');
     burger.setAttribute('aria-expanded', 'true');
-    scrim = h('div', { class: 'scrim', onclick: closeDrawer });
+    scrim = h('div', { class: 'scrim', onclick: () => closeDrawer(true) });
     document.body.append(scrim);
+    side?.querySelector('a[href], button')?.focus({ preventScroll: true });
   });
-  nav.addEventListener('click', (e) => { if (e.target.closest('a')) closeDrawer(); });
+  // a link in the panel goes somewhere: the drawer shuts behind it
+  (side || nav).addEventListener('click', (e) => { if (e.target.closest('a[href]')) closeDrawer(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('drawer')) { e.preventDefault(); closeDrawer(true); } });
   window.addEventListener('online', () => sigMood(baseMood()));
   window.addEventListener('offline', () => sigSay('You’re offline. I’ll catch up when you’re back.', 'offline', 5000));
 }
