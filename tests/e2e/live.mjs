@@ -93,7 +93,8 @@ async function ask(page, q) {
 try {
   const { ctx, page, errors } = await open({ viewport: { width: 1440, height: 1000 } }, 'laptop');
   // the site's links: in the top bar, or in the side panel beside the chats on Sig's own page
-  const nav = await page.locator('header .top-nav a, .sg-site a').allInnerTexts();
+  // (each place in the side panel says what's in it under its name, as "Library / 122 sheets": the name is the first line)
+  const nav = (await page.locator('header .top-nav a, .sg-site a').allInnerTexts()).map((t) => t.split('\n')[0].trim());
   check('Laptop: the navigation is there', ['Library', 'Ask Sig', 'Community', 'My Miracle'].every((x) => nav.includes(x)), nav.join(', '));
   const a = await ask(page, 'Is HGH plus enclomiphene good for fat loss?');
   check('Laptop: Sig answers about HGH and enclomiphene', a.text.length > 200 && /enclomiphene/i.test(a.text), `${a.text.length} characters in ${a.secs} s`);
