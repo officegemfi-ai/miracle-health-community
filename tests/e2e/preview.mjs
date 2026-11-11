@@ -104,10 +104,11 @@ await post.locator('button:has-text("React")').click();
 await page.click('.pop button:has-text("Support")');
 await page.waitForTimeout(400);
 check('A Sig sticker lands on the post', (await post.locator('.stk-count.mine').count()) === 1);
-const upBtn = post.locator('.vrail button.up');
-const scoreBefore = Number(await post.locator('.vrail b').textContent());
+// the feed is a log: the votes sit in the row of actions under each entry
+const upBtn = post.locator('.vote.h button.up');
+const scoreBefore = Number(await post.locator('.vote.h b').textContent());
 await upBtn.click();
-await page.waitForFunction((n) => Number(document.querySelectorAll('article.post')[1].querySelector('.vrail b').textContent) === n + 1, scoreBefore);
+await page.waitForFunction((n) => Number(document.querySelectorAll('article.post')[1].querySelector('.vote.h b').textContent) === n + 1, scoreBefore);
 check('Votes count', true);
 
 // A report: Sig reads it, the Signal moves, the author is told. SS-31 has
@@ -174,8 +175,8 @@ check('Asking where to buy is refused with the rule', /rule 1/.test(await page.t
 
 // The Signal, profiles, the leaderboard, notifications, moderation
 await page.goto(`${BASE}#/signal`);
-await page.waitForSelector('.sig-row');
-check('The Signal page ranks every compound', (await page.locator('.sig-row').count()) >= 50);
+await page.waitForSelector('.top-table tbody tr[data-signal]');
+check('The Signal page ranks every compound, as a table like top', (await page.locator('.top-table tbody tr[data-signal]').count()) >= 50);
 check('and lists the live moves with their causes', (await page.locator('.move-i').count()) >= 3);
 await page.goto(`${BASE}#/u/first_look`);
 await page.waitForSelector('h1:text("u/first_look")');
