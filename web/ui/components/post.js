@@ -8,7 +8,8 @@ import * as Posts from '../../data/posts.js';
 import { track } from '../../data/telemetry.js';
 import { spaceOf, signalOf } from '../../app/store.js';
 import { sigSay } from '../shell.js';
-import { sigNum, outcomeChip, readMini, refreshSignal } from './signal.js';
+import { sigNum, movement, refreshSignal } from './signal.js';
+import { OUTCOME } from '../../core/signal.js';
 import { afterEarn } from './game.js';
 import { openReport } from './report.js';
 
@@ -133,30 +134,48 @@ export function statusChip(item) {
   return null;
 }
 
-export function spaceLink(p) {
+export function spaceLink(p, { tile = true } = {}) {
   const sp = spaceOf(p.compound_id) || { name: p.compound_name, category: p.compound_category };
-  return h('a', { class: 'space', href: `#/s/${encodeURIComponent(p.compound_id)}` }, spaceTile(sp, 22), `s/${p.compound_name}`);
+  return h('a', { class: 'space', href: `#/s/${encodeURIComponent(p.compound_id)}` }, tile ? spaceTile(sp, 22) : null, `s/${p.compound_name}`);
 }
 
-export function authorLink(p, cls = 'who') {
-  return h('a', { class: cls, href: `#/u/${encodeURIComponent(p.author_handle)}` }, emblem(p.author_level || 1, 18), `u/${p.author_handle}`);
+export function authorLink(p, cls = 'who', { badge = true } = {}) {
+  return h('a', { class: cls, href: `#/u/${encodeURIComponent(p.author_handle)}` }, badge ? emblem(p.author_level || 1, 18) : null, `u/${p.author_handle}`);
+}
+
+// Sig's read under a report, as its check: what it read (how it went, for how long, the side
+// effects), whether the author confirmed or corrected it, and the Signal it moved. A question says
+// it doesn't feed the Signal; a report still being read says so.
+function readStrip(p) {
+  const cid = p.compound_id;
+  if (p.kind === 'question') return h('p', { class: 'read-q' }, '○ a question: answers help, but only reports feed the Signal');
+  if (p.read_pending) return h('p', { class: 'read-strip pending' }, h('span', { class: 'rs-k' }, '◌ sig is reading'), h('span', { class: 'rs-what' }, 'it moves the Signal once it’s read'));
+  if (!p.counts_for_signal || !OUTCOME[p.outcome]) return null;
+  const x = signalOf(cid);
+  const what = [OUTCOME[p.outcome][0], p.duration, ...(p.side_effects || []).slice(0, 3)].filter(Boolean).map((w) => String(w).toLowerCase()).join(' · ');
+  const by = p.read_corrected ? 'corrected by the author' : p.read_confirmed ? 'author confirmed' : p.outcome !== 'better' ? 'counts as much as “it worked”' : '';
+  return h('p', { class: 'read-strip', title: 'Sig read this as a first-hand report. It feeds the Signal.' },
+    h('span', { class: 'rs-k' }, '✓ sig read'),
+    h('span', { class: 'rs-what' }, h('span', { class: 'rs-v' }, what), by ? ` · ${by}` : ''),
+    x && x.score != null ? h('a', { class: 'rs-sig', href: `#/s/${encodeURIComponent(cid)}`, title: `${p.compound_name} Community Signal` },
+      `→ ${p.compound_name.toLowerCase()} `, sigNum(cid), ' ', movement(x)) : h('span', {}));
 }
 
 export function postCard(p) {
   const href = `#/post/${encodeURIComponent(p.id)}`;
-  const card = h('article', { class: 'card post', 'data-post': p.id });
+  // A feed is a log: each post an entry on one line down the page, each report a commit and
+  // Sig's read its check
+  const card = h('article', { class: `card post log${p.kind === 'question' ? ' q' : ''}`, 'data-post': p.id });
+  const sep = () => h('span', { class: 'sep' }, '·');
   const draw = () => {
-    const x = signalOf(p.compound_id);
     card.replaceChildren(
-      h('div', { class: 'vrail' }, voteWidget('post', p)),
+      h('div', { class: 'vrail graph', 'aria-hidden': 'true' }, h('span', { class: 'g-line' }), h('span', { class: 'g-dot' })),
       h('div', { class: 'post-main' },
-        h('div', { class: 'post-head' }, spaceLink(p), h('span', { class: 'sep' }, '·'), authorLink(p), h('span', { class: 'sep' }, '·'), h('span', {}, ago(p.created_at)),
-          x && x.score != null ? h('span', { class: 'grow' }) : null,
-          x && x.score != null ? h('a', { class: 'chip', href: `#/s/${encodeURIComponent(p.compound_id)}`, title: `${p.compound_name} Community Signal` }, 'Signal ', sigNum(p.compound_id)) : null),
+        h('div', { class: 'post-head' }, h('span', { class: 'kind' }, p.kind === 'question' ? 'question' : 'report'), sep(), spaceLink(p, { tile: false }), sep(),
+          authorLink(p, 'who', { badge: false }), sep(), h('span', {}, ago(p.created_at)), statusChip(p)),
         h('a', { class: 'post-title', href }, p.title),
-        h('div', { class: 'post-chips' }, p.kind === 'question' ? h('span', { class: 'chip' }, 'Question') : h('span', { class: 'chip' }, 'Report'), outcomeChip(p), statusChip(p), readMini(p),
-          p.duration && p.counts_for_signal ? h('span', { class: 'chip' }, p.duration) : null),
         h('div', { class: 'excerpt' }, p.body),
+        readStrip(p),
         stickerRow(p),
         h('div', { class: 'acts' },
           voteWidget('post', p, true),
