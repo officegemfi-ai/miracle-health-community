@@ -410,8 +410,8 @@ check('A part that couldn’t be loaded says so and offers Try again, which brin
   /couldn’t be loaded just now/.test(lostLead) && await B.evaluate(() => !!document.activeElement?.closest('.body-card')), lostLead);
 
 await B.goto(`${BASE}#/signal`);
-await B.waitForSelector('.sig-row');
-check('The Signal page ranks the compounds', (await B.locator('.sig-row').count()) >= 50);
+await B.waitForSelector('.top-table tbody tr[data-signal]');
+check('The Signal page ranks the compounds, as a table like top', (await B.locator('.top-table tbody tr[data-signal]').count()) >= 50);
 check('and lists the live moves with their causes', (await B.locator('.move-i').count()) >= 1);
 await B.waitForSelector('.viz-compact .flowviz.compact');
 check('It draws how the number is made: public forums and members’ reports in, one number out',
@@ -419,7 +419,7 @@ check('It draws how the number is made: public forums and members’ reports in,
   && /THE FORMULA/.test(await B.textContent('.viz-compact .flowviz')));
 const ladderCounts = await B.locator('.ladder-steps .step-l .cnt b').allTextContents();
 check('with the certification ladder, which counts every Signal once',
-  ladderCounts.length === 5 && ladderCounts.reduce((a, t) => a + Number(t.replace(/\D/g, '')), 0) === await B.locator('.sig-row').count(), ladderCounts.join(' '));
+  ladderCounts.length === 5 && ladderCounts.reduce((a, t) => a + Number(t.replace(/\D/g, '')), 0) === await B.locator('.top-table tbody tr[data-signal]').count(), ladderCounts.join(' '));
 await B.$eval('#sim-n', (el) => { el.value = '150'; el.dispatchEvent(new Event('input', { bubbles: true })); });
 check('The takeover slider shows what 150 first-hand reports would do: 75% from members, Signal Certified',
   /75% from members/.test(await B.textContent('.sim-out')) && /Signal Certified/.test(await B.textContent('.sim-out'))
