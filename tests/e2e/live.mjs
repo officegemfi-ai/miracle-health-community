@@ -84,18 +84,20 @@ async function ask(page, q) {
   return {
     secs: Math.round((Date.now() - t) / 1000),
     text: (await last.innerText().catch(() => '')) || '',
-    agents: await last.locator('.tstep .tstep-who').allInnerTexts().catch(() => []),
+    // each step's agent, by its key (the page has shown it as a name and as a short name)
+    agents: await last.locator('.tstep').evaluateAll((els) => els.map((el) => el.dataset.agent)).catch(() => []),
   };
 }
 
 // 2. Ask Sig on a laptop
 try {
   const { ctx, page, errors } = await open({ viewport: { width: 1440, height: 1000 } }, 'laptop');
-  const nav = await page.locator('header .top-nav a').allInnerTexts();
+  // the site's links: in the top bar, or in the side panel beside the chats on Sig's own page
+  const nav = await page.locator('header .top-nav a, .sg-site a').allInnerTexts();
   check('Laptop: the navigation is there', ['Library', 'Ask Sig', 'Community', 'My Miracle'].every((x) => nav.includes(x)), nav.join(', '));
   const a = await ask(page, 'Is HGH plus enclomiphene good for fat loss?');
   check('Laptop: Sig answers about HGH and enclomiphene', a.text.length > 200 && /enclomiphene/i.test(a.text), `${a.text.length} characters in ${a.secs} s`);
-  const need = ['Planner', 'Evidence librarian', 'Relatives agent', 'Combination agent', 'Markers agent', 'Safety agent'];
+  const need = ['planner', 'evidence', 'relatives', 'combination', 'markers', 'safety'];
   const missing = need.filter((x) => !a.agents.includes(x));
   check('Laptop: each agent\'s step shows', !missing.length, missing.length ? `missing ${missing.join(', ')}; got ${[...new Set(a.agents)].join(', ')}` : [...new Set(a.agents)].join(', '));
   const chips = await page.locator('.sc-chip').allInnerTexts();
@@ -117,15 +119,19 @@ try {
 // 3. Ask Sig on a phone
 try {
   const { ctx, page, errors } = await open({ ...devices['iPhone 13'] }, 'phone');
-  await page.click('.menu-btn');
+  // the menu: the side panel with the chats and the site's links on Sig's own page (or the
+  // site's menu, on a page with the site's bar)
+  const sidePanel = await page.locator('#tm-menu').count() > 0;
+  await page.click(sidePanel ? '#tm-menu' : '.menu-btn');
   await page.waitForTimeout(400);
-  check('Phone: the menu opens with the navigation', await page.locator('#menu a[href="/library/"]').first().isVisible());
+  check('Phone: the menu opens with the navigation', await page.locator(sidePanel ? '#sg-side a[href="/library/"]' : '#menu a[href="/library/"]').first().isVisible());
   await shot(page, 'phone_menu', null);
-  await page.click('.menu-close');
-  await page.waitForTimeout(300);
+  if (sidePanel) await page.keyboard.press('Escape');
+  else await page.click('.menu-close');
+  await page.waitForTimeout(400);
   const a = await ask(page, 'Is ipamorelin good for fat loss?');
   check('Phone: Sig answers about ipamorelin', a.text.length > 200 && /ipamorelin/i.test(a.text), `${a.text.length} characters in ${a.secs} s`);
-  check('Phone: the Relatives agent looked at its relatives', a.agents.includes('Relatives agent'), [...new Set(a.agents)].join(', '));
+  check('Phone: the Relatives agent looked at its relatives', a.agents.includes('relatives'), [...new Set(a.agents)].join(', '));
   await shot(page, 'phone_answer', null);
   const peek = page.locator('.sc-peek');
   check('Phone: the peek bar shows', await peek.isVisible().catch(() => false));
