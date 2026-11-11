@@ -971,9 +971,11 @@ Deno.test('their stack is laid out with the answer, checked with what they menti
   const ev = await events(await handle(ask([{ role: 'user', content: 'I take BPC-157, TB-500 and creatine. OK together?' }]), deps(full.f)));
   assert(ev.some((e) => e.event === 'card' && e.data.kind === 'yours'));
   assert(ev.some((e) => e.event === 'step' && e.data.agent === 'builder' && /Laid out your stack of 3/.test(e.data.title)));
-  // No medicines mentioned: the guide says what the check covers, rather than asking
+  // No medicines mentioned: the safety line ends with the clinician check, rather than a question or a note on what the check left out
   const notes = String((full.calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
-  assert(notes.includes('the check covers the compounds together, not medicines they haven\'t named'), notes);
+  assert(notes.includes('end the safety line with the check with their clinician before adding anything'), notes);
+  const g = guideSystem('');
+  assert(g.includes('one or two short sentences for the whole answer') && g.includes('Never write what you assume or what a check left out'));
 });
 
 Deno.test('"never studied together" is no finding: the card says no known clashes instead', async () => {
