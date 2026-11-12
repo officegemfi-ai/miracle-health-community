@@ -27,10 +27,10 @@ const namesOf = (xs) => listOf(xs.map((x, i) => (i ? mid(x) : x)));
 export const BODY_MAX = 6;
 // What a line does at its place: its mark, and the word a screen reader hears instead
 export const BODY_OPS = {
-  is: ['▶', 'acts'], up: ['▲', 'raises'], down: ['▼', 'lowers'], block: ['┤', 'blocks'], watch: ['◆', 'worth checking'], warn: ['!', 'caution'],
+  is: ['▶', 'acts'], up: ['▲', 'raises'], down: ['▼', 'lowers'], block: ['×', 'blocks'], watch: ['◊', 'worth checking'], warn: ['!', 'caution'],
 };
 // Which way a blood marker may move
-const DIRS = { up: ['▲', 'may rise'], down: ['▼', 'may fall'], watch: ['◆', 'worth checking'] };
+const DIRS = { up: ['▲', 'may rise'], down: ['▼', 'may fall'], watch: ['◊', 'worth checking'] };
 
 // The compounds asked for, cleaned: known ids only, each once, at most BODY_MAX. A compound with
 // lines is drawn; without, it isn't drawn yet (or, when failed, its lines couldn't be read)
