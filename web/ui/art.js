@@ -43,7 +43,7 @@ const GLYPH = [
   '<circle cx="16" cy="16" r="3.5"/><circle cx="16" cy="5" r="2.2"/><circle cx="16" cy="27" r="2.2"/><circle cx="5" cy="16" r="2.2"/><circle cx="27" cy="16" r="2.2"/><path d="M16 7.5v5M16 19.5v5M7.5 16h5M19.5 16h5"/>',
   [0, 60, 120, 180, 240, 300].map((a) => `<ellipse cx="16" cy="16" rx="3.6" ry="9" transform="rotate(${a} 16 16) translate(0 -5)"/>`).join('') + '<circle cx="16" cy="16" r="2.4" fill="currentColor" stroke="none"/>',
 ];
-export const TIERS = [['#D8FF3D', '#7FD858', 'Signal'], ['#7CF0DC', '#D8FF3D', 'Resonant'], ['#FFE07A', '#F5A93F', 'Lodestar']];
+export const TIERS = [['#3D8BFF', '#9CC2FF', 'Signal'], ['#7CF0DC', '#3D8BFF', 'Resonant'], ['#FFE07A', '#F5A93F', 'Lodestar']];
 export const tierOf = (level) => TIERS[Math.min(2, Math.floor((Math.max(1, level) - 1) / 5))];
 
 export function emblem(level = 1, size = 40, locked = false, label = '') {
@@ -58,7 +58,7 @@ export function emblem(level = 1, size = 40, locked = false, label = '') {
     <radialGradient id="${g}r" cx=".35" cy=".25" r=".8"><stop offset="0" stop-color="#fff" stop-opacity="${locked ? 0.06 : 0.3}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
     <path d="${hex}" fill="url(#${g})" opacity="${locked ? 0.14 : 0.26}"/>
     <path d="${hex}" fill="none" stroke="url(#${g})" stroke-width="2.6" stroke-linejoin="round"/>
-    <path d="M32 9.5 L51.5 20.8 L51.5 43.2 L32 54.5 L12.5 43.2 L12.5 20.8 Z" fill="#0B0F11" fill-opacity="${locked ? 0.55 : 0.82}"/>
+    <path d="M32 9.5 L51.5 20.8 L51.5 43.2 L32 54.5 L12.5 43.2 L12.5 20.8 Z" fill="#000000" fill-opacity="${locked ? 0.55 : 0.82}"/>
     <path d="${hex}" fill="url(#${g}r)"/>
     <g transform="translate(16 16)" fill="none" stroke="url(#${g})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="${ca}">${GLYPH[i]}</g>
     ${locked ? '<g transform="translate(46 46)"><circle r="7.5" fill="#1B2725" stroke="#5E6664"/><path d="M-2.8 -.4v-1.8a2.8 2.8 0 0 1 5.6 0v1.8M-3.8 -.4h7.6v4.8h-7.6z" fill="none" stroke="#A9B1AE" stroke-width="1.3" stroke-linejoin="round"/></g>' : ''}
@@ -107,7 +107,7 @@ export function scale(score) {
   const s = Math.max(0, Math.min(100, Number(score) || 0));
   const g = nextId('sc');
   return svg(`<svg class="scale" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#B0453D"/><stop offset=".55" stop-color="#D4A72C"/><stop offset="1" stop-color="#D8FF3D"/></linearGradient></defs>
+    <defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#B0453D"/><stop offset=".55" stop-color="#D4A72C"/><stop offset="1" stop-color="#3D8BFF"/></linearGradient></defs>
     <rect x="0" y="5" width="200" height="4" rx="2" fill="currentColor" fill-opacity=".14"/>
     <rect x="0" y="5" width="${(2 * s).toFixed(1)}" height="4" rx="2" fill="url(#${g})"/>
     <rect x="${Math.max(0, 2 * s - 1.5).toFixed(1)}" y="1" width="3" height="12" rx="1.5" fill="currentColor"/></svg>`);

@@ -24,8 +24,8 @@ export function levelAfter(n, w = 50) {
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const LIME = '#D8FF3D';
-const FORUM = '#A4A9A6';
+const LIME = '#3D8BFF';
+const FORUM = '#A1A7B2';
 let uidN = 0;
 const uid = (p) => `${p}${(uidN += 1)}`;
 
@@ -39,7 +39,7 @@ function sealInner(key) {
     early: `<circle cx="16" cy="16" r="12.5" fill="none" stroke="${LIME}" stroke-width="2" stroke-dasharray="3 3.5"/>`,
     backed: `<circle cx="16" cy="16" r="12.5" fill="none" stroke="${LIME}" stroke-opacity=".35" stroke-width="2"/><path d="M16 3.5a12.5 12.5 0 0 1 0 25" fill="none" stroke="${LIME}" stroke-width="2.4" stroke-linecap="round"/>`,
     verified: `<circle cx="16" cy="16" r="12.5" fill="none" stroke="${LIME}" stroke-width="2.4"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="${LIME}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`,
-    certified: `<path d="M16 2.5l3.1 2.4 3.9-.5 1.5 3.6 3.6 1.5-.5 3.9 2.4 3.1-2.4 3.1.5 3.9-3.6 1.5-1.5 3.6-3.9-.5L16 29.5l-3.1-2.4-3.9.5-1.5-3.6-3.6-1.5.5-3.9L2.5 16l2.4-3.1-.5-3.9 3.6-1.5 1.5-3.6 3.9.5z" fill="${LIME}"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="#0B0F11" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+    certified: `<path d="M16 2.5l3.1 2.4 3.9-.5 1.5 3.6 3.6 1.5-.5 3.9 2.4 3.1-2.4 3.1.5 3.9-3.6 1.5-1.5 3.6-3.9-.5L16 29.5l-3.1-2.4-3.9.5-1.5-3.6-3.6-1.5.5-3.9L2.5 16l2.4-3.1-.5-3.9 3.6-1.5 1.5-3.6 3.9.5z" fill="${LIME}"/><path d="m11 16.4 3.3 3.3 6.7-7.4" fill="none" stroke="#000000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
   }[k];
   const inner = k === 'forum' ? `<text x="16" y="20" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="10.5" fill="${FORUM}">F</text>`
     : k === 'early' ? `<circle cx="16" cy="16" r="3.2" fill="${LIME}"/>` : k === 'backed' ? `<circle cx="16" cy="16" r="4" fill="${LIME}"/>` : '';
@@ -48,7 +48,7 @@ function sealInner(key) {
 // disc: on a dark disc, for light backgrounds (the lime would wash out on white)
 export function sealSvg(key, size = 28, disc = false) {
   const k = levelOf(key).key;
-  const inner = disc ? `<circle cx="16" cy="16" r="16" fill="#0B0F11"/><g transform="translate(4.5 4.5) scale(.72)">${sealInner(k)}</g>` : sealInner(k);
+  const inner = disc ? `<circle cx="16" cy="16" r="16" fill="#000000"/><g transform="translate(4.5 4.5) scale(.72)">${sealInner(k)}</g>` : sealInner(k);
   return `<svg class="seal seal-${k}" viewBox="0 0 32 32" width="${size}" height="${size}" role="img" aria-label="${esc(levelOf(k).name)}">${inner}</svg>`;
 }
 // A seal placed inside a bigger drawing, at (x, y), size px wide
@@ -75,7 +75,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
   const pct = Math.round(s * 100);
   const f1 = (n) => Number(n).toFixed(1);
   const rad = (deg) => (deg * Math.PI) / 180;
-  const WHITE = '#EEECE6';
+  const WHITE = '#F7F8FA';
 
   // Particles along a path: n dots, evenly spaced in time, fading in and out at the ends
   const dots = (pid, n, dur, color, r = 2.1) => Array.from({ length: n }, (_, i) => {
@@ -91,22 +91,22 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
 
   // An input: a slim row with an initial tile, the name, how many Signals use it, and a port
   const chip = (x, y, w, name, n, portX, portY) => `<g>
-      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="#12171A"/>
+      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="#17171A"/>
       <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="${WHITE}" fill-opacity=".035" stroke="${WHITE}" stroke-opacity=".1"/>
       <rect x="${x + 8}" y="${y + 8}" width="24" height="24" rx="7" fill="${FORUM}" fill-opacity=".14"/>
       <text x="${x + 20}" y="${y + 24}" text-anchor="middle" class="t-mono" font-size="11" font-weight="600" fill="${FORUM}">${esc((name || ' ')[0])}</text>
       <text x="${x + 42}" y="${y + 18}" class="t-head" font-size="13.5" fill="${WHITE}">${esc(name)}</text>
       <text x="${x + 42}" y="${y + 31}" class="t-mono" font-size="9" letter-spacing=".5" fill="${WHITE}" fill-opacity=".55">IN ${fmt(n)} SIGNAL${n === 1 ? '' : 'S'}</text>
-      <circle cx="${portX}" cy="${portY}" r="3" fill="#0B0F11" stroke="${FORUM}" stroke-width="1.4"/>
+      <circle cx="${portX}" cy="${portY}" r="3" fill="#000000" stroke="${FORUM}" stroke-width="1.4"/>
     </g>`;
   const member = (x, y, w, portX, portY) => `<g>
-      <rect x="${x}" y="${y}" width="${w}" height="48" rx="8" fill="#12171A"/>
+      <rect x="${x}" y="${y}" width="${w}" height="48" rx="8" fill="#17171A"/>
       <rect x="${x}" y="${y}" width="${w}" height="48" rx="8" fill="${LIME}" fill-opacity=".07" stroke="${LIME}" stroke-opacity=".5"/>
       <circle cx="${x + 24}" cy="${y + 24}" r="11" fill="none" stroke="${LIME}" stroke-width="1.6"/>
       <circle cx="${x + 24}" cy="${y + 24}" r="4.2" fill="${LIME}"/>
       <text x="${x + 44}" y="${y + 21}" class="t-head" font-size="14" fill="${WHITE}">${fmt(reports)} first-hand report${reports === 1 ? '' : 's'}</text>
       <text x="${x + 44}" y="${y + 36}" class="t-mono" font-size="9" letter-spacing=".5" fill="${LIME}" fill-opacity=".85">+ ${fmt(sames)} “SAME FOR ME”</text>
-      <circle cx="${portX}" cy="${portY}" r="3" fill="#0B0F11" stroke="${LIME}" stroke-width="1.4"/>
+      <circle cx="${portX}" cy="${portY}" r="3" fill="#000000" stroke="${LIME}" stroke-width="1.4"/>
     </g>`;
 
   // The dial: the members' share in lime, the forums' in blue-grey, a tick ring, a slow orbit
@@ -126,7 +126,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
       <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${WHITE}" stroke-opacity=".06" stroke-width="11"/>
       ${fLen > 0 ? arc(fLen, s * C + gap / 2, FORUM, 11, 0.5) : ''}
       ${mLen > 0 ? `${arc(mLen, gap / 2, LIME, 11, 1)}` : `<circle cx="${cx}" cy="${cy - r}" r="3.4" fill="${LIME}"/>`}
-      <circle cx="${cx}" cy="${cy}" r="${r - 15}" fill="#0E1316" stroke="${WHITE}" stroke-opacity=".07"/>
+      <circle cx="${cx}" cy="${cy}" r="${r - 15}" fill="#121214" stroke="${WHITE}" stroke-opacity=".07"/>
       <text x="${cx}" y="${cy + (big ? 6 : 3)}" text-anchor="middle" class="t-head" font-size="${big ? 40 : 30}" fill="${LIME}">${pct}%</text>
       <text x="${cx}" y="${cy + (big ? 23 : 17)}" text-anchor="middle" class="t-mono" font-size="${big ? 8.5 : 7.5}" letter-spacing="1.2" fill="${WHITE}" fill-opacity=".75">FROM MEMBERS</text>
       <line x1="${cx - 16}" y1="${cy + (big ? 31 : 23)}" x2="${cx + 16}" y2="${cy + (big ? 31 : 23)}" stroke="${WHITE}" stroke-opacity=".14"/>
@@ -147,7 +147,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
   };
 
   // The output: the number of live Signals, the levels as a stacked bar and as seals
-  const levelColors = { forum: FORUM, early: 'rgba(216,255,61,.38)', backed: 'rgba(216,255,61,.6)', verified: 'rgba(216,255,61,.82)', certified: LIME };
+  const levelColors = { forum: FORUM, early: 'rgba(61,139,255,.38)', backed: 'rgba(61,139,255,.6)', verified: 'rgba(61,139,255,.82)', certified: LIME };
   const stack = (x, y, w) => {
     const tot = LEVELS.reduce((a, l) => a + level(l.key), 0);
     if (!tot) return `<rect x="${x}" y="${y}" width="${w}" height="5" rx="2.5" fill="${WHITE}" fill-opacity=".08"/>`;
@@ -201,8 +201,8 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
       ${dial(cx, cy, r, true)}
       ${formula(cx, 283, 200)}
       <g transform="translate(${cardX} ${cardY})">
-        <rect width="${cardW}" height="${cardH}" rx="6" fill="#0E1316" stroke="${LIME}" stroke-opacity=".38"/>
-        <circle cx="0" cy="${cardH / 2}" r="3" fill="#0B0F11" stroke="${LIME}" stroke-width="1.4"/>
+        <rect width="${cardW}" height="${cardH}" rx="6" fill="#121214" stroke="${LIME}" stroke-opacity=".38"/>
+        <circle cx="0" cy="${cardH / 2}" r="3" fill="#000000" stroke="${LIME}" stroke-width="1.4"/>
         ${head(16, 25, 'THE SIGNAL', LIME)}${liveDot(cardW - 18, 21.5)}
         <text x="16" y="68" class="t-head" font-size="40" fill="${WHITE}">${fmt(signals)}</text>
         <text x="16" y="86" class="t-mono" font-size="8.5" letter-spacing=".8" fill="${WHITE}" fill-opacity=".6">LIVE SIGNALS, 0–100</text>
@@ -242,8 +242,8 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
     ${member(cx - 104, my, 208, cx, my + 48)}
     ${dial(cx, cy, r, false)}
     <g transform="translate(${cx - cardW / 2} ${oy})">
-      <rect width="${cardW}" height="${cardH}" rx="6" fill="#0E1316" stroke="${LIME}" stroke-opacity=".38"/>
-      <circle cx="${cardW / 2}" cy="0" r="3" fill="#0B0F11" stroke="${LIME}" stroke-width="1.4"/>
+      <rect width="${cardW}" height="${cardH}" rx="6" fill="#121214" stroke="${LIME}" stroke-opacity=".38"/>
+      <circle cx="${cardW / 2}" cy="0" r="3" fill="#000000" stroke="${LIME}" stroke-width="1.4"/>
       ${head(16, 24, 'THE SIGNAL', LIME)}${liveDot(98, 20.5)}
       <text x="16" y="60" class="t-head" font-size="32" fill="${WHITE}">${fmt(signals)}</text>
       <text x="16" y="76" class="t-mono" font-size="8" letter-spacing=".6" fill="${WHITE}" fill-opacity=".6">LIVE SIGNALS</text>
@@ -276,10 +276,10 @@ export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {},
   // so the names never sit on the line), and the number of reports that reaches each
   const marks = [[25, 'Community-backed', 'Backed'], [50, 'Community-verified', 'Verified'], [75, 'Signal Certified', 'Certified']].map(([t, name, short]) => {
     const n = (w * t) / (100 - t);
-    return `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" stroke="#EEECE6" stroke-opacity=".14" stroke-dasharray="3 5"/>
+    return `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" stroke="#F7F8FA" stroke-opacity=".14" stroke-dasharray="3 5"/>
       <line x1="${X(n)}" x2="${X(n)}" y1="${Y(t)}" y2="${Y(0)}" stroke="${LIME}" stroke-opacity=".28" stroke-dasharray="2 4"/>
       <circle cx="${X(n)}" cy="${Y(t)}" r="3.4" fill="${LIME}"/>
-      <text x="${W - R - 4}" y="${Y(t) - 5}" text-anchor="end" class="t-mono" font-size="${compact ? 8 : 9}" fill="#EEECE6" fill-opacity=".72">${t}% · ${(compact ? short : name).toUpperCase()}</text>
+      <text x="${W - R - 4}" y="${Y(t) - 5}" text-anchor="end" class="t-mono" font-size="${compact ? 8 : 9}" fill="#F7F8FA" fill-opacity=".72">${t}% · ${(compact ? short : name).toUpperCase()}</text>
       <text x="${X(n)}" y="${Y(0) + 14}" text-anchor="middle" class="t-mono" font-size="${compact ? 8 : 9}" fill="${LIME}" fill-opacity=".85">${Math.round(n)}</text>`;
   }).join('');
   // Signals on the line: where their share puts them
@@ -294,7 +294,7 @@ export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {},
     const n = (w * sh) / (100 - sh);
     const x = X(n); const y = Y(sh);
     const many = list.length > 1;
-    return `<g class="tk-dot"><circle class="pulse" cx="${x}" cy="${y}" r="${many ? 9 : 6}" fill="${LIME}" fill-opacity=".25"/><circle cx="${x}" cy="${y}" r="${many ? 5.5 : 4}" fill="${LIME}" stroke="#0B0F11" stroke-width="1.5"/>${many ? `<text x="${x + 12}" y="${y - 10}" class="t-mono" font-size="9.5" fill="#EEECE6">${list.length} SIGNALS</text>` : ''}</g>`;
+    return `<g class="tk-dot"><circle class="pulse" cx="${x}" cy="${y}" r="${many ? 9 : 6}" fill="${LIME}" fill-opacity=".25"/><circle cx="${x}" cy="${y}" r="${many ? 5.5 : 4}" fill="${LIME}" stroke="#000000" stroke-width="1.5"/>${many ? `<text x="${x + 12}" y="${y - 10}" class="t-mono" font-size="9.5" fill="#F7F8FA">${list.length} SIGNALS</text>` : ''}</g>`;
   }).join('');
   // The point to call out, labelled below and to the right (under the curve, off the line)
   const youMark = you ? (() => {
@@ -306,10 +306,10 @@ export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {},
     const tw = text.length * (compact ? 5.6 : 6.2);
     const tx = x + 14 + tw > W - R ? x - 14 - tw : x + 14;
     return `<g class="tk-you">${byN ? `<line x1="${x}" x2="${x}" y1="${y}" y2="${Y(0)}" stroke="${LIME}" stroke-width="1.4" stroke-dasharray="3 3"/>` : ''}
-      <circle class="pulse" cx="${x}" cy="${y}" r="11" fill="${LIME}" fill-opacity=".3"/><circle cx="${x}" cy="${y}" r="6" fill="${LIME}" stroke="#0B0F11" stroke-width="2"/>
+      <circle class="pulse" cx="${x}" cy="${y}" r="11" fill="${LIME}" fill-opacity=".3"/><circle cx="${x}" cy="${y}" r="6" fill="${LIME}" stroke="#000000" stroke-width="2"/>
       <text x="${tx}" y="${Math.min(y + 20, Y(0) - 8)}" class="t-mono" font-size="${compact ? 9 : 10}" font-weight="600" fill="${LIME}">${text}</text></g>`;
   })() : '';
-  const yTicks = [0, 25, 50, 75, 100].map((t) => `<text x="${L - 8}" y="${Y(t) + 3}" text-anchor="end" class="t-mono" font-size="${compact ? 8 : 9}" fill="#EEECE6" fill-opacity=".5">${t}%</text>`).join('');
+  const yTicks = [0, 25, 50, 75, 100].map((t) => `<text x="${L - 8}" y="${Y(t) + 3}" text-anchor="end" class="t-mono" font-size="${compact ? 8 : 9}" fill="#F7F8FA" fill-opacity=".5">${t}%</text>`).join('');
   return `<svg class="takeover${still ? ' still' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="The takeover line: the forums count as ${w} reports, so a Signal is 50% members' data after ${w} first-hand reports and 75% after ${w * 3}.">
     <defs>
       <pattern id="${id}-h" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="${FORUM}" stroke-opacity=".16" stroke-width="2"/></pattern>
@@ -319,11 +319,11 @@ export function takeoverSvg({ w = 50, points = [], max = 300, you = null } = {},
     ${yTicks}
     ${marks}
     <path class="draw" d="${d}" fill="none" stroke="${LIME}" stroke-width="2.8" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1"/>
-    <line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#EEECE6" stroke-opacity=".3"/>
+    <line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#F7F8FA" stroke-opacity=".3"/>
     <text x="${X(max * (compact ? 0.56 : 0.62))}" y="${Y(compact ? 93 : 93)}" class="t-mono" font-size="9.5" fill="${FORUM}" fill-opacity=".9">FORUM DATA</text>
     <text x="${X(max * (compact ? 0.56 : 0.62))}" y="${Y(9)}" class="t-mono" font-size="9.5" fill="${LIME}">MEMBERS’ DATA</text>
     ${dots}${youMark}
-    <text x="${L + pw / 2}" y="${H - 8}" text-anchor="middle" class="t-mono" font-size="${compact ? 8.5 : 9.5}" fill="#EEECE6" fill-opacity=".62">FIRST-HAND REPORTS FOR ONE COMPOUND →</text>
+    <text x="${L + pw / 2}" y="${H - 8}" text-anchor="middle" class="t-mono" font-size="${compact ? 8.5 : 9.5}" fill="#F7F8FA" fill-opacity=".62">FIRST-HAND REPORTS FOR ONE COMPOUND →</text>
   </svg>`;
 }
 
