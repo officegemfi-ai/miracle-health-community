@@ -91,17 +91,17 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
 
   // An input: a slim row with an initial tile, the name, how many Signals use it, and a port
   const chip = (x, y, w, name, n, portX, portY) => `<g>
-      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="#17171A"/>
-      <rect x="${x}" y="${y}" width="${w}" height="40" rx="11" fill="${WHITE}" fill-opacity=".035" stroke="${WHITE}" stroke-opacity=".1"/>
-      <rect x="${x + 8}" y="${y + 8}" width="24" height="24" rx="7" fill="${FORUM}" fill-opacity=".14"/>
+      <rect x="${x}" y="${y}" width="${w}" height="40" rx="0" fill="#17171A"/>
+      <rect x="${x}" y="${y}" width="${w}" height="40" rx="0" fill="${WHITE}" fill-opacity=".035" stroke="${WHITE}" stroke-opacity=".1"/>
+      <rect x="${x + 8}" y="${y + 8}" width="24" height="24" rx="0" fill="${FORUM}" fill-opacity=".14"/>
       <text x="${x + 20}" y="${y + 24}" text-anchor="middle" class="t-mono" font-size="11" font-weight="600" fill="${FORUM}">${esc((name || ' ')[0])}</text>
       <text x="${x + 42}" y="${y + 18}" class="t-head" font-size="13.5" fill="${WHITE}">${esc(name)}</text>
       <text x="${x + 42}" y="${y + 31}" class="t-mono" font-size="9" letter-spacing=".5" fill="${WHITE}" fill-opacity=".55">IN ${fmt(n)} SIGNAL${n === 1 ? '' : 'S'}</text>
       <circle cx="${portX}" cy="${portY}" r="3" fill="#000000" stroke="${FORUM}" stroke-width="1.4"/>
     </g>`;
   const member = (x, y, w, portX, portY) => `<g>
-      <rect x="${x}" y="${y}" width="${w}" height="48" rx="8" fill="#17171A"/>
-      <rect x="${x}" y="${y}" width="${w}" height="48" rx="8" fill="${LIME}" fill-opacity=".07" stroke="${LIME}" stroke-opacity=".5"/>
+      <rect x="${x}" y="${y}" width="${w}" height="48" rx="0" fill="#17171A"/>
+      <rect x="${x}" y="${y}" width="${w}" height="48" rx="0" fill="${LIME}" fill-opacity=".07" stroke="${LIME}" stroke-opacity=".5"/>
       <circle cx="${x + 24}" cy="${y + 24}" r="11" fill="none" stroke="${LIME}" stroke-width="1.6"/>
       <circle cx="${x + 24}" cy="${y + 24}" r="4.2" fill="${LIME}"/>
       <text x="${x + 44}" y="${y + 21}" class="t-head" font-size="14" fill="${WHITE}">${fmt(reports)} first-hand report${reports === 1 ? '' : 's'}</text>
@@ -137,7 +137,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
   const formula = (cx, y, w) => {
     const parts = [[65, 'WHAT HAPPENED', LIME], [15, 'AGREEMENT', LIME], [10, 'VOICES', LIME], [10, 'VOLUME', LIME]];
     let x = cx - w / 2;
-    const bar = parts.map(([p, , c]) => { const wd = (w * p) / 100 - 2; const r = `<rect x="${f1(x)}" y="${y}" width="${f1(wd)}" height="5" rx="2.5" fill="${c}"/>`; x += (w * p) / 100; return r; }).join('');
+    const bar = parts.map(([p, , c]) => { const wd = (w * p) / 100 - 2; const r = `<rect x="${f1(x)}" y="${y}" width="${f1(wd)}" height="5" rx="0" fill="${c}"/>`; x += (w * p) / 100; return r; }).join('');
     const item = ([p, t, c]) => `<tspan fill="${c}">•</tspan><tspan fill="${WHITE}" fill-opacity=".62">\u00A0${p} ${t}</tspan>`;
     const sep = '<tspan>\u00A0\u00A0\u00A0</tspan>';
     return `<text x="${cx}" y="${y - 9}" text-anchor="middle" class="t-mono" font-size="9" letter-spacing="1.4" fill="${WHITE}" fill-opacity=".45">THE FORMULA</text>
@@ -150,11 +150,11 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
   const levelColors = { forum: FORUM, early: 'rgba(61,139,255,.38)', backed: 'rgba(61,139,255,.6)', verified: 'rgba(61,139,255,.82)', certified: LIME };
   const stack = (x, y, w) => {
     const tot = LEVELS.reduce((a, l) => a + level(l.key), 0);
-    if (!tot) return `<rect x="${x}" y="${y}" width="${w}" height="5" rx="2.5" fill="${WHITE}" fill-opacity=".08"/>`;
+    if (!tot) return `<rect x="${x}" y="${y}" width="${w}" height="5" rx="0" fill="${WHITE}" fill-opacity=".08"/>`;
     let cx = x;
-    return `<rect x="${x}" y="${y}" width="${w}" height="5" rx="2.5" fill="${WHITE}" fill-opacity=".08"/>${LEVELS.map((l) => {
+    return `<rect x="${x}" y="${y}" width="${w}" height="5" rx="0" fill="${WHITE}" fill-opacity=".08"/>${LEVELS.map((l) => {
       const wd = (w * level(l.key)) / tot; if (!wd) return '';
-      const r = `<rect x="${f1(cx)}" y="${y}" width="${f1(Math.max(1.5, wd - 1.5))}" height="5" rx="2" fill="${levelColors[l.key]}"/>`; cx += wd; return r;
+      const r = `<rect x="${f1(cx)}" y="${y}" width="${f1(Math.max(1.5, wd - 1.5))}" height="5" rx="0" fill="${levelColors[l.key]}"/>`; cx += wd; return r;
     }).join('')}`;
   };
   const seals = (x, y, w, size) => {
@@ -201,7 +201,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
       ${dial(cx, cy, r, true)}
       ${formula(cx, 283, 200)}
       <g transform="translate(${cardX} ${cardY})">
-        <rect width="${cardW}" height="${cardH}" rx="6" fill="#121214" stroke="${LIME}" stroke-opacity=".38"/>
+        <rect width="${cardW}" height="${cardH}" rx="0" fill="#121214" stroke="${LIME}" stroke-opacity=".38"/>
         <circle cx="0" cy="${cardH / 2}" r="3" fill="#000000" stroke="${LIME}" stroke-width="1.4"/>
         ${head(16, 25, 'THE SIGNAL', LIME)}${liveDot(cardW - 18, 21.5)}
         <text x="16" y="68" class="t-head" font-size="40" fill="${WHITE}">${fmt(signals)}</text>
@@ -242,7 +242,7 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
     ${member(cx - 104, my, 208, cx, my + 48)}
     ${dial(cx, cy, r, false)}
     <g transform="translate(${cx - cardW / 2} ${oy})">
-      <rect width="${cardW}" height="${cardH}" rx="6" fill="#121214" stroke="${LIME}" stroke-opacity=".38"/>
+      <rect width="${cardW}" height="${cardH}" rx="0" fill="#121214" stroke="${LIME}" stroke-opacity=".38"/>
       <circle cx="${cardW / 2}" cy="0" r="3" fill="#000000" stroke="${LIME}" stroke-width="1.4"/>
       ${head(16, 24, 'THE SIGNAL', LIME)}${liveDot(98, 20.5)}
       <text x="16" y="60" class="t-head" font-size="32" fill="${WHITE}">${fmt(signals)}</text>
