@@ -72,6 +72,8 @@ export async function route() {
   if (!pages[r.name]) current.name = 'home';
   renderNav(navKey === 'u' ? '' : (pages[r.name] ? navKey : 'home'), current.cid);
   renderTabbar(navKey === 'u' ? '' : navKey);
+  // the screen Create opens has its own main action, so Create steps back there
+  document.querySelector('.top-actions .create')?.setAttribute('aria-current', r.name === 'new' ? 'page' : 'false');
   track('screen', { screen: current.name });
   try {
     await page();

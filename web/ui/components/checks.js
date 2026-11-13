@@ -221,7 +221,7 @@ export function textsChoice({ compact = false } = {}) {
   const terms = 'At most one a day, between 9am and 8pm your time, and they never say what you took. Message and data rates may apply. Reply STOP to stop or HELP for help. Your number is never shared.';
   const draw = (on) => {
     const btn = h('button', {
-      class: on ? 'btn ghost sm' : 'btn lime sm', type: 'button',
+      class: on ? 'btn ghost sm' : 'btn ink sm', type: 'button',
       onclick: async () => {
         btn.disabled = true;
         const { data, error } = await Checks.setTexts(!on, tz);

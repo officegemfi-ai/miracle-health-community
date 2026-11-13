@@ -104,7 +104,7 @@ export function renderTop() {
   if (!S.me) { actions.replaceChildren(); searchBox.replaceChildren(); tabbar.replaceChildren(); return; }
   const lv = levelOf(S.card?.level || 1);
   actions.replaceChildren(
-    h('a', { class: 'btn lime sm create', href: '#/new' }, icon('plus', 16), h('span', { class: 'lbl' }, 'Create')),
+    h('a', { class: 'btn lime sm create', href: '#/new', 'aria-current': /^#\/new\b/.test(location.hash) ? 'page' : 'false' }, icon('plus', 16), h('span', { class: 'lbl' }, 'Create')),
     bellButton(),
     h('a', { class: 'me-chip', href: `#/u/${encodeURIComponent(S.me.handle)}`, title: `${lv.name} · your profile`, id: 'me-chip' },
       emblem(S.card?.level || 1, 32, false, `${lv.name} emblem`),

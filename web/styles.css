@@ -979,7 +979,7 @@ h1 em,h2 em{font-style:normal;font-weight:inherit}
 .th-sort{padding:0;border:0;background:none;font:inherit;color:inherit;cursor:pointer}
 .th-sort:hover,[aria-sort] .th-sort{color:var(--text)}
 .top-table .rk{width:1%;color:var(--muted)}
-.top-table tbody th{font:600 14px/1.3 var(--body)}
+.top-table tbody th{font:600 14px/1.3 var(--body);white-space:normal;min-width:7.5em}
 .top-table tbody th a{color:var(--text);text-decoration:none}
 .top-table tbody th a:hover{text-decoration:underline;text-decoration-color:var(--line-2)}
 .top-table .sigc-in{display:flex;align-items:center;gap:10px}
@@ -1002,6 +1002,22 @@ h1 em,h2 em{font-style:normal;font-weight:inherit}
   .top-table .opt{display:none}
   .top-table th,.top-table td{padding:9px 10px}
 }
+/* the side panel docks from 861px, so the board's column is narrow up to 1100px: it drops the same parts
+   a phone does; on a phone the cells pad a little less, so the moves stay on screen */
+@media (min-width:861px) and (max-width:1100px){
+  .top-table .opt{display:none}
+}
+@media (max-width:480px){
+  .top-table th,.top-table td{padding:9px 8px}
+}
+/* one main action per view: where the phone tab bar's Share is on screen, and on the screen Create opens,
+   Create steps back to a hairline (it stays where it is) */
+@media (max-width:860px){
+  .top-actions .create{background:transparent;border-color:var(--line-2);box-shadow:none}
+  .top-actions .create:hover{background:transparent;border-color:var(--text)}
+}
+.top-actions .create[aria-current=page]{background:transparent;border-color:var(--line-2);box-shadow:none}
+.top-actions .create[aria-current=page]:hover{background:transparent;border-color:var(--text)}
 /* ================================================================ the marks of the four places
    As on miraclehealth.us: the Library is the Evidence agent's mark (blue), Ask Sig is Sig's ring of
    the twelve, the Community the Community agent's (lime), My Miracle the Builder's (pink) */
