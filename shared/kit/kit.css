@@ -75,7 +75,8 @@ a.mh-chip:hover .mh-chip-name{text-decoration:underline;text-underline-offset:3p
   --mh-bm-meet:color-mix(in srgb,var(--mh-lime) 18%,transparent);
   --mh-bm-lit:color-mix(in srgb,var(--mh-lime) 42%,transparent);
   font:15px/1.5 var(--mh-body);overflow-wrap:break-word}
-.mh-bm-lead{margin:0 0 14px;font-weight:600}
+.mh-bm-lead{max-width:52ch;margin:0 0 14px;font-weight:600}
+.mh-bm-txt{max-width:52ch}
 .mh-bm-route{display:inline-block;margin-left:6px;padding:1px 8px;border:1px solid var(--mh-bm-rule);border-radius:0;font:500 12px/1.6 var(--mh-body);color:var(--mh-bm-soft);white-space:nowrap}
 .mh-bm-list{margin:0}
 .mh-bm-row{display:grid;gap:6px;padding:12px 0;border-top:1px solid var(--mh-bm-rule)}
@@ -93,6 +94,7 @@ a.mh-chip:hover .mh-chip-name{text-decoration:underline;text-underline-offset:3p
 .mh-bm-mks{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
 .mh-bm-mk{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 8px;border:1px solid var(--mh-bm-rule);border-radius:0;background:none;color:inherit;font:500 12px/1 var(--mh-body)}
 button.mh-bm-mk{cursor:pointer}
+@media (max-width:700px){button.mh-bm-mk{min-height:40px}}
 button.mh-bm-mk:hover{border-color:currentColor}
 button.mh-bm-mk[aria-pressed="true"]{border-color:currentColor;background:var(--mh-bm-lit);font-weight:600}
 .mh-bm-dir{font:600 11px/1 var(--mh-mono)}
