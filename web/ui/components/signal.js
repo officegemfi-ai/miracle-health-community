@@ -81,7 +81,7 @@ export function signalCard(cid, opts = {}) {
   const fams = (x.source_families || []).join(', ');
   const hist = S.history.get(cid);
   const card = h('section', { class: 'card dark sigcard', 'aria-label': `${name} Community Signal` },
-    h('div', { class: 'lbl' }, h('span', { class: 'kick' }, opts.title || `${name} · Community Signal`), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'LIVE')),
+    h('div', { class: 'lbl' }, h('span', { class: 'kick' }, opts.title || `${name} · Community Signal`), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'live')),
     h('div', { class: 'sig-big' }, h('b', { 'data-sig-of': cid }, fmt1(x.score)), h('span', {}, '/100'), h('span', { class: 'grow' }), h('span', { 'data-mv-of': cid }, movement(x))),
     scale(x.score),
     h('div', { class: 'cap2' }, `Overall rating · ${x.summary_label} · ${x.confidence_label} confidence`),
