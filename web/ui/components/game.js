@@ -185,7 +185,7 @@ export function refreshSeason() {
 // Celebrations
 function confetti() {
   const box = h('div', { class: 'confetti', 'aria-hidden': 'true' });
-  const colors = ['#D8FF3D', '#7FD858', '#FCFCFC', '#7CF0DC', '#FFE07A'];
+  const colors = ['#3D8BFF', '#9CC2FF', '#FCFCFC', '#7CF0DC', '#FFE07A'];
   for (let i = 0; i < 36; i += 1) {
     const p = h('i', {});
     p.style.left = `${Math.random() * 100}%`;

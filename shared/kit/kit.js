@@ -101,7 +101,7 @@ export function signalHtml(score, { seal = '', level = '', big = false } = {}) {
 // ---------------------------------------------------------------------------
 // Six quiet tints of bone, not a colour per category: lime is the Signal's alone, and the
 // category is always written beside the tile.
-const BONE = '#EEECE6', SAND = '#E8DCC4', STONE = '#CED6D2', SAGE = '#DAE2CA', MIST = '#C9D3DC', CLAY = '#E6CFC0';
+const BONE = '#F7F8FA', SAND = '#E8DCC4', STONE = '#CED6D2', SAGE = '#DAE2CA', MIST = '#C9D3DC', CLAY = '#E6CFC0';
 const CAT = {
   'Metabolic & weight': BONE, 'Growth-hormone axis': STONE, 'Healing & recovery': SAGE, 'Gut & digestion': SAGE,
   'Immune & inflammation': SAGE, 'Cognition & focus': MIST, 'Mood & stress': MIST, Sleep: STONE,
@@ -128,15 +128,15 @@ export function tileSvg(space, size = 32) {
     // A stack: layered plates, with how many compounds are in it
     const n = (space.part_ids || []).length || '';
     return `<svg class="tile mh-tile" viewBox="0 0 32 32" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
-      <rect width="32" height="32" rx="5" fill="#0E1316"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".45"/>
+      <rect width="32" height="32" rx="5" fill="#121214"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".45"/>
       <path d="M9 13.5 16 10l7 3.5-7 3.5z" fill="${color}"/><path d="m9 17.5 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
       <path d="m9 21 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/>
-      ${n ? `<circle cx="25" cy="7" r="5" fill="${color}"/><text x="25" y="9.6" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="7.5" fill="#0B0F11">${Number(n)}</text>` : ''}</svg>`;
+      ${n ? `<circle cx="25" cy="7" r="5" fill="${color}"/><text x="25" y="9.6" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="7.5" fill="#000000">${Number(n)}</text>` : ''}</svg>`;
   }
   const txt = initials(space?.name || space?.compound_name || space?.id).replace(/[^A-Z0-9]/g, '');
   const fs = txt.length > 2 ? 11 : 13;
   return `<svg class="tile mh-tile" viewBox="0 0 32 32" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
-    <rect width="32" height="32" rx="5" fill="#0E1316"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".35"/>
+    <rect width="32" height="32" rx="5" fill="#121214"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".35"/>
     <text x="16" y="20.5" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="${fs}" fill="${color}">${txt}</text></svg>`;
 }
 // A compound: its tile, name, evidence meter and Signal, and a short line about its part in a
@@ -153,7 +153,7 @@ export function chipHtml({ name = '', href = '', category = '', kind = '', grade
 // curious, an eye when watching; amber when something is wrong, grey when offline.
 // dark: drawn on a dark page. On a light one the ring gets an ink edge, so it still reads.
 // ---------------------------------------------------------------------------
-const INK = '#0B0F11';
+const INK = '#000000';
 export const MOODS = ['idle', 'happy', 'think', 'sleepy', 'watching', 'curious', 'concerned', 'cheer', 'support', 'offline', 'burst'];
 const SPARK = 'M32 19.5 C33.3 27 37 30.7 44.5 32 C37 33.3 33.3 37 32 44.5 C30.7 37 27 33.3 19.5 32 C27 30.7 30.7 27 32 19.5 Z';
 const BAR = (c) => `<rect class="sig-mark" x="23" y="29.5" width="18" height="5" rx="2.5" fill="${c}"/>`;
@@ -170,7 +170,7 @@ const MARKS = {
 };
 export function sigSvg(size = 56, mood = 'idle', { cls = '', dark = false } = {}) {
   const moodCls = MOODS.includes(mood) ? mood : 'idle';
-  const c = mood === 'offline' ? '#8E9693' : mood === 'concerned' ? '#E8B75A' : '#D8FF3D';
+  const c = mood === 'offline' ? '#7F8796' : mood === 'concerned' ? '#E8B75A' : '#3D8BFF';
   const edge = dark ? '' : `<circle cx="32" cy="32" r="24.5" fill="none" stroke="${INK}" stroke-opacity=".35"/><circle cx="32" cy="32" r="17.5" fill="none" stroke="${INK}" stroke-opacity=".35"/>`;
   const mark = MARKS[moodCls] ? MARKS[moodCls](c) : `<circle class="sig-mark sig-dot" cx="32" cy="32" r="7.5" fill="${c}"/>`;
   return `<svg class="sig ${moodCls}${cls ? ` ${esc(cls)}` : ''}" viewBox="0 0 64 64" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
