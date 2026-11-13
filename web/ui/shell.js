@@ -1,8 +1,8 @@
-// The frame around every page, a window in Sig's terminal as on every page of miraclehealth.us: the
-// side panel with the four places and the menu (never removed; a drawer on phones), the title bar
-// with the tab of what's open, search and your things, the path, the phone tab bar, the footer,
-// and Sig in the corner. Pages draw into it with render() and setRail(); the rail's cards are
-// chosen in ui/rail.js.
+// The frame around every page, as on every page of miraclehealth.us: the side panel with Miracle
+// Health's places and the menu (never removed: open beside the page from 1280px wide, a drawer
+// below that), the plain top bar with search and your things, the phone tab bar, the footer, and
+// Sig in the corner. Pages draw into it with render() and setRail(); the rail's cards are chosen
+// in ui/rail.js.
 import { h, icon, bar } from './dom.js';
 import { sig, emblem, spaceTile } from './art.js';
 import { fmtN, fmt1 } from '../core/format.js';
@@ -30,30 +30,6 @@ export function render(...nodes) {
 export function setRail(nodes) { rail.replaceChildren(...[nodes].flat().filter(Boolean)); }
 
 export function setWide(on) { document.body.classList.toggle('wide', !!on); }
-
-// The window's tab and path: what's open, named like a file in Sig's terminal (the feed, the
-// Signal as top, a space as s/…), and where it sits, from ~ (Home)
-const TAB = {
-  home: 'home.feed', popular: 'popular.feed', signal: 'signal.top', explore: 'spaces', stack: 'stack.find', builders: 'builders.board',
-  quests: 'quests.season', notifications: 'inbox', new: 'new-post.md', how: 'how-it-works.md', rules: 'rules.md', account: 'account', mod: 'mod.queue',
-};
-const UNDER = { s: '#/explore', u: '', post: '' };
-const winTabs = document.getElementById('win-tabs');
-const winPath = document.getElementById('win-path');
-const clip = (x, n = 24) => (x.length > n ? `${x.slice(0, n - 1)}…` : x);
-export function setWindow(r, step = '') {
-  if (!winTabs || !winPath) return;
-  const name = step || (r.name in TAB || r.name in UNDER ? r.name : 'home');
-  const arg = step ? '' : String(r.arg || '');
-  const tab = step || (name in UNDER ? `${name}/${name === 'post' ? arg.slice(0, 8) : clip(arg)}` : arg && name === 'mod' ? `mod/${clip(arg)}` : TAB[name]);
-  winTabs.replaceChildren(h('a', { class: 'win-tab on', href: location.hash || '#/home', 'aria-current': 'page' },
-    h('i', { 'aria-hidden': 'true' }), h('span', { class: 'win-tabname' }, tab)));
-  const sep = () => h('span', { 'aria-hidden': 'true' }, '/');
-  const segs = name in UNDER && arg
-    ? [UNDER[name] ? h('a', { href: UNDER[name] }, name) : h('span', {}, name), sep(), h('b', {}, clip(arg, 40))]
-    : [h('b', {}, step || name)];
-  winPath.replaceChildren(h('span', { class: 'wp-crumbs' }, h('a', { href: '#/home', 'aria-label': 'Home' }, '~'), sep(), ...segs));
-}
 
 // The left menu
 const MAIN = [
@@ -155,14 +131,26 @@ export function renderFooter() {
   if (C.contactEmail) foot.append(' Contact the moderators: ', h('a', { href: `mailto:${C.contactEmail}` }, C.contactEmail));
 }
 
-// The side panel slides in as a drawer on phones
+// The side panel stands beside the page from 1280px wide. Below that it's a drawer the menu button
+// slides in over the page, which holds still and can't be reached until the drawer closes: its own
+// button, the scrim, Escape or a link in it close it.
 const burger = document.getElementById('burger');
 const side = document.getElementById('side');
+const sideClose = document.getElementById('side-close');
+const docked = window.matchMedia('(min-width:1280px)');
+const behind = () => [document.querySelector('.win'), tabbar, dock, document.querySelector('.skip')].filter(Boolean);
 let scrim = null;
+// A panel that has just slid in isn't focusable until the browser has drawn it: try again for a moment
+const focusSoon = (el, tries = 20) => {
+  if (!el || !document.body.classList.contains('drawer')) return;
+  el.focus({ preventScroll: true });
+  if (document.activeElement !== el && tries > 0) setTimeout(() => focusSoon(el, tries - 1), 16);
+};
 export function closeDrawer(back = false) {
   if (!document.body.classList.contains('drawer')) return;
   document.body.classList.remove('drawer');
   burger?.setAttribute('aria-expanded', 'false');
+  for (const el of behind()) el.inert = false;
   scrim?.remove(); scrim = null;
   if (back) burger?.focus();
 }
@@ -202,17 +190,20 @@ export function sigSay(content, mood = 'happy', ms = 4200, important = false) {
   hideTimer = setTimeout(() => bubble?.classList.remove('in'), ms);
 }
 
-// The frame's own listeners: the phone drawer, and Sig noticing the connection drop or come back
+// The frame's own listeners: the drawer, and Sig noticing the connection drop or come back
 export function mountShell() {
   burger?.addEventListener('click', () => {
-    const open = !document.body.classList.contains('drawer');
-    if (!open) return closeDrawer(true);
+    if (document.body.classList.contains('drawer')) return closeDrawer(true);
     document.body.classList.add('drawer');
     burger.setAttribute('aria-expanded', 'true');
+    for (const el of behind()) el.inert = true;
     scrim = h('div', { class: 'scrim', onclick: () => closeDrawer(true) });
     document.body.append(scrim);
-    side?.querySelector('a[href], button')?.focus({ preventScroll: true });
+    focusSoon(side?.querySelector('a[href], button'));
   });
+  sideClose?.addEventListener('click', () => closeDrawer(true));
+  // the window grows wide enough for the panel to stand beside the page: no drawer is left open
+  docked.addEventListener('change', (e) => { if (e.matches) closeDrawer(); });
   // a link in the panel goes somewhere: the drawer shuts behind it
   (side || nav).addEventListener('click', (e) => { if (e.target.closest('a[href]')) closeDrawer(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('drawer')) { e.preventDefault(); closeDrawer(true); } });

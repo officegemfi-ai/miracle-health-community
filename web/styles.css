@@ -33,8 +33,8 @@
   --body:'Mona Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'Monaspace Neon',ui-monospace,SFMono-Regular,Menlo,monospace;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6);
-  --rail-w:320px;--top-h:52px;--tick-h:28px;
-  --os-page:#000000;--os-win:#000000;--os-bar:#17171A;--os-side:#000000;--os-stat:#000000;--os-g:16px;--side-w:272px;
+  --rail-w:320px;--top-h:60px;--tick-h:28px;
+  --os-page:#000000;--os-win:#000000;--os-bar:#17171A;--os-side:#000000;--os-stat:#000000;--os-g:0px;--side-w:272px;
   color-scheme:dark;
 }
 
@@ -57,10 +57,9 @@ img,svg{flex:none}
 .hide{display:none!important}
 
 /* ---------------------------------------------------------------- the status bar: the Signal, live
-   Sig's status bar at the foot of the window, as on every page of miraclehealth.us: Sig, the
-   Signal running live, safety on. On a phone it runs across the top, under nothing. */
-.ticker{position:sticky;bottom:var(--os-g);z-index:40;display:flex;align-items:stretch;flex:none;height:var(--tick-h);margin:0 -1px -1px;border:1px solid rgba(255,255,255,.1);border-radius:0;background:var(--os-stat);color:var(--on-ink-2)}
-.ticker::before{content:'';position:absolute;left:-1px;right:-1px;top:100%;height:calc(var(--os-g) + 1px);background:var(--os-page);pointer-events:none}
+   Sig's status bar at the foot of the page: Sig, the Signal running live, safety on. On a phone it
+   runs across the top, under nothing. */
+.ticker{position:sticky;bottom:0;z-index:40;display:flex;align-items:stretch;flex:none;height:var(--tick-h);margin:0;border-top:1px solid var(--line);background:var(--os-stat);color:var(--on-ink-2)}
 .tick-sig{display:inline-flex;align-items:center;gap:7px;flex:none;padding:0 12px;border-bottom-left-radius:0;background:var(--text);color:#000000;font:500 11.5px/1 var(--mono);letter-spacing:.04em}
 .tick-sig svg{display:block;width:12px;height:12px}
 .tick-lead{flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-right:1px solid rgba(255,255,255,.08);font:500 10.5px/1 var(--mono);letter-spacing:.12em;color:var(--lime);position:relative;z-index:2}
@@ -78,45 +77,30 @@ img,svg{flex:none}
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(61,139,255,.6);animation:live 1.8s ease-out infinite;display:inline-block}
 @keyframes live{0%{box-shadow:0 0 0 0 rgba(61,139,255,.55)}70%{box-shadow:0 0 0 7px rgba(61,139,255,0)}100%{box-shadow:0 0 0 0 rgba(61,139,255,0)}}
 
-/* ---------------------------------------------------------------- top bar */
-.topbar{position:sticky;top:var(--os-g);z-index:40;display:flex;align-items:center;gap:14px;flex:none;height:var(--top-h);margin:-1px -1px 0;padding:0 12px 0 16px;border:1px solid rgba(255,255,255,.1);border-radius:0;background:var(--os-bar);color:var(--on-ink)}
-/* the gap above the window keeps the page's colour, and the title bar's round corners are painted
-   in it, so nothing scrolling under them shows */
-.topbar::before{content:'';position:absolute;left:-1px;right:-1px;bottom:100%;height:calc(var(--os-g) + 1px);background:var(--os-page);pointer-events:none}
-.topbar::after{content:'';position:absolute;left:-1px;right:-1px;top:-1px;height:13px;pointer-events:none;
-  background:radial-gradient(circle at 100% 100%,transparent 11.4px,var(--os-page) 12.2px) left top/13px 13px no-repeat,radial-gradient(circle at 0 100%,transparent 11.4px,var(--os-page) 12.2px) right top/13px 13px no-repeat}
-.win-brand{display:flex;align-items:center;gap:10px;flex:none;padding-right:4px}
-.win-ring{display:block;width:18px;height:18px}
-.win-ring svg{display:block}
-.win-brand b{font:650 14px/1 var(--body);letter-spacing:-.01em;color:var(--text)}
-.win-dim{font:400 11.5px/1 var(--mono);color:var(--muted)}
-/* the tab of what's open sits on the window, as a file's tab does in an editor */
-.win-tabs{display:flex;align-items:flex-end;gap:2px;flex:0 1 auto;min-width:0;align-self:stretch;overflow:hidden}
-.win-tab{position:relative;display:flex;align-items:center;gap:9px;flex:0 1 220px;min-width:0;height:34px;margin-bottom:-1px;padding:0 16px 0 13px;border:1px solid transparent;border-bottom:0;border-radius:0;color:var(--muted);font:500 12px/1 var(--mono);text-decoration:none;white-space:nowrap}
-.win-tab.on{z-index:1;border-color:rgba(255,255,255,.1);background:var(--os-win);color:var(--text)}
-.win-tab>i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--lime)}
-.win-tabname{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.win-tab:focus-visible{outline:2px solid var(--text);outline-offset:-3px}
-.win-path{display:flex;flex-wrap:wrap;align-items:center;flex:none;gap:6px 18px;min-height:34px;padding:6px 24px;border-bottom:1px solid rgba(255,255,255,.08);font:400 12.5px/1.5 var(--mono);color:var(--muted)}
-.wp-crumbs{display:flex;flex-wrap:wrap;gap:0 6px;min-width:0}
-.wp-crumbs a{color:var(--text-2);text-decoration:none}
-.wp-crumbs a:hover{color:var(--text)}
-.wp-crumbs b{font-weight:500;color:var(--text);overflow-wrap:anywhere}
-/* before the first page is drawn (or behind the beta password) the window has no tab or path yet */
-.win-tabs:empty,.win-path:empty{display:none}
-.burger{display:none;background:none;border:0;color:var(--on-ink);padding:6px;margin-left:-6px;border-radius:var(--r)}
+/* ---------------------------------------------------------------- top bar
+   As on every page of miraclehealth.us: a plain bar that stays at the top while the page scrolls
+   under it. The menu button and the logo show while the side panel is a drawer (under 1280px
+   wide); then search, then your things. */
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;flex:none;height:var(--top-h);margin:0;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.84);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--on-ink)}
+.burger,.side-close{display:grid;place-items:center;flex:none;width:32px;height:32px;padding:0;border:0;border-radius:0;background:none;color:var(--text-2)}
+.burger{display:none;margin:0 0 0 -8px}
+.side-close{margin-left:auto}
+.burger:hover,.side-close:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.burger:focus-visible,.side-close:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.top-logo{display:none;align-items:center;gap:10px;flex:none;text-decoration:none;color:var(--on-ink)}
+.top-logo img{display:block;width:auto;height:22px}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--on-ink);flex:none}
 .logo img{height:28px;width:auto;display:block}
-.logo .tag{font:500 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--on-ink-2);border:1px solid var(--line-2);border-radius:0;padding:3px 8px}
-.search{flex:1 1 auto;min-width:0;max-width:440px;margin:0 0 0 auto;position:relative}
-.search input{width:100%;height:34px;border-radius:var(--pill);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:var(--on-ink);padding:0 12px 0 36px;outline:none;font:400 12.5px/1 var(--mono)}
+.logo .tag,.top-logo .tag{font:500 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--on-ink-2);border:1px solid var(--line-2);border-radius:0;padding:3px 8px}
+.search{flex:0 1 420px;min-width:0;margin:0;position:relative}
+.search input{width:100%;height:40px;border-radius:var(--pill);border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--on-ink);padding:0 12px 0 38px;outline:none;font:400 14.5px/1 var(--body)}
 .search input::placeholder{color:rgba(252,252,252,.5)}
 .search input:focus{border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.06)}
-.search .ic{position:absolute;left:12px;top:8px;color:var(--muted)}
-.search-pop{position:absolute;left:0;right:0;top:40px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:6px;max-height:60vh;overflow:auto}
+.search .ic{position:absolute;left:13px;top:11px;color:var(--muted)}
+.search-pop{position:absolute;left:0;right:0;top:46px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:6px;max-height:60vh;overflow:auto}
 .search-pop a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);text-decoration:none}
 .search-pop a:hover,.search-pop a.on{background:var(--surface-2)}
-.top-actions{display:flex;align-items:center;gap:8px;flex:none}
+.top-actions{display:flex;align-items:center;gap:8px;flex:none;margin-left:auto}
 .icon-btn{position:relative;display:inline-grid;place-items:center;width:40px;height:40px;border-radius:var(--pill);border:0;background:transparent;color:var(--on-ink)}
 .icon-btn:hover{background:rgba(255,255,255,.08)}
 .count{position:absolute;top:3px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:0;background:var(--bone);color:var(--on-bone);font:600 10.5px/18px var(--mono);text-align:center}
@@ -144,24 +128,51 @@ img,svg{flex:none}
 .lnk{background:none;border:0;padding:0;color:var(--text);font-weight:600;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px;cursor:pointer}
 
 /* ---------------------------------------------------------------- layout */
-.os{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);min-height:100dvh}
-.win{position:relative;display:flex;flex-direction:column;min-width:0;min-height:calc(100dvh - 2 * var(--os-g));margin:var(--os-g);border:1px solid rgba(255,255,255,.1);border-radius:0;background:radial-gradient(90% 640px at 50% -160px,rgba(26,4,255,.3) 0%,rgba(0,0,0,0) 62%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--os-win)}
+.os{display:grid;grid-template-columns:minmax(0,1fr);min-height:100dvh}
+.win{position:relative;display:flex;flex-direction:column;min-width:0;min-height:100dvh;margin:0;background:radial-gradient(90% 640px at 50% -160px,rgba(26,4,255,.3) 0%,rgba(0,0,0,0) 62%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--os-win)}
 .layout{flex:1 0 auto;display:grid;grid-template-columns:minmax(0,1fr) var(--rail-w);grid-template-areas:'main rail';gap:28px;padding:0 24px 56px}
-/* the side panel: the logo, the four places of Miracle Health (the design kit's bar, standing up,
-   each with its mark), then the community's menu, then the rules and the legal */
+/* the side panel: the logo, Miracle Health's places (the Signal first, then the design kit's bar,
+   standing up, each with its mark), then the community's menu, then the rules and the legal. It is
+   never taken away: open beside the page from 1280px wide, and below that a drawer the menu
+   button slides in, with its own button to close it, as on miraclehealth.us. */
 .side{position:sticky;top:0;z-index:31;display:flex;flex-direction:column;height:100dvh;padding:10px 10px 12px 12px;border-right:1px solid rgba(255,255,255,.09);background:var(--os-side);color:var(--text);overflow:hidden}
 .side-head{display:flex;align-items:center;flex:none;height:44px;padding:0 0 0 6px}
+@media (min-width:1280px){
+  .os{grid-template-columns:var(--side-w) minmax(0,1fr)}
+  .side-close,.scrim{display:none}
+  /* signing in, the bar would be empty beside the open panel */
+  body.auth .topbar{display:none}
+}
+@media (max-width:1279px){
+  .side{position:fixed;top:0;bottom:0;left:0;z-index:48;width:min(86vw,300px);height:100dvh;visibility:hidden;transform:translateX(-102%);transition:transform .22s ease,visibility 0s linear .22s;box-shadow:12px 0 40px rgba(0,0,0,.5)}
+  body.drawer .side{visibility:visible;transform:none;transition:transform .22s ease}
+  .burger{display:grid}
+  .top-logo{display:flex}
+  .scrim{position:fixed;inset:0;z-index:47;background:rgba(0,0,0,.55)}
+}
+/* the page behind an open drawer holds still */
+:root:has(body.drawer){overflow:hidden}
+@media (max-width:900px){
+  .burger,.side-close{width:40px;height:40px}
+}
+/* on a phone the bar holds the logo without its tag, so Create, the bell and you still fit */
+@media (max-width:480px){
+  .top-logo .tag{display:none}
+}
 .side .logo img{height:22px}
 .side .family{display:grid;gap:1px;flex:none;margin:6px 0 0;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,.09)}
-.side .family a{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;column-gap:10px;height:36px;padding:0 10px;border-radius:0;color:var(--text-2);font:500 13.5px/1 var(--body)}
-.side .family a::before{content:'';width:16px;height:16px;justify-self:center;background:no-repeat center/16px 16px}
-.side .family a[data-place]::after{content:none;position:static;width:auto;height:auto;background:none;font:400 11px/1 var(--mono);color:var(--muted)}
+/* the Signal leads the places, as on miraclehealth.us; it sits just above the kit's bar of the four */
+.side .side-signal{flex:none;margin:6px 0 1px;position:relative;text-decoration:none;white-space:nowrap}
+.side .side-signal+.family{margin-top:0}
+.side .family a,.side .side-signal{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;column-gap:10px;height:36px;padding:0 10px;border-radius:0;color:var(--text-2);font:500 13.5px/1 var(--body)}
+.side .family a::before,.side .side-signal::before{content:'';width:16px;height:16px;justify-self:center;background:no-repeat center/16px 16px}
+.side .family a[data-place]::after,.side .side-signal::after{content:none;position:static;width:auto;height:auto;background:none;font:400 11px/1 var(--mono);color:var(--muted)}
 .side .family a[data-place="ai"]::after{content:'12 agents' / ''}
-.side .family a[data-place="community"]::after{content:'live' / '';padding-left:12px;background:radial-gradient(circle at 3px 50%,var(--lime) 2.6px,transparent 3.2px) no-repeat}
+.side .family a[data-place="community"]::after,.side .side-signal::after{content:'live' / '';padding-left:12px;background:radial-gradient(circle at 3px 50%,var(--lime) 2.6px,transparent 3.2px) no-repeat}
 .side .family a[data-place="my"]::after{content:'this device' / ''}
-.side .family a:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.side .family a:hover,.side .side-signal:hover{background:rgba(255,255,255,.05);color:var(--text)}
 .side .family a[aria-current="page"]{background:rgba(255,255,255,.08);color:var(--text)}
-.side .family a:focus-visible,.leftnav a:focus-visible,.side-legal a:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
+.side .family a:focus-visible,.side .side-signal:focus-visible,.leftnav a:focus-visible,.side-legal a:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
 .leftnav{flex:1 1 auto;min-height:0;margin:8px -6px 0 0;padding:2px 6px 18px 0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
 .side-legal{flex:none;margin:auto 0 0;padding:10px 10px 0;border-top:1px solid rgba(255,255,255,.09);font:400 11.5px/1.4 var(--body);color:var(--muted)}
 .side-legal a{color:inherit;text-decoration:none}
@@ -759,10 +770,6 @@ label.f.nm{margin:0}
 @media (max-width:1300px){
   .layout{grid-template-columns:minmax(0,1fr);grid-template-areas:'main' 'rail'}
   .rail{padding-top:0;max-width:780px;width:100%;justify-self:center;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-  .win-dim{display:none}
-}
-@media (max-width:1060px){
-  .win-tabs{display:none}
 }
 /* signing in, in a window too narrow for the two halves side by side: one over the other */
 @media (min-width:861px) and (max-width:1180px){
@@ -770,25 +777,17 @@ label.f.nm{margin:0}
   .auth-art{min-height:0;padding:196px 40px 40px;border-right:0;border-bottom:1px solid var(--line)}
   .auth-form{padding:48px 40px 56px}
 }
-/* on a phone the window fills the screen: the side panel slides in from the menu button, the
-   Signal runs across the top, as it always has, and the tabs sit at the bottom */
+/* on a phone the Signal runs across the top, as it always has, the top bar is a little shorter
+   and the tabs sit at the bottom */
 @media (max-width:860px){
-  :root{--os-g:0px;--top-h:52px}
+  :root{--top-h:56px}
   html{scroll-padding-top:calc(var(--tick-h) + var(--top-h) + 12px)}
   body{--stick:calc(var(--tick-h) + var(--top-h))}
-  .os{grid-template-columns:minmax(0,1fr)}
-  .side{position:fixed;top:0;bottom:0;left:0;z-index:48;width:min(86vw,300px);height:100dvh;visibility:hidden;transform:translateX(-102%);transition:transform .22s ease,visibility 0s linear .22s;box-shadow:12px 0 40px rgba(0,0,0,.5)}
-  body.drawer .side{visibility:visible;transform:none;transition:transform .22s ease}
-  .win{min-height:100dvh;border:0;border-radius:0}
-  .topbar{top:var(--tick-h);gap:10px;margin:0;padding:0 10px 0 8px;border-width:0 0 1px;border-radius:0}
-  .topbar::before,.topbar::after,.ticker::before{display:none}
-  .ticker{order:-1;top:0;bottom:auto;margin:0;border-width:0 0 1px;border-radius:0}
+  .topbar{top:var(--tick-h);gap:6px;padding:0 10px 0 8px}
+  .ticker{order:-1;top:0;bottom:auto;border-top:0;border-bottom:1px solid var(--line)}
   .tick-sig,.tick-safe{display:none}
-  .win-path{padding:6px 14px}
-  .layout{grid-template-columns:minmax(0,1fr);grid-template-areas:'main' 'rail';padding:0 12px 96px;gap:14px}
+  .layout{grid-template-columns:minmax(0,1fr);grid-template-areas:'main' 'rail';padding:0 16px 96px;gap:14px}
   .rail{grid-template-columns:minmax(0,1fr)}
-  .burger{display:inline-grid}
-  .scrim{position:fixed;inset:0;z-index:47;background:rgba(0,0,0,.55)}
   .search{display:none}
   .me-chip .kick,.me-chip b{display:none}
   .me-chip{padding:3px;border:0}
@@ -836,7 +835,7 @@ label.f.nm{margin:0}
   .explore-bar .btn{width:100%}
   .stack-hit .row.nw{flex-wrap:wrap}
 }
-@media (min-width:861px){.post .vote.h{display:none}.scrim{display:none}}
+@media (min-width:861px){.post .vote.h{display:none}}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   .tick-track{animation:none}
@@ -1022,6 +1021,7 @@ h1 em,h2 em{font-style:normal;font-weight:inherit}
 /* ================================================================ the marks of the four places
    As on miraclehealth.us: the Library is the Evidence agent's mark (blue), Ask Sig is Sig's ring of
    the twelve, the Community the Community agent's (lime), My Miracle the Builder's (pink) */
+.side .side-signal::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M3%2013.5v-4M6.5%2013.5v-9M10%2013.5v-6.5M13.5%2013.5v-3%22%20fill%3D%22none%22%20stroke%3D%22%233D8BFF%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E")}
 .side .family a[data-place="library"]::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236FA8FE%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20color%3D%22%236FA8FE%22%3E%3Cpath%20d%3D%22M6.8%202.8v18.4M17.2%202.8v18.4M6.8%207.2h10.4M6.8%2012h10.4M6.8%2016.8h10.4%22%2F%3E%3C%2Fsvg%3E")}
 .side .family a[data-place="ai"]::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%22-8%20-8%2016%2016%22%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23FF6B5B%22%20color%3D%22%23FF6B5B%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28-85.5%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23FF9F4A%22%20color%3D%22%23FF9F4A%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28-52.77%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23F2C94C%22%20color%3D%22%23F2C94C%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28-20.05%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%233D8BFF%22%20color%3D%22%233D8BFF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%2812.68%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%235FE08A%22%20color%3D%22%235FE08A%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%2845.41%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%233FE0C5%22%20color%3D%22%233FE0C5%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%2878.14%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%2355D3FF%22%20color%3D%22%2355D3FF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28110.86%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%236FA8FE%22%20color%3D%22%236FA8FE%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28143.59%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%238F95FF%22%20color%3D%22%238F95FF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28176.32%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23B98CFF%22%20color%3D%22%23B98CFF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28209.05%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23FF7FC8%22%20color%3D%22%23FF7FC8%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28241.77%29%22%2F%3E%3C%2Fsvg%3E")}
 .side .family a[data-place="community"]::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%233D8BFF%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20color%3D%22%233D8BFF%22%3E%3Ccircle%20cx%3D%224.6%22%20cy%3D%225.4%22%20r%3D%221.6%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%223.6%22%20r%3D%221.6%22%2F%3E%3Ccircle%20cx%3D%2219.4%22%20cy%3D%225.4%22%20r%3D%221.6%22%2F%3E%3Cpath%20d%3D%22M5.6%206.8%2012%2015.6l6.4-8.8M12%205.2v10.4%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2218.8%22%20r%3D%222.4%22%2F%3E%3C%2Fsvg%3E")}
