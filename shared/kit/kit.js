@@ -128,7 +128,7 @@ export function tileSvg(space, size = 32) {
     // A stack: layered plates, with how many compounds are in it
     const n = (space.part_ids || []).length || '';
     return `<svg class="tile mh-tile" viewBox="0 0 32 32" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
-      <rect width="32" height="32" rx="5" fill="#121214"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".45"/>
+      <rect width="32" height="32" rx="0" fill="#121214"/><rect x=".5" y=".5" width="31" height="31" rx="0" fill="none" stroke="${color}" stroke-opacity=".45"/>
       <path d="M9 13.5 16 10l7 3.5-7 3.5z" fill="${color}"/><path d="m9 17.5 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
       <path d="m9 21 7 3.5 7-3.5" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/>
       ${n ? `<circle cx="25" cy="7" r="5" fill="${color}"/><text x="25" y="9.6" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="7.5" fill="#000000">${Number(n)}</text>` : ''}</svg>`;
@@ -136,7 +136,7 @@ export function tileSvg(space, size = 32) {
   const txt = initials(space?.name || space?.compound_name || space?.id).replace(/[^A-Z0-9]/g, '');
   const fs = txt.length > 2 ? 11 : 13;
   return `<svg class="tile mh-tile" viewBox="0 0 32 32" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
-    <rect width="32" height="32" rx="5" fill="#121214"/><rect x=".5" y=".5" width="31" height="31" rx="4.5" fill="none" stroke="${color}" stroke-opacity=".35"/>
+    <rect width="32" height="32" rx="0" fill="#121214"/><rect x=".5" y=".5" width="31" height="31" rx="0" fill="none" stroke="${color}" stroke-opacity=".35"/>
     <text x="16" y="20.5" text-anchor="middle" font-family="Monaspace Neon, ui-monospace, monospace" font-weight="700" font-size="${fs}" fill="${color}">${txt}</text></svg>`;
 }
 // A compound: its tile, name, evidence meter and Signal, and a short line about its part in a

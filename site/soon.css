@@ -8,6 +8,6 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 h1{margin:20px 0 10px;font:700 clamp(26px,6vw,40px)/1.15 'Unbounded',system-ui,sans-serif;letter-spacing:-.01em}
 h1 span{color:var(--muted);font-weight:500}
 .lead{margin:0;max-width:30em;color:var(--ink-2)}
-.soon{margin:28px 0 0;padding:10px 20px;border-radius:999px;border:1.5px solid var(--coral);color:var(--coral-text);font-weight:600}
+.soon{margin:28px 0 0;padding:10px 20px;border-radius:0;border:1.5px solid var(--coral);color:var(--coral-text);font-weight:600}
 .note{margin:12px 0 0;color:var(--muted);font-size:15px}
 footer{padding:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;text-align:center}

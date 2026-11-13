@@ -108,7 +108,7 @@ export function scale(score) {
   const g = nextId('sc');
   return svg(`<svg class="scale" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
     <defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#B0453D"/><stop offset=".55" stop-color="#D4A72C"/><stop offset="1" stop-color="#3D8BFF"/></linearGradient></defs>
-    <rect x="0" y="5" width="200" height="4" rx="2" fill="currentColor" fill-opacity=".14"/>
-    <rect x="0" y="5" width="${(2 * s).toFixed(1)}" height="4" rx="2" fill="url(#${g})"/>
-    <rect x="${Math.max(0, 2 * s - 1.5).toFixed(1)}" y="1" width="3" height="12" rx="1.5" fill="currentColor"/></svg>`);
+    <rect x="0" y="5" width="200" height="4" rx="0" fill="currentColor" fill-opacity=".14"/>
+    <rect x="0" y="5" width="${(2 * s).toFixed(1)}" height="4" rx="0" fill="url(#${g})"/>
+    <rect x="${Math.max(0, 2 * s - 1.5).toFixed(1)}" y="1" width="3" height="12" rx="0" fill="currentColor"/></svg>`);
 }

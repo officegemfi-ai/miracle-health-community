@@ -28,7 +28,7 @@
    (set --mh-meter to color them) */
 .mh-ev{display:inline-flex;align-items:center;gap:8px;vertical-align:middle}
 .mh-meter{display:inline-grid;grid-template-columns:repeat(4,8px);gap:2px;flex:none;color:var(--mh-meter,currentColor)}
-.mh-meter i{height:6px;border-radius:1.5px;background:currentColor;opacity:.22}
+.mh-meter i{height:6px;border-radius:0;background:currentColor;opacity:.22}
 .mh-meter.m1 i:nth-child(-n+1),.mh-meter.m2 i:nth-child(-n+2),.mh-meter.m3 i:nth-child(-n+3),.mh-meter.m4 i{opacity:1}
 
 /* The Community Signal: the seal and the number */
@@ -38,7 +38,7 @@
 .mh-signal.big svg{width:30px;height:30px}
 
 /* A compound: tile, name, meter and Signal, and its part in a plan or stack */
-.mh-chip{display:inline-flex;align-items:center;gap:10px;max-width:100%;min-width:0;padding:7px 12px 7px 7px;border-radius:6px;background:var(--mh-chip-bg,rgba(0,0,0,.05));color:inherit;text-decoration:none;vertical-align:middle}
+.mh-chip{display:inline-flex;align-items:center;gap:10px;max-width:100%;min-width:0;padding:7px 12px 7px 7px;border-radius:0;background:var(--mh-chip-bg,rgba(0,0,0,.05));color:inherit;text-decoration:none;vertical-align:middle}
 .mh-chip .mh-tile{flex:none;width:28px;height:28px}
 .mh-chip-t{display:flex;flex-direction:column;gap:2px;min-width:0}
 .mh-chip-n{display:flex;flex-wrap:wrap;align-items:center;gap:4px 9px;font:600 14.5px/1.3 var(--mh-body);letter-spacing:-.01em}
@@ -76,22 +76,22 @@ a.mh-chip:hover .mh-chip-name{text-decoration:underline;text-underline-offset:3p
   --mh-bm-lit:color-mix(in srgb,var(--mh-lime) 42%,transparent);
   font:15px/1.5 var(--mh-body);overflow-wrap:break-word}
 .mh-bm-lead{margin:0 0 14px;font-weight:600}
-.mh-bm-route{display:inline-block;margin-left:6px;padding:1px 8px;border:1px solid var(--mh-bm-rule);border-radius:8px;font:500 12px/1.6 var(--mh-body);color:var(--mh-bm-soft);white-space:nowrap}
+.mh-bm-route{display:inline-block;margin-left:6px;padding:1px 8px;border:1px solid var(--mh-bm-rule);border-radius:0;font:500 12px/1.6 var(--mh-body);color:var(--mh-bm-soft);white-space:nowrap}
 .mh-bm-list{margin:0}
 .mh-bm-row{display:grid;gap:6px;padding:12px 0;border-top:1px solid var(--mh-bm-rule)}
 .mh-bm-row dt{font:600 12px/1.5 var(--mh-mono);color:var(--mh-bm-soft)}
 .mh-bm-row dd{margin:0}
 @container mh-bm (min-width:34rem){.mh-bm-row{grid-template-columns:10rem 1fr;gap:18px}.mh-bm-row dt{padding-top:2px}}
 .mh-bm-list ul,.mh-bm-table ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.mh-bm-ln{display:grid;grid-template-columns:1.1em 1fr;gap:8px;align-items:baseline;margin:0 -6px;padding:2px 6px;border-radius:6px}
+.mh-bm-ln{display:grid;grid-template-columns:1.1em 1fr;gap:8px;align-items:baseline;margin:0 -6px;padding:2px 6px;border-radius:0}
 .mh-bm-op{font:600 12px/1 var(--mh-mono);color:var(--mh-bm-soft);text-align:center}
 .mh-bm-ln.op-warn .mh-bm-op,.mh-bm-key .op-warn .mh-bm-op{color:var(--mh-bm-warn)}
 .mh-bm-ln.op-watch .mh-bm-op,.mh-bm-key .op-watch .mh-bm-op{color:var(--mh-bm-watch)}
 .mh-bm-refs{white-space:nowrap}
-.mh-bm-src{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;margin-right:2px;padding:0 4px;border-radius:6px;background:var(--mh-bm-rule);color:inherit;font:600 11px/1 var(--mh-mono);text-decoration:none;vertical-align:middle}
+.mh-bm-src{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;margin-right:2px;padding:0 4px;border-radius:0;background:var(--mh-bm-rule);color:inherit;font:600 11px/1 var(--mh-mono);text-decoration:none;vertical-align:middle}
 .mh-bm-src:hover{text-decoration:underline}
 .mh-bm-mks{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
-.mh-bm-mk{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 8px;border:1px solid var(--mh-bm-rule);border-radius:8px;background:none;color:inherit;font:500 12px/1 var(--mh-body)}
+.mh-bm-mk{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 8px;border:1px solid var(--mh-bm-rule);border-radius:0;background:none;color:inherit;font:500 12px/1 var(--mh-body)}
 button.mh-bm-mk{cursor:pointer}
 button.mh-bm-mk:hover{border-color:currentColor}
 button.mh-bm-mk[aria-pressed="true"]{border-color:currentColor;background:var(--mh-bm-lit);font-weight:600}
@@ -99,7 +99,7 @@ button.mh-bm-mk[aria-pressed="true"]{border-color:currentColor;background:var(--
 .mh-bm-mk.d-watch .mh-bm-dir{color:var(--mh-bm-watch)}
 .mh-bm-ln.lit{background:var(--mh-bm-lit);box-shadow:inset 3px 0 0 currentColor}
 /* Its own positioning context, so the words only screen readers hear can't stick out past it */
-.mh-bm-scroll{position:relative;overflow-x:auto;border-radius:8px}
+.mh-bm-scroll{position:relative;overflow-x:auto;border-radius:0}
 /* Fixed columns: the place, then one equal column per compound, drawn or not */
 .mh-bm-table{width:100%;min-width:calc(8rem + var(--n,2) * 13rem);border-collapse:collapse;table-layout:fixed}
 .mh-bm-table[data-n="3"]{--n:3}.mh-bm-table[data-n="4"]{--n:4}.mh-bm-table[data-n="5"]{--n:5}.mh-bm-table[data-n="6"]{--n:6}
@@ -117,11 +117,11 @@ button.mh-bm-mk[aria-pressed="true"]{border-color:currentColor;background:var(--
 .mh-bm-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:14px 0 0;padding:0;list-style:none;font:500 12px/1.4 var(--mh-body);color:var(--mh-bm-soft)}
 .mh-bm-key li{display:inline-flex;align-items:center;gap:6px}
 .mh-bm-msg{margin:0;color:var(--mh-bm-soft)}
-.mh-bm-retry{margin-top:12px;min-height:44px;padding:0 18px;border:1px solid currentColor;border-radius:8px;background:none;color:inherit;font:600 14px/1 var(--mh-body);cursor:pointer}
+.mh-bm-retry{margin-top:12px;min-height:44px;padding:0 18px;border:1px solid currentColor;border-radius:0;background:none;color:inherit;font:600 14px/1 var(--mh-body);cursor:pointer}
 .mh-bm-foot{margin:12px 0 0;font-size:12px;color:var(--mh-bm-soft)}
 .mh-bm-skel{display:grid;gap:14px}
 .mh-bm-skel span{display:grid;grid-template-columns:7rem 1fr;gap:16px}
-.mh-bm-skel i{display:block;height:12px;border-radius:6px;background:var(--mh-bm-rule)}
+.mh-bm-skel i{display:block;height:12px;border-radius:0;background:var(--mh-bm-rule)}
 .mh-bm-skel span:nth-child(2n) i:last-child{width:72%}
 .mh-bm :focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .mh-bm-scroll:focus-visible{outline-offset:4px}
