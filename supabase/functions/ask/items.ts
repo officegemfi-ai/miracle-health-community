@@ -39,7 +39,7 @@ export type CardItem = {
   signal: { score: number; level: string; reports: number | null; effects: string[] } | null;
   // What the community reports (members' first-hand reports and public forum data), and which of
   // the two voices leads for what they asked
-  community: Community | null; lead: Lead; communityNote?: 'pregnancy' | 'reaction' | 'down';
+  community: Community | null; lead: Lead; communityNote?: 'pregnancy' | 'reaction' | 'down' | 'off';
   tag: string; tone: 'ok' | 'warn' | 'none'; caution: string;
   benefits: StudyFinding[];
   labs: string[];
@@ -117,12 +117,13 @@ const labsOf = (sheet: Sheet | null | undefined) =>
   [...(sheet?.labs?.before ?? []), ...(sheet?.labs?.during ?? [])].map((l) => cleanField(l, 160)).filter(Boolean).slice(0, 4);
 
 // What every card item shares, whoever laid it out
-export function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot; use?: Use | null; byId?: Map<string, Item>; screen?: Screen }, pregnant: boolean, goal?: string) {
+export function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Snapshot; use?: Use | null; byId?: Map<string, Item>; screen?: Screen; on?: (agent: string) => boolean }, pregnant: boolean, goal?: string) {
   const sig = ctx.snap.signals[it.id] as Signal | undefined;
   const { tag, tone } = tagFor(it, sh, ctx.byId);
-  // In pregnancy what people report is left out; when the numbers couldn't be read, the card says so
+  // In pregnancy what people report is left out; when the numbers couldn't be read, or the member
+  // turned the community off for this chat, the card says so
   const reaction = !!ctx.screen?.reaction;
-  const communityNote: CardItem['communityNote'] | null = pregnant ? 'pregnancy' : reaction ? 'reaction' : ctx.snap.ok === false ? 'down' : null;
+  const communityNote: CardItem['communityNote'] | null = pregnant ? 'pregnancy' : reaction ? 'reaction' : ctx.snap.ok === false ? 'down' : ctx.on && !ctx.on('community') ? 'off' : null;
   const community = communityNote ? null : communityOf(sig, ctx.use ?? null, ctx.snap.uses);
   const blocked = BLOCKED.has(sh?.status_us?.key ?? it.status ?? '') || blockedItem(it, ctx.byId ?? new Map());
   const studies = studiesOf(sh, goal);
@@ -130,7 +131,7 @@ export function baseItem(it: Item, sh: Sheet | null | undefined, ctx: { snap: Sn
     id: it.id, name: sh?.name ?? it.name, family: familyOne(it.family), url: `/library/${it.id}/`,
     status: sh ? { key: sh.status_us.key, label: sh.status_us.label } : null, grade: sh?.evidence?.grade ?? it.grade ?? null,
     use: useOf(sh, goal),
-    signal: sig && typeof sig.score === 'number' ? {
+    signal: sig && typeof sig.score === 'number' && communityNote !== 'off' ? {
       score: Number(sig.score), level: LEVEL_SHORT[sig.certification ?? 'forum'] ?? 'Forum data',
       reports: typeof sig.first_hand === 'number' && sig.first_hand > 0 ? sig.first_hand : null,
       effects: (sig.side_effects ?? []).slice(0, 2).map((e) => cleanField(e.effect, 40)).filter(Boolean),

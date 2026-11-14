@@ -2,7 +2,7 @@
 // things they all do with it: open fact sheets, read both voices on a compound, announce a step.
 import { condense, type Goal, type Item, type Sheet, type Signal, type Snapshot, stub, BLOCKED } from './library.ts';
 import { strict } from './guard.ts';
-import { blockedItem, type Community, COMMUNITY_DOWN, communityOf, type Use, type Voice, voiceLine, voiceOf } from './community.ts';
+import { blockedItem, type Community, COMMUNITY_DOWN, communityOf, studiesAlone, type Use, type Voice, voiceLine, voiceOf } from './community.ts';
 import type { Plan } from './outcomes.ts';
 import type { Gate } from './gate.ts';
 import type { Standing } from './screen.ts';
@@ -24,6 +24,7 @@ export type Ctx = {
   heard: Map<string, Community | null>;   // compounds whose community numbers the guide or a card used
   unread: Set<string>;  // compounds whose fact sheet exists but couldn't be loaded just now
   plan: Plan;           // the Planner's read: what they asked about, in what studies measure
+  on: (agent: string) => boolean;   // whether an agent answers this turn (the member's choice; safety always)
 };
 
 export async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, Sheet | null>> {
@@ -37,22 +38,27 @@ export async function openSheets(ids: string[], ctx: Ctx): Promise<Map<string, S
 
 // Both voices on one compound, for what the member asked: what the studies show and what the
 // community reports, and which leads
+// When the member turned the community off for this chat, there's no community side: the studies
+// stand alone, and nothing counts as heard from it
 export function voiceFor(id: string, ctx: Ctx): Voice | null {
   const it = ctx.byId.get(id);
   if (!it) return null;
   const sh = ctx.sheets.get(id);
-  const community = communityOf(ctx.snap.signals[id] as Signal | undefined, ctx.use, ctx.snap.uses);
-  ctx.heard.set(id, community);
+  const listening = ctx.on('community');
+  const community = listening ? communityOf(ctx.snap.signals[id] as Signal | undefined, ctx.use, ctx.snap.uses) : null;
+  if (listening) ctx.heard.set(id, community);
   const blocked = BLOCKED.has(sh?.status_us?.key ?? it.status ?? '') || blockedItem(it, ctx.byId);
   return voiceOf({ id, name: sh?.name ?? it.name }, studiesOf(sh, ctx.goal), community, { blocked, pregnant: ctx.screen.pregnant || ctx.st.pregnant, reaction: ctx.screen.reaction });
 }
-// A fact sheet as the guide reads it, with the community's numbers and which voice leads
+// A fact sheet as the guide reads it, with the community's numbers and which voice leads (the
+// studies alone when the community wasn't asked)
 export function sheetText(id: string, ctx: Ctx): string {
   const it = ctx.byId.get(id);
   const sh = ctx.sheets.get(id);
   if (!it) return `No compound with the id "${id}" in the Library.`;
   if (ctx.unread.has(id)) return `### ${it.name} (id ${id})\nIts fact sheet couldn't be loaded just now: don't make specific claims about it, and don't call it checked for pregnancy or interactions.`;
-  const voice = ctx.snap.ok === false ? COMMUNITY_DOWN : voiceLine(voiceFor(id, ctx)!);
+  const voice = !ctx.on('community') ? studiesAlone(voiceFor(id, ctx)!, communityOf(ctx.snap.signals[id] as Signal | undefined, ctx.use, ctx.snap.uses))
+    : ctx.snap.ok === false ? COMMUNITY_DOWN : voiceLine(voiceFor(id, ctx)!);
   return strict(`${sh ? condense(sh, it, null, ctx.snap.uses, false) : stub(it, null, ctx.snap.uses, false)}\n${voice}`);
 }
 

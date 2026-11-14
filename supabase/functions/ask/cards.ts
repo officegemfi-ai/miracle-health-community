@@ -86,7 +86,7 @@ export function voicesCard(ids: string[], ctx: Ctx): string | null {
 // order they named them; never ranked by what people report, and no winner.
 export function compareCard(ids: string[], ctx: Ctx): string | null {
   const pregnant = ctx.screen.pregnant || ctx.st.pregnant;
-  const note: CardItem['communityNote'] | null = pregnant ? 'pregnancy' : ctx.screen.reaction ? 'reaction' : ctx.snap.ok === false ? 'down' : null;
+  const note: CardItem['communityNote'] | null = pregnant ? 'pregnancy' : ctx.screen.reaction ? 'reaction' : ctx.snap.ok === false ? 'down' : !ctx.on('community') ? 'off' : null;
   const items = ids.filter((id) => ctx.byId.has(id)).slice(0, 4).map((id, order) => {
     const it = ctx.byId.get(id)!;
     const sh = ctx.sheets.get(id);

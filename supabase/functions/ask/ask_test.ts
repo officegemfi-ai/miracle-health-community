@@ -5,8 +5,9 @@ import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } f
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, dedupeSentences, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
 import { baselineFor, blockedItem, comboLine, communityOf, communityTitle, communityTop, leadOf, pulseLine, stackSignal, topText, useById, voiceLine, voiceOf } from './community.ts';
-import { clientAddress, corsHeaders, handle, type HttpDeps, readConversation, signReply, v6net } from './index.ts';
-import { AUDIT_SYSTEM, GUIDE_TOOLS, guideSystem, INTERPRET_SYSTEM, REVIEW_SYSTEM } from './prompts.ts';
+import { answering, clientAddress, corsHeaders, handle, type HttpDeps, readAgents, readConversation, signReply, v6net } from './index.ts';
+import { AUDIT_SYSTEM, GUIDE_TOOLS, guideSystem, INTERPRET_SYSTEM, offNote, REVIEW_SYSTEM } from './prompts.ts';
+import { CHOOSABLE } from './types.ts';
 import { tidyRead, verdictLabel } from './interpret.ts';
 import { proven } from './items.ts';
 
@@ -2142,4 +2143,123 @@ Deno.test('no efficacy read under an answer the Safety agent held back', async (
   const ev = await events(await handle(ask([{ role: 'user', content: 'Will creatine help me get stronger?' }]), deps(f)));
   assert(!ev.some((e) => e.event === 'card' && e.data.type === 'interpretation'));
   assertEquals(calls.filter((c) => c.kind === 'interpret').length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Who answers: the agents a member chooses for a chat (the Safety agent always answers)
+// ---------------------------------------------------------------------------
+const askWith = (messages: unknown, agents: unknown) =>
+  new Request('https://x.supabase.co/functions/v1/ask', { method: 'POST', headers: { Origin: 'https://miraclehealth.us', 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.9' }, body: JSON.stringify({ messages, agents }) });
+type Call = { kind: string; body: Record<string, unknown> };
+const notesOf = (calls: Call[]) => String((calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
+const toolsOf = (calls: Call[]) => ((calls.find((c) => c.kind === 'guide')!.body.tools ?? []) as { name: string }[]).map((t) => t.name).sort();
+const whoLine = (notes: string) => notes.split('\n').find((l) => l.startsWith('Who answers:')) ?? '';
+const all = (but: string[]) => CHOOSABLE.filter((a) => !but.includes(a));
+
+Deno.test('who answers: only known agents count, the Safety agent is always on, and all of them is the whole team', () => {
+  assertEquals(readAgents({ messages: [] }), undefined);
+  assertEquals(readAgents({ agents: 'community' }), undefined);
+  assertEquals([...readAgents({ agents: ['community', 'safety', 'nobody', 7, 'community'] })!], ['community']);
+  assertEquals(readAgents({ agents: [...CHOOSABLE] }), undefined);
+  assertEquals(readAgents({ agents: [] })!.size, 0);
+  assertEquals(answering(undefined).length, 12);
+  assertEquals(answering(new Set(['community'])), ['safety', 'community']);
+  // Nothing to say when everyone answers; otherwise who isn't, and what not to do in their place
+  assertEquals(offNote([]), '');
+  const one = offNote(['community']);
+  assert(one.includes('and the community isn\'t among them') && one.includes('say nothing about what members or the forums report or rate') && one.includes('The Safety agent\'s rules all still apply'), one);
+});
+
+Deno.test('the community, the Planner and the Interpretation agent only: the others stay out, their tools too, and Sig writes', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['HGH', 'enclomiphene'], goals: ['weight'] },
+    rounds: [{ text: 'People mostly take HGH for recovery. ' + WORDS }],
+  });
+  const ev = await events(await handle(askWith([{ role: 'user', content: 'Is HGH plus enclomiphene good for fat loss?' }], ['community', 'planner', 'interpretation']), deps(withLibrary(f))));
+  // The page is told who answers, first
+  assertEquals([ev[0].event, ev[0].data.agents], ['meta', ['safety', 'planner', 'community', 'interpretation']]);
+  const ran = new Set(ev.filter((e) => e.event === 'step').map((e) => e.data.agent));
+  for (const a of ['relatives', 'combination', 'markers', 'evidence', 'mechanism', 'synergy', 'builder', 'recommender']) assert(!ran.has(a), a);
+  assert(ran.has('planner') && ran.has('community') && ran.has('safety'));
+  assert(!calls.some((c) => c.kind === 'audit'));
+  // The fact sheets still open (the safety line comes from them), as Sig's own lookup, and Sig writes
+  assert(ev.some((e) => e.event === 'step' && e.data.id === 'lookup' && e.data.agent === 'sig'));
+  assert(ev.some((e) => e.event === 'step' && e.data.id === 'write' && e.data.agent === 'sig' && e.data.status === 'done'));
+  // No evidence ladder without the Evidence librarian
+  assert(!ev.some((e) => e.event === 'ladder'));
+  const notes = notesOf(calls);
+  assert(whoLine(notes).startsWith('Who answers: the member chose who answers in this chat, and the Recommender, the Evidence librarian, the Relatives agent, the Mechanism agent, the Combination agent, the Markers agent, the Synergy auditor and the Stack builder aren\'t among them. Don\'t speak for them or do their work: '), whoLine(notes));
+  assert(whoLine(notes).includes('don\'t suggest options or compounds they didn\'t name') && whoLine(notes).includes('don\'t name blood markers') && whoLine(notes).includes('no plan and no shortlist'));
+  assert(!notes.includes('Markers agent, from the Library\'s body map') && !notes.includes('Different pathways') && !notes.includes('Tesamorelin\'s findings'), notes);
+  assertEquals(toolsOf(calls), ['clinician_questions', 'read_fact_sheets', 'search_library', 'warning_signs']);
+});
+
+Deno.test('the community left out: none of its numbers or cards, the studies alone on each sheet, but what it knows about safety still reaches Sig', async () => {
+  const { f, calls } = fakeWorld({
+    screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'], uses: ['injury'] },
+    rounds: [{ text: WORDS }],
+  });
+  const snap = { ...SNAPSHOT, signals: { ...SNAPSHOT.signals, bpc157: { ...SNAPSHOT.signals.bpc157, serious: 4 } } };
+  const g = ((url: string | URL, init?: RequestInit) => (String(url).endsWith('snapshot.json') ? Promise.resolve(new Response(JSON.stringify(snap))) : f(url, init))) as unknown as typeof fetch;
+  const ev = await events(await handle(askWith([{ role: 'user', content: 'I take BPC-157 and creatine for a torn tendon.' }], all(['community'])), deps(g)));
+  assert(!ev.some((e) => e.event === 'step' && e.data.agent === 'community'));
+  assert(!ev.some((e) => e.event === 'card' && (e.data.type === 'voices' || e.data.type === 'community')));
+  const notes = notesOf(calls);
+  assert(notes.includes('BPC-157 [bpc157], the studies. Studies:') && notes.includes('Community: not asked in this chat (the member turned it off)'), notes);
+  assert(notes.includes('4 member reports describe a reaction that sounded serious'), 'the safety watch stays');
+  assert(!notes.includes('Signal 71.2') && !notes.includes('members rate it 78') && !notes.includes('The community so far'), notes);
+  assert(whoLine(notes).includes('and the community isn\'t among them'));
+  // Their stack is still laid out and checked, with the community's side marked as not asked
+  const stack = ev.find((e) => e.event === 'card' && e.data.type === 'shortlist')!.data;
+  assert(stack.items.every((i: { community: unknown; communityNote: string; signal: unknown }) => i.community === null && i.communityNote === 'off' && i.signal === null));
+  // Where the answer came from: the fact sheets, and nothing heard from the community
+  assertEquals(ev.find((e) => e.event === 'sources')!.data.community.signals, 0);
+});
+
+Deno.test('the Synergy auditor left out still comes when what they named meets their own medicines: the Safety agent calls it in', async () => {
+  const run = async (screen: unknown) => {
+    const w = fakeWorld({ screen, rounds: [{ text: WORDS }], audit: { findings: [{ ids: ['bpc157'], kind: 'interaction', level: 'caution', note: 'Ask your prescriber first: you take warfarin.' }], summary: 'One thing to check.' } });
+    const ev = await events(await handle(askWith([{ role: 'user', content: 'Can I add BPC-157 and creatine? I take warfarin.' }], ['community']), deps(w.f)));
+    return { ev, calls: w.calls };
+  };
+  const meds = await run({ ...NONE, compounds: ['BPC-157', 'creatine'], medications: ['warfarin'], goals: ['recovery'] });
+  const syn = meds.ev.filter((e) => e.event === 'step' && e.data.agent === 'synergy');
+  assert(syn.length === 2 && syn.every((e) => e.data.by === 'safety'), JSON.stringify(syn));
+  assert(meds.calls.some((c) => c.kind === 'audit'));
+  assert(!whoLine(notesOf(meds.calls)).includes('Synergy auditor') && notesOf(meds.calls).includes('Ask your prescriber first: you take warfarin.'));
+  // With no medicine, condition or pregnancy, it's the member's choice
+  const none = await run({ ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'] });
+  assert(!none.calls.some((c) => c.kind === 'audit') && !none.ev.some((e) => e.event === 'step' && e.data.agent === 'synergy'));
+  assert(whoLine(notesOf(none.calls)).includes('the Synergy auditor'));
+});
+
+Deno.test('a comparison without the community still never picks a winner', async () => {
+  const { f, calls } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157', 'creatine'], goals: ['recovery'], compare: true }, rounds: [{ text: WORDS }] });
+  const ev = await events(await handle(askWith([{ role: 'user', content: 'BPC-157 vs creatine for a tendon?' }], all(['community'])), deps(f)));
+  const notes = notesOf(calls);
+  assert(notes.includes('They\'re comparing BPC-157, Creatine') && notes.includes('Don\'t pick a winner'), notes.slice(-1200));
+  assert(!notes.includes('never rank them by what people report'));
+  const cmp = ev.find((e) => e.event === 'card' && e.data.type === 'compare')!.data;
+  assert(cmp.items.every((i: { communityNote: string }) => i.communityNote === 'off'));
+});
+
+Deno.test('a tool of an agent the member left out is turned down, even if asked for', async () => {
+  const plan = { title: 'Heal that tendon', first_step: 'Start the loading program', foundations: [{ pillar: 'exercise', state: 'start', step: 'Loading work' }, { pillar: 'nutrition', state: 'unknown', step: 'Protein at every meal' }, { pillar: 'sleep', state: 'unknown', step: '7 hours or more' }] };
+  const { f, calls } = fakeWorld({ screen: { ...NONE, compounds: ['BPC-157'], goals: ['recovery'] }, rounds: [{ text: WORDS, tool: { name: 'present_plan', input: plan } }, { text: 'That is all.' }] });
+  const ev = await events(await handle(askWith([{ role: 'user', content: 'Make me a plan for my tendon with BPC-157.' }], all(['builder'])), deps(f)));
+  assert(!ev.some((e) => e.event === 'card' && e.data.type === 'plan'));
+  const second = calls.filter((c) => c.kind === 'guide')[1];
+  assert(JSON.stringify(second.body.messages).includes('Not this time: the member chose who answers in this chat'));
+  assert(!toolsOf(calls).includes('present_plan') && !toolsOf(calls).includes('present_shortlist'));
+});
+
+Deno.test('Sig speaks an answer: a headline, a paragraph per compound, the studies and the safety line apart, and a plan only when asked', () => {
+  const prompt = guideSystem('');
+  assert(prompt.includes('1. The bottom line, as a headline: one sentence of about 15 words or fewer'));
+  assert(prompt.includes('a short paragraph that starts with its name, linked and in bold'));
+  assert(prompt.includes('don\'t write the Signal\'s score'));
+  assert(prompt.includes('as a paragraph that starts "The studies:"') && prompt.includes('as a paragraph that starts "**Good to know:**"'));
+  assert(prompt.includes('Call present_plan only when they ask for a plan') && prompt.includes('6. Their plan (present_plan) only when they ask for one'));
+  assert(!prompt.includes('In a full answer about a goal or their stack, call present_plan') && !prompt.includes('A full answer about a goal or their own stack builds their Miracle Plan'));
+  assert(prompt.includes('In the reports I\'ve read, people most often') && prompt.includes('never as one person\'s story'));
 });

@@ -8,6 +8,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 import { type ChatMessage, heldReply, type Models, runTurn, urgentKind } from './agents.ts';
 import { createLibrary, type Library, type SignalRow } from './library.ts';
+import { CHOOSABLE, type Choosable } from './types.ts';
 import { clientAddress, sameKey, v6net } from '../_shared/address.ts';
 
 // The caller's address for the counts (the same rule as every other function): exported for the tests
@@ -98,6 +99,18 @@ export function readConversation(body: unknown): { messages: InMessage[] } | { e
   return { messages: kept };
 }
 
+// The agents the member chose for this chat (the picker beside the box to write in), as the page
+// sent them: only known names count, and the Safety agent is on whatever is sent. Nothing sent, or
+// all of them, is the whole team (undefined).
+export function readAgents(body: unknown): Set<Choosable> | undefined {
+  const raw = (body as { agents?: unknown })?.agents;
+  if (!Array.isArray(raw)) return undefined;
+  const chosen = new Set(raw.slice(0, 40).filter((a): a is Choosable => typeof a === 'string' && (CHOOSABLE as readonly string[]).includes(a)));
+  return chosen.size === CHOOSABLE.length ? undefined : chosen;
+}
+// The agents that answer, as the page is told in the stream's first event
+export const answering = (chosen: ReadonlySet<Choosable> | undefined): string[] => ['safety', ...CHOOSABLE.filter((a) => !chosen || chosen.has(a))];
+
 // Sig's own replies come back from the page with a signature, so a page (or anyone
 // calling directly) can't put words in its mouth: an unsigned or altered reply is replaced
 const hmac = async (key: string, data: string) => {
@@ -129,6 +142,7 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
   const conv = readConversation(body);
   if ('error' in conv) return json({ error: conv.error }, conv.status, cors);
   const messages = await checkReplies(conv.messages, deps.salt);
+  const agents = readAgents(body);
 
   let q: Quota = { ok: false, reason: 'unavailable' };
   const evalRun = await sameKey(req.headers.get('x-eval-key'), deps.evalKey);
@@ -163,11 +177,11 @@ export async function handle(req: Request, deps: HttpDeps): Promise<Response> {
       let timedOut = false;
       const timer = setTimeout(() => { timedOut = true; abort.abort(); }, 120_000);
       const t0 = Date.now();
-      send('meta', { v: 1, left: q.left ?? null, ...(evalRun ? { eval: true } : {}) });
+      send('meta', { v: 1, left: q.left ?? null, agents: answering(agents), ...(evalRun ? { eval: true } : {}) });
       try {
         const { memo } = held ? { memo: heldReply(held, messages, send) } : await runTurn(messages, {
           apiKey: deps.apiKey, models: deps.models, effort: deps.effort, reasonEffort: deps.reasonEffort, library: deps.library,
-          fetchImpl: deps.fetchImpl, signal: abort.signal, log: deps.log,
+          ...(agents ? { agents } : {}), fetchImpl: deps.fetchImpl, signal: abort.signal, log: deps.log,
         }, send);
         if (held) deps.log?.({ ask_held: { kind: held, reason: q.reason ?? 'unavailable' } });
         const reply = cleanText(memo).slice(0, LIMITS.assistantChars);
