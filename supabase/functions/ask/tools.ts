@@ -11,6 +11,7 @@ import { auditCard } from './cards.ts';
 import { evidenceStep } from './evidence.ts';
 import { chip, type Ctx, nextId, openSheets, sheetText, step } from './context.ts';
 import { strs } from './fence.ts';
+import { TOOL_AGENT } from './prompts.ts';
 
 // Food-like, low-risk supplements a plan may add before the Library has a fact sheet for them
 // (protein, amino acids, fiber, electrolytes, basic vitamins and minerals); any other
@@ -28,6 +29,8 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
   ctx.uses[name] = (ctx.uses[name] ?? 0) + 1;
   if (ctx.uses[name] > (TOOL_LIMITS[name] ?? 2)) return 'That tool has been used enough for this turn; answer from what you have.';
   if (ctx.wordsOnly && CARD_TOOLS.has(name)) return 'The cards are already on their screen: write the reply in words now.';
+  // An agent the member left out of this chat doesn't do its work (its tools aren't offered either)
+  if (TOOL_AGENT[name] && !ctx.on(TOOL_AGENT[name])) return 'Not this time: the member chose who answers in this chat, and that tool\'s agent isn\'t among them. Answer without it.';
   switch (name) {
     case 'find_options': {
       const goal = String(input.goal ?? '') as Goal;

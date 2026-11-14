@@ -15,10 +15,10 @@
 // Every step is announced to the page as it happens. Nothing the member writes is stored.
 import { ApiError, type Block, type Message, retry, stream, tuning } from './claude.ts';
 import { indexText } from './library.ts';
-import { guideSystem, GUIDE_TOOLS, turnNotes } from './prompts.ts';
+import { guideSystem, GUIDE_TOOLS, offNote, TOOL_AGENT, turnNotes } from './prompts.ts';
 import type { Community, TopRow, Use, Voice } from './community.ts';
 import { INJECT_CARD, INJECT_SIGNS } from './urgency.ts';
-import type { Audit, ChatMessage, Emit, TurnDeps } from './types.ts';
+import { type Audit, type ChatMessage, CHOOSABLE, type Emit, type TurnDeps } from './types.ts';
 import { SAFETY_MARK, screenNote } from './screen.ts';
 import { CAUTIONED, FULL_ANSWER } from './gate.ts';
 import { cautionFor } from './items.ts';
@@ -38,7 +38,7 @@ export { benefitsOf, type CardItem, cautionFor, PILLAR_STATES, PILLARS, studiesO
 const MAX_ROUNDS = 6;
 // A reply with cards but fewer characters of words than this gets written again, once
 const FEW_WORDS = 240;
-const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the bottom line of what they asked (two sentences, key point in **bold**), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, and the one safety line, in calm words. No questions. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
+const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the bottom line of what they asked (one short sentence, on its own), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, and the one safety line, in calm words. No questions. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
 
 // The last message gets the cache mark (so each round of the loop reuses the one before)
@@ -68,8 +68,10 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   const { synNote, upfront } = await synergyStage(turn, named, comparing);
 
   // 4. The guide writes, with the Library tools; every part goes through the gate
-  const interpreting = interprets(turn, named, comparing);
-  const notes = { recNote, evNote, communityNote: heard.communityNote, comboNote, markNote, synNote, sheetsForTurn, interpretNote: interpreting ? INTERPRET_NOTE : '' };
+  const interpreting = turn.ctx.on('interpretation') && interprets(turn, named, comparing);
+  // Who wasn't asked (the Synergy auditor counts as asked when the Safety agent called it in)
+  const off = CHOOSABLE.filter((a) => !turn.ctx.on(a) && !(a === 'synergy' && upfront));
+  const notes = { recNote, evNote, communityNote: heard.communityNote, compareNote: heard.compareNote ?? '', comboNote, markNote, synNote, sheetsForTurn, interpretNote: interpreting ? INTERPRET_NOTE : '', offNote: offNote(off) };
   const written = await guide(turn, notes, { named, comparing, upfront, ...heard });
   await closingWords(turn, named, written.wrote);
   // 4b. The Interpretation agent: everything above, weighed for efficacy, last
@@ -80,7 +82,7 @@ export async function runTurn(messages: ChatMessage[], deps: TurnDeps, emit: Emi
   return tally(turn, { t0, ...written, signals, comparing, efficacy: efficacy?.verdict ?? null });
 }
 
-type Notes = { recNote: string; evNote: string; communityNote: string; comboNote: string; markNote: string; synNote: string; sheetsForTurn: string[]; interpretNote: string };
+type Notes = { recNote: string; evNote: string; communityNote: string; compareNote: string; comboNote: string; markNote: string; synNote: string; sheetsForTurn: string[]; interpretNote: string; offNote: string };
 // What the Interpretation agent weighs: the other agents' notes and the fact sheets, as the guide had them
 function briefOf(n: Notes): string {
   return [
@@ -94,25 +96,29 @@ function briefOf(n: Notes): string {
 type Laid = { named: string[]; comparing: boolean; upfront: Audit | null; voices: Voice[]; top: TopRow[]; listUse: Use | null };
 type Written = { wrote: string; rounds: number; model: string; usage: { in: number; out: number; cacheRead: number; cacheWrite: number } };
 
+// Who writes the answer: the Recommender, or Sig itself when the member left the Recommender out
+const writer = (turn: Turn) => (turn.ctx.on('recommender') ? 'recommender' : 'sig');
+
 // The guide's turn: its instructions and notes, the cards laid out before its words, then its
 // rounds of writing and tool calls
 async function guide(turn: Turn, notes: Notes, laid: Laid): Promise<Written> {
   const { messages, deps, emit, screen, items, snap, minor, held, pregnant, gate, ctx } = turn;
-  const { recNote, evNote, communityNote, comboNote, markNote, synNote, sheetsForTurn, interpretNote } = notes;
+  const { recNote, evNote, communityNote, compareNote, comboNote, markNote, synNote, sheetsForTurn, interpretNote, offNote: off } = notes;
   const { named, comparing, upfront, voices, top, listUse } = laid;
   const system = [
     { type: 'text', text: guideSystem(indexText(items)), cache_control: { type: 'ephemeral' } },
-    { type: 'text', text: turnNotes({ safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, combination: comboNote, markers: markNote, synergy: synNote, interpretation: interpretNote, sheets: sheetsForTurn }) },
+    { type: 'text', text: turnNotes({ off, safety: screenNote(screen, ctx.st, ctx.shortlistsOn), recommender: recNote, evidence: evNote, community: communityNote, compare: compareNote, combination: comboNote, markers: markNote, synergy: synNote, interpretation: interpretNote, sheets: sheetsForTurn }) },
   ];
   gate.sources(system.map((b) => b.text).join('\n'));
   const convo: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
   // Held turns: someone under 18 can still get questions to take to their doctor; a crisis or
   // an emergency gets words only
-  const tools = !held ? GUIDE_TOOLS
+  const theirs = GUIDE_TOOLS.filter((t) => !TOOL_AGENT[t.name] || ctx.on(TOOL_AGENT[t.name]));
+  const tools = !held ? theirs
     : minor && screen.red_flag !== 'self_harm' && screen.red_flag !== 'emergency' ? GUIDE_TOOLS.filter((t) => t.name === 'clinician_questions' || t.name === 'warning_signs')
     : [];
   if (!tools.length) system[1].text += '\nNo tools this turn: answer in words only, and don\'t write tool names or card lists.';
-  if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'run', title: 'Writing your answer' });
+  if (!held) emit('step', { id: 'write', agent: writer(turn), status: 'run', title: 'Writing your answer' });
   gate.wordsFirst = true;
   // Someone who injects gets the safety basics once in a chat, right after the short version
   // (adults only: someone under 18 is told to talk to a parent and a doctor)
@@ -208,7 +214,7 @@ async function guide(turn: Turn, notes: Notes, laid: Laid): Promise<Written> {
 async function closingWords(turn: Turn, named: string[], wrote: string) {
   const { emit, screen, held, pregnant, gate, ctx } = turn;
   if (!wrote.trim()) gate.trusted('I couldn’t put an answer together just now. Please ask again, maybe in other words.');
-  if (!held) emit('step', { id: 'write', agent: 'recommender', status: 'done', title: 'Answer written' });
+  if (!held) emit('step', { id: 'write', agent: writer(turn), status: 'done', title: 'Answer written' });
   await gate.drain();
   if (screen.red_flag === 'self_harm' && !gate.released.trim()) {
     gate.trusted('I’m really sorry you’re going through this, and I’m glad you said something. Please call or text 988 now to talk with someone at the Suicide & Crisis Lifeline, or call 911 if you’re in danger right now. You don’t have to face this alone.');
@@ -284,6 +290,7 @@ function tally(turn: Turn, run: Written & { t0: number; signals: number; compari
   deps.log?.({
     ask: {
       ms: Date.now() - t0, rounds: rounds + 1, model, screened: screen.ok, sheets: ctx.opened.size, signals, use: use?.id ?? null, shortlists: ctx.shortlists, stacks: ctx.stacks, efficacy,
+      agents: 1 + CHOOSABLE.filter((a) => ctx.on(a)).length,
       parts: { checked: gate.checked, edited: gate.edited, held: gate.held, unchecked: gate.unchecked, unsourced: gate.unsourced }, tokens: usage, compare: comparing,
     },
   });
