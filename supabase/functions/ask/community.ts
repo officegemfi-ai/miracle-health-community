@@ -274,6 +274,14 @@ export function leadLine(v: Voice): string {
   }
   return '→ Neither the studies nor the community have anything on this yet: say so plainly.';
 }
+// The studies alone, when the member turned the community off for this chat. What the community
+// knows about safety (the side-effect watch, serious reactions) still comes, and so does whatever
+// must lead (FDA's safety-risk list, pregnancy, a reaction): choosing who answers never takes away
+// what keeps someone safe.
+export function studiesAlone(v: Voice, c: Community | null): string {
+  const safety = c ? safetyLines(c) : [];
+  return `${v.name} [${v.id}], the studies. ${studiesLine(v.studies)} Community: not asked in this chat (the member turned it off), so say nothing about what people report or rate${safety.length ? `, except what the Safety agent keeps: ${safety.join(' ')}` : '.'}${v.why ? `\n${leadLine(v)}` : ''}`;
+}
 // One compound's two voices, for the guide's notes and the fact sheets it opens
 export function voiceLine(v: Voice): string {
   const fx = v.community?.sideEffects ?? [];

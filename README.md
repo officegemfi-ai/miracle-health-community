@@ -114,7 +114,10 @@ goes through eleven agents and the community's numbers, and the page shows each 
    talks like a caring clinician, briefly, in an educational, scientific way, and it never asks
    the visitor questions: it answers with what they've told it, and when something they haven't
    said would change the answer (a medicine, a condition, pregnancy), it says so as a statement.
-   Safety notes are one calm, informative line, never alarm.
+   Safety notes are one calm, informative line, never alarm. Its answer is spoken, as someone who
+   has read every report: a one-line headline, a short paragraph for each compound starting with
+   its name (the page puts its Signal beside it), the studies in a paragraph of their own, then
+   the safety line ("Good to know:"); a Miracle Plan only when the visitor asks for one.
    Warning signs are never worded by the model: it picks them from a fixed table
    (`urgency.ts`, drafted from public medical guidance, not yet reviewed by a clinician), and
    the page shows each under its level: call 911 now, same day, or this week. Someone who
@@ -189,6 +192,17 @@ goes through eleven agents and the community's numbers, and the page shows each 
    dosing units, supplement-extract brands and outside links are always taken out as well.
    Sig lists points to discuss with the visitor's own clinician, who decides what's right for
    them (no one at Miracle Health reviews chats); the page copies them in one tap.
+
+**Who answers.** Beside the box to write in, the visitor can choose which agents answer in a chat,
+or keep all twelve: the page sends the choice as `agents` (nothing sent is all of them), and the
+stream's first event, `meta`, says who answers. The Safety agent always answers. An agent that
+isn't chosen doesn't run, isn't offered its tools (`TOOL_AGENT` in `prompts.ts`), and Sig is told
+not to speak for it; with the Recommender left out, Sig writes the answer itself (steps from
+`sig`). Choosing never takes away what keeps someone safe: the fact sheets of what they named
+always open (the safety line comes from them); the community's side-effect watch and serious
+reactions still reach Sig when the community is left out; a comparison still never picks a
+winner; and the Synergy auditor still checks what they named against their own medicines,
+conditions or pregnancy (the Safety agent calls it in, and its steps say `by: safety`).
 
 No doses, no sellers, no diagnosis, ever. Flags that matter for the rest of a chat (under 18,
 pregnancy, an earlier crisis) carry over through Sig's own replies, which the page sends

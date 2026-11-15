@@ -8,7 +8,7 @@ import { evidenceNote, NO_PLAN, planOutcomes, plannerNote, plannerTitle } from '
 import { pairingNote, pairings, pairingTitle, type Related } from './relatives.ts';
 import { mechanismFor, mechanismNote, mechanismTitle } from './mechanism.ts';
 import { type Body, markersNote, markersTitle, readMarkers } from './markers.ts';
-import type { Audit, ChatMessage, Emit, Screen, TurnDeps } from './types.ts';
+import { asked, type Audit, type ChatMessage, type Emit, type Screen, type TurnDeps } from './types.ts';
 import { screenMessage, screenTitle, type Standing, standing } from './screen.ts';
 import { auditSet, auditText, auditTitle } from './audit.ts';
 import { Gate } from './gate.ts';
@@ -55,6 +55,7 @@ export async function begin(messages: ChatMessage[], deps: TurnDeps, emit: Emit)
     injectShown: !!st.injectShown,
     signs: new Set(),
     goal: screen.goals[0], use, heard: new Map(), unread: new Set(), plan: NO_PLAN,
+    on: (agent: string) => asked(deps, agent),
   };
   emit('step', { id: 'safety', agent: 'safety', status: 'done', title: screenTitle(screen, ctx.st), flag: minor && screen.red_flag === 'none' ? 'minor' : screen.red_flag });
   // Help comes first, and it's ours, not a model's
@@ -71,7 +72,7 @@ export async function studies(turn: Turn): Promise<Studied> {
   const { messages, emit, last, screen, items, snap, axes, held, gate, ctx } = turn;
   // 2. The Planner: what they want, in what studies measure, from their own words (their latest
   // message that names something) or else their goal
-  if (!held && items.length) {
+  if (!held && items.length && ctx.on('planner')) {
     ctx.plan = planOutcomes(messages.filter((m) => m.role === 'user').map((m) => m.content).reverse(), screen.goals);
     if (ctx.plan.outcomes.length) emit('step', { id: 'plan', agent: 'planner', status: 'done', title: plannerTitle(ctx.plan) });
   }
@@ -89,40 +90,46 @@ export async function studies(turn: Turn): Promise<Studied> {
   if (!held && items.length) {
     const goal = screen.goals[0];
     if (named.length) {
-      emit('step', { id: 'lookup', agent: 'recommender', status: 'run', title: 'Opening the fact sheets', chips: named.map((id) => chip(id, ctx)) });
+      // The fact sheets of what they named open whoever was asked (the Safety agent's line on the
+      // risks comes from them); the Recommender's lookup when it was asked, Sig's own otherwise
+      const by = ctx.on('recommender') ? 'recommender' : 'sig';
+      emit('step', { id: 'lookup', agent: by, status: 'run', title: 'Opening the fact sheets', chips: named.map((id) => chip(id, ctx)) });
       await openSheets(named.slice(0, 4), ctx);
       named.slice(0, 4).forEach((id) => { ctx.opened.add(id); sheetsForTurn.push(sheetText(id, ctx)); });
       const ready = named.slice(0, 4).filter((id) => ctx.sheets.get(id)).length;
-      emit('step', { id: 'lookup', agent: 'recommender', status: 'done', title: ready ? `Opened ${ready} fact sheet${ready === 1 ? '' : 's'}` : 'No fact sheet yet for these', chips: named.map((id) => chip(id, ctx)) });
+      emit('step', { id: 'lookup', agent: by, status: 'done', title: ready ? `Opened ${ready} fact sheet${ready === 1 ? '' : 's'}` : 'No fact sheet yet for these', chips: named.map((id) => chip(id, ctx)) });
       recNote = `the member named ${named.map((id) => `${ctx.byId.get(id)!.name} [${id}]`).join(', ')}; their fact sheets (or a note that there isn't one yet) are below.`;
       // What each sheet shows on what they asked about (or, when the Planner had nothing to go on,
       // for their goal): a reply that says nothing is known gets it put back
       if (ctx.plan.outcomes.length) {
-        const own = evidenceStep(named.slice(0, 4), ctx);
-        evNote += `\n${evidenceNote(own, ctx.plan)}`;
+        // (each of these three only when the member asked it; the screen's evidence ladder is the
+        // Evidence librarian's, so it's drawn only when the librarian was asked)
+        const own = ctx.on('evidence') ? evidenceStep(named.slice(0, 4), ctx) : [];
+        if (ctx.on('evidence')) evNote += `\n${evidenceNote(own, ctx.plan)}`;
         // 2b. The Relatives agent: what works through the same hormone or receptor, a rung below
         // (a turn never fails on it: without it, the ladder goes on from how each one works)
-        const { note: relNote, rel } = await relativesStep(named.slice(0, 4), own, axes, ctx).catch((e) => {
+        const { note: relNote, rel } = !ctx.on('relatives') ? { note: '', rel: [] as Related[] } : await relativesStep(named.slice(0, 4), own, axes, ctx).catch((e) => {
           console.error('relatives', e);
           emit('step', { id: 'relatives', agent: 'relatives', status: 'done', title: 'Couldn’t look at relatives just now' });
           return { note: '', rel: [] as Related[] };
         });
         if (relNote) evNote += `\n${relNote}`;
         // 2c. The Mechanism agent: how each could bear on it, from its own sheet or pathway
-        const mech = named.slice(0, 4).filter((id) => ctx.byId.has(id)).map((id) => mechanismFor(id, ctx.byId.get(id)!.name, ctx.sheets.get(id), ctx.plan, axes));
+        const mech = !ctx.on('mechanism') ? [] : named.slice(0, 4).filter((id) => ctx.byId.has(id)).map((id) => mechanismFor(id, ctx.byId.get(id)!.name, ctx.sheets.get(id), ctx.plan, axes));
         if (mech.some((m) => m.how)) {
           emit('step', { id: 'mechanism', agent: 'mechanism', status: 'done', title: mechanismTitle(ctx.plan), chips: mech.filter((m) => m.how).map((m) => chip(m.id, ctx)) });
           evNote += `\n${mechanismNote(mech, ctx.plan)}`;
         }
-        ladder = { own, rel, mech, pairs: [] };
+        if (ctx.on('evidence')) ladder = { own, rel, mech, pairs: [] };
       } else {
         gate.findings(named.slice(0, 4).flatMap((id) => (benefitsOf(ctx.sheets.get(id), goal, 2) ?? [])
           .map((b) => `${ctx.byId.get(id)?.name ?? id}: ${b.claim} (evidence: ${b.evidence || 'not graded'})`)));
       }
-    } else if (ctx.plan.outcomes.length) {
+    } else if (ctx.plan.outcomes.length && ctx.on('evidence')) {
       evNote += ' When you open fact sheets, the Evidence librarian marks their findings on exactly that.';
     }
-    if (goal) {
+    // The Library's options for their goal: the Recommender's, only when it was asked
+    if (goal && ctx.on('recommender')) {
       const opts = rank(items, snap.signals, goal, { limit: 8 });
       if (opts.length) {
         emit('step', { id: 'rank', agent: 'recommender', status: 'done', title: `Looked up options for ${GOAL_LABEL[goal]} in the Library` });
@@ -139,7 +146,7 @@ export function combinationStage(turn: Turn, named: string[], comparing: boolean
   const { emit, axes, ctx } = turn;
   // 2d. The Combination agent: how what they named together relates, by the Library's pathways
   let comboNote = '';
-  if (!comparing && named.length >= 2 && axes.length) {
+  if (!comparing && named.length >= 2 && axes.length && ctx.on('combination')) {
     const p = pairings(named.slice(0, 4), axes);
     const name = (id: string) => ctx.byId.get(id)?.name ?? id;
     if (p.length) {
@@ -155,7 +162,7 @@ export function markerStage(turn: Turn, named: string[]): string {
   const { emit, held, body, ctx } = turn;
   // 2e. The Markers agent: the blood markers what they named may move, and any pushed both ways
   let markNote = '';
-  if (!held && named.length && body) {
+  if (!held && named.length && body && ctx.on('markers')) {
     const r = readMarkers(named.slice(0, 4), body);
     if (r.drawn.length) {
       emit('step', { id: 'markers', agent: 'markers', status: 'done', title: markersTitle(r), chips: r.drawn.map((id) => chip(id, ctx)) });
@@ -165,7 +172,7 @@ export function markerStage(turn: Turn, named: string[]): string {
   return markNote;
 }
 
-export type Heard = { communityNote: string; top: TopRow[]; voices: Voice[]; listUse: Use | null };
+export type Heard = { communityNote: string; top: TopRow[]; voices: Voice[]; listUse: Use | null; compareNote?: string };
 export function communityStage(turn: Turn, named: string[], comparing: boolean): Heard {
   const { emit, screen, items, snap, held, pregnant, use, ctx } = turn;
   // 2f. The community: what members and the public forums report on what they named and on what
@@ -176,6 +183,13 @@ export function communityStage(turn: Turn, named: string[], comparing: boolean):
   // The community's list answers what they asked about, even when it's not the goal the studies
   // answer for (no studies voice is involved in it)
   const listUse = use ?? (screen.asks_community && !held ? useById(screen.uses[0]) : null);
+  // Not asked: nothing from the community this turn (what it knows about safety still reaches the
+  // guide, with each fact sheet)
+  if (!ctx.on('community')) {
+    // A comparison still never picks a winner
+    const compareNote = comparing && ctx.shortlistsOn ? `They're comparing ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}. After your opening words they see a card with them side by side${use ? ` for ${use.label.toLowerCase()}` : ''}: what the studies show, US status and the one caution for each. Don't pick a winner: say how they differ for their goal (evidence in people, status, risks), proven options first, and what to ask a clinician. Don't read the card's numbers out.` : '';
+    return { communityNote: '', top, voices, listUse: null, ...(compareNote ? { compareNote } : {}) };
+  }
   if (!held && items.length && (named.length || listUse)) {
     voices.push(...named.slice(0, 4).map((id) => voiceFor(id, ctx)).filter((v): v is Voice => !!v));
     // What the community reports most for a use: only when they ask, never in pregnancy or when
@@ -211,19 +225,23 @@ export async function synergyStage(turn: Turn, named: string[], comparing: boole
   // Their medicines, conditions or pregnancy matter for what they compare too: each compound is
   // checked against them (findings about taking the compared ones together are left out)
   const memberRisk = !!(screen.medications.length || screen.conditions.length || pregnant);
+  // Not asked, the auditor still comes when what they named meets their own medicines, conditions
+  // or pregnancy: the Safety agent calls it in (choosing who answers never takes that away)
+  const calledIn = !ctx.on('synergy') && memberRisk;
+  if (!ctx.on('synergy') && !memberRisk) return { synNote, upfront };
   if ((!comparing || memberRisk) && (named.length >= 2 || (named.length >= 1 && memberRisk))) {
-    emit('step', { id: 'synergy', agent: 'synergy', status: 'run', title: comparing ? `Checking each${screen.medications.length ? ' with your medicines' : ' for you'}` : `Checking ${named.length > 1 ? `${named.length} together` : ctx.byId.get(named[0])?.name ?? 'it'}${screen.medications.length ? ' with your medicines' : ''}` });
+    emit('step', { id: 'synergy', agent: 'synergy', status: 'run', ...(calledIn ? { by: 'safety' } : {}), title: comparing ? `Checking each${screen.medications.length ? ' with your medicines' : ' for you'}` : `Checking ${named.length > 1 ? `${named.length} together` : ctx.byId.get(named[0])?.name ?? 'it'}${screen.medications.length ? ' with your medicines' : ''}` });
     await openSheets(named, ctx);
     const all = await auditSet(named, screen.medications, screen.conditions, pregnant, ctx, deps);
     const a = comparing ? { ...all, findings: all.findings.filter((f) => f.ids.filter((i) => named.includes(i)).length <= 1) } : all;
-    emit('step', { id: 'synergy', agent: 'synergy', status: 'done', title: auditTitle(a, comparing ? 1 : named.length) });
+    emit('step', { id: 'synergy', agent: 'synergy', status: 'done', ...(calledIn ? { by: 'safety' } : {}), title: auditTitle(a, comparing ? 1 : named.length) });
     upfront = a;
     named.forEach((id) => ctx.audited.add(id));
     synNote = auditText(a, ctx.byId);
     if (comparing) {
       synNote += '\nThey\'re comparing these, not taking them together: what the auditor found about their own medicines, conditions or pregnancy goes in your safety line, naming the compound it applies to.';
     } else if (ctx.shortlistsOn) {
-      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with what the studies show (evidence, US status, safety notes) beside what the community reports, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, what the community reports, how they fit together. Don't repeat the card's status and safety notes, and don't present these same compounds again with present_shortlist. Their plan (present_plan) puts them in its peptides and medicines layer (supplements in its supplements layer).${!screen.medications.length && !screen.conditions.length ? ' They haven\'t mentioned medicines or conditions: end the safety line with the check with their clinician before adding anything, and don\'t describe what the auditor did or didn\'t check.' : ''}`;
+      synNote += `\nStack builder: after your opening words the member sees a "Your stack" card with ${named.map((id) => ctx.byId.get(id)!.name).join(', ')}, each with what the studies show (evidence, US status, safety notes)${ctx.on('community') ? ' beside what the community reports' : ''}, and the auditor's findings beneath. Give your read of their stack in words, benefits first: what each is there for, how it works toward their goal, ${ctx.on('community') ? 'what the community reports, ' : ''}how they fit together. Don't repeat the card's status and safety notes, and don't present these same compounds again with present_shortlist.${ctx.on('builder') ? ' Their plan (present_plan), when they ask for one, puts them in its peptides and medicines layer (supplements in its supplements layer).' : ''}${!screen.medications.length && !screen.conditions.length ? ' They haven\'t mentioned medicines or conditions: end the safety line with the check with their clinician before adding anything, and don\'t describe what the auditor did or didn\'t check.' : ''}`;
     }
   }
   return { synNote, upfront };
