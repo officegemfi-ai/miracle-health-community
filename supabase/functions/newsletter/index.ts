@@ -106,6 +106,12 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     if (!Number.isInteger(n) || n < 1 || n > 10000) return json({ error: 'Which issue?' }, 400);
     const issue = await deps.fetchIssue(n);
     if (!issue) return json({ error: `Issue ${n} isn't on the site yet` }, 404);
+    // US law (CAN-SPAM) wants a postal address in every marketing email: an issue goes out only with
+    // the one the website prints at its foot (library/data/about.json, mailing_address)
+    const postal = postalOf(issue.html);
+    if (!postal) {
+      return json({ error: `Issue ${n} has no postal address at its foot. Add mailing_address to the website's library/data/about.json, publish the issue again, then send it.` }, 409);
+    }
     let sent = 0;
     for (let round = 0; round < 50; round++) {
       const { data, error } = await deps.db.rpc('newsletter_due', { issue: n, max_rows: 100 });
@@ -117,7 +123,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
         return {
           to: r.email, subject: issue.subject,
           html: issue.html.replaceAll('{{unsubscribe}}', u),
-          text: `${issue.subject}\n\nRead it on the web: ${deps.site}/weekly/${n}/\n\nUnsubscribe: ${u}`,
+          text: `${issue.subject}\n\nRead it on the web: ${deps.site}/weekly/${n}/\n\nUnsubscribe: ${u}\n\n${postal}`,
           headers: { 'List-Unsubscribe': `<${u}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
         };
       });
@@ -157,6 +163,13 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return answer(ok ? 'check' : 'later');
   }
   return answer('later');
+}
+
+// The postal line at an issue's foot (the website marks it data-mh-postal), as plain text
+export function postalOf(html: string): string {
+  const m = /<p[^>]*\bdata-mh-postal\b[^>]*>([\s\S]*?)<\/p>/i.exec(html);
+  if (!m) return '';
+  return m[1].replace(/<[^>]+>/g, '').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 }
 
 // Resend's batch API: up to 100 emails a call

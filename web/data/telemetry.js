@@ -1,4 +1,5 @@
-// Analytics and error tracking: optional, and never given health content.
+// Analytics and error tracking: optional (on only when POSTHOG_KEY or SENTRY_DSN is set), never
+// given health content, never recording sessions, and leaving no cookies on the device.
 import { loadScript } from './scripts.js';
 
 export function track(event, props) {
@@ -13,8 +14,9 @@ export async function startTelemetry(C) {
         api_host: C.posthogHost || 'https://us.i.posthog.com',
         autocapture: false,            // would capture post titles
         capture_pageview: false,       // we send screen names only
-        disable_session_recording: true,
+        disable_session_recording: true, // no session replay: nothing anyone types or does is recorded
         person_profiles: 'identified_only',
+        persistence: 'memory',           // no cookies or storage on the device, as the privacy notice says
       });
     } catch (_) { /* analytics is optional */ }
   }

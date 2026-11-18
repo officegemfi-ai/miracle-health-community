@@ -1,14 +1,16 @@
-// Signed out: signing in with a phone number and a texted code, picking a handle to join (open to
-// adults; an invite link still brings its invite along), and "Share how it went" written before
-// signing in. route is the router, handed in by it, so these pages can send someone on once in.
+// Signed out: the month and year you were born (asked first, before anything else), signing in with
+// a phone number and a texted code, picking a handle to join (open to adults; an invite link still
+// brings its invite along), and "Share how it went" written before signing in. route is the router,
+// handed in by it, so these pages can send someone on once in.
 import { h, msgBox, say } from '../dom.js';
 import { sig } from '../art.js';
 import { friendly } from '../../core/errors.js';
 import { e164 } from '../../core/phone.js';
+import { isAdult } from '../../core/age.js';
 import * as Auth from '../../data/auth.js';
 import * as Library from '../../data/library.js';
 import { C } from '../../data/config.js';
-import { saveGuestDraft, readGuestDraft, readInvite, clearInvite } from '../../data/storage.js';
+import { saveGuestDraft, readGuestDraft, readInvite, clearInvite, ageState, keepAge } from '../../data/storage.js';
 import { loadScript } from '../../data/scripts.js';
 import { track } from '../../data/telemetry.js';
 import { S, setSession } from '../../app/store.js';
@@ -29,6 +31,49 @@ async function mountTurnstile(box) {
     callback: (t) => { turnstileToken = t; },
     'expired-callback': () => { turnstileToken = null; },
   });
+}
+
+// The age question (November 18). Before anything is asked, even a phone number, the month and year
+// you were born, asked plainly: nothing on that screen says what age is needed, and neither picker
+// starts on an answer. Someone under 18 is told they can't join and nothing else is asked; this
+// device remembers that for a day, so the answer can't just be changed and sent again. Only whether
+// you're old enough is kept, on this device; the month and year are never sent or stored. The
+// server still refuses anyone who hasn't confirmed they're an adult (complete_signup).
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function renderAge(next) {
+  const msg = msgBox();
+  const thisYear = new Date().getFullYear();
+  const month = h('select', { class: 'input', id: 'birth-month', required: true },
+    h('option', { value: '' }, 'Month'), ...MONTHS.map((m, i) => h('option', { value: String(i + 1) }, m)));
+  const year = h('select', { class: 'input', id: 'birth-year', required: true },
+    h('option', { value: '' }, 'Year'), ...Array.from({ length: 101 }, (_, i) => h('option', { value: String(thisYear - i) }, String(thisYear - i))));
+  authLayout(
+    h('div', { class: 'kick' }, 'Before you start'),
+    h('h2', {}, 'When were you born?'),
+    h('p', { class: 'muted' }, 'We ask everyone. It stays on this device: we never send or keep the date.'),
+    h('form', {
+      onsubmit: (e) => {
+        e.preventDefault();
+        const m = Number(month.value), y = Number(year.value);
+        if (!m || !y) return say(msg, 'Choose the month and the year.');
+        if (!isAdult(m, y)) { keepAge(false); track('age_refused'); return renderTooYoung(); }
+        keepAge(true);
+        next();
+      },
+    },
+    h('div', { class: 'f-row' },
+      h('label', { class: 'f', for: 'birth-month' }, h('span', {}, 'Month'), month),
+      h('label', { class: 'f', for: 'birth-year' }, h('span', {}, 'Year'), year)),
+    h('button', { class: 'btn lime block', type: 'submit' }, 'Continue'), msg));
+  // the art beside it says nothing about age either
+  const lede = document.querySelector('.auth-art .lede');
+  if (lede) lede.textContent = 'Your report moves the number for the next person, even if it did nothing. Free to join.';
+}
+function renderTooYoung() {
+  authLayout(
+    h('h2', {}, 'Sorry, you can’t join Miracle Health.'),
+    h('p', { class: 'muted' }, 'The community is only for adults. You can still read the Library on our website.'),
+    h('p', { class: 'mt16' }, h('a', { class: 'btn block', href: 'https://miraclehealth.us/library/' }, 'Go to the Library')));
 }
 
 // Signed out: the same words and three steps as the "Took something?" band on miraclehealth.us,
@@ -84,12 +129,16 @@ export function renderGuestDraft(cid = '', d = '', route = () => {}) {
 }
 
 export function renderSignIn(route) {
+  // the age question comes before the phone number; under 18, nothing more is asked
+  const age = ageState();
+  if (age === 'no') return renderTooYoung();
+  if (age !== 'ok') return renderAge(() => renderSignIn(route));
   const msg = msgBox();
   const phone = h('input', { class: 'input', type: 'tel', autocomplete: 'tel', inputmode: 'tel', id: 'phone', required: true, placeholder: '(555) 123-4567' });
   const ts = h('div', { class: 'turnstile' });
   const send = h('button', { class: 'btn lime block', type: 'submit' }, 'Text me a code');
   authLayout(
-    h('div', { class: 'kick' }, 'Free to join, 18 and over'),
+    h('div', { class: 'kick' }, 'Free to join'),
     h('h2', {}, 'Sign in.'),
     h('p', { class: 'muted' }, 'We text you a code. Your number is never shown to anyone.'),
     h('form', {
@@ -134,12 +183,15 @@ function renderCode(phone, route) {
 }
 
 export function renderSignup(route) {
+  // (signed in on a device that hasn't been asked, say after clearing it: ask now, before anything is kept)
+  const age = ageState();
+  if (age === 'no') { signOut(); return renderTooYoung(); }
+  if (age !== 'ok') return renderAge(() => renderSignup(route));
   const msg = msgBox();
   const saved = readInvite();
   // No invite needed; one that came in with an invite link is shown, and can be cleared
   const invite = saved ? h('input', { class: 'input', id: 'invite', autocomplete: 'off', value: saved }) : null;
   const handle = h('input', { class: 'input', id: 'handle', required: true, autocomplete: 'nickname', maxlength: 20, placeholder: 'letters, numbers, _' });
-  const adult = h('input', { type: 'checkbox', id: 'adult' });
   const rules = h('input', { type: 'checkbox', id: 'rules-ok' });
   const health = h('input', { type: 'checkbox', id: 'health-ok' });
   const go = h('button', { class: 'btn lime block', type: 'submit' }, 'Join the community');
@@ -150,12 +202,11 @@ export function renderSignup(route) {
     h('form', {
       onsubmit: async (e) => {
         e.preventDefault();
-        if (!adult.checked) return say(msg, 'Miracle Health is for adults 18 and over.');
         if (!rules.checked) return say(msg, 'Read and accept the community rules to join.');
         if (!health.checked) return say(msg, 'To join, agree to how what you post about your health is collected and shown.');
         go.disabled = true; say(msg, '');
         const { error } = await Auth.completeSignup({
-          handle: handle.value.trim(), invite_code: invite ? invite.value.trim() : '', confirm_adult: true,
+          handle: handle.value.trim(), invite_code: invite ? invite.value.trim() : '', confirm_adult: ageState() === 'ok',
           rules_version: S.rules?.version || '', health_data_consent: true,
         });
         go.disabled = false;
@@ -169,7 +220,6 @@ export function renderSignup(route) {
     },
     invite ? h('label', { class: 'f', for: 'invite' }, h('span', {}, 'Invite code (optional)'), invite) : null,
     h('label', { class: 'f', for: 'handle' }, h('span', {}, 'Handle'), handle),
-    h('label', { class: 'check', for: 'adult' }, adult, h('span', {}, 'I’m 18 or older.')),
     h('label', { class: 'check', for: 'rules-ok' }, rules, h('span', {}, 'I’ve read the ', h('a', { href: '#/rules', target: '_blank', rel: 'noopener' }, 'community rules'), ' and will follow them.')),
     h('label', { class: 'check', for: 'health-ok' }, health, h('span', {},
       'I agree that what I post about my health is stored and shown to other members',

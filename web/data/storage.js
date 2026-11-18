@@ -56,3 +56,21 @@ export function keepGateKey(slot, value) {
 export function forgetGateKey(slot) {
   try { localStorage.removeItem(slot); } catch (_) { /* private mode */ }
 }
+
+// The age question at sign-in (ui/pages/auth.js): only whether this device's person said they were
+// old enough is kept, never the date. "ok" stays; a "no" lasts a day, so the answer can't just be
+// changed and sent again.
+const AGE = 'mh-age';
+const DAY = 24 * 60 * 60 * 1000;
+export function ageState() {
+  try {
+    const v = localStorage.getItem(AGE) || '';
+    if (v === 'ok') return 'ok';
+    const m = /^no:(\d+)$/.exec(v);
+    if (m && Date.now() - Number(m[1]) < DAY) return 'no';
+  } catch (_) { /* private mode: asked again next time */ }
+  return '';
+}
+export function keepAge(adult) {
+  try { localStorage.setItem(AGE, adult ? 'ok' : `no:${Date.now()}`); } catch (_) { /* private mode */ }
+}
