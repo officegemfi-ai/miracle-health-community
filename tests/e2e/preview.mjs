@@ -41,9 +41,19 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(BASE);
 await page.waitForSelector('#site-password');
 check('The preview asks for the password first', (await page.textContent('.demo-banner')).includes('made-up members'));
+// The age question comes first on a device that hasn't answered it (web/ui/pages/auth.js)
+async function passAge(page) {
+  await page.waitForSelector('#birth-year, #phone', { timeout: 90000 });
+  if (await page.isVisible('#birth-year')) {
+    await page.selectOption('#birth-month', '1');
+    await page.selectOption('#birth-year', '1990');
+    await page.click('form button[type=submit]');
+    await page.waitForSelector('#phone');
+  }
+}
 await page.fill('#site-password', PASSWORD);
 await page.click('form button[type=submit]');
-await page.waitForSelector('#phone', { timeout: 90000 });
+await passAge(page);
 check('The password opens the sign-in page, with the database running in the browser', true);
 
 await page.fill('#phone', '5555551234');
@@ -53,7 +63,6 @@ await page.fill('#code', '123456');
 await page.click('form button[type=submit]');
 await page.waitForSelector('#handle');
 await page.fill('#handle', 'first_look');
-await page.check('#adult');
 await page.check('#rules-ok');
 await page.check('#health-ok');
 await page.click('form button[type=submit]');

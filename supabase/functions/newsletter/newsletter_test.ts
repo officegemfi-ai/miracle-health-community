@@ -1,5 +1,5 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
-import { handle, type Deps, type Mail } from './index.ts';
+import { handle, postalOf, type Deps, type Mail } from './index.ts';
 
 const SITE = 'https://miraclehealth.us';
 const KEY = 'k'.repeat(40);
@@ -61,13 +61,14 @@ Deno.test('sending an issue needs the admin key and goes to each confirmed addre
   let round = 0;
   const db = fakeDb({ newsletter_due: () => (round++ === 0 ? [{ id: 1, email: 'a@example.com', unsub_token: 'u1' }] : []), newsletter_sent: null });
   const sent: Mail[] = [];
-  const d = deps(db, { send: (m) => { sent.push(...m); return Promise.resolve(true); }, fetchIssue: () => Promise.resolve({ subject: 'The Signal #1', html: '<p>Hi</p><a href="{{unsubscribe}}">x</a>' }) });
+  const d = deps(db, { send: (m) => { sent.push(...m); return Promise.resolve(true); }, fetchIssue: () => Promise.resolve({ subject: 'The Signal #1', html: '<p>Hi</p><a href="{{unsubscribe}}">x</a><p data-mh-postal style="x">Miracle Health · 1 Main St &amp; Co, Town, CA 90000</p>' }) });
   const no = await handle(new Request('https://x/f', { method: 'POST', body: JSON.stringify({ send: 1 }) }), d);
   assertEquals(no.status, 401);
   const r = await handle(new Request('https://x/f', { method: 'POST', headers: { 'x-admin-key': KEY }, body: JSON.stringify({ send: 1 }) }), d);
   assertEquals((await r.json()).sent, 1);
   assert(sent[0].html.includes('?u=u1'));
   assertEquals(sent[0].headers?.['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+  assert(sent[0].text.endsWith('Miracle Health · 1 Main St & Co, Town, CA 90000'));
 });
 
 Deno.test('without JavaScript, the form posts and goes back to the site to say what happened', async () => {
@@ -103,4 +104,15 @@ Deno.test('a form post can never send an issue, even with a field named send', a
   }), deps(db, { send: () => Promise.resolve(true), fetchIssue: () => Promise.resolve({ subject: 's', html: 'h' }) }));
   assertEquals(r.headers.get('Location'), `${SITE}/weekly/#signup-confirmed`);
   assert(!db.calls.some(([fn]) => fn === 'newsletter_due'));
+});
+
+Deno.test('an issue without a postal address at its foot is not sent, and the text part carries it when it is', async () => {
+  const db = fakeDb({ newsletter_due: [{ id: 1, email: 'a@example.com', unsub_token: 'u1' }] });
+  const sent: Mail[] = [];
+  const bare = deps(db, { send: (m) => { sent.push(...m); return Promise.resolve(true); }, fetchIssue: () => Promise.resolve({ subject: 'The Signal #2', html: '<p>Hi</p><a href="{{unsubscribe}}">x</a>' }) });
+  const no = await handle(new Request('https://x/f', { method: 'POST', headers: { 'x-admin-key': KEY }, body: JSON.stringify({ send: 2 }) }), bare);
+  assertEquals(no.status, 409);
+  assertEquals(sent.length, 0);
+  assert(!db.calls.some(([fn]) => fn === 'newsletter_due'));
+  assertEquals(postalOf('<p data-mh-postal style="a">Miracle Health · 1 Main St &amp; Co</p>'), 'Miracle Health · 1 Main St & Co');
 });

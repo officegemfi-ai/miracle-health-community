@@ -47,15 +47,26 @@ const errors = [];
 const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
 page.on('pageerror', (e) => errors.push(String(e)));
 const shot = (name) => page.screenshot({ path: `${OUT}smoke_${name}.png` }).catch(() => {});
+// The age question comes first on a device that hasn't answered it (web/ui/pages/auth.js)
+async function passAge(page) {
+  await page.waitForSelector('#birth-year, #phone', { timeout: 90000 });
+  if (await page.isVisible('#birth-year')) {
+    await page.selectOption('#birth-month', '1');
+    await page.selectOption('#birth-year', '1990');
+    await page.click('form button[type=submit]');
+    await page.waitForSelector('#phone');
+  }
+}
 let code = 1;
 try {
   await page.goto(BASE);
-  await page.waitForSelector('#site-password, #phone', { timeout: 60000 });
+  await page.waitForSelector('#site-password, #birth-year, #phone', { timeout: 60000 });
   if (await page.isVisible('#site-password')) {
     await page.fill('#site-password', PASSWORD);
     await page.click('form button[type=submit]');
-    await page.waitForSelector('#phone', { timeout: 60000 });
+    await page.waitForSelector('#birth-year, #phone', { timeout: 60000 });
   }
+  await passAge(page);
   check('The test app opens on its sign-in page', true);
 
   // A test number: Supabase skips the text and takes the fixed code
@@ -70,7 +81,6 @@ try {
 
   if (await page.isVisible('#handle')) {
     await page.fill('#handle', `smoke_${String(Date.now()).slice(-6)}`);
-    await page.check('#adult');
     await page.check('#rules-ok');
     await page.check('#health-ok');
     await page.click('form button[type=submit]');

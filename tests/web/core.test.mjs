@@ -199,3 +199,17 @@ test('what a moderator\'s action says', () => {
   assert.equal(MOD_TEXT.hold({ what: 'comment', by: 'auto' }), 'Your comment is waiting for a moderator (an automatic check)');
   assert.equal(MOD_TEXT.unban(), 'Your account is active again');
 });
+
+// The age question at sign-in: 18 or older today, counted from the last day of the birth month
+import { isAdult } from '../../web/core/age.js';
+test('the age question lets in adults and nobody younger', () => {
+  const now = new Date(2026, 10, 18);             // 18 November 2026
+  assert.equal(isAdult(1, 1990, now), true);
+  assert.equal(isAdult(10, 2008, now), true);     // 18 since the end of October
+  assert.equal(isAdult(11, 2008, now), false);    // turns 18 by the end of this month: not yet
+  assert.equal(isAdult(12, 2008, now), false);
+  assert.equal(isAdult(6, 2014, now), false);     // a child
+  assert.equal(isAdult(0, 1990, now), false);     // no month
+  assert.equal(isAdult(5, 2030, now), false);     // the future
+  assert.equal(isAdult(Number(''), 1990, now), false);
+});

@@ -69,8 +69,19 @@ async function person(viewport = { width: 1280, height: 900 }) {
   page.on('dialog', (d) => d.accept());
   return page;
 }
+// The age question comes first on a device that hasn't answered it (web/ui/pages/auth.js)
+async function passAge(page) {
+  await page.waitForSelector('#birth-year, #phone', { timeout: 90000 });
+  if (await page.isVisible('#birth-year')) {
+    await page.selectOption('#birth-month', '1');
+    await page.selectOption('#birth-year', '1990');
+    await page.click('form button[type=submit]');
+    await page.waitForSelector('#phone');
+  }
+}
 async function signIn(page, phone) {
   await page.goto(BASE);
+  await passAge(page);
   await page.fill('#phone', phone);
   await page.click('form button[type=submit]');
   await page.waitForSelector('#code');
@@ -88,7 +99,6 @@ async function signUp(page, invite, handle) {
     throw new Error('The sign-up form asks for an invite without an invite link');
   }
   await page.fill('#handle', handle);
-  await page.check('#adult');
   await page.check('#rules-ok');
   await page.check('#health-ok');
   await page.click('form button[type=submit]');
@@ -122,6 +132,26 @@ async function waitPoints(page, want, ms = 15000) {
 }
 const tickerValue = (page, cid) => page.evaluate((c) => document.querySelector(`#tick-track [data-sig-of="${c}"]`)?.textContent ?? null, cid);
 const shot = (page, name) => page.screenshot({ path: `${OUT}${name}.png` });
+
+// ---------------------------------------------------------------------------
+// 0: the age question comes before anything else, and a child is asked nothing more
+// ---------------------------------------------------------------------------
+{
+  const K = await person();
+  await K.goto(BASE);
+  await K.waitForSelector('#birth-year');
+  check('The age question comes before the phone number', !(await K.isVisible('#phone')));
+  check('and it doesn’t say what age is needed', !/\b18\b|adult/i.test(await K.textContent('.auth-wrap')));
+  await K.selectOption('#birth-month', '6');
+  await K.selectOption('#birth-year', String(new Date().getFullYear() - 12));
+  await K.click('form button[type=submit]');
+  await K.waitForSelector('h2:text("Sorry, you can’t join Miracle Health.")');
+  check('Someone under 18 is told they can’t join, and no phone number is asked', !(await K.isVisible('#phone')));
+  await K.reload();
+  await K.waitForSelector('h2:text("Sorry, you can’t join Miracle Health.")');
+  check('and the device remembers it, so the answer can’t just be changed', !(await K.isVisible('#birth-year')));
+  await K.context().close();
+}
 
 // ---------------------------------------------------------------------------
 // A: a new member joins through an invite link, gets their bearings with Sig, plays

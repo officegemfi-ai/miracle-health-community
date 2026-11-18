@@ -37,17 +37,28 @@ await page.click('form button[type=submit]');
 await page.waitForSelector('.err');
 check('A wrong password is refused', (await page.textContent('.err')).includes('isn’t right') && !(await page.isVisible('#phone')));
 
+// The age question comes first on a device that hasn't answered it (web/ui/pages/auth.js)
+async function passAge(page) {
+  await page.waitForSelector('#birth-year, #phone', { timeout: 90000 });
+  if (await page.isVisible('#birth-year')) {
+    await page.selectOption('#birth-month', '1');
+    await page.selectOption('#birth-year', '1990');
+    await page.click('form button[type=submit]');
+    await page.waitForSelector('#phone');
+  }
+}
 await page.fill('#site-password', PASSWORD);
 await page.click('form button[type=submit]');
-await page.waitForSelector('#phone, h1:text("Community rules")');
+await page.waitForSelector('#birth-year, #phone, h1:text("Community rules")');
 check('The right password opens the site', !(await page.isVisible('#site-password')));
 
 await page.goto(BASE);
 await page.reload();
-await page.waitForSelector('#phone');
+await page.waitForSelector('#birth-year, #phone');
 check('The browser stays unlocked after a reload', !(await page.isVisible('#site-password')));
 
 // The unlocked key really reaches the community: a new phone gets through to sign-up
+await passAge(page);
 await page.fill('#phone', '5555550104');
 await page.click('form button[type=submit]');
 await page.waitForSelector('#code');
