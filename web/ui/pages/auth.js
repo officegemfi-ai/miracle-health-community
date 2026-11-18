@@ -2,8 +2,8 @@
 // a phone number and a texted code, picking a handle to join (open to adults; an invite link still
 // brings its invite along), and "Share how it went" written before signing in. route is the router,
 // handed in by it, so these pages can send someone on once in.
-import { h, msgBox, say } from '../dom.js';
-import { ring } from '../art.js';
+import { h, html, msgBox, say } from '../dom.js';
+import { FREE, FREE_ADULTS, LEDE, welcomeMarkup } from './welcome.js';
 import { friendly } from '../../core/errors.js';
 import { e164 } from '../../core/phone.js';
 import { isAdult } from '../../core/age.js';
@@ -67,7 +67,7 @@ function renderAge(next) {
     h('button', { class: 'btn lime block', type: 'submit' }, 'Continue'), msg));
   // the art beside it says nothing about age either
   const lede = document.querySelector('.auth-art .lede');
-  if (lede) lede.textContent = 'Your report moves the number for the next person, even if it did nothing. Free to join.';
+  if (lede) lede.textContent = `${LEDE} ${FREE}`;
 }
 function renderTooYoung() {
   authLayout(
@@ -76,21 +76,12 @@ function renderTooYoung() {
     h('p', { class: 'mt16' }, h('a', { class: 'btn block', href: 'https://miraclehealth.us/library/' }, 'Go to the Library')));
 }
 
-// Signed out: the same words and three steps as the "Took something?" band on miraclehealth.us,
-// so joining from there lands where it left off. No photograph: Sig's ring (the mark in the browser
-// tab), and rings around it.
+// Signed out: the welcome (pages/welcome.js, the same words and three steps as the "Took something?"
+// band on miraclehealth.us) beside the form. The build draws the same welcome into the page, so it's
+// on screen before this code arrives, and this replaces it with no visible change.
 function authLayout(...formKids) {
   document.body.classList.add('auth');
-  render(h('section', { class: 'auth-wrap' },
-    h('div', { class: 'auth-art' },
-      h('div', { class: 'sig-hero' }, ring(132)),
-      h('div', { class: 'kick' }, 'The Miracle Health community'),
-      h('h1', {}, 'Took something? ', h('em', {}, 'Say how it went.')),
-      h('p', { class: 'lede' }, 'Your report moves the number for the next person, even if it did nothing. Free, for adults 18 and over.'),
-      h('ol', { class: 'auth-steps' },
-        h('li', {}, h('span', { class: 'n' }, '01'), h('b', {}, 'Share how it went'), h('span', {}, 'What you took it for, for how long, and whether things got better, stayed the same or got worse.')),
-        h('li', {}, h('span', { class: 'n' }, '02'), h('b', {}, 'Check the read'), h('span', {}, 'Sig shows you what it understood. Fix anything it got wrong: your word wins.')),
-        h('li', {}, h('span', { class: 'n' }, '03'), h('b', {}, 'See it count'), h('span', {}, 'The rating for that use updates, and you’re asked how it’s going at 2, 6 and 12 weeks.')))),
+  render(h('section', { class: 'auth-wrap' }, html(welcomeMarkup(FREE_ADULTS)),
     h('div', { class: 'auth-form' }, h('div', { class: 'inner' }, ...formKids))));
 }
 

@@ -40,7 +40,11 @@ And for all of them: no two modules import each other, directly or round a loop.
 ```
 web/
 ├── app.js                composition root: connect, wire the frame, the live news and the router, boot
+├── boot.js               before the first paint: does this device keep a sign-in? (the one classic,
+│                         undeferred script, and the one look at storage outside data/: it only asks
+│                         whether a sign-in is kept, so a member sees "Loading…", not the welcome)
 ├── core/                 the rules, each testable on its own (tests/web/core.test.mjs)
+│   ├── ring.js           Sig's ring as markup (the welcome in the page and the app draw it)
 │   ├── format.js         numbers, counts, "3h ago"
 │   ├── errors.js         errors in plain words
 │   ├── phone.js          a typed phone number as sign-in needs it
@@ -77,7 +81,8 @@ web/
 │   │                     checks, feed, spaces, picker, report, bodymap (the kit's body map on a space)
 │   └── pages/            one module per page: home, space, explore, new-post, stack, post, signal,
 │                         profile, builders, quests, notifications, onboarding, moderation, info,
-│                         account, auth, gate
+│                         account, auth, gate; welcome (the welcome beside every signed-out screen,
+│                         which the build also draws into the page: scripts/write_config.mjs)
 └── kit/                  kit.js, kit.css, signalviz.js, bodymap.js (copies of shared/kit)
 ```
 

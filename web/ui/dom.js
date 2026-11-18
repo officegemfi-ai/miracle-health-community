@@ -21,6 +21,12 @@ export function h(tag, props, ...kids) {
 
 // Static SVG markup we write ourselves (never member text) becomes a node
 const parser = new DOMParser();
+// Markup made from constants (never anyone's text), as elements: the welcome (pages/welcome.js)
+export function html(markup) {
+  const doc = parser.parseFromString(markup, 'text/html');
+  return document.importNode(doc.body.firstElementChild, true);
+}
+
 export function svg(markup) {
   const withNs = markup.includes('xmlns=') ? markup : markup.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
   const doc = parser.parseFromString(withNs, 'image/svg+xml');

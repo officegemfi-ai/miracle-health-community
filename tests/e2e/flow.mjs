@@ -138,7 +138,18 @@ const shot = (page, name) => page.screenshot({ path: `${OUT}${name}.png` });
 // ---------------------------------------------------------------------------
 {
   const K = await person();
-  await K.goto(BASE);
+  // The welcome is drawn into the page itself, so it's on screen before the app's code has run (the
+  // app's lists are held back here to look at that moment)
+  const hold = async (r) => { await new Promise((ok) => setTimeout(ok, 1500)); await r.continue(); };
+  await K.route('**/rules.json*', hold);
+  await K.goto(BASE, { waitUntil: 'domcontentloaded' });
+  check('A visitor sees the welcome before the app has started: Sig’s ring, the line and the steps',
+    await K.evaluate(() => {
+      const f = document.querySelector('#app > .first-screen');
+      return !!f && getComputedStyle(f).display !== 'none' && /Took something\?/.test(f.textContent)
+        && f.querySelectorAll('svg.ring circle').length === 12 && getComputedStyle(document.querySelector('#app > .boot')).display === 'none';
+    }));
+  await K.unroute('**/rules.json*', hold);
   await K.waitForSelector('#birth-year');
   check('The age question comes before the phone number', !(await K.isVisible('#phone')));
   check('and it doesn’t say what age is needed', !/\b18\b|adult/i.test(await K.textContent('.auth-wrap')));
@@ -171,6 +182,15 @@ await A.click('.quest button:has-text("Claim +20")');
 check('Joining three spaces finishes a quest; claiming it pays 20, plus 5 for the first contribution of the day',
   (await waitPoints(A, 25)) === 25 && (await shown('kneeguy')) === 25, `${await points(A)} points`);
 check('and the emblem card beside the feed shows the same total', Number((await A.textContent('[data-mecard] .pts')).replace(/\D/g, '')) === 25);
+{
+  // A member's own device never shows the sign-in welcome, not even before the app starts (web/boot.js)
+  const A2 = await A.context().newPage();
+  await A2.route('**/rules.json*', async (r) => { await new Promise((ok) => setTimeout(ok, 1500)); await r.continue(); });
+  await A2.goto(BASE, { waitUntil: 'domcontentloaded' });
+  check('A member opening the app sees “Loading…”, never the welcome for visitors',
+    await A2.evaluate(() => { const f = document.querySelector('#app > .first-screen'); return document.documentElement.classList.contains('member') && (!f || getComputedStyle(f).display === 'none'); }));
+  await A2.close();
+}
 
 await A.goto(`${BASE}#/s/bpc157`);
 await A.waitForSelector('.space-hero h1:text("BPC-157.")');
