@@ -133,9 +133,9 @@ export function flowSvg({ sources = [], share = 0, reports = 0, sames = 0, signa
       <text x="${cx}" y="${cy + (big ? 43 : 33)}" text-anchor="middle" class="t-mono" font-size="${big ? 8 : 7}" letter-spacing="1" fill="${FORUM}">${100 - pct}% FORUMS</text>`;
   };
 
-  // The formula: 65 what happened, 15 agreement, 10 voices, 10 volume
+  // The formula: 65 how well it worked, 15 how much people agree, 10 how many people, 10 how many reports
   const formula = (cx, y, w) => {
-    const parts = [[65, 'WHAT HAPPENED', LIME], [15, 'AGREEMENT', LIME], [10, 'VOICES', LIME], [10, 'VOLUME', LIME]];
+    const parts = [[65, 'HOW WELL IT WORKED', LIME], [15, 'HOW MUCH PEOPLE AGREE', LIME], [10, 'HOW MANY PEOPLE', LIME], [10, 'HOW MANY REPORTS', LIME]];
     let x = cx - w / 2;
     const bar = parts.map(([p, , c]) => { const wd = (w * p) / 100 - 2; const r = `<rect x="${f1(x)}" y="${y}" width="${f1(wd)}" height="5" rx="0" fill="${c}"/>`; x += (w * p) / 100; return r; }).join('');
     const item = ([p, t, c]) => `<tspan fill="${c}">•</tspan><tspan fill="${WHITE}" fill-opacity=".62">\u00A0${p} ${t}</tspan>`;
