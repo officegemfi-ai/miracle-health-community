@@ -142,6 +142,8 @@ const shot = (page, name) => page.screenshot({ path: `${OUT}${name}.png` });
   await K.waitForSelector('#birth-year');
   check('The age question comes before the phone number', !(await K.isVisible('#phone')));
   check('and it doesn’t say what age is needed', !/\b18\b|adult/i.test(await K.textContent('.auth-wrap')));
+  check('Beside it stands Sig’s ring, the mark in the browser tab: eleven coloured pieces and a white centre',
+    (await K.locator('.auth-art .sig-hero svg.ring circle').count()) === 12);
   await K.selectOption('#birth-month', '6');
   await K.selectOption('#birth-year', String(new Date().getFullYear() - 12));
   await K.click('form button[type=submit]');

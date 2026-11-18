@@ -819,7 +819,7 @@ label.f.nm{margin:0}
   .auth-art h1{font-size:clamp(31px,8.6vw,39.5px)}
   .auth-art .lede{font-size:16px}
   .auth-art .sig-hero{right:16px;top:16px;width:76px;height:76px}
-  .auth-art .sig-hero .sig{width:76px;height:76px}
+  .auth-art .sig-hero svg{width:76px;height:76px}
   .auth-steps{display:none}
   .demo-banner .long{display:none}.demo-banner .short{display:inline}
   .cap{text-align:left;max-width:none}

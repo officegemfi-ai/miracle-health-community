@@ -3,7 +3,7 @@
 // brings its invite along), and "Share how it went" written before signing in. route is the router,
 // handed in by it, so these pages can send someone on once in.
 import { h, msgBox, say } from '../dom.js';
-import { sig } from '../art.js';
+import { ring } from '../art.js';
 import { friendly } from '../../core/errors.js';
 import { e164 } from '../../core/phone.js';
 import { isAdult } from '../../core/age.js';
@@ -77,12 +77,13 @@ function renderTooYoung() {
 }
 
 // Signed out: the same words and three steps as the "Took something?" band on miraclehealth.us,
-// so joining from there lands where it left off. No photograph: Sig's ring, and rings around it.
+// so joining from there lands where it left off. No photograph: Sig's ring (the mark in the browser
+// tab), and rings around it.
 function authLayout(...formKids) {
   document.body.classList.add('auth');
   render(h('section', { class: 'auth-wrap' },
     h('div', { class: 'auth-art' },
-      h('div', { class: 'sig-hero' }, sig(132, 'happy')),
+      h('div', { class: 'sig-hero' }, ring(132)),
       h('div', { class: 'kick' }, 'The Miracle Health community'),
       h('h1', {}, 'Took something? ', h('em', {}, 'Say how it went.')),
       h('p', { class: 'lede' }, 'Your report moves the number for the next person, even if it did nothing. Free, for adults 18 and over.'),
