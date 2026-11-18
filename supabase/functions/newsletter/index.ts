@@ -165,14 +165,14 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   return answer('later');
 }
 
-// Resend's batch API: up to 100 emails a call
 // The postal line at an issue's foot (the website marks it data-mh-postal), as plain text
 export function postalOf(html: string): string {
   const m = /<p[^>]*\bdata-mh-postal\b[^>]*>([\s\S]*?)<\/p>/i.exec(html);
   if (!m) return '';
-  return m[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+  return m[1].replace(/<[^>]+>/g, '').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 }
 
+// Resend's batch API: up to 100 emails a call
 export function resend(apiKey: string, from: string, fetchImpl: typeof fetch = fetch) {
   return async (mails: Mail[]): Promise<boolean> => {
     if (!mails.length) return true;
