@@ -2,7 +2,7 @@
 // first read (which also sets up the turn), the Planner, the Recommender's lookup, the Evidence
 // librarian, the Relatives, Mechanism, Combination and Markers agents, the community and the
 // Synergy auditor. Each returns what it found, as notes for the guide.
-import { type Axis, GOAL_LABEL, type Item, mentioned, optionLine, rank, resolve, type Snapshot, tidyBlends } from './library.ts';
+import { type Axis, equipmentOnly, GOAL_LABEL, type Item, mentioned, optionLine, rank, resolve, type Snapshot, tidyBlends } from './library.ts';
 import { COMMUNITY_DOWN, comboLine, communityTitle, communityTop, pulseLine, stackSignal, type TopRow, topText, type Use, useById, type Voice } from './community.ts';
 import { evidenceNote, NO_PLAN, planOutcomes, plannerNote, plannerTitle } from './outcomes.ts';
 import { pairingNote, pairings, pairingTitle, type Related } from './relatives.ts';
@@ -36,6 +36,15 @@ export async function begin(messages: ChatMessage[], deps: TurnDeps, emit: Emit)
     deps.library.axes().catch(() => [] as Axis[]),
     deps.library.body().catch(() => null as Body | null),
   ]);
+  // Equipment named after a medicine isn't that medicine: a compound the member only ever wrote as
+  // one ("how many units go on an insulin syringe?") leaves the Safety agent's lists, so nobody reads
+  // it as something they take or want to combine
+  const gear = new Set(equipmentOnly(items, messages.filter((m) => m.role === 'user').map((m) => m.content).join('\n')));
+  if (gear.size) {
+    const keep = (n: string) => !resolve(items, [n]).some((id) => gear.has(id));
+    screen.compounds = screen.compounds.filter(keep);
+    screen.medications = screen.medications.filter(keep);
+  }
   const minor = screen.red_flag === 'minor' || st.minor;
   const held = screen.red_flag === 'self_harm' || screen.red_flag === 'emergency' || minor;
   const gate = new Gate(emit, deps, screen, { ...st, minor }, last);

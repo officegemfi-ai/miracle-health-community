@@ -285,10 +285,27 @@ export function resolve(items: Item[], names: string[]): string[] {
   return out;
 }
 
+// Equipment named after a medicine: an insulin syringe or needle is what people measure and inject
+// many things with (compounded semaglutide, peptides), so "insulin" in it isn't the medicine
+const EQUIPMENT = /\binsulin[\s-]+(?:pen[\s-]+)?(?:syringes?|needles?)\b/gi;
+export const withoutEquipment = (s: string) => String(s ?? '').replace(EQUIPMENT, ' ');
+
 // Compounds named anywhere in a message, as a backstop to the Safety agent's list. Longer names
 // are looked for first, and each one found is blanked out, so a name inside a longer one isn't
-// counted too ("clomiphene" inside "enclomiphene"); names of the same length are looked for together
+// counted too ("clomiphene" inside "enclomiphene"); names of the same length are looked for together.
+// Equipment named after a medicine ("an insulin syringe") doesn't count.
 export function mentioned(items: Item[], text: string): string[] {
+  return findNames(items, withoutEquipment(text));
+}
+
+// The compounds a member only ever wrote as equipment ("how many units go on an insulin syringe?"):
+// not something they take or asked about
+export function equipmentOnly(items: Item[], text: string): string[] {
+  const real = new Set(mentioned(items, text));
+  return findNames(items, text).filter((id) => !real.has(id));
+}
+
+function findNames(items: Item[], text: string): string[] {
   let t = spaced(text);
   const j = joined(text);
   let squashed = fold(text);
