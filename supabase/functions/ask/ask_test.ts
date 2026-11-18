@@ -1,6 +1,6 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { sse, stream, tuning, canForceTool } from './claude.ts';
-import { BLOCKED, clearCache, condense, createLibrary, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, type Signal, tidyBlends, UNAPPROVED } from './library.ts';
+import { BLOCKED, clearCache, condense, createLibrary, equipmentOnly, indexText, type Item, mentioned, optionLine, rank, resolve, search, type Sheet, type Signal, tidyBlends, UNAPPROVED } from './library.ts';
 import { cleanField, CRISIS, maskTargets, MINOR, redact, scan, unmaskTargets } from './guard.ts';
 import { INJECT_SIGNS, URGENCY, warningCard } from './urgency.ts';
 import { applyFixes, dedupeSentences, benefitsOf, plainScreen, screenTitle, settle, sourceNumbers, standing, studiesOf, tagFor, cautionFor, unsourcedNumbers, useOf } from './agents.ts';
@@ -214,6 +214,39 @@ Deno.test('a name inside a longer name is not named too: enclomiphene is not clo
   assertEquals(mentioned(items, 'Enclomiphene vs clomiphene for men?'), ['clomiphene', 'enclomiphene']);
   assertEquals(mentioned(items, 'I was on Clomid, now enclomiphene citrate'), ['clomiphene', 'enclomiphene']);
   assertEquals(mentioned(items, 'I take clomiphene'), ['clomiphene']);
+});
+
+Deno.test('an insulin syringe or needle is equipment, not insulin', () => {
+  const items: Item[] = [...ITEMS,
+    { id: 'semaglutide', name: 'Semaglutide', family: 'GLP-1 medicines', category: 'Weight & metabolism', aliases: ['Ozempic', 'Wegovy', 'sema'], kind: 'compound', parts: [], sheet: true },
+    { id: 'insulin', name: 'Insulin', family: 'Diabetes medicines', category: 'Weight & metabolism', aliases: [], kind: 'compound', parts: [], sheet: true }];
+  const q = 'How many units of semaglutide go on an insulin syringe?';
+  assertEquals(mentioned(items, q), ['semaglutide']);
+  assertEquals(equipmentOnly(items, q), ['insulin']);
+  assertEquals(mentioned(items, 'Can I use insulin needles or an insulin pen needle for BPC-157?'), ['bpc157']);
+  assertEquals(mentioned(items, 'Insulin-syringe units for Ozempic?'), ['semaglutide']);
+  // Insulin itself still counts, here or anywhere else in the chat
+  assertEquals(mentioned(items, 'I take insulin and want to add semaglutide'), ['semaglutide', 'insulin']);
+  assertEquals(equipmentOnly(items, 'I take insulin. How many units go on an insulin syringe?'), []);
+});
+
+Deno.test('a question about measuring with an insulin syringe is about the medicine in it, not insulin', async () => {
+  const extra: Item[] = [
+    { id: 'semaglutide', name: 'Semaglutide', family: 'GLP-1 medicines', category: 'Weight & metabolism', aliases: ['Ozempic', 'Wegovy'], kind: 'compound', parts: [], sheet: true, status: 'approved', status_label: 'FDA-approved', grade: 'strong', goals: {}, summary: 'A GLP-1 medicine.' },
+    { id: 'insulin', name: 'Insulin', family: 'Diabetes medicines', category: 'Weight & metabolism', aliases: [], kind: 'compound', parts: [], sheet: true, status: 'approved', status_label: 'FDA-approved', grade: 'strong', goals: {}, summary: 'A hormone medicine.' },
+  ];
+  // The Safety agent is a model: it can still write insulin down, as a compound and as a medicine
+  const world = fakeWorld({ screen: { ...NONE, asks_dose: true, compounds: ['semaglutide', 'insulin'], medications: ['insulin'] }, rounds: [{ text: 'Miracle Health doesn’t give doses. ' + WORDS }] });
+  const f = (async (url: string | URL, init?: RequestInit) => String(url).endsWith('/index.json')
+    ? new Response(JSON.stringify({ items: [...ITEMS, ...extra] })) : world.f(url, init)) as unknown as typeof fetch;
+  const ev = await events(await handle(ask([{ role: 'user', content: 'How many units of semaglutide go on an insulin syringe?' }]), deps(f)));
+  const steps = ev.filter((e) => e.event === 'step');
+  const chips = steps.flatMap((e) => ((e.data.chips ?? []) as { id: string }[]).map((c) => c.id));
+  assert(chips.includes('semaglutide'));
+  assert(!chips.includes('insulin'));
+  // Nothing checks the two together, and insulin isn't treated as a medicine they take
+  assert(!world.calls.some((c) => c.kind === 'audit'));
+  assert(!steps.some((e) => e.data.agent === 'synergy'));
 });
 
 Deno.test('a blend counts only when it is named, never because its parts are listed', () => {
