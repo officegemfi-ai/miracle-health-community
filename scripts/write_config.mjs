@@ -82,5 +82,9 @@ if (demo) {
   html = html.replace('<!--preview-engine-->\n', '');
   rmSync(join(out, 'preview'), { recursive: true, force: true });
 }
+// The welcome, drawn into the page so a phone shows it before the app's code arrives (web/boot.js
+// keeps it off a device that's signed in). Not behind the site password: nothing shows before that.
+const { firstScreenMarkup } = await import('../web/ui/pages/welcome.js');
+html = html.replace('<!--first-screen-->', cfg.gate ? '' : firstScreenMarkup());
 writeFileSync(indexPath, html);
 console.log(`wrote config.js and CSP for ${cfg.environment}${demo ? ' (preview with sample posts)' : ''}${cfg.gate ? ', behind the site password' : ''}`);

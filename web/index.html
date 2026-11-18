@@ -5,15 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Miracle Health Community</title>
 <meta name="robots" content="noindex, nofollow">
+<!-- What a shared link shows in a text, WhatsApp or a post: the welcome's words, and its picture,
+     which the website makes with its other share cards (scripts/og_images.mjs, "community") -->
+<meta name="description" content="Took something? Say how it went. Your report moves the number for the next person, even if it did nothing. Free to join.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Miracle Health">
+<meta property="og:url" content="https://community.miraclehealth.us/">
+<meta property="og:title" content="Took something? Say how it went. · Miracle Health community">
+<meta property="og:description" content="Your report moves the number for the next person, even if it did nothing. Free to join.">
+<meta property="og:image" content="https://miraclehealth.us/img/og/community.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Sig’s ring beside “Took something? Say how it went.”, the Miracle Health community">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#000000">
 <meta http-equiv="Content-Security-Policy" content="__CSP__">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Before the first paint: does this device keep a sign-in? (members see "Loading…", others the welcome) -->
+<script src="boot.js"></script>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/mona-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="kit/kit.css">
 <link rel="stylesheet" href="styles.css">
-<script src="config.js"></script>
-<script src="vendor/supabase-2.117.2.js"></script>
+<!-- Deferred, so the page paints while they download: they still run in this order once the page
+     has been read (the settings, Supabase, then the app, which is a module and deferred too) -->
+<script defer src="config.js"></script>
+<script defer src="vendor/supabase-2.117.2.js" fetchpriority="low"></script>
 <!--preview-engine-->
 <script type="module" src="app.js"></script>
 </head>
@@ -46,7 +63,7 @@
   <div class="top-actions" id="top-actions"></div>
 </header>
 <div class="layout">
-  <main id="app" tabindex="-1"><div class="boot"><p>Loading…</p></div></main>
+  <main id="app" tabindex="-1"><!--first-screen--><div class="boot"><p>Loading…</p></div></main>
   <aside class="rail" id="rail" aria-label="Community"></aside>
 </div>
 <footer class="foot">

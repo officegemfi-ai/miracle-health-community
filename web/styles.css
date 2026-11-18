@@ -646,6 +646,11 @@ table.metrics td.v{text-align:right;font:600 15px var(--mono);white-space:nowrap
 .demo-banner{position:relative;z-index:31;padding:7px 14px;text-align:center;font:500 11.5px/1.5 var(--mono);letter-spacing:.03em;background:var(--amber);color:#000000}
 .demo-banner .short{display:none}
 .boot{min-height:60vh;display:grid;place-items:center;text-align:center;padding:40px 20px}
+/* The welcome the build draws into the page (web/ui/pages/welcome.js) stands in for "Loading…" on a
+   device without a sign-in; web/boot.js marks a signed-in one, which keeps "Loading…" */
+html:not(.member) #app>.first-screen+.boot{display:none}
+.member #app>.first-screen{display:none}
+.first-shape{visibility:hidden}
 .boot .sig{width:96px;height:96px}
 .boot p{font:500 12px var(--mono);letter-spacing:0;text-transform:lowercase;color:var(--muted)}
 .empty{display:grid;justify-items:center;gap:10px;text-align:center;padding:36px 20px}
