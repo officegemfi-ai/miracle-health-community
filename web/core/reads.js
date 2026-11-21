@@ -8,12 +8,12 @@ export const HOW_LONG = ['Under a week', '1–4 weeks', '1–3 months', '3–6 m
 // A sentence's first letter in lower case, to run on inside another
 export const lower = (s) => String(s || '').charAt(0).toLowerCase() + String(s || '').slice(1);
 
-// Sig's read of a report in one line: how it went, how long, what for, side effects. useLabel
-// names a use.
+// Sig's read of a report in one line, as sentences (never bits strung on dots): how it went and how
+// far in, what for, then the side effects. useLabel names a use. It ends without its full stop.
 export function readLine(p, useLabel) {
   const uses = (p.read_uses || []).map((u) => `${lower(useLabel(u.use))}${u.outcome !== p.outcome && OUTCOME[u.outcome] ? ` (${lower(OUTCOME[u.outcome][0])})` : ''}`);
-  return [OUTCOME[p.outcome][0], p.duration, uses.length ? `for ${uses.join(', ')}` : null,
-    (p.side_effects || []).length ? `side effects: ${p.side_effects.join(', ')}` : 'no side effects'].filter(Boolean).join(' · ');
+  return `${[OUTCOME[p.outcome][0], p.duration ? `${lower(p.duration)} in` : null, uses.length ? `for ${uses.join(', ')}` : null].filter(Boolean).join(', ')}. ${
+    (p.side_effects || []).length ? `Side effects: ${p.side_effects.map(lower).join(', ')}` : 'No side effects'}`;
 }
 
 // What it may have been for: the uses people mention most for this compound (x, its Signal),

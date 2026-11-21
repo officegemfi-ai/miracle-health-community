@@ -150,7 +150,7 @@ await page.screenshot({ path: `${OUT}preview_02_report.png` });
 // was for), then the author confirms the rest
 await page.waitForSelector('.airead .kick:text("Did we read you right?")');
 await page.waitForSelector('.airead .ask1:has-text("what did you take it for?")');
-check('The read in one line, and one question about what it’s missing', /Better · 6 weeks/.test(await page.textContent('.airead')));
+check('The read in one line, and one question about what it’s missing', /Better, 6 weeks in/.test(await page.textContent('.airead')));
 await page.click('.airead .ask1 button:has-text("Endurance")');
 await page.waitForSelector('.airead button:has-text("Yes, that’s right")');
 check('Answering it fills in the read', /for endurance/.test(await page.textContent('.airead')), (await page.textContent('.airead')).slice(0, 140));
@@ -185,7 +185,7 @@ check('Asking where to buy is refused with the rule', /rule 1/.test(await page.t
 // The Signal, profiles, the leaderboard, notifications, moderation
 await page.goto(`${BASE}#/signal`);
 await page.waitForSelector('.top-table tbody tr[data-signal]');
-check('The Signal page ranks every compound, as a table like top', (await page.locator('.top-table tbody tr[data-signal]').count()) >= 50);
+check('The Signal page ranks every compound, in one table', (await page.locator('.top-table tbody tr[data-signal]').count()) >= 50);
 check('and lists the live moves with their causes', (await page.locator('.move-i').count()) >= 3);
 await page.goto(`${BASE}#/u/first_look`);
 await page.waitForSelector('h1:text("u/first_look")');

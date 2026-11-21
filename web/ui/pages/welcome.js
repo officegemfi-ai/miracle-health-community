@@ -12,9 +12,9 @@ export const LEDE = 'Your report moves the number for the next person, even if i
 export const FREE = 'Free to join.';
 export const FREE_ADULTS = 'Free, for adults 18 and over.';
 const STEPS = [
-  ['01', 'Share how it went', 'What you took it for, for how long, and whether things got better, stayed the same or got worse.'],
-  ['02', 'Check the read', 'Sig shows you what it understood. Fix anything it got wrong: your word wins.'],
-  ['03', 'See it count', 'The rating for that use updates, and you’re asked how it’s going at 2, 6 and 12 weeks.'],
+  ['1', 'Share how it went', 'What you took it for, for how long, and whether things got better, stayed the same or got worse.'],
+  ['2', 'Check the read', 'Sig shows you what it understood. Fix anything it got wrong: your word wins.'],
+  ['3', 'See it count', 'The rating for that use updates, and you’re asked how it’s going at 2, 6 and 12 weeks.'],
 ];
 
 export function welcomeMarkup(free = FREE) {

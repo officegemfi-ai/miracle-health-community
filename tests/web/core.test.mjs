@@ -163,8 +163,8 @@ test('posts: a title from the first sentence, the thread, the spaces a post is i
 test('Sig\'s read in one line, and what it may have been for', () => {
   const label = (id) => ({ joint_pain: 'Joint pain', sleep: 'Sleep' }[id] || id);
   assert.equal(readLine({ outcome: 'better', duration: '1–3 months', read_uses: [{ use: 'joint_pain', outcome: 'better' }, { use: 'sleep', outcome: 'same' }], side_effects: [] }, label),
-    'Better · 1–3 months · for joint pain, sleep (about the same) · no side effects');
-  assert.equal(readLine({ outcome: 'worse', read_uses: [], side_effects: ['Headache'] }, label), 'Worse · side effects: Headache');
+    'Better, 1–3 months in, for joint pain, sleep (about the same). No side effects');
+  assert.equal(readLine({ outcome: 'worse', read_uses: [], side_effects: ['Headache'] }, label), 'Worse. Side effects: headache');
   assert.deepEqual(likelyUses({ by_use: [{ use: 'sleep' }] }, { uses: [{ id: 'joint_pain' }, { id: 'sleep' }] }), ['sleep', 'joint_pain']);
   assert.deepEqual(likelyUses(null, null), []);
   assert.equal(lower('Joint pain'), 'joint pain');

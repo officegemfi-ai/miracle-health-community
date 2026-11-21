@@ -46,7 +46,7 @@ export async function renderSpace(cid, sort = 'hot', only = 'all') {
       h('div', { class: 'space-hero' },
         spaceTile(sp, 72),
         h('div', {}, h('div', { class: 'kick' }, kick), h('h1', {}, `${sp.name}.`),
-          h('p', { class: 'lede' }, `${fmtN(sp.members_count)} member${sp.members_count === 1 ? '' : 's'} · ${fmtN(sp.posts_week)} post${sp.posts_week === 1 ? '' : 's'} this week · ${fmtN(sp.reports)} first-hand report${sp.reports === 1 ? '' : 's'}`)),
+          h('p', { class: 'lede' }, `${fmtN(sp.members_count)} member${sp.members_count === 1 ? '' : 's'}, ${fmtN(sp.posts_week)} post${sp.posts_week === 1 ? '' : 's'} this week, ${fmtN(sp.reports)} first-hand report${sp.reports === 1 ? '' : 's'}`)),
         h('div', { class: 'join' }, joinButton(sp))),
       stack ? partChips(sp, 'In this stack') : sp.kind === 'blend' ? partChips(sp, 'In the vial') : null,
       sp.aliases?.length ? h('p', { class: 'xs muted mt8 aka' }, `Also called ${sp.aliases.slice(0, 8).join(', ')}`) : null,

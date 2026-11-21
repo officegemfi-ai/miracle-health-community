@@ -148,31 +148,34 @@ export function authorLink(p, cls = 'who', { badge = true } = {}) {
 // it doesn't feed the Signal; a report still being read says so.
 function readStrip(p) {
   const cid = p.compound_id;
-  if (p.kind === 'question') return h('p', { class: 'read-q' }, '○ a question: answers help, but only reports feed the Signal');
-  if (p.read_pending) return h('p', { class: 'read-strip pending' }, h('span', { class: 'rs-k' }, '◌ sig is reading'), h('span', { class: 'rs-what' }, 'it moves the Signal once it’s read'));
+  if (p.kind === 'question') return h('p', { class: 'read-q' }, 'A question. Answers help, but only reports feed the Signal.');
+  if (p.read_pending) return h('p', { class: 'read-strip pending' }, h('span', { class: 'rs-k' }, 'Sig is reading it'), h('span', { class: 'rs-what' }, 'It moves the Signal once it’s read.'));
   if (!p.counts_for_signal || !OUTCOME[p.outcome]) return null;
   const x = signalOf(cid);
-  const what = [OUTCOME[p.outcome][0], p.duration, ...(p.side_effects || []).slice(0, 3)].filter(Boolean).map((w) => String(w).toLowerCase()).join(' · ');
-  const by = p.read_corrected ? 'corrected by the author' : p.read_confirmed ? 'author confirmed' : p.outcome !== 'better' ? 'counts as much as “it worked”' : '';
+  // In sentences, never a chain of bits on dots: how it went and how far in, any side effects, and that
+  // "about the same" or "worse" counts as much as "better"
+  const effects = (p.side_effects || []).slice(0, 3).map((w) => String(w).toLowerCase());
+  const what = [`${OUTCOME[p.outcome][0]}${p.duration ? `, ${String(p.duration).toLowerCase()} in` : ''}`,
+    effects.length ? `Side effects: ${effects.join(', ')}` : null,
+    !p.read_corrected && !p.read_confirmed && p.outcome !== 'better' ? 'Counts as much as “it worked”' : null].filter(Boolean).join('. ');
   return h('p', { class: 'read-strip', title: 'Sig read this as a first-hand report. It feeds the Signal.' },
-    h('span', { class: 'rs-k' }, '✓ sig read'),
-    h('span', { class: 'rs-what' }, h('span', { class: 'rs-v' }, what), by ? ` · ${by}` : ''),
+    h('span', { class: 'rs-k' }, icon('check', 14), p.read_corrected ? 'Corrected by the author' : p.read_confirmed ? 'Confirmed by the author' : 'Sig’s read'),
+    h('span', { class: 'rs-what' }, `${what}.`),
     x && x.score != null ? h('a', { class: 'rs-sig', href: `#/s/${encodeURIComponent(cid)}`, title: `${p.compound_name} Community Signal` },
-      `→ ${p.compound_name.toLowerCase()} `, sigNum(cid), ' ', movement(x)) : h('span', {}));
+      `${p.compound_name} `, sigNum(cid), ' ', movement(x)) : h('span', {}));
 }
 
 export function postCard(p) {
   const href = `#/post/${encodeURIComponent(p.id)}`;
-  // A feed is a log: each post an entry on one line down the page, each report a commit and
-  // Sig's read its check
+  // A feed is a line down the page, each post an entry on it, with Sig's read under a report
   const card = h('article', { class: `card post log${p.kind === 'question' ? ' q' : ''}`, 'data-post': p.id });
   const sep = () => h('span', { class: 'sep' }, '·');
   const draw = () => {
     card.replaceChildren(
       h('div', { class: 'vrail graph', 'aria-hidden': 'true' }, h('span', { class: 'g-line' }), h('span', { class: 'g-dot' })),
       h('div', { class: 'post-main' },
-        h('div', { class: 'post-head' }, h('span', { class: 'kind' }, p.kind === 'question' ? 'question' : 'report'), sep(), spaceLink(p, { tile: false }), sep(),
-          authorLink(p, 'who', { badge: false }), sep(), h('span', {}, ago(p.created_at)), statusChip(p)),
+        h('div', { class: 'post-head' }, h('span', { class: 'kind' }, p.kind === 'question' ? 'Question' : 'Report'), h('span', {}, 'in'), spaceLink(p, { tile: false }),
+          h('span', {}, 'by'), authorLink(p, 'who', { badge: false }), sep(), h('span', {}, ago(p.created_at)), statusChip(p)),
         h('a', { class: 'post-title', href }, p.title),
         h('div', { class: 'excerpt' }, p.body),
         readStrip(p),
