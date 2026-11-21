@@ -907,6 +907,8 @@ label.f.nm{margin:0}
 
 /* How it works in the body: the kit's body map, on a space (ui/components/bodymap.js) */
 .body-card h2.kick{margin:0 0 12px}
+/* the body map's list and table name the places in the body in words: the text face, as on the website's fact sheets (the kit sets them in the code face) */
+.mh-bm-row dt,.mh-bm-table tbody th{font-family:var(--body);font-size:13px}
 
 /* ================================================================ Said once, for every screen
    Buttons are rectangular and set in the text face; a page's kicker is one short phrase in the
