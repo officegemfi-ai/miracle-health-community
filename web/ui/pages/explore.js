@@ -21,7 +21,7 @@ export async function renderExplore(family = '') {
       h('a', { href: `#/explore${k ? `?f=${encodeURIComponent(k)}` : ''}`, 'aria-current': family === k ? 'page' : null }, l, h('span', { class: 'n' }, fmtN(n)))));
   const card = (s) => h('a', { class: 'card space-card', href: `#/s/${encodeURIComponent(s.compound_id)}` },
     h('div', { class: 'top' }, spaceTile(s, 36), h('b', { class: 'grow' }, s.name)),
-    isStack(s) || s.kind === 'blend' ? h('div', { class: 'xs muted' }, (s.part_ids || []).map((id) => spaceOf(id)?.name || id).join(' · ')) : null,
+    isStack(s) || s.kind === 'blend' ? h('div', { class: 'xs muted' }, (s.part_ids || []).map((id) => spaceOf(id)?.name || id).join(', ')) : null,
     h('div', { class: 'row between' }, s.score != null ? h('span', { class: 'sc num', 'data-sig-of': s.compound_id }, fmt1(s.score)) : h('span', { class: 'kick' }, 'No Signal yet'), s.score != null ? movement(signalOf(s.compound_id)) : null),
     h('div', { class: 'meta' }, h('span', {}, `${plural(s.members_count, 'member')} · ${plural(s.reports, 'report')}`), joinButton(s)));
   const suggest = h('p', { class: 'small muted mt16' }, 'Missing something? ', h('button', { class: 'lnk', type: 'button', onclick: () => suggestCompound(filter.value.trim()) }, 'Suggest it for the library'), '.');

@@ -21,7 +21,7 @@ export function renderAccount() {
     h('section', { class: 'card row nw' },
       emblem(S.card?.level || 1, 56, false, lv.name),
       h('div', { class: 'grow' }, h('b', {}, `u/${S.me.handle}`), S.me.role !== 'member' ? h('span', { class: 'chip ink' }, S.me.role) : null,
-        h('div', { class: 'small muted' }, `${lv.name} · ${fmtN(S.card?.points || 0)} Signal points · member since ${new Date(S.me.created_at).toLocaleDateString()}`)),
+        h('div', { class: 'small muted' }, `${lv.name}, ${fmtN(S.card?.points || 0)} Signal points. Member since ${new Date(S.me.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`)),
       h('button', {
         class: 'btn', type: 'button',
         onclick: async () => { await signOut(); location.hash = '#/'; location.reload(); },

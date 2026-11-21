@@ -32,11 +32,11 @@ export async function renderSignalPage() {
     takeover,
     ladder,
     movers,
-    h('div', { class: 'top-head' }, h('h2', {}, 'The Signal ', h('span', { class: 'top-dash' }, '— top')), h('p', { class: 'top-sub' }, 'every Signal, ranked; sort by any column')),
+    h('div', { class: 'top-head' }, h('h2', {}, 'Every Signal, ranked'), h('p', { class: 'top-sub' }, 'Sort by any column.')),
     sortbar, list, tail,
     h('section', { class: 'card mt16' },
       h('h3', {}, 'How the number moves'),
-      h('p', { class: 'small muted' }, '65% is what people report happened, 15% how much those reports agree, 10% how many independent voices there are and 10% how much there is to go on. Every first-hand report Sig reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
+      h('p', { class: 'small muted' }, '65% is how well it worked, 15% how much people agree, 10% how many people and 10% how many reports. Every first-hand report Sig reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
       h('a', { class: 'lnk small', href: '#/how' }, 'More on how it works')));
   const rail = fillRail('signal');
   const [rows, pulse] = await Promise.all([loadSignal(), loadPulse(), loadHistory()]);
@@ -66,7 +66,7 @@ export async function renderSignalPage() {
       h('b', {}, levelOf(lvl).name), lvl === 'forum' ? '' : ', if each comes from a different person'));
   };
   takeover.replaceChildren(
-    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'The takeover line'), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'live')),
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'The takeover line'), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'Live')),
     h('h2', {}, 'From forum chatter to certified human data.'),
     h('p', { class: 'small' }, `Forums count as ${w} reports for each compound. After ${w} first-hand reports here, half of the number is members’ own experience; after ${w * 3}, three quarters. Each dot is a Signal today.`),
     chart,
@@ -80,7 +80,7 @@ export async function renderSignalPage() {
   ladder.replaceChildren(
     h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Certification'), h('span', { class: 'xs muted' }, 'Each Signal earns its level from the database, live')),
     h('div', { class: 'ladder-steps' }, LEVELS.map((l, i) => h('div', { class: `step-l card ${levels[l.key] ? 'has' : ''}` },
-      h('div', { class: 'row nw' }, seal(l.key, 34, true), h('span', { class: 'n mono' }, `0${i + 1}`)),
+      h('div', { class: 'row nw' }, seal(l.key, 34, true), h('span', { class: 'n mono' }, `${i + 1}`)),
       h('b', {}, l.name), h('p', { class: 'xs muted' }, l.rule),
       h('div', { class: 'cnt' }, h('b', { class: 'num' }, fmtN(levels[l.key] || 0)), h('span', { class: 'xs muted' }, ` Signal${levels[l.key] === 1 ? '' : 's'}`))))));
 
@@ -94,14 +94,15 @@ export async function renderSignalPage() {
       : h('p', { class: 'xs muted' }, 'Nothing yet.'));
   movers.replaceChildren(board('Rising', rising, 'up'), board('Falling', falling, 'dn'));
 
-  // The board, as a table like top: the rank, the compound, its Signal with its bar, the four
-  // parts of the score (what happened 65, agreement 15, voices 10, volume 10), where the data comes
-  // from, its last move and how it reads. Any column sorts it; the filters pick what's in it.
+  // The board, as a table: the rank, the compound, its Signal with its bar, the four parts of the
+  // score by the names the website gives them (how well it worked 65, how much people agree 15, how
+  // many people 10, how many reports 10), where the data comes from, its last move and how it reads.
+  // Any column sorts it; the filters pick what's in it.
   const COLS = [
-    ['rank', '#', null], ['name', 'compound', null], ['score', 'signal', (x) => x.score],
-    ['efficacy', 'what happened', (x) => x.efficacy], ['consistency', 'agreement', (x) => x.consistency],
-    ['diversity', 'voices', (x) => x.diversity], ['confidence', 'volume', (x) => x.confidence],
-    ['community', 'from', (x) => x.internal_share], ['move', 'last move', (x) => Math.abs(delta(x))], ['read', 'read', null],
+    ['rank', '#', null], ['name', 'Compound', null], ['score', 'Signal', (x) => x.score],
+    ['efficacy', 'How well it worked', (x) => x.efficacy], ['consistency', 'How much people agree', (x) => x.consistency],
+    ['diversity', 'How many people', (x) => x.diversity], ['confidence', 'How many reports', (x) => x.confidence],
+    ['community', 'From members', (x) => x.internal_share], ['move', 'Last move', (x) => Math.abs(delta(x))], ['read', 'How it reads', null],
   ];
   const NUMERIC = new Set(['score', 'efficacy', 'consistency', 'diversity', 'confidence']);
   // on a narrower screen the table keeps the rank, the compound, the Signal and its last move; the
@@ -112,7 +113,7 @@ export async function renderSignalPage() {
     const shown = live.filter((x) => only === 'all' || (only === 'stacks' ? ['stack', 'blend'].includes(x.kind) : only === 'certified' ? ['verified', 'certified'].includes(x.certification) : !['stack', 'blend'].includes(x.kind)));
     const key = COLS.find(([k]) => k === sort)?.[2] || ((x) => x.score);
     const ranked = [...shown].sort((a, b) => (key(b) ?? -1) - (key(a) ?? -1) || b.score - a.score);
-    sortbar.replaceChildren(...[['all', 'all'], ['single', 'compounds'], ['stacks', 'stacks & blends'], ['certified', 'verified+']].map(([k, l]) =>
+    sortbar.replaceChildren(...[['all', 'All'], ['single', 'Compounds'], ['stacks', 'Stacks and blends'], ['certified', 'Verified and up']].map(([k, l]) =>
       h('a', { href: '#/signal', 'aria-current': only === k ? 'page' : null, onclick: (e) => { e.preventDefault(); only = k; draw(); } }, l)));
     const nums = [];
     const head = h('tr', {}, COLS.map(([k, label, by]) => h('th', { scope: 'col', class: `${NUMERIC.has(k) ? 'n' : ''}${OPT.has(k) ? ' opt' : ''}${OPT2.has(k) ? ' opt2' : ''}`.trim() || null, 'aria-sort': by && sort === k ? 'descending' : null },
@@ -138,15 +139,15 @@ export async function renderSignalPage() {
     if (!reduceMotion()) nums.forEach(([el, x]) => tick(el, x.prev_score, x.score));
     else nums.forEach(([el, x]) => { el.textContent = fmt1(x.score); });
   };
-  // The latest moves, newest first, as lines in a log: when, what moved, to what
+  // The latest moves, newest first: when, what moved, to what
   const stamp = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
   const moved = live.filter((x) => x.prev_score != null && x.computed_at).sort((a, b) => Date.parse(b.computed_at) - Date.parse(a.computed_at)).slice(0, 6);
   tail.replaceChildren(
-    h('p', { class: 'tl-cmd', 'aria-hidden': 'true' }, '$ tail -f signal.log'),
-    ...(moved.length ? moved.map((x) => h('p', { class: 'tl-line' }, h('span', { class: 'tl-when' }, stamp.format(new Date(x.computed_at)).toLowerCase()),
-      h('a', { href: `#/s/${encodeURIComponent(x.compound_id)}` }, x.compound_name), ` ${fmt1(x.score)} `, movement(x)))
-      : [h('p', { class: 'tl-line' }, h('span', { class: 'tl-when' }, 'now'), 'waiting for the first move')]),
-    h('p', { class: 'tl-note' }, 'Each report lands here as a line, signed by ', h('span', { class: 'tl-co' }, 'the community'), ', and the row above moves with it.'));
+    h('p', { class: 'kick' }, 'Latest moves'),
+    ...(moved.length ? moved.map((x) => h('p', { class: 'tl-line' }, h('span', { class: 'tl-when' }, stamp.format(new Date(x.computed_at))),
+      h('a', { href: `#/s/${encodeURIComponent(x.compound_id)}` }, x.compound_name), ' ', h('span', { class: 'num' }, fmt1(x.score)), ' ', movement(x)))
+      : [h('p', { class: 'tl-line' }, 'Waiting for the first move.')]),
+    h('p', { class: 'tl-note' }, 'Each first-hand report lands here, and its row above moves with it.'));
   draw();
   if (window.innerWidth > 860) sigSay('Every number here moves when someone shares how it went. Tap one to see its space.', 'watching', 4000);
   await rail;

@@ -162,19 +162,23 @@ let sigBtn = null;
 let hideTimer = null;
 const night = () => { const hr = new Date().getHours(); return hr >= 23 || hr < 6; };
 export function baseMood() { return navigator.onLine === false ? 'offline' : night() ? 'sleepy' : 'idle'; }
+// The corner shows Sig at 64px, 48 on a phone (styles.css). Drawn at the size it is shown, so the
+// kit gives it the detail that size can carry.
+const phone = window.matchMedia('(max-width:860px)');
+const dockSig = (mood) => sig(phone.matches ? 48 : 64, mood);
 
 export function mountSig(tipFor) {
   if (!S.me) { dock.replaceChildren(); return; }
   bubble = h('div', { class: 'sigsay', role: 'status', 'aria-live': 'polite' });
-  sigBtn = h('button', { type: 'button', 'aria-label': 'Sig, the Community Signal in person', title: 'Sig' }, sig(64, baseMood()));
+  sigBtn = h('button', { type: 'button', 'aria-label': 'Sig, the Community Signal in person', title: 'Sig' }, dockSig(baseMood()));
   sigBtn.addEventListener('click', () => sigSay(tipFor(), 'happy', 5200));
   dock.replaceChildren(sigBtn, bubble);
 }
 
 export function sigMood(mood, ms = 0) {
   if (!sigBtn) return;
-  sigBtn.replaceChildren(sig(64, mood));
-  if (ms) setTimeout(() => sigBtn?.replaceChildren(sig(64, baseMood())), ms);
+  sigBtn.replaceChildren(dockSig(mood));
+  if (ms) setTimeout(() => sigBtn?.replaceChildren(dockSig(baseMood())), ms);
 }
 
 // Important news (your report counted, a new emblem) isn't talked over by tips

@@ -147,34 +147,61 @@ export function chipHtml({ name = '', href = '', category = '', kind = '', grade
 }
 
 // ---------------------------------------------------------------------------
-// Sig, the Community Signal in person: the Signal's own ring with a dot inside. It has no face.
-// A mood changes the mark inside the ring (and how it moves, kit.css): three dots while it
-// thinks, a bar while it rests, a spark to cheer, a heart for support, a question mark when
-// curious, an eye when watching; amber when something is wrong, grey when offline.
-// dark: drawn on a dark page. On a light one the ring gets an ink edge, so it still reads.
+// Sig, the Community Signal in person, drawn in the same hand as the front page's three step
+// drawings: a fine ring on a 200 grid, the mood inside it in the Signal's blue, and around the
+// mood its echoes fading out (half strength, then a fifth), in hairlines that stay 1.2px at any
+// size. It has no face. A mood changes what is inside the ring (and how it moves, kit.css): a
+// dot at rest, three dots while it thinks, a spark to cheer, a heart for support, a question
+// mark when curious, an eye when watching, a moon while it rests; a warning sign in amber when
+// something is wrong, grey when offline.
+// Small sizes draw less, so it still reads: under 56px one echo, under 36px the ring and the
+// mood alone, drawn larger.
+// dark: drawn on a dark page, in white lines. On a light one the lines are ink.
 // ---------------------------------------------------------------------------
-const INK = '#000000';
 export const MOODS = ['idle', 'happy', 'think', 'sleepy', 'watching', 'curious', 'concerned', 'cheer', 'support', 'offline', 'burst'];
-const SPARK = 'M32 19.5 C33.3 27 37 30.7 44.5 32 C37 33.3 33.3 37 32 44.5 C30.7 37 27 33.3 19.5 32 C27 30.7 30.7 27 32 19.5 Z';
-const BAR = (c) => `<rect class="sig-mark" x="23" y="29.5" width="18" height="5" rx="2.5" fill="${c}"/>`;
-const MARKS = {
-  think: (c) => `<g class="sig-mark"><circle class="sig-dot" cx="22.5" cy="32" r="3.1" fill="${c}"/><circle class="sig-dot d2" cx="32" cy="32" r="3.1" fill="${c}"/><circle class="sig-dot d3" cx="41.5" cy="32" r="3.1" fill="${c}"/></g>`,
-  sleepy: BAR,
-  offline: BAR,
-  cheer: (c) => `<path class="sig-mark" d="${SPARK}" fill="${c}"/>`,
-  burst: (c) => `<path class="sig-mark" d="${SPARK}" fill="${c}"/>`,
-  support: (c) => `<path class="sig-mark" d="M32 43.5 C25 38 20.5 34.3 20.5 29 C20.5 25 23.6 22.2 27 22.2 C29.1 22.2 31 23.3 32 25.1 C33 23.3 34.9 22.2 37 22.2 C40.4 22.2 43.5 25 43.5 29 C43.5 34.3 39 38 32 43.5 Z" fill="${c}"/>`,
-  curious: (c) => `<g class="sig-mark"><path d="M26.4 27.2 A5.6 5.6 0 1 1 34.8 32.05 Q32 33.7 32 37.2" fill="none" stroke="${c}" stroke-width="4.2" stroke-linecap="round"/><circle cx="32" cy="43.4" r="2.8" fill="${c}"/></g>`,
-  watching: (c) => `<g class="sig-mark"><path d="M19.2 32 Q32 20 44.8 32 Q32 44 19.2 32 Z" fill="none" stroke="${c}" stroke-width="3.4" stroke-linejoin="round"/><circle class="sig-pupil" cx="32" cy="32" r="4.6" fill="${c}"/></g>`,
-  concerned: (c) => `<g class="sig-mark"><path d="M32 21.5 V34.5" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="42.6" r="3" fill="${c}"/></g>`,
-};
+// A four-point spark: t is how far its points reach, a and b bend its sides (a fuller spark has larger ones)
+const sigSpark = (t, a, b) => `M0${-t}C${a}${-b} ${b}${-a} ${t} 0C${b} ${a} ${a} ${b} 0 ${t}C${-a} ${b}${-b} ${a}${-t} 0C${-b}${-a}${-a}${-b} 0${-t}Z`;
+const SIG_HEART = 'M0 35C-23 17-38 5-38-12.5C-38-25.5-28-35-16.5-35C-9.5-35-3.3-31.3 0-25.4C3.3-31.3 9.5-35 16.5-35C28-35 38-25.5 38-12.5C38 5 23 17 0 35Z';
+const SIG_MOON = 'M-9.1-39A40 40 0 1 0 39 9.1A34 34 0 0 1-9.1-39Z';
+const sigEye = (w, h) => `M${-w} 0Q0${-h} ${w} 0Q0 ${h}${-w} 0Z`;
+const sigSign = (top, base, half) => `M0${-top}L${half} ${base}H${-half}Z`;
 export function sigSvg(size = 56, mood = 'idle', { cls = '', dark = false } = {}) {
-  const moodCls = MOODS.includes(mood) ? mood : 'idle';
-  const c = mood === 'offline' ? '#7F8796' : mood === 'concerned' ? '#E8B75A' : '#3D8BFF';
-  const edge = dark ? '' : `<circle cx="32" cy="32" r="24.5" fill="none" stroke="${INK}" stroke-opacity=".35"/><circle cx="32" cy="32" r="17.5" fill="none" stroke="${INK}" stroke-opacity=".35"/>`;
-  const mark = MARKS[moodCls] ? MARKS[moodCls](c) : `<circle class="sig-mark sig-dot" cx="32" cy="32" r="7.5" fill="${c}"/>`;
-  return `<svg class="sig ${moodCls}${cls ? ` ${esc(cls)}` : ''}" viewBox="0 0 64 64" width="${Number(size)}" height="${Number(size)}" aria-hidden="true">
-    <g class="sig-body">${edge}<circle class="sig-ring" cx="32" cy="32" r="21" fill="none" stroke="${c}" stroke-width="6"/>${mark}</g></svg>`;
+  const m = MOODS.includes(mood) ? mood : 'idle';
+  const px = Number(size) || 56;
+  const lod = px >= 56 ? 2 : px >= 36 ? 1 : 0;   // 2: the whole drawing. 1: one echo. 0: the ring and the mood
+  const k = [1.5, 1.14, 1][lod];                   // the mood grows as the drawing around it goes
+  const R = Math.min(96, Math.floor(99.5 - 120 / px));   // the ring, whole inside the box however small it is drawn
+  const off = m === 'offline';
+  const a = off ? '#7F8796' : m === 'concerned' ? '#E8B75A' : '#3D8BFF';
+  const line = (o) => `rgba(${dark ? '255,255,255' : '0,0,0'},${off ? Math.min(o, 0.45) : o})`;
+  const S = 'fill="none" stroke-width="1.2" vector-effect="non-scaling-stroke"';
+  const circle = (r, stroke, more = '') => `<circle${more} r="${r}" stroke="${stroke}" ${S}/>`;
+  const path = (d, stroke, more = '') => `<path${more} d="${d}" stroke="${stroke}" ${S}/>`;
+  // Echoes: rings, or the mood's own shape again, larger and fainter
+  const rings = (r1, r2, r3) => (lod ? circle(r1, line(0.5)) : '') + (lod === 2 ? circle(r2, line(0.2)) + (r3 ? circle(r3, line(0.2)) : '') : '');
+  const grown = (d, s) => d.replace(/-?\d*\.?\d+/g, (n) => Math.round(n * s * 10) / 10);   // the same shape, s times the size
+  const echo = (d, s1, s2) => (lod === 2 ? path(grown(d, s1), line(0.5)) + path(grown(d, s2), line(0.2)) : lod ? path(grown(d, (s1 + s2) / 2), line(0.5)) : '');
+  const mark = (inner) => (k === 1 ? `<g class="sig-mark">${inner}</g>` : `<g transform="scale(${k})"><g class="sig-mark">${inner}</g></g>`);
+  const dot = (cy) => `<circle cy="${cy}" r="3.6" stroke="${a}" ${S}/>`;
+  const draw = {
+    idle: () => (lod ? rings(72, 52, 33) : circle(58, line(0.5))) + mark(circle(lod ? 16 : 13, a, ' class="sig-dot"')),
+    think: () => (lod === 2 ? path('M-70-27H70M-70 27H70', line(0.5)) + path('M-56-52H56M-56 52H56', line(0.2)) : lod ? path('M-66-32H66M-66 32H66', line(0.5)) : '')
+      + mark([-34, 0, 34].map((x, i) => `<circle class="sig-dot${i ? ` d${i + 1}` : ''}" cx="${x}" r="9" stroke="${a}" ${S}/>`).join('')),
+    cheer: () => (lod === 2 ? path(sigSpark(66, 10, 36), line(0.5)) + path(sigSpark(86, 16, 57), line(0.2)) : lod ? path(sigSpark(72, 12, 42), line(0.5)) : '')
+      + mark(path(sigSpark(46, 5, 18), a)),
+    support: () => echo(SIG_HEART, 1.4, 1.82) + mark(path(SIG_HEART, a)),
+    curious: () => rings(76, 57) + mark(path('M-22-20A22 22 0 1 1 11-.9Q0 5.6 0 18', a) + dot(37)),
+    watching: () => (lod === 2 ? path(sigEye(80, 74), line(0.2)) + path(sigEye(58, 52), line(0.5)) : lod ? path(sigEye(66, 58), line(0.5)) : path(sigEye(62, 54), a))
+      + `<g class="sig-mark"><g class="sig-pupil">${lod === 2 ? circle(17, a) + circle(5, a) : lod ? circle(19, a) + circle(6, a) : circle(18, a)}</g></g>`,
+    concerned: () => (lod === 2 ? path(sigSign(78, 50, 74), line(0.2)) + path(sigSign(52, 34, 48), line(0.5)) : lod ? path(sigSign(66, 44, 63), line(0.5)) : '')
+      + mark(path('M0-26V6', a) + dot(21)),
+    sleepy: () => rings(74, 54) + mark(path(SIG_MOON, a)),
+    offline: () => mark(path('M-24 0H24', a)),
+  };
+  draw.happy = draw.idle;
+  draw.burst = draw.cheer;
+  return `<svg class="sig ${m}${cls ? ` ${esc(cls)}` : ''}" viewBox="-100 -100 200 200" width="${px}" height="${px}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle class="sig-ring" r="${R}" stroke="${line(0.9)}" ${S}/><g class="sig-in">${draw[m]()}</g></svg>`;
 }
 
 // ---------------------------------------------------------------------------

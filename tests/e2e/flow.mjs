@@ -256,7 +256,7 @@ await A.waitForSelector('.sigsay.in:has-text("Sig read your report")', { timeout
 check('The author hears from Sig the moment the read lands, without a reload (live)', /Better/.test(await A.textContent('.sigsay')), (await A.textContent('.sigsay')).slice(0, 100));
 await A.waitForSelector('.airead:has-text("Better")', { timeout: 15000 });
 check('The post shows what Sig read: better, what for, for 6 weeks, side effects, feeding the BPC-157 Signal',
-  /6 weeks/.test(await A.textContent('.airead')) && /Nausea/.test(await A.textContent('.airead')) && /BPC-157 Signal/.test(await A.textContent('.airead'))
+  /6 weeks/.test(await A.textContent('.airead')) && /nausea/i.test(await A.textContent('.airead')) && /BPC-157 Signal/.test(await A.textContent('.airead'))
   && /for injury healing, joint pain/.test(await A.textContent('.airead')), (await A.textContent('.airead')).slice(0, 160));
 await A.waitForSelector('dialog .celebrate h2:text("You reached Pulse.")', { timeout: 15000 });
 check('Passing 60 points celebrates the second emblem, Pulse (live)', (await waitPoints(A, 70)) === 70 && (await shown('kneeguy')) === 70, `${await points(A)} points`);
@@ -463,7 +463,7 @@ check('A part that couldn’t be loaded says so and offers Try again, which brin
 
 await B.goto(`${BASE}#/signal`);
 await B.waitForSelector('.top-table tbody tr[data-signal]');
-check('The Signal page ranks the compounds, as a table like top', (await B.locator('.top-table tbody tr[data-signal]').count()) >= 50);
+check('The Signal page ranks the compounds, in one table', (await B.locator('.top-table tbody tr[data-signal]').count()) >= 50);
 check('and lists the live moves with their causes', (await B.locator('.move-i').count()) >= 1);
 await B.waitForSelector('.viz-compact .flowviz.compact');
 check('It draws how the number is made: public forums and members’ reports in, one number out',

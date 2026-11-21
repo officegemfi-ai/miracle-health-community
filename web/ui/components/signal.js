@@ -73,7 +73,7 @@ export function signalCard(cid, opts = {}) {
   if (!x || x.score == null) {
     const sp = spaceOf(cid);
     return h('section', { class: 'card dark sigcard', 'aria-label': `${name} Community Signal` },
-      h('div', { class: 'lbl' }, h('span', { class: 'kick' }, 'Community Signal'), h('span', { class: 'live' }, 'NOT YET')),
+      h('div', { class: 'lbl' }, h('span', { class: 'kick' }, 'Community Signal'), h('span', { class: 'live' }, 'Not yet')),
       h('div', { class: 'sig-big' }, h('b', {}, '—'), h('span', {}, '/100')),
       h('p', { class: 'small', text: `${name} has no Signal yet. It unlocks after three first-hand reports here: share yours, whether it worked or not.` }),
       sp ? h('div', { class: 'share-meter' }, h('div', { class: 'row between' }, h('span', {}, 'Reports so far'), h('b', {}, `${sp.reports} of 3`)), bar((sp.reports / 3) * 100)) : null);
@@ -81,10 +81,10 @@ export function signalCard(cid, opts = {}) {
   const fams = (x.source_families || []).join(', ');
   const hist = S.history.get(cid);
   const card = h('section', { class: 'card dark sigcard', 'aria-label': `${name} Community Signal` },
-    h('div', { class: 'lbl' }, h('span', { class: 'kick' }, opts.title || `${name} · Community Signal`), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'live')),
+    h('div', { class: 'lbl' }, h('span', { class: 'kick' }, opts.title || `${name} · Community Signal`), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'Live')),
     h('div', { class: 'sig-big' }, h('b', { 'data-sig-of': cid }, fmt1(x.score)), h('span', {}, '/100'), h('span', { class: 'grow' }), h('span', { 'data-mv-of': cid }, movement(x))),
     scale(x.score),
-    h('div', { class: 'cap2' }, `Overall rating · ${x.summary_label} · ${x.confidence_label} confidence`),
+    h('div', { class: 'cap2' }, `${x.summary_label}, ${String(x.confidence_label).toLowerCase()} confidence`),
     hist && hist.length > 1 ? h('div', { class: 'mt8' }, sparkline(hist.slice(-24), 280, 40, 'lime')) : null,
     opts.compact ? byUse(x, 3, true) : byUse(x),
     opts.compact ? null : measuringTools(x, name),
@@ -93,7 +93,7 @@ export function signalCard(cid, opts = {}) {
       h('div', { class: 'mt8' }, bar(Math.min(100, (x.internal_share / 50) * 100))),
       h('div', { class: 'cap2 mt8' }, x.internal_share >= 50
         ? 'Most of this number now comes from members here.'
-        : `${x.first_hand ? `${fmtN(x.first_hand)} first-hand report${x.first_hand === 1 ? '' : 's'} here` : 'No reports here yet'}${x.same_for_me ? ` + ${fmtN(x.same_for_me)} “same for me”` : ''}${fams ? ` · the rest from ${fams}` : ''}. At 50% it’s ours.`)));
+        : `${x.first_hand ? `${fmtN(x.first_hand)} first-hand report${x.first_hand === 1 ? '' : 's'} here` : 'No reports here yet'}${x.same_for_me ? ` and ${fmtN(x.same_for_me)} “same for me”` : ''}${fams ? `; the rest from ${fams}` : ''}. At 50% it’s ours.`)));
   return card;
 }
 
@@ -107,7 +107,7 @@ function byUse(x, max = 6, compact = false) {
   const shown = (compact ? rated : list).slice(0, max);
   return h('div', { class: `uses ${compact ? 'compact' : ''}`.trim(), 'aria-label': 'Rated by use' },
     h('div', { class: 'row between' }, h('span', { class: 'kick' }, 'Rated by use'),
-      h('span', { class: 'xs mono dim' }, rated.length ? 'From first-hand reports' : 'Each use is rated after 3 reports')),
+      h('span', { class: 'xs dim' }, rated.length ? 'From first-hand reports' : 'Each use is rated after 3 reports')),
     shown.map((u) => {
       const base = u.rating != null && u.better_pct != null ? baselineOf(u.use) : null;
       return h('div', { class: `use ${u.rating != null ? 'rated' : 'waiting'}`, 'data-use': u.use },
@@ -118,10 +118,10 @@ function byUse(x, max = 6, compact = false) {
         h('span', { class: 'use-meta' }, [
           u.reports ? `${fmtN(u.reports)} report${u.reports === 1 ? '' : 's'}` : 'No reports yet',
           u.better_pct != null ? `${u.better_pct}% said better` : null,
-          base ? `in trials: ${base.short}` : null,
-          u.forum ? `forums: ${FORUM_WORD[u.forum] || String(u.forum).toLowerCase()}` : null,
+          base ? `In trials: ${base.short}` : null,
+          u.forum ? `Forums: ${FORUM_WORD[u.forum] || String(u.forum).toLowerCase()}` : null,
           u.rating == null && u.reports < 3 ? `${3 - (u.reports || 0)} more to rate` : null,
-        ].filter(Boolean).join(' · ')));
+        ].filter(Boolean).map((t) => `${t}.`).join(' ')));
     }),
     rated.length && !compact ? h('p', { class: 'xs dim' }, 'Each rating starts from what members report for that use across every compound and moves toward this one’s own reports, so a handful of glowing reports can’t outrank many good ones. The band is the likely range.') : null,
     !compact && list.length > max ? h('p', { class: 'xs dim' }, `+ ${list.length - max} more use${list.length - max === 1 ? '' : 's'}`) : null);
@@ -172,13 +172,13 @@ function measuringTools(x, name) {
   const lvl = levelOf(x.certification);
   const n = (x.reports_better || 0) + (x.reports_same || 0) + (x.reports_worse || 0);
   const w = S.pulse?.external_weight ?? 50;
-  const parts = [['What happened', 'efficacy', 65], ['Agreement', 'consistency', 15], ['Voices', 'diversity', 10], ['Volume', 'confidence', 10]];
+  const parts = [['How well it worked', 'efficacy', 65], ['How much people agree', 'consistency', 15], ['How many people', 'diversity', 10], ['How many reports', 'confidence', 10]];
   return h('div', { class: 'tools' },
     h('div', { class: 'cert-row' }, seal(x.certification, 30),
       h('div', { class: 'grow' }, h('b', {}, lvl.name), h('div', { class: 'xs' }, lvl.rule))),
     n ? h('div', { class: 'tool' },
       h('div', { class: 'row between' }, h('span', { class: 'kick' }, `How ${n} first-hand report${n === 1 ? '' : 's'} went`),
-        x.better_pct != null ? h('span', { class: 'xs mono', title: 'A 95% Wilson interval: with this many reports, the true share is likely in this range' }, `${x.better_pct}% better · 95% CI ${x.better_low}–${x.better_high}%`) : null),
+        x.better_pct != null ? h('span', { class: 'xs', title: 'A 95% Wilson interval: with this many reports, the true share is likely in this range' }, `${x.better_pct}% better · 95% CI ${x.better_low}–${x.better_high}%`) : null),
       splitBar({ better: x.reports_better || 0, same: x.reports_same || 0, worse: x.reports_worse || 0 }),
       h('div', { class: 'split-key xs' }, h('span', { class: 'b' }, `Better ${x.reports_better || 0}`), h('span', { class: 's' }, `About the same ${x.reports_same || 0}`), h('span', { class: 'w' }, `Worse ${x.reports_worse || 0}`)))
       : h('p', { class: 'xs tool' }, 'No first-hand reports here yet. With the first one you’ll see how reports split: better, about the same or worse.'),

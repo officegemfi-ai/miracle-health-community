@@ -30,7 +30,7 @@ export async function renderProfile(handle, tab = 'posts') {
         h('div', {},
           h('div', { class: 'kick' }, `Member #${fmtN(m.member_no)} · since ${new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}${m.role !== 'member' ? ` · ${m.role}` : ''}`),
           h('h1', {}, `u/${m.handle}`),
-          h('p', { class: 'lede' }, h('b', {}, lv.name), ` · level ${m.level} of 15 · ${lv.tier} tier${next ? ` · ${fmtN(next.min_points - m.points)} points to ${next.name}` : ''}`),
+          h('p', { class: 'lede' }, h('b', {}, lv.name), `, level ${m.level} of 15, ${lv.tier} tier.${next ? ` ${fmtN(next.min_points - m.points)} points to ${next.name}.` : ''}`),
           m.streak_days > 1 ? h('div', { class: 'streak mt8' }, icon('flame', 16), `${m.streak_days}-day streak`) : null)),
       h('div', { class: 'hero-stats' },
         h('div', {}, h('b', {}, fmtN(m.points)), h('span', {}, 'Signal points')),

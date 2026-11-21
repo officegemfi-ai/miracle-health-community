@@ -46,20 +46,19 @@
 .mh-chip-r{font-size:12.5px;line-height:1.4;opacity:.75}
 a.mh-chip:hover .mh-chip-name{text-decoration:underline;text-underline-offset:3px}
 
-/* Sig: the Signal's own ring with a dot, or with a mood's mark where the dot was (kit.js). It
-   moves only to say something: three dots beat while it thinks, the ring swells when something
-   good happens, the eye looks aside while it watches, and it dims when asleep or offline.
+/* Sig: a fine ring with the mood drawn inside it, in the hand of the front page's three step
+   drawings (kit.js). It moves only to say something: the three dots beat while it thinks, the
+   drawing swells when something good happens and the eye looks aside while it watches. The
+   drawing's middle is the grid's 0 0, which is where an SVG transform starts from.
    (sig-dot is also the waiting dots' beat in Ask Sig.) */
-.sig .sig-ring,.sig .sig-mark,.sig .sig-pupil{transform-box:fill-box;transform-origin:center}
 .sig.think .sig-dot{animation:sig-dot 1.2s ease-in-out infinite}
 .sig.think .sig-dot.d2{animation-delay:.2s}
 .sig.think .sig-dot.d3{animation-delay:.4s}
-.sig.happy .sig-ring,.sig.cheer .sig-ring,.sig.burst .sig-ring{animation:sig-swell .7s ease 2}
+.sig.happy .sig-in,.sig.cheer .sig-in,.sig.burst .sig-in{animation:sig-swell .7s ease 2}
 .sig.watching .sig-pupil{animation:sig-look 4s ease-in-out infinite}
-.sig.sleepy{opacity:.55}
 @keyframes sig-dot{0%,100%{opacity:.25}50%{opacity:1}}
 @keyframes sig-swell{0%,100%{transform:scale(1)}40%{transform:scale(1.09)}}
-@keyframes sig-look{0%,40%,100%{transform:translateX(0)}50%,90%{transform:translateX(-2px)}}
+@keyframes sig-look{0%,40%,100%{transform:translateX(0)}50%,90%{transform:translateX(-7px)}}
 @media (prefers-reduced-motion:reduce){
   .sig *{animation:none!important}
 }

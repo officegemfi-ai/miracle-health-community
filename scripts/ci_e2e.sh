@@ -61,4 +61,7 @@ done
 
 step "running the preview test"
 BASE_URL=http://127.0.0.1:4175/ GATE_PASSWORD=ci-preview-password timeout 300 node tests/e2e/preview.mjs
+
+step "checking every screen keeps the clean rule (no code costume, no dot chains, no words in the code face)"
+BASE_URL=http://127.0.0.1:4175/ GATE_PASSWORD=ci-preview-password timeout 300 node tests/e2e/clean.mjs
 step "done"
