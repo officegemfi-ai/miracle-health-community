@@ -609,7 +609,8 @@ dialog.modal h2{margin-top:0}
 
 /* ---------------------------------------------------------------- Sig */
 .sigdock{position:fixed;right:calc(var(--os-g) + 14px);bottom:calc(var(--os-g) + var(--tick-h) + 12px);z-index:35;display:flex;align-items:flex-end;gap:10px;flex-direction:row-reverse}
-.sigdock>button{border:0;background:none;padding:0;border-radius:50%;filter:drop-shadow(0 10px 18px rgba(0,0,0,.25))}
+/* Sig is drawn in hairlines: the button gives it a black disc to stand on, so it reads over whatever scrolls under it */
+.sigdock>button{border:0;background:var(--bg);padding:0;border-radius:50%;filter:drop-shadow(0 10px 18px rgba(0,0,0,.25))}
 .sigsay{max-width:280px;padding:12px 14px;border-radius:0;border:1px solid var(--line-2);background:var(--surface-3);color:var(--on-ink);font-size:13.5px;line-height:1.45;box-shadow:var(--shadow);opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none}
 .sigsay.in{opacity:1;transform:none;pointer-events:auto}
 .sigsay b{color:#FFFFFF}
