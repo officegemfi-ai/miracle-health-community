@@ -172,7 +172,7 @@ function measuringTools(x, name) {
   const lvl = levelOf(x.certification);
   const n = (x.reports_better || 0) + (x.reports_same || 0) + (x.reports_worse || 0);
   const w = S.pulse?.external_weight ?? 50;
-  const parts = [['What happened', 'efficacy', 65], ['Agreement', 'consistency', 15], ['Voices', 'diversity', 10], ['Volume', 'confidence', 10]];
+  const parts = [['How well it worked', 'efficacy', 65], ['How much people agree', 'consistency', 15], ['How many people', 'diversity', 10], ['How many reports', 'confidence', 10]];
   return h('div', { class: 'tools' },
     h('div', { class: 'cert-row' }, seal(x.certification, 30),
       h('div', { class: 'grow' }, h('b', {}, lvl.name), h('div', { class: 'xs' }, lvl.rule))),

@@ -36,7 +36,7 @@ export async function renderSignalPage() {
     sortbar, list, tail,
     h('section', { class: 'card mt16' },
       h('h3', {}, 'How the number moves'),
-      h('p', { class: 'small muted' }, '65% is what people report happened, 15% how much those reports agree, 10% how many independent voices there are and 10% how much there is to go on. Every first-hand report Sig reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
+      h('p', { class: 'small muted' }, '65% is how well it worked, 15% how much people agree, 10% how many people and 10% how many reports. Every first-hand report Sig reads, every “same for me” and every post taken down recalculates the compound’s Signal in the database, and every change is kept as a new version. New accounts count half. Points go to taking part, never to how things turned out.'),
       h('a', { class: 'lnk small', href: '#/how' }, 'More on how it works')));
   const rail = fillRail('signal');
   const [rows, pulse] = await Promise.all([loadSignal(), loadPulse(), loadHistory()]);
