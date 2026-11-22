@@ -189,7 +189,7 @@ if (import.meta.main) {
   const { url, service } = env();
   const db = createClient(url, service, { auth: { persistSession: false } });
   const site = 'https://miraclehealth.us';
-  const origins = (Deno.env.get('NEWSLETTER_ORIGINS') ?? `${site},https://www.miraclehealth.us`).split(',').map((s) => s.trim()).filter(Boolean);
+  const origins = (Deno.env.get('NEWSLETTER_ORIGINS') ?? `${site},https://www.miraclehealth.us,https://theunhyped.com,https://www.theunhyped.com`).split(',').map((s) => s.trim()).filter(Boolean);
   const apiKey = Deno.env.get('RESEND_API_KEY') ?? '';
   const from = Deno.env.get('NEWSLETTER_FROM') ?? '';
   const send = apiKey && from ? resend(apiKey, from) : undefined;

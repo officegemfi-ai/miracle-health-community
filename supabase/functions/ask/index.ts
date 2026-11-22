@@ -225,7 +225,7 @@ if (import.meta.main) {
   const db = createClient(url, service, { auth: { persistSession: false } });
   const list = (s: string | undefined) => (s ?? '').split(',').map((x) => x.trim()).filter(Boolean);
   const deps: HttpDeps = {
-    origins: list(Deno.env.get('ASK_ORIGINS') ?? 'https://miraclehealth.us,https://www.miraclehealth.us'),
+    origins: list(Deno.env.get('ASK_ORIGINS') ?? 'https://theunhyped.com,https://www.theunhyped.com,https://miraclehealth.us,https://www.miraclehealth.us'),
     apiKey: Deno.env.get('ANTHROPIC_API_KEY') ?? '',
     models: {
       guide: Deno.env.get('ASK_MODEL') || 'claude-sonnet-5-5',
