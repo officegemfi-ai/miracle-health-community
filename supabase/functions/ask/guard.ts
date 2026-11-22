@@ -41,7 +41,7 @@ export const DOSE_WORDS = /\b(?:(?:one|two|three|four|five|six|seven|eight|nine|
 // "twice a day", "once weekly", "2x/day", "every other day", "5 days on, 2 off"
 export const SCHEDULE = new RegExp(String.raw`\b(?:once|twice|three times|\d+\s?x)\s+(?:a|per|each)\s+(?:day|week|night|morning)\b|\b\d+\s?x\s?\/\s?(?:day|d|week|wk)\b|\bevery\s+(?:other\s+)?(?:day|night|morning|\d+\s+(?:hours|days))\b|\b\d+\s+(?:days?|weeks?)\s+on\b`, 'gi');
 // Links to anywhere but our own sites
-export const LINK = /\bhttps?:\/\/(?!(?:www\.)?miraclehealth\.us\b|community\.miraclehealth\.us\b)[^\s)\]]+/gi;
+export const LINK = /\bhttps?:\/\/(?!(?:www\.|community\.)?(?:theunhyped\.com|miraclehealth\.us)\b)[^\s)\]]+/gi;
 export const SALES = /\b(?:discount|coupon|promo|affiliate)\s+codes?\b|\buse\s+code\b|\b(?:buy|order|get)\s+(?:it|them|some)\s+(?:from|at|on)\b|\bresearch[- ]chemical\s+(?:sites?|vendors?|shops?|stores?|suppliers?)\b/gi;
 // Supplement-extract brands the Library never prints (the same list as the site's library build)
 export const BRANDS = /\b(?:KSM-?66|Sensoril|Bacognize|Synapsa|GlucoVantage|CarnoSyn|5-?Loxin|Rejuvant|Cognizin|Meriva|Longvida|BCM-?95|LMNT|Liquid\s?I\.?V\.?|Testofen|PharmaGABA|Iodoral|Suntheanine|Magtein|Relora|Ovasitol|Tru\s?Niagen|Niagen|Levagen|Kyolic|Florastor|Affron|PrimaVie|SpermidineLIFE|Avmacol|TeaCrine|LJ100|Mitopure|Pepzingi)\b/gi;

@@ -159,10 +159,12 @@ setup)
   if [ "$ENV_NAME" = test ]; then
     default_site=https://community.miraclehealth.us/test/
     # The deploy's end-to-end check runs the test app from the runner itself, at this address
-    default_origins=https://community.miraclehealth.us,http://127.0.0.1:4173
+    default_origins=https://community.theunhyped.com,https://community.miraclehealth.us,http://127.0.0.1:4173
   else
     default_site=https://community.miraclehealth.us/
-    default_origins=https://community.miraclehealth.us
+    # The new address and the old one: Unhyped moves to theunhyped.com, and the old address
+    # forwards there, so both are allowed while it moves
+    default_origins=https://community.theunhyped.com,https://community.miraclehealth.us
   fi
   site_url="${SITE_URL:-$default_site}"
 
@@ -249,7 +251,7 @@ setup)
   args=("REVIEW_SECRET=$secret" "MODERATION_MODEL=${MODERATION_MODEL:-claude-haiku-5-5}" "APP_ORIGINS=$origins")
   # Sig's chat (the ask function) answers the public website; the test project also
   # answers the deploy's own check, which calls it from the runner
-  ask_origins="${ASK_ORIGINS:-https://miraclehealth.us,https://www.miraclehealth.us}"
+  ask_origins="${ASK_ORIGINS:-https://theunhyped.com,https://www.theunhyped.com,https://miraclehealth.us,https://www.miraclehealth.us}"
   if [ "$ENV_NAME" = test ]; then
     case ",$ask_origins," in *,http://127.0.0.1:4173,*) ;; *) ask_origins="$ask_origins,http://127.0.0.1:4173" ;; esac
   fi
@@ -270,7 +272,7 @@ setup)
     tk="$(derive texts)"; nk="$(derive newsletter)"; mask "$tk"; mask "$nk"
     args+=("TEXTS_CRON_KEY=$tk" "NEWSLETTER_ADMIN_KEY=$nk")
   fi
-  news_origins="${NEWSLETTER_ORIGINS:-https://miraclehealth.us,https://www.miraclehealth.us}"
+  news_origins="${NEWSLETTER_ORIGINS:-https://theunhyped.com,https://www.theunhyped.com,https://miraclehealth.us,https://www.miraclehealth.us}"
   if [ "$ENV_NAME" = test ]; then news_origins="$news_origins,http://127.0.0.1:4173,http://127.0.0.1:4310"; fi
   args+=("NEWSLETTER_ORIGINS=$news_origins")
   for v in RESEND_API_KEY NEWSLETTER_FROM TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_MESSAGING_SERVICE_SID; do

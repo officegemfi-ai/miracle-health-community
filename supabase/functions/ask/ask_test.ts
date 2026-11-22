@@ -286,6 +286,10 @@ Deno.test('the plain checks catch amounts, schedules, outside links and sales ta
   for (const k of ['dose', 'schedule', 'link', 'sales']) assert(hits.includes(k as never), k);
   assertEquals(scan('Vitamin B12, omega-3, GLP-1, CoQ10 and 5-HTP; a trial of 53 people lost 15% of body weight.'), []);
   assertEquals(scan('See [BPC-157](lib:bpc157) and https://miraclehealth.us/library/'), []);
+  // Both of our addresses, while Unhyped moves to theunhyped.com, and nobody else's
+  assertEquals(scan('See https://theunhyped.com/library/bpc157/, https://www.theunhyped.com/ and https://community.theunhyped.com/#/new'), []);
+  assertEquals(scan('Or https://community.miraclehealth.us/ and https://www.miraclehealth.us/sig/'), []);
+  assertEquals(scan('Not https://theunhyped.co/ nor https://notmiraclehealth.us/x').map((h) => h.kind), ['link', 'link']);
   assert(redact('Use 2.5mg weekly').includes('[amount removed]'));
   assertEquals(cleanField('Strong evidence: 5 g a day <b>helps</b>', 80), 'Strong evidence: a day helps');
 });

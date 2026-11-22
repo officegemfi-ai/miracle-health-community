@@ -63,7 +63,7 @@ const csp = [
   `script-src 'self'${demo ? " 'wasm-unsafe-eval'" : ''}${cfg.turnstileSiteKey ? ' https://challenges.cloudflare.com' : ''}${cfg.posthogKey ? ` ${origin(posthogAssets)}` : ''}${cfg.sentryDsn ? ' https://browser.sentry-cdn.com' : ''}`,
   // Realtime runs over a websocket on the same host: wss:// for https://, ws:// for a local http:// one
   // and the Library's grades on the website (one public file, the same for every visitor)
-  `connect-src 'self' ${supa} ${supa.replace(/^http/, 'ws')} https://miraclehealth.us${cfg.posthogKey ? ` ${origin(posthogHost)} ${origin(posthogAssets)}` : ''}${sentryIngest ? ` ${sentryIngest}` : ''}`,
+  `connect-src 'self' ${supa} ${supa.replace(/^http/, 'ws')} https://theunhyped.com https://miraclehealth.us${cfg.posthogKey ? ` ${origin(posthogHost)} ${origin(posthogAssets)}` : ''}${sentryIngest ? ` ${sentryIngest}` : ''}`,
   `frame-src${cfg.turnstileSiteKey ? ' https://challenges.cloudflare.com' : " 'none'"}`,
   "img-src 'self' data:",
   "style-src 'self'",
