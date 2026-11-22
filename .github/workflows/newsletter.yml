@@ -1,7 +1,7 @@
 # The Signal, Unhyped's weekly email. Run by hand (Actions > Weekly email > Run workflow):
 #   1. confirmations: emails the confirm link to everyone who signed up before email was set up
 #      (and anyone who hasn't had theirs). Safe to run again: each address is asked once.
-#   2. send: emails issue <n> (miraclehealth.us/weekly/<n>/email.html, published first) to every
+#   2. send: emails issue <n> (theunhyped.com/weekly/<n>/email.html, published first) to every
 #      confirmed address that hasn't had it. Safe to run again: nobody gets an issue twice.
 # Needs the email account set up first: the RESEND_API_KEY secret and the NEWSLETTER_FROM variable
 # (an address on a domain verified with Resend), then a deploy to live so the function has them.
@@ -37,8 +37,8 @@ jobs:
         if: inputs.action == 'send'
         run: |
           case "$ISSUE" in ''|*[!0-9]*) echo "::error title=Weekly email::Say which issue to send (a number)"; exit 1 ;; esac
-          curl -fsS -o /dev/null "https://miraclehealth.us/weekly/$ISSUE/email.html" \
-            || { echo "::error title=Weekly email::miraclehealth.us/weekly/$ISSUE/email.html isn't published yet"; exit 1; }
+          curl -fsS -o /dev/null "https://theunhyped.com/weekly/$ISSUE/email.html" \
+            || { echo "::error title=Weekly email::theunhyped.com/weekly/$ISSUE/email.html isn't published yet"; exit 1; }
       - name: Call the newsletter function
         run: |
           ref="$(scripts/supabase_project.sh live ref)"

@@ -61,7 +61,7 @@ const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePa
 const errors = [];
 async function person(viewport = { width: 1280, height: 900 }) {
   const ctx = await browser.newContext({ viewport });
-  await ctx.route('https://miraclehealth.us/library/data/body/**', bodyFiles);
+  await ctx.route('https://theunhyped.com/library/data/body/**', bodyFiles);
   // Whatever the app's own security policy refuses, for the checks that care
   await ctx.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) => { (window.__csp ||= []).push(`${e.violatedDirective} ${e.blockedURI || ''}`.trim()); }));
   const page = await ctx.newPage();
@@ -425,7 +425,7 @@ await B.goto(`${BASE}#/s/bpc157`);
 await B.waitForSelector('.sigcard .tools .cert-row');
 const tools = await B.textContent('.sigcard .tools');
 await B.waitForSelector('a.lib-link', { state: 'attached' });
-check('A space links to its fact sheet in the public library', (await B.getAttribute('a.lib-link', 'href')) === 'https://miraclehealth.us/library/bpc157/');
+check('A space links to its fact sheet in the public library', (await B.getAttribute('a.lib-link', 'href')) === 'https://theunhyped.com/library/bpc157/');
 const jointRow = (await B.textContent('.sigcard .uses [data-use="joints"]')) || '';
 check('A space rates the compound by use: joint pain shows its first report and how often the forums mention it',
   /Joint pain/.test(jointRow) && /1 report/.test(jointRow) && /forums: very common/i.test(jointRow) && /2 more to rate/i.test(jointRow), jointRow);

@@ -12,7 +12,7 @@
 // Like the rest of the kit: no imports, our own markup with escaped text only, the same file on
 // both sites (scripts/sync_kit.sh). The styles are in kit.css (.mh-bm).
 
-const SITE = 'https://miraclehealth.us';
+const SITE = 'https://theunhyped.com';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x);
 const okId = (id) => typeof id === 'string' && /^[a-z0-9]{1,40}$/.test(id);
@@ -144,7 +144,7 @@ function manyHtml(list, rows, ctx, label, uid) {
  * @param {boolean} [props.retry] offer Try again (wireBodyMap's onRetry): in the error state, and
  *   on a ready map with a part whose lines couldn't be read
  * @param {(id: string, n: number) => string} [props.sourceHref] where a line's source number leads
- *   (default: that compound's fact sheet on miraclehealth.us)
+ *   (default: that compound's fact sheet on theunhyped.com)
  * @param {string} [props.label] the accessible name (default: "How X works in the body, place by place, head to toe")
  * @param {string} [props.id] an id for this map, unique on the page
  * @param {string} [props.note] a line under the map

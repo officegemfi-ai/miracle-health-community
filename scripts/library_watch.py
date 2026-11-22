@@ -272,7 +272,7 @@ def render(rows, markers, by, counts, today, list_url='', cap=True):
         for f in sorted(rows, key=lambda x: (x['name'].lower(), -strength(x))):
             if f['name'] != cur:
                 cur = f['name']
-                out.append(f'\n**[{cur}](https://miraclehealth.us/library/{f["id"]}/)**')
+                out.append(f'\n**[{cur}](https://theunhyped.com/library/{f["id"]}/)**')
             out.append(line(f))
         return out
 
@@ -319,7 +319,7 @@ def ticked_in(body):
             if cur and m and re.match(r'\s*- \[[xX]\] ', line):
                 out.add(f'{cur}:{m.group(1)}')
             continue
-        m = re.search(r'\]\(https://miraclehealth\.us/library/([a-z0-9-]+)/\)\*\*\s*$', line)
+        m = re.search(r'\]\(https://theunhyped\.com/library/([a-z0-9-]+)/\)\*\*\s*$', line)
         if m:
             cur = m.group(1)
     return out

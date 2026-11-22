@@ -1,5 +1,5 @@
 // signal: the Community Signal's public read API. Anyone can read it, with no key: it serves the
-// same aggregate numbers miraclehealth.us shows, nothing about any one member. The database
+// same aggregate numbers theunhyped.com shows, nothing about any one member. The database
 // publishes a new numbered version whenever the numbers change, checking once a minute
 // (migration 20261107000100); this serves the newest one.
 //   GET /signal                  the whole Signal: snapshot.json's fields, plus version and published_at

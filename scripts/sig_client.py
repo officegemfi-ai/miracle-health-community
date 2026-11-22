@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 
 # The page the questions come from: the test project accepts this one; the live project accepts
-# only its site (the live check passes --origin https://miraclehealth.us)
+# only its site (the live check passes --origin https://theunhyped.com)
 ORIGIN = 'http://127.0.0.1:4173'
 
 # Amounts in dosing units, but not a foundation target: food protein ("about 1 g of protein per

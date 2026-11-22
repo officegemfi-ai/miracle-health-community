@@ -74,6 +74,6 @@ verify_jwt = false
 verify_jwt = false
 
 # The Community Signal's public read API: anyone may read it, with no key (aggregate numbers only,
-# the same miraclehealth.us shows; see supabase/functions/signal)
+# the same theunhyped.com shows; see supabase/functions/signal)
 [functions.signal]
 verify_jwt = false

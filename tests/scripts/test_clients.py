@@ -60,9 +60,9 @@ class SigClient(unittest.TestCase):
 
     def test_a_question_carries_its_page_and_key(self):
         StandInSig.replies = [(200, 'event: text\ndata: {"d": "Hi."}\n\n')]
-        r = sig_client.post(self.url, [{'role': 'user', 'content': 'hi'}], key='k' * 40, origin='https://miraclehealth.us')
+        r = sig_client.post(self.url, [{'role': 'user', 'content': 'hi'}], key='k' * 40, origin='https://theunhyped.com')
         self.assertEqual((r['status'], sig_client.text_of(r['events'])), (200, 'Hi.'))
-        self.assertEqual(StandInSig.seen[0][1:3], ('https://miraclehealth.us', 'k' * 40))
+        self.assertEqual(StandInSig.seen[0][1:3], ('https://theunhyped.com', 'k' * 40))
 
     def test_an_error_or_a_dropped_connection_is_a_failed_question_not_a_crash(self):
         StandInSig.replies = [(500, 'oops'), ('drop', '')]

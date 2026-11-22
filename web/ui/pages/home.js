@@ -18,7 +18,7 @@ export async function renderHome(sort = 'hot') {
   drawDue();
   render(
     S.me.status === 'suspended' ? h('div', { class: 'msg note' }, `Your account is paused until ${new Date(S.me.suspended_until).toLocaleString()}. You can read, but not post or comment.`) : null,
-    // The feed opens the way miraclehealth.us does: words on a plate, no photograph
+    // The feed opens the way theunhyped.com does: words on a plate, no photograph
     h('section', { class: 'feed-hero' },
       h('div', {},
         h('div', { class: 'kick' }, joined.length ? `${joined.length} space${joined.length === 1 ? '' : 's'} you follow` : 'Everything, until you join spaces'),

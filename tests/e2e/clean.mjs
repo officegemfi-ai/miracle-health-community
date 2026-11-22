@@ -1,5 +1,5 @@
 // The clean check, for the app: the small details that make a screen look machine-made and busy
-// (the owner's rule, November 18; the brand book on miraclehealth.us, "Clean, not costume"). It joins
+// (the owner's rule, November 18; the brand book on theunhyped.com, "Clean, not costume"). It joins
 // the preview as a new member and opens every screen at a laptop's and a phone's width, and fails
 // when a screen shows
 //   - code costume: a file name as a label, a shell path, a prompt, a command or a flag, a code

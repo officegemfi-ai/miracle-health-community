@@ -1,7 +1,7 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert/strict';
 import { handle, postalOf, type Deps, type Mail } from './index.ts';
 
-const SITE = 'https://miraclehealth.us';
+const SITE = 'https://theunhyped.com';
 const KEY = 'k'.repeat(40);
 function fakeDb(answers: Record<string, unknown>) {
   const calls: [string, Record<string, unknown> | undefined][] = [];

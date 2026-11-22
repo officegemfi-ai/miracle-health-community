@@ -20,7 +20,7 @@
 #             totals only, no posts or names), for the site's snapshot.json
 #   fn-key    <texts|newsletter> prints the key the scheduled workflows call those functions with
 #   public-reports  prints the reports their authors made public, as JSON
-#             (private.public_reports()), for the pages at community.miraclehealth.us/r/
+#             (private.public_reports()), for the pages at community.theunhyped.com/r/
 #   eval-key  (test only) <key> sets the key Sig's test set runs with; "off" removes it
 #
 # Reads: SUPABASE_ACCESS_TOKEN, deploy/<env>.env (SUPABASE_PROJECT_REF), and optionally
@@ -157,11 +157,11 @@ advisors)
 
 setup)
   if [ "$ENV_NAME" = test ]; then
-    default_site=https://community.miraclehealth.us/test/
+    default_site=https://community.theunhyped.com/test/
     # The deploy's end-to-end check runs the test app from the runner itself, at this address
     default_origins=https://community.theunhyped.com,https://community.miraclehealth.us,http://127.0.0.1:4173
   else
-    default_site=https://community.miraclehealth.us/
+    default_site=https://community.theunhyped.com/
     # The new address and the old one: Unhyped moves to theunhyped.com, and the old address
     # forwards there, so both are allowed while it moves
     default_origins=https://community.theunhyped.com,https://community.miraclehealth.us

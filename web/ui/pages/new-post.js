@@ -16,7 +16,7 @@ import { compoundPicker, picksNote } from '../components/picker.js';
 import { afterEarn } from '../components/game.js';
 import { draftFrom } from '../../kit/kit.js';
 
-// d: a draft from miraclehealth.us (a plan from Sig check-in, or "add how it went" in Sig;
+// d: a draft from theunhyped.com (a plan from Sig check-in, or "add how it went" in Sig;
 // kit.js draftLink), to edit
 export function renderNew(param = '', d = '') {
   if (S.me.status === 'suspended') { render(h('div', { class: 'msg note' }, 'Your account is paused, so you can’t post right now.')); return; }
@@ -49,7 +49,7 @@ export function renderNew(param = '', d = '') {
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'New post'), h('h1', {}, 'What have you taken, and how did it go?'))),
     draft ? h('div', { class: 'msg note from-plan' }, sig(32, 'happy'),
-      h('span', {}, h('b', {}, 'Drafted for you on miraclehealth.us. '), 'It’s yours to change: add side effects or anything else, check what you took, and nothing is posted until you press Post.')) : null,
+      h('span', {}, h('b', {}, 'Drafted for you on theunhyped.com. '), 'It’s yours to change: add side effects or anything else, check what you took, and nothing is posted until you press Post.')) : null,
     !draft && fromGuest?.body ? h('div', { class: 'msg note from-plan' }, sig(32, 'happy'),
       h('span', {}, h('b', {}, 'Your report is here. '), 'Check what you took, add a title if you like, and press Post.')) : null,
     h('form', {

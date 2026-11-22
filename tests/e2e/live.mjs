@@ -1,4 +1,4 @@
-// After going live: miraclehealth.us works the way a visitor uses it, against the live Sig.
+// After going live: theunhyped.com works the way a visitor uses it, against the live Sig.
 //   1. The Library serves what Sig reads: enclomiphene's fact sheet and the body map carry the
 //      IGF-1 finding (it falls with enclomiphene, rises with HGH), and its page shows it.
 //   2. Ask Sig on a laptop: the navigation is there; a question about two compounds gets an answer
@@ -8,11 +8,11 @@
 //      an answer, the peek bar, and the screen as a sheet with the evidence.
 // No errors in the page. Screenshots go to tests/e2e/out/live_*.png; with SHOTS_IN_LOG=1 a small
 // copy of each is printed to the log too.
-// Usage: [SITE=https://miraclehealth.us] [SHOTS_IN_LOG=1] node tests/e2e/live.mjs
+// Usage: [SITE=https://theunhyped.com] [SHOTS_IN_LOG=1] node tests/e2e/live.mjs
 import { chromium, devices } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
-const SITE = (process.env.SITE || 'https://miraclehealth.us').replace(/\/$/, '');
+const SITE = (process.env.SITE || 'https://theunhyped.com').replace(/\/$/, '');
 const OUT = new URL('./out/', import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });
 

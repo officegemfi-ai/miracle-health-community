@@ -1,4 +1,4 @@
-# The live check: asks the live Sig a few real questions, and opens miraclehealth.us the way a
+# The live check: asks the live Sig a few real questions, and opens theunhyped.com the way a
 # visitor does, on a laptop and a phone. It runs at the end of every Promote to live, and by hand.
 # Nothing here changes anything; the questions count against the site's daily answers like any
 # visitor's (seven of them).
@@ -35,7 +35,7 @@ jobs:
           ASK: https://nerfymdslkhopsomwriv.supabase.co/functions/v1/ask
         run: |
           set -o pipefail
-          python3 scripts/ask_eval.py "$ASK" --origin https://miraclehealth.us --questions evals/live.jsonl \
+          python3 scripts/ask_eval.py "$ASK" --origin https://theunhyped.com --questions evals/live.jsonl \
             --strict --steps --answers --min-pass 1 --out "$RUNNER_TEMP/live" 2>&1 | tee "$RUNNER_TEMP/live.log" \
             || { scripts/ci_annotate.sh "Sig on live" "$RUNNER_TEMP/live.log"; exit 1; }
 
@@ -53,7 +53,7 @@ jobs:
           npm ci --prefix tests/e2e --no-audit --no-fund --loglevel=error
           npx --prefix tests/e2e playwright install --with-deps chromium > "$RUNNER_TEMP/pw.log" 2>&1 \
             || { tail -n 20 "$RUNNER_TEMP/pw.log"; exit 1; }
-      - name: Ask Sig on miraclehealth.us
+      - name: Ask Sig on theunhyped.com
         env:
           SHOTS_IN_LOG: ${{ inputs.shots_in_log && '1' || '' }}
         run: |

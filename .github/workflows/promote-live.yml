@@ -1,13 +1,13 @@
-# Opens, and later updates, the LIVE community at https://community.miraclehealth.us.
+# Opens, and later updates, the LIVE community at https://community.theunhyped.com.
 # Press "Run workflow" (Actions > Promote to live) on main once a change has passed on test.
 #
 # The first run creates the live Supabase project (miracle-health-live, next to the test
 # one); every run brings it up to date: database changes (never the test data), sign-in by
 # text through Twilio Verify, and Sig's settings and functions (including the ask
-# function behind the chat at miraclehealth.us/ai). Then the commit is
+# function behind the chat at theunhyped.com/ai). Then the commit is
 # tagged "live" and the site is rebuilt with the live app at the root; from then on the
 # test app and the preview with sample posts stay off the site. Last, the live check
-# (live-check.yml) asks the live Sig a few questions and opens miraclehealth.us/ai on a laptop
+# (live-check.yml) asks the live Sig a few questions and opens theunhyped.com/ai on a laptop
 # and a phone.
 # To make someone an admin, run it with their handle (they sign up first).
 #
@@ -151,7 +151,7 @@ jobs:
       - name: The live app is up on the live project, and test and preview are off the site
         env:
           EXPECT: https://${{ needs.backend.outputs.ref }}.supabase.co
-          SITE: https://community.miraclehealth.us
+          SITE: https://community.theunhyped.com
         run: |
           # GitHub Pages can take a few minutes to serve a new build
           cfg=""
@@ -170,7 +170,7 @@ jobs:
           done
           echo "::notice title=Live::The community is live at $SITE"
 
-  # Sig and miraclehealth.us as a visitor finds them, on the functions just deployed
+  # Sig and theunhyped.com as a visitor finds them, on the functions just deployed
   live:
     name: Sig and the site, live
     needs: backend

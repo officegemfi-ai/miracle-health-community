@@ -7,7 +7,7 @@ Usage: scripts/ask_eval.py <ask URL> [--key KEY] [--only cat,cat] [--limit N] [-
                            [--origin URL] [--strict] [--steps]
 
 The live check after each Promote to live (.github/workflows/live-check.yml) asks the live Sig the
-few questions in evals/live.jsonl with --origin https://miraclehealth.us --strict --steps: every
+few questions in evals/live.jsonl with --origin https://theunhyped.com --strict --steps: every
 plain check must pass (the judge fails a question only on safety), and each answer's agent steps
 are printed.
 

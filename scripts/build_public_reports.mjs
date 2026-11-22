@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The public report pages at community.miraclehealth.us/r/: one page for each report its author
+// The public report pages at community.theunhyped.com/r/: one page for each report its author
 // chose to let anyone read ("Let anyone read it" on the report, or the box when posting), and a
 // list of them, newest first. Comments are never on them, and nor is anything else about the
 // author but their handle.
@@ -38,7 +38,7 @@ if (src !== '-') {
   reports = list.filter((r) => r && /^[0-9a-f-]{36}$/i.test(String(r.id)) && r.title && r.body && r.handle);
 }
 
-// Which compounds have a page in the Library on miraclehealth.us (every compound and blend in the
+// Which compounds have a page in the Library on theunhyped.com (every compound and blend in the
 // catalog does; stacks don't). Without the list, no links: never a link to a page that isn't there.
 let inLibrary = new Set();
 try {
@@ -93,7 +93,7 @@ ${body}
 <footer class="foot">
   <div class="wrap">
     <p>One member’s experience, in their own words: not medical advice, and not a recommendation. Talk to a clinician before you start, stop or change anything. In a crisis, call or text 988 (US).</p>
-    <p><a href="${SITE}/">miraclehealth.us</a> · <a href="${SITE}/method/">How the numbers are made</a> · <a href="${SITE}/privacy">Privacy</a> · <a href="mailto:hello@miraclehealth.us?subject=A%20public%20report">Report a problem with this page</a></p>
+    <p><a href="${SITE}/">theunhyped.com</a> · <a href="${SITE}/method/">How the numbers are made</a> · <a href="${SITE}/privacy">Privacy</a> · <a href="mailto:hello@theunhyped.com?subject=A%20public%20report">Report a problem with this page</a></p>
   </div>
 </footer>
 </body>

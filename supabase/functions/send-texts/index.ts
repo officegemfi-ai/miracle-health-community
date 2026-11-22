@@ -28,7 +28,7 @@ export function localHour(tz: string, at: Date): number {
     return localHour('America/Los_Angeles', at);
   }
 }
-export const textFor = (postId: string, community = 'https://community.miraclehealth.us') =>
+export const textFor = (postId: string, community = 'https://community.theunhyped.com') =>
   `Unhyped: one of your reports is due for a check-in. How's it going? ${community}/#/post/${postId} Reply STOP to stop these texts.`;
 
 export async function handle(req: Request, deps: Deps): Promise<Response> {

@@ -1,7 +1,7 @@
 // The Signal, drawn: how the number is made (public forums in, members' reports in, one
 // number out), the takeover line (how far a Signal has moved from forum data to members'
 // data), the certification seals and the split of first-hand reports. Plain SVG strings and
-// no imports, so the public library on miraclehealth.us uses the same drawings.
+// no imports, so the public library on theunhyped.com uses the same drawings.
 
 // The levels a Signal earns (the database decides; these are the words and the rules shown).
 // The numbers match the default settings in 20261029000100_signal_certification.sql.
