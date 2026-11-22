@@ -1,4 +1,4 @@
--- Miracle Health community: the library, stacks and suggestions (pgTAP)
+-- Unhyped community: the library, stacks and suggestions (pgTAP)
 -- Posting one compound, a blend or a stack; finding stacks; a stack's own Signal;
 -- suggesting what the library is missing. Everything rolls back at the end.
 

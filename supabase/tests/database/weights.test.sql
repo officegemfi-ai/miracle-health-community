@@ -1,4 +1,4 @@
--- Miracle Health community: reports checked, followed up and weighted (pgTAP)
+-- Unhyped community: reports checked, followed up and weighted (pgTAP)
 -- The author's check on the read, check-ins at 2, 6 and 12 weeks, weights and holds, pooled
 -- ratings with ranges, the side-effect watch, focus pairs and the snapshot. Rolls back at the end.
 

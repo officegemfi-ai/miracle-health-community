@@ -1,4 +1,4 @@
-// Miracle Health Community · web app
+// Unhyped Community · web app
 // Plain JavaScript modules, no build step. It talks to Supabase with the public key only; who can
 // see or change what is enforced by the database, not here.
 //
@@ -8,7 +8,7 @@
 //   data/  the only code that reaches Supabase, the network, storage and analytics
 //   app/   what the app knows (the store), the use cases that fill it, and live news
 //   ui/    the page: the frame, the rail, components, pages and the router
-// kit/ is Miracle Health's design kit, shared with the website (scripts/sync_kit.sh).
+// kit/ is Unhyped's design kit, shared with the website (scripts/sync_kit.sh).
 import { C } from './data/config.js';
 import { connect } from './data/client.js';
 import * as Auth from './data/auth.js';

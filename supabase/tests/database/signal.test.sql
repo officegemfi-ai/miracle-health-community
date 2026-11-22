@@ -1,4 +1,4 @@
--- Miracle Health community: the Community Signal (pgTAP)
+-- Unhyped community: the Community Signal (pgTAP)
 -- Who can read it, what moves it, and what can't. Everything rolls back at the end.
 
 begin;

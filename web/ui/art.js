@@ -1,6 +1,6 @@
 // The community's art, drawn in code: Sig (the Community Signal in person) in
 // every mood, the fifteen emblems from Spark to Organism, Sig stickers, space
-// tiles and sparklines. Sig and the tiles come from Miracle Health's design kit
+// tiles and sparklines. Sig and the tiles come from Unhyped's design kit
 // (web/kit, copied from shared/kit), so the website draws the same ones.
 import { svg } from './dom.js';
 import { sigSvg, tileSvg, catColor, initials } from '../kit/kit.js';
@@ -10,7 +10,7 @@ let uid = 0;
 const nextId = (p) => `${p}${++uid}`;
 
 // ---------------------------------------------------------------------------
-// Sig, from Miracle Health's design kit (the website draws the same Sig)
+// Sig, from Unhyped's design kit (the website draws the same Sig)
 // ---------------------------------------------------------------------------
 export function sig(size = 56, mood = 'idle', cls = '') {
   return svg(sigSvg(size, mood, { cls, dark: true }));

@@ -42,7 +42,7 @@ they go into GitHub (Settings > Secrets and variables > Actions) or into Supabas
 4. Variables (all optional): `MODERATION_MODEL` (default `claude-haiku-5-5`), `PRIVACY_URL`
    (default https://miraclehealth.us/privacy), `CONTACT_EMAIL` (default hello@miraclehealth.us),
    `TURNSTILE_SITE_KEY`, `POSTHOG_KEY`, `SENTRY_DSN`; `NEWSLETTER_FROM`, the weekly email's sender
-   (e.g. `Miracle Health <signal@miraclehealth.us>`, on the domain verified in Resend);
+   (e.g. `Unhyped <signal@miraclehealth.us>`, on the domain verified in Resend);
    `CHECKIN_TEXTS` = `on` once check-in texts can be sent (it shows members the choice, and starts
    the hourly Check-in texts workflow). After setting any of these, run Promote to live.
 

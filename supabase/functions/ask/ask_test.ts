@@ -236,7 +236,7 @@ Deno.test('a question about measuring with an insulin syringe is about the medic
     { id: 'insulin', name: 'Insulin', family: 'Diabetes medicines', category: 'Weight & metabolism', aliases: [], kind: 'compound', parts: [], sheet: true, status: 'approved', status_label: 'FDA-approved', grade: 'strong', goals: {}, summary: 'A hormone medicine.' },
   ];
   // The Safety agent is a model: it can still write insulin down, as a compound and as a medicine
-  const world = fakeWorld({ screen: { ...NONE, asks_dose: true, compounds: ['semaglutide', 'insulin'], medications: ['insulin'] }, rounds: [{ text: 'Miracle Health doesn’t give doses. ' + WORDS }] });
+  const world = fakeWorld({ screen: { ...NONE, asks_dose: true, compounds: ['semaglutide', 'insulin'], medications: ['insulin'] }, rounds: [{ text: 'Unhyped doesn’t give doses. ' + WORDS }] });
   const f = (async (url: string | URL, init?: RequestInit) => String(url).endsWith('/index.json')
     ? new Response(JSON.stringify({ items: [...ITEMS, ...extra] })) : world.f(url, init)) as unknown as typeof fetch;
   const ev = await events(await handle(ask([{ role: 'user', content: 'How many units of semaglutide go on an insulin syringe?' }]), deps(f)));
@@ -581,16 +581,16 @@ Deno.test('a crisis: the 988 card, no tools, no lookups', async () => {
 Deno.test('a part that slips in a dose is rewritten before anyone sees it', async () => {
   const { f } = fakeWorld({
     screen: { ...NONE, asks_dose: true, compounds: ['BPC-157'] },
-    review: (p) => (/mcg/.test(p.text) ? { ok: false, broken: [1], revised: 'Miracle Health doesn’t give doses.' } : { ok: true }),
+    review: (p) => (/mcg/.test(p.text) ? { ok: false, broken: [1], revised: 'Unhyped doesn’t give doses.' } : { ok: true }),
     rounds: [{ text: 'Most people use 250 mcg.\n\nHere is what the evidence shows.' }],
   });
   const ev = await events(await handle(ask([{ role: 'user', content: 'What dose of BPC-157?' }]), deps(f)));
   const text = ev.filter((e) => e.event === 'text').map((e) => e.data.d).join('');
-  assertEquals(text, 'Miracle Health doesn’t give doses.\n\nHere is what the evidence shows.');
+  assertEquals(text, 'Unhyped doesn’t give doses.\n\nHere is what the evidence shows.');
   assert(!JSON.stringify(ev).includes('250 mcg'));
   // which rule, never the text (and the dose was also a number the check couldn't find in the sources)
   assertEquals(ev.find((e) => e.event === 'review')!.data, { ok: false, edited: 1, held: 0, rules: [1], numbers: 1 });
-  assert(ev[ev.length - 1].data.memo.endsWith('Miracle Health doesn’t give doses.\n\nHere is what the evidence shows.'));
+  assert(ev[ev.length - 1].data.memo.endsWith('Unhyped doesn’t give doses.\n\nHere is what the evidence shows.'));
   // In place of a dose: what the studies show and what the community reports, side by side
   assert(ev.some((e) => e.event === 'card' && e.data.type === 'voices' && e.data.items[0].id === 'bpc157'));
 });
@@ -806,7 +806,7 @@ Deno.test('a reply that came out as cards and a line is written again, once, in 
   assertEquals(plain.calls.filter((c) => c.kind === 'guide').length, 1);
 });
 
-Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplements for the weak spot, checked', async () => {
+Deno.test('the plan: pillars at the base, their own compounds, supplements for the weak spot, checked', async () => {
   const { f, calls } = fakeWorld({
     screen: { ...NONE, compounds: ['testosterone'], goals: ['muscle'] },
     rounds: [
@@ -820,7 +820,7 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
         ],
         peptides: [{ id: 'testosterone', role: 'Hormone therapy' }, { id: 'bpc157', role: 'Recovery' }],
         supplements: [{ id: 'creatine', role: 'Works with strength training' }, { id: 'eaa', role: 'Fills protein gaps' }, { id: 'same', role: 'Mood' }, { id: 'mk677', role: 'GH' }, { id: 'nope', role: 'x' }],
-        wellbeing: ['Check your labs with your prescriber', 'Share wins in the Miracle Health community'],
+        wellbeing: ['Check your labs with your prescriber', 'Share wins in the Unhyped community', 'Join the Unhyped community'],
       } } },
       { text: 'Start with protein at breakfast.' },
     ],
@@ -842,7 +842,7 @@ Deno.test('the Miracle Plan: pillars at the base, their own compounds, supplemen
   assert(ev.some((e) => e.event === 'card' && e.data.type === 'audit' && e.data.for === plan.id));
   const toolResult = JSON.stringify(calls.filter((c) => c.kind === 'guide')[1].body.messages);
   assert(toolResult.includes('BPC-157 (not something they take') && toolResult.includes('MK-677 (not something they take'));
-  assert(ev[ev.length - 1].data.memo.includes('Miracle Plan "Keep your muscle", first step: Protein first at breakfast: nutrition start'));
+  assert(ev[ev.length - 1].data.memo.includes('Plan "Keep your muscle", first step: Protein first at breakfast: nutrition start'));
   // Not for someone under 18
   const minor = fakeWorld({ screen: { ...NONE, red_flag: 'minor' }, rounds: [{ text: 'Food, sleep and training. ' + WORDS, tool: { name: 'present_plan', input: { title: 'x', foundations: [] } } }, { text: 'Talk to a parent.' }] });
   const ev2 = await events(await handle(ask([{ role: 'user', content: "I'm 16, how do I get bigger?" }]), deps(minor.f)));
@@ -1615,7 +1615,7 @@ Deno.test('a sentence said twice in a row in other words is said once', () => {
 
 Deno.test('Sig says it is Sig, an AI, and never goes by its old name', () => {
   const prompt = guideSystem('');
-  assert(prompt.startsWith('You are Sig, the AI guide on Miracle Health'));
+  assert(prompt.startsWith('You are Sig, the AI guide on Unhyped'));
   assert(/You're an AI, not a person or a clinician/.test(prompt));
   assert(prompt.includes('you speak as "I" (never as "Miracle AI", the old name)'));
   // The old name appears only in that one line
@@ -2293,6 +2293,6 @@ Deno.test('Sig speaks an answer: a headline, a paragraph per compound, the studi
   assert(prompt.includes('don\'t write the Signal\'s score'));
   assert(prompt.includes('as a paragraph that starts "The studies:"') && prompt.includes('as a paragraph that starts "**Good to know:**"'));
   assert(prompt.includes('Call present_plan only when they ask for a plan') && prompt.includes('6. Their plan (present_plan) only when they ask for one'));
-  assert(!prompt.includes('In a full answer about a goal or their stack, call present_plan') && !prompt.includes('A full answer about a goal or their own stack builds their Miracle Plan'));
+  assert(!prompt.includes('In a full answer about a goal or their stack, call present_plan') && !prompt.includes('A full answer about a goal or their own stack builds their plan'));
   assert(prompt.includes('In the reports I\'ve read, people most often') && prompt.includes('never as one person\'s story'));
 });

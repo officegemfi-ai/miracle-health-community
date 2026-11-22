@@ -1,4 +1,4 @@
--- Miracle Health community: the Signal's levels, measuring tools and public snapshot (pgTAP)
+-- Unhyped community: the Signal's levels, measuring tools and public snapshot (pgTAP)
 -- Everything rolls back at the end.
 
 begin;

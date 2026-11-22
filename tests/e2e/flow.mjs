@@ -158,10 +158,10 @@ const shot = (page, name) => page.screenshot({ path: `${OUT}${name}.png` });
   await K.selectOption('#birth-month', '6');
   await K.selectOption('#birth-year', String(new Date().getFullYear() - 12));
   await K.click('form button[type=submit]');
-  await K.waitForSelector('h2:text("Sorry, you can’t join Miracle Health.")');
+  await K.waitForSelector('h2:text("Sorry, you can’t join Unhyped.")');
   check('Someone under 18 is told they can’t join, and no phone number is asked', !(await K.isVisible('#phone')));
   await K.reload();
-  await K.waitForSelector('h2:text("Sorry, you can’t join Miracle Health.")');
+  await K.waitForSelector('h2:text("Sorry, you can’t join Unhyped.")');
   check('and the device remembers it, so the answer can’t just be changed', !(await K.isVisible('#birth-year')));
   await K.context().close();
 }

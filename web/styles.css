@@ -1,4 +1,4 @@
-/* Miracle Health Community
+/* Unhyped Community
    The look of miraclehealth.us: black pages, near-white words, one electric blue main action.
    Mona Sans for every word (headlines wide, heavy and in capitals), Monaspace Neon for numbers
    only: a score, a count, a move. Clean, not costume (the brand book): no label in the code
@@ -91,9 +91,9 @@ img,svg{flex:none}
 .burger:hover,.side-close:hover{background:var(--surface-3);color:var(--text)}
 .burger:focus-visible,.side-close:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 .top-logo{display:none;align-items:center;gap:10px;flex:none;min-height:40px;text-decoration:none;color:var(--on-ink)}
-.top-logo img{display:block;width:auto;height:22px}
+.top-logo img{display:block;width:auto;height:20px}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--on-ink);flex:none}
-.logo img{height:28px;width:auto;display:block}
+.logo img{height:22px;width:auto;display:block}
 .logo .tag,.top-logo .tag{font:600 12.5px/1 var(--body);color:var(--on-ink-2);border:1px solid var(--line-2);border-radius:0;padding:4px 8px}
 .search{flex:0 1 420px;min-width:0;margin:0;position:relative}
 .search input{width:100%;height:40px;border-radius:var(--pill);border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--on-ink);padding:0 12px 0 38px;font:400 14.5px/1 var(--body);transition:border-color .15s}
@@ -135,7 +135,7 @@ img,svg{flex:none}
 .os{display:grid;grid-template-columns:minmax(0,1fr);min-height:100dvh}
 .win{position:relative;display:flex;flex-direction:column;min-width:0;min-height:100dvh;margin:0;background:radial-gradient(90% 640px at 50% -160px,rgba(26,4,255,.3) 0%,rgba(0,0,0,0) 62%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--os-win)}
 .layout{flex:1 0 auto;display:grid;grid-template-columns:minmax(0,1fr) var(--rail-w);grid-template-areas:'main rail';gap:28px;padding:0 24px 56px}
-/* the side panel: the logo, Miracle Health's places (the Signal first, then the design kit's bar,
+/* the side panel: the logo, Unhyped's places (the Signal first, then the design kit's bar,
    standing up, each with its mark), then the community's menu, then the rules and the legal. It is
    never taken away: open beside the page from 1280px wide, and below that a drawer the menu
    button slides in, with its own button to close it, as on miraclehealth.us. */
@@ -163,7 +163,7 @@ img,svg{flex:none}
 @media (max-width:480px){
   .top-logo .tag{display:none}
 }
-.side .logo img{height:22px}
+.side .logo img{height:20px}
 .side .family{display:grid;gap:1px;flex:none;margin:6px 0 0;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,.09)}
 /* the Signal leads the places, as on miraclehealth.us; it sits just above the kit's bar of the four */
 .side .side-signal{flex:none;margin:6px 0 1px;position:relative;text-decoration:none;white-space:nowrap}
@@ -688,7 +688,7 @@ label.f.nm{margin:0}
 .hero .chip.part{background:rgba(255,255,255,.06);border-color:var(--ink-line);color:var(--on-ink)}
 .hero .chip.part:hover{border-color:var(--bone)}
 .hero .aka{position:relative;z-index:1;color:var(--on-ink-2)}
-/* A space's links into the rest of Miracle Health: the evidence meter (the Library's grade), the
+/* A space's links into the rest of Unhyped: the evidence meter (the Library's grade), the
    fact sheet and Sig */
 .space-links{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin-top:14px;font-size:13.5px}
 .space-links a{display:inline-flex;align-items:center;gap:6px;color:var(--on-ink);font-weight:600;text-decoration:none}
@@ -1038,7 +1038,7 @@ h1 em,h2 em{font-style:normal;font-weight:inherit}
 .top-actions .create[aria-current=page]:hover{background:transparent;border-color:var(--text)}
 /* ================================================================ the marks of the four places
    As on miraclehealth.us: the Library is the Evidence agent's mark (blue), Ask Sig is Sig's ring of
-   the twelve, the Community the Community agent's (lime), My Miracle the Builder's (pink) */
+   the twelve, the Community the Community agent's (lime), My stack the Builder's (pink) */
 .side .side-signal::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M3%2013.5v-4M6.5%2013.5v-9M10%2013.5v-6.5M13.5%2013.5v-3%22%20fill%3D%22none%22%20stroke%3D%22%233D8BFF%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E")}
 .side .family a[data-place="library"]::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236FA8FE%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20color%3D%22%236FA8FE%22%3E%3Cpath%20d%3D%22M6.8%202.8v18.4M17.2%202.8v18.4M6.8%207.2h10.4M6.8%2012h10.4M6.8%2016.8h10.4%22%2F%3E%3C%2Fsvg%3E")}
 .side .family a[data-place="ai"]::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%22-8%20-8%2016%2016%22%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23FF6B5B%22%20color%3D%22%23FF6B5B%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28-85.5%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23FF9F4A%22%20color%3D%22%23FF9F4A%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28-52.77%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23F2C94C%22%20color%3D%22%23F2C94C%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28-20.05%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%233D8BFF%22%20color%3D%22%233D8BFF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%2812.68%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%235FE08A%22%20color%3D%22%235FE08A%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%2845.41%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%233FE0C5%22%20color%3D%22%233FE0C5%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%2878.14%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%2355D3FF%22%20color%3D%22%2355D3FF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28110.86%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%236FA8FE%22%20color%3D%22%236FA8FE%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28143.59%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%238F95FF%22%20color%3D%22%238F95FF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28176.32%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23B98CFF%22%20color%3D%22%23B98CFF%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28209.05%29%22%2F%3E%3Ccircle%20r%3D%226.14%22%20fill%3D%22none%22%20stroke%3D%22%23FF7FC8%22%20color%3D%22%23FF7FC8%22%20stroke-width%3D%222.72%22%20stroke-dasharray%3D%222.54%2038.58%22%20transform%3D%22rotate%28241.77%29%22%2F%3E%3C%2Fsvg%3E")}

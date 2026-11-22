@@ -17,7 +17,7 @@ and a change to the database is made in one place.
              ├──────────────────────────────────────────────┤
              │ core/  the rules: pure functions             │  no page, no network
              └──────────────────────────────────────────────┘
-  kit/  Miracle Health's design kit, shared with the website (scripts/sync_kit.sh)
+  kit/  Unhyped's design kit, shared with the website (scripts/sync_kit.sh)
 ```
 
 ## The rules

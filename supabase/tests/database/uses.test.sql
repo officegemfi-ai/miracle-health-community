@@ -1,4 +1,4 @@
--- Miracle Health community: ratings by use (pgTAP)
+-- Unhyped community: ratings by use (pgTAP)
 -- What members took something for, read from each report; each Signal's rating per use;
 -- the forums' mentions next to it; the public snapshot. Everything rolls back at the end.
 

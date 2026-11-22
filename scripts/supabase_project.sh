@@ -177,7 +177,7 @@ setup)
       site_url: $site, disable_signup: false,
       external_email_enabled: false, external_anonymous_users_enabled: false,
       external_phone_enabled: true, sms_autoconfirm: false, sms_max_frequency: 60,
-      sms_template: "Your Miracle Health code is {{ .Code }}",
+      sms_template: "Your Unhyped code is {{ .Code }}",
       jwt_exp: 3600, refresh_token_rotation_enabled: true }')"
   if [ -n "${TWILIO_ACCOUNT_SID:-}" ] && [ -n "${TWILIO_AUTH_TOKEN:-}" ] && [ -n "${TWILIO_VERIFY_SERVICE_SID:-}" ]; then
     mask "$TWILIO_AUTH_TOKEN"

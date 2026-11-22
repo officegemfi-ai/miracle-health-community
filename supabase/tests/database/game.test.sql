@@ -1,4 +1,4 @@
--- Miracle Health community: the game layer (pgTAP)
+-- Unhyped community: the game layer (pgTAP)
 -- Spaces, threads, stickers, Signal points and emblems, badges, quests,
 -- notifications and the live Signal. One story, start to finish; it all rolls back.
 

@@ -1,5 +1,5 @@
 // The guide's tools: looking things up in the Library, and the cards it can put on the member's
-// screen (shortlists, the Miracle Plan, questions, when to get help), each checked by the gate.
+// screen (shortlists, the plan, questions, when to get help), each checked by the gate.
 import { BLOCKED, familyOne, GOAL_LABEL, GOALS, type Goal, optionLine, rank, search, UNAPPROVED } from './library.ts';
 import { cleanField, maskTargets } from './guard.ts';
 import { blockedItem } from './community.ts';
@@ -200,7 +200,7 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
       peptides.sort(byProof).splice(4);
       supplements.sort(byProof).splice(4);
       const wellbeing = strs(input.wellbeing, 3, 160).map((w) => cleanField(w, 80, true)).filter((w) => w && !GENERIC_WELLBEING.test(w)).slice(0, 2);
-      const title = cleanField(input.title, 60) || 'Your Miracle Plan';
+      const title = cleanField(input.title, 60) || 'Your plan';
       const card = `card${++ctx.stepN}`;
       ctx.plans++;
       // Their people: the community space for what they take (or the plan's first supplement)
@@ -223,10 +223,10 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
           const ps = peptides.map(keep);
           const ss = supplements.map(keep);
           const ws = wellbeing.filter((_, n) => ok.has(`w${n}`));
-          const t = ok.has('title') ? title : 'Your Miracle Plan';
+          const t = ok.has('title') ? title : 'Your plan';
           const lead = fs.find((f) => f.state === 'start');
           const first = lead ? { pillar: lead.pillar, step: (firstStep && ok.has('first') ? firstStep : '') || lead.step } : null;
-          ctx.memo.push(`Miracle Plan "${t}"${first ? `, first step: ${first.step}` : ''}: ${fs.map((f) => `${f.pillar} ${f.state}${f.step ? ` (${f.step})` : ''}`).join('; ')}`
+          ctx.memo.push(`Plan "${t}"${first ? `, first step: ${first.step}` : ''}: ${fs.map((f) => `${f.pillar} ${f.state}${f.step ? ` (${f.step})` : ''}`).join('; ')}`
             + (ps.length ? `; peptides and medicines: ${ps.map((i) => `${i.name} [${i.id}]`).join(', ')}` : '')
             + (ss.length ? `; supplements: ${ss.map((i) => `${i.name} [${i.id}]`).join(', ')}` : '')
             + (ws.length ? `; wellbeing: ${ws.join(' / ')}` : ''));
@@ -253,7 +253,7 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
         + (dropped.length ? `. Left out: ${dropped.join('; ')}` : '');
       return ctx.gate.waiting
         ? `Their plan will be shown right after your words: ${summary}.${auditLine}\nNow, in words: why the start pillar matters most for them and the first step, and for the compounds, their benefits and how they work. The card lists the steps and roles, so don't repeat them as a list. Don't mention when the card appears. Then call clinician_questions.`
-        : `Shown to the member as their Miracle Plan: ${summary}.${auditLine}\nIn a line or two, point them to where they start and the first step if you haven't yet (the card lists the rest), then call clinician_questions.`;
+        : `Shown to the member as their plan: ${summary}.${auditLine}\nIn a line or two, point them to where they start and the first step if you haven't yet (the card lists the rest), then call clinician_questions.`;
     }
     case 'clinician_questions': {
       // Points to discuss with their clinician, each a topic: Sig asks no questions, not even on
@@ -282,7 +282,7 @@ export async function runTool(name: string, input: Record<string, unknown>, ctx:
       if (!card) return 'No card shown: use ids from the list.';
       fresh.forEach((id) => ctx.signs.add(id));
       const n = card.groups.reduce((t, g) => t + g.signs.length, 0);
-      step(ctx, { id: nextId(ctx, 'warn'), agent: 'safety', status: 'done', title: `When to get help: ${n} sign${n === 1 ? '' : 's'}, at levels from Miracle Health’s table` });
+      step(ctx, { id: nextId(ctx, 'warn'), agent: 'safety', status: 'done', title: `When to get help: ${n} sign${n === 1 ? '' : 's'}, at levels from Unhyped’s table` });
       ctx.gate.card([], () => {
         ctx.memo.push(`when to get help: ${card.groups.map((g) => `${g.label}: ${g.signs.join('; ')}`).join(' / ')}`);
         return card;

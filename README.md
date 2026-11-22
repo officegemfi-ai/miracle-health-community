@@ -1,6 +1,6 @@
-# Miracle Health Community
+# Unhyped Community
 
-The backend and web app for the Miracle Health community: phone sign-in (open to adults; an
+The backend and web app for the Unhyped community: phone sign-in (open to adults; an
 invite link adds its perks), posts, comments, votes, reports and moderation, built on Supabase.
 
 Posts name what the member took, from a library of about 300 peptides, hormones, supplements,
@@ -55,13 +55,13 @@ so the public library on miraclehealth.us can use the same drawings.
   tests the rules
 - `shared/rules.json`, `shared/uses.json`: the community rules and the list of uses, copied to the app and
   the AI reviewer by `scripts/sync_rules.sh`
-- `shared/kit/`: Miracle Health's design kit, the pieces the app and the website (miraclehealth.us) share
+- `shared/kit/`: Unhyped's design kit, the pieces the app and the website (miraclehealth.us) share
   so they look like one product and can't drift apart: the bar of the four places (Library, Ask Sig,
-  Community, My Miracle), the evidence meter, the Community Signal number, compound tiles and chips, Sig,
+  Community, My stack), the evidence meter, the Community Signal number, compound tiles and chips, Sig,
   the Signal drawings (`signalviz.js`), the body map (`bodymap.js`: how a compound works in the body,
   place by place, from its fact sheet; one compound as a list, two to six as a table with where they
   meet, with loading and error states; on every Library fact sheet and on the app's spaces) and the
-  links between places (a question for Sig, a check-in from a member's Miracle Plan drafted as a post). `scripts/sync_kit.sh [path/to/miraclehealth-site]`
+  links between places (a question for Sig, a check-in from a member's plan drafted as a post). `scripts/sync_kit.sh [path/to/miraclehealth-site]`
   copies it to `web/kit` and the website; CI checks every copy matches
   (`scripts/check_kit_sync.sh`), the website's on its main branch included
 - `shared/signal_baseline.json`: the Community Signal's public-forum starting point, loaded by a migration
@@ -80,11 +80,11 @@ so the public library on miraclehealth.us can use the same drawings.
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
 
 ## Ask Sig (`supabase/functions/ask`)
-Sig is the Community Signal in person, and Miracle Health's AI: it reads every report into the
+Sig is the Community Signal in person, and Unhyped's AI: it reads every report into the
 Signal in the community, and answers questions in the chat called Ask Sig on the website.
 - **The names**: "Ask Sig" is the place (the menu, buttons, the page at miraclehealth.us/ai, with
   miraclehealth.us/sig as a short link); "Sig" is who answers, and speaks as "I". The first mention
-  on a page says it plainly: "Sig, Miracle Health's AI". Never "Sig AI", never "Miracle AI".
+  on a page says it plainly: "Sig, Unhyped's AI". Never "Sig AI", never "Miracle AI".
 - **Saying it's an AI**: the page's opening line, its fine print, the adults-only check, the
   welcome in the community, the privacy notice and the terms all say Sig is an AI, not a person
   or a clinician; if asked, Sig says so too (`prompts.ts`).
@@ -117,7 +117,7 @@ goes through eleven agents and the community's numbers, and the page shows each 
    Safety notes are one calm, informative line, never alarm. Its answer is spoken, as someone who
    has read every report: a one-line headline, a short paragraph for each compound starting with
    its name (the page puts its Signal beside it), the studies in a paragraph of their own, then
-   the safety line ("Good to know:"); a Miracle Plan only when the visitor asks for one.
+   the safety line ("Good to know:"); a plan from Sig only when the visitor asks for one.
    Warning signs are never worded by the model: it picks them from a fixed table
    (`urgency.ts`, drafted from public medical guidance, not yet reviewed by a clinician), and
    the page shows each under its level: call 911 now, same day, or this week. Someone who
@@ -191,7 +191,7 @@ goes through eleven agents and the community's numbers, and the page shows each 
    rewritten, or held back; if the check can't run, nothing unchecked goes out. Amounts in
    dosing units, supplement-extract brands and outside links are always taken out as well.
    Sig lists points to discuss with the visitor's own clinician, who decides what's right for
-   them (no one at Miracle Health reviews chats); the page copies them in one tap.
+   them (no one at Unhyped reviews chats); the page copies them in one tap.
 
 **Who answers.** Beside the box to write in, the visitor can choose which agents answer in a chat,
 or keep all twelve: the page sends the choice as `agents` (nothing sent is all of them), and the

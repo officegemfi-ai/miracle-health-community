@@ -1,4 +1,4 @@
-/* Miracle Health's design kit: the pieces every Miracle Health page shares (kit.js draws them).
+/* Unhyped's design kit: the pieces every Unhyped page shares (kit.js draws them).
    The source is shared/kit in miracle-health-community; scripts/sync_kit.sh copies it into the
    community app and the website, and CI checks every copy matches. Load it before each app's
    own stylesheet. */

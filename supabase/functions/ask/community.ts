@@ -56,7 +56,7 @@ export type Community = {
   near: UseRow | null;
   uses: UseRow[];
   sideEffects: { effect: string; n: number }[];   // n: how many reports mention it
-  themes: { theme: string; label: string }[];     // what people describe most (Miracle Health's forum research)
+  themes: { theme: string; label: string }[];     // what people describe most (Unhyped's forum research)
   // How many improve anyway for what was asked (or its closest use), from trials: context only
   baseline: { use: string; pct: number; says: string } | null;
   // Side effects reported unusually often for it, compared with every other compound

@@ -1,4 +1,4 @@
--- Miracle Health community: the published Signal, the versions the signal function and Sig read
+-- Unhyped community: the published Signal, the versions the signal function and Sig read
 -- (migration 20261107000100) (pgTAP)
 -- Everything rolls back at the end.
 

@@ -13,9 +13,9 @@ Usage: scripts/ask_smoke.py https://<ref>.supabase.co/functions/v1/ask   (eleven
 7. A stack someone already takes: the Stack builder lays it out, with the auditor's check on it,
    and the Interpretation agent's efficacy read comes last.
 8. Someone who injects and has a red, warm injection site: the injection safety basics and a
-   "When to get help" card with the levels from Miracle Health's table, and no amounts.
+   "When to get help" card with the levels from Unhyped's table, and no amounts.
 9. Someone on a GLP-1 worried about losing muscle: a plan straight away, no questions.
-10. The same chat, once they've answered (short on protein, not lifting): their Miracle Plan,
+10. The same chat, once they've answered (short on protein, not lifting): their plan,
    built around nutrition, with supplements that shore it up.
 11. What the community reports, for a question the studies can't answer (TB-500 has animal
    studies only): the community's step, the studies and the community side by side, what the
@@ -285,7 +285,7 @@ for n, (title, q) in enumerate(questions, 1):
             failures.append(f'{title}: the plan has {len(starts)} pillars marked start')
         if starts and not (plan.get('first') or {}).get('step'):
             failures.append(f'{title}: the plan has no first step')
-        if any(re.search(r'share (?:your )?(?:wins|progress)|stay positive|miracle health community', w, re.I) for w in plan.get('wellbeing', [])):
+        if any(re.search(r'share (?:your )?(?:wins|progress)|stay positive|(?:unhyped|miracle health) community', w, re.I) for w in plan.get('wellbeing', [])):
             warnings.append(f'{title}: a generic wellbeing line reached the plan')
         # The plain advice a pillar gets when the check didn't pass the guide's step (or there was none)
         fell = [f.get('pillar') for f in plan.get('foundations', []) if f.get('step') in PLAIN_STEPS]
@@ -293,7 +293,7 @@ for n, (title, q) in enumerate(questions, 1):
             warnings.append(f'{title}: plain advice instead of the guide\'s step for {", ".join(fell)}')
     if n == 10:
         if not plan:
-            failures.append(f'{title}: no Miracle Plan once they had answered')
+            failures.append(f'{title}: no plan once they had answered')
         else:
             if pillars.get('nutrition', {}).get('state') != 'start':
                 warnings.append(f'{title}: nutrition isn\'t where someone short on protein starts')
