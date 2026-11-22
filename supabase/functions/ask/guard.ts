@@ -1,7 +1,7 @@
 // Plain checks on what Sig writes. The Safety agent reads every part of a reply before
 // it's shown (agents.ts, the gate); these run as well, on everything that goes out:
-//   - amounts in dosing units are always taken out, whatever the agent said, since Miracle
-//     Health gives no doses (body-weight changes like "lost 8.4 kg" and lab units like
+//   - amounts in dosing units are always taken out, whatever the agent said, since Unhyped
+//     gives no doses (body-weight changes like "lost 8.4 kg" and lab units like
 //     mg/dL stay);
 //   - supplement-extract brand names, outside links and sales talk are taken out.
 // They also give the Safety agent hints, and catch signs of crisis or of a minor in the

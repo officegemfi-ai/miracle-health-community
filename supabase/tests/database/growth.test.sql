@@ -1,4 +1,4 @@
--- Miracle Health community: growth (pgTAP)
+-- Unhyped community: growth (pgTAP)
 -- GLP-1s first, a report public by its author's choice, check-in texts by the member's choice,
 -- and the weekly email's sign-up, confirmation and unsubscribing. Rolls back at the end.
 

@@ -12,7 +12,7 @@ export function notifParts(n) {
   const d = n.data || {};
   const who = n.actor_handle ? `u/${n.actor_handle}` : 'Someone';
   switch (n.kind) {
-    case 'welcome': return [sig(34, 'happy'), 'Welcome to Miracle Health. I’m Sig, the Community Signal in person, and Miracle Health’s AI: I read every report into the Signal. Join a few spaces and share how it went.', null, '#/explore'];
+    case 'welcome': return [sig(34, 'happy'), 'Welcome to Unhyped. I’m Sig, the Community Signal in person, and Unhyped’s AI: I read every report into the Signal. Join a few spaces and share how it went.', null, '#/explore'];
     case 'comment': return [icon('comment', 18), `${who} commented on your post`, n.comment_body || n.post_title, `#/post/${n.post_id}`];
     case 'reply': return [icon('comment', 18), `${who} replied to you`, n.comment_body, `#/post/${n.post_id}`];
     case 'same_for_me': {

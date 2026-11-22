@@ -16,7 +16,7 @@ import { compoundPicker, picksNote } from '../components/picker.js';
 import { afterEarn } from '../components/game.js';
 import { draftFrom } from '../../kit/kit.js';
 
-// d: a draft from miraclehealth.us (a Miracle Plan check-in, or "add how it went" in Sig;
+// d: a draft from miraclehealth.us (a plan from Sig check-in, or "add how it went" in Sig;
 // kit.js draftLink), to edit
 export function renderNew(param = '', d = '') {
   if (S.me.status === 'suspended') { render(h('div', { class: 'msg note' }, 'Your account is paused, so you can’t post right now.')); return; }

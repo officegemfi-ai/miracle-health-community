@@ -1,5 +1,5 @@
 // A space: one compound, blend or stack, with its Community Signal, where it leads in the rest of
-// Miracle Health, and its posts (a compound's own, or the stacks and blends it's in).
+// Unhyped, and its posts (a compound's own, or the stacks and blends it's in).
 import { h, icon } from '../dom.js';
 import { sig, spaceTile } from '../art.js';
 import { fmtN, plural } from '../../core/format.js';
@@ -15,7 +15,7 @@ import { sortbar, fillFeed, composerBar, newPostsPill } from '../components/feed
 import { joinButton, partChips, askAbout, evidenceTag, LIBRARY } from '../components/spaces.js';
 import { askLink } from '../../kit/kit.js';
 
-// Where this space leads in the rest of Miracle Health: how strong the evidence is (the Library's
+// Where this space leads in the rest of Unhyped: how strong the evidence is (the Library's
 // grade), its fact sheet, and Sig with a question about it typed in
 function spaceLinks(sp) {
   const slot = h('span', { class: 'ev-slot' });

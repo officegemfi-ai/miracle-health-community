@@ -1,5 +1,5 @@
 // What a card shows for each compound, from its fact sheet and the community's numbers: the
-// findings for the member's goal, its US status as a tag and a caution, and the Miracle Plan's
+// findings for the member's goal, its US status as a tag and a caution, and the plan's
 // pillars.
 import { BLOCKED, familyOne, type Item, LEVEL_SHORT, type Sheet, type Signal, type Snapshot, UNAPPROVED } from './library.ts';
 import { cleanField, strict } from './guard.ts';
@@ -7,14 +7,14 @@ import { blockedItem, type Community, communityOf, type Lead, type Studies, type
 import type { Screen } from './types.ts';
 
 export type StudyFinding = { claim: string; evidence: string; source?: { title: string; year: string; url: string } };
-// The Miracle Plan: three pillars at the base, then their peptides and medicines, supplements,
+// The plan: three pillars at the base, then their peptides and medicines, supplements,
 // and wellbeing and community on top
 export const PILLARS = ['nutrition', 'sleep', 'exercise'] as const;
 // start: their weakest pillar, where they begin (exactly one); next: also needs work
 export const PILLAR_STATES = ['start', 'next', 'strong', 'unknown'] as const;
 export type PillarState = typeof PILLAR_STATES[number];
 // Wellbeing lines that would fit anyone: the card links to the community space itself
-export const GENERIC_WELLBEING = /\b(?:share|post)\b[^.]*\b(?:wins?|progress|journey|updates?|story)\b|\bstay\s+(?:positive|motivated|consistent|on track)\b|\bcelebrate\b|\bmiracle\s+health\s+community\b|\b(?:join|find)\s+(?:the\s+)?community\b|\bbe\s+patient\b|\blisten\s+to\s+your\s+body\b/i;
+export const GENERIC_WELLBEING = /\b(?:share|post)\b[^.]*\b(?:wins?|progress|journey|updates?|story)\b|\bstay\s+(?:positive|motivated|consistent|on track)\b|\bcelebrate\b|\b(?:unhyped|miracle\s+health)\s+community\b|\b(?:join|find)\s+(?:the\s+)?community\b|\bbe\s+patient\b|\blisten\s+to\s+your\s+body\b/i;
 export const PILLAR_NAME: Record<typeof PILLARS[number], string> = { nutrition: 'Nutrition', sleep: 'Sleep', exercise: 'Exercise' };
 // A pillar's step when the guide gave none, or the check couldn't let its words through
 export const PILLAR_STEP: Record<typeof PILLARS[number], string> = {

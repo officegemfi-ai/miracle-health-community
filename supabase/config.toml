@@ -37,7 +37,7 @@ enable_signup = false
 [auth.sms]
 enable_signup = true
 enable_confirmations = true
-template = "Your Miracle Health code is {{ .Code }}"
+template = "Your Unhyped code is {{ .Code }}"
 max_frequency = "60s"
 
 # Fixed codes for local development and the end-to-end test only.

@@ -1,4 +1,4 @@
--- Miracle Health community: access and abuse tests (pgTAP)
+-- Unhyped community: access and abuse tests (pgTAP)
 -- Each test signs in as a different person and tries something they should or
 -- shouldn't be able to do. Run with `supabase test db`, or locally with
 -- scripts/test_local.sh. Everything rolls back at the end.
@@ -122,7 +122,7 @@ select throws_ok($$ select public.complete_signup('olga_x', 'FOUNDER01', true, '
 
 select tests.as_user('nora');
 select throws_ok($$ select public.complete_signup('nora_n', 'FOUNDER01', false, '2026-10-21', true) $$,
-  'P0001', 'Miracle Health is for adults 18 and over.', 'Sign-up needs the 18+ confirmation');
+  'P0001', 'Unhyped is for adults 18 and over.', 'Sign-up needs the 18+ confirmation');
 select throws_ok($$ select public.complete_signup('nora_n', 'FOUNDER01', true, '2026-10-21', false) $$,
   'P0001', 'To join, agree to how what you post about your health is collected and shown.', 'Sign-up needs consent to collect health information');
 select throws_ok($$ select public.complete_signup('nora_n', 'NOPE12345', true, '2026-10-21', true) $$,

@@ -1,5 +1,5 @@
-// The frame around every page, as on every page of miraclehealth.us: the side panel with Miracle
-// Health's places and the menu (never removed: open beside the page from 1280px wide, a drawer
+// The frame around every page, as on every page of miraclehealth.us: the side panel with Unhyped's
+// places and the menu (never removed: open beside the page from 1280px wide, a drawer
 // below that), the plain top bar with search and your things, the phone tab bar, the footer, and
 // Sig in the corner. Pages draw into it with render() and setRail(); the rail's cards are chosen
 // in ui/rail.js.
@@ -56,7 +56,7 @@ export function renderNav(current = '', cid = '') {
       ? joined.map((s) => h('a', { class: 'nav-space', href: `#/s/${encodeURIComponent(s.compound_id)}`, 'aria-current': cid === s.compound_id ? 'page' : null },
         spaceTile(s, 24), h('span', { class: 'grow' }, s.name), h('span', { class: 's', 'data-sig-of': s.compound_id }, s.score != null ? fmt1(s.score) : '')))
       : [h('p', { class: 'nav-empty' }, 'You haven’t joined any yet. ', h('a', { href: '#/explore' }, 'Explore spaces'))]),
-    // The rest of Miracle Health is at the top of this panel: the four places, as on every page
+    // The rest of Unhyped is at the top of this panel: the four places, as on every page
     h('div', { class: 'nav-sec' }, h('span', { class: 'kick' }, 'Resources')),
     h('a', { class: 'nav-i', href: '#/how', 'aria-current': current === 'how' ? 'page' : null }, icon('info', 20), 'How it works'),
     h('a', { class: 'nav-i', href: '#/rules', 'data-nav': 'rules', 'aria-current': current === 'rules' ? 'page' : null }, icon('book', 20), 'Community rules'),

@@ -71,7 +71,7 @@ function renderAge(next) {
 }
 function renderTooYoung() {
   authLayout(
-    h('h2', {}, 'Sorry, you can’t join Miracle Health.'),
+    h('h2', {}, 'Sorry, you can’t join Unhyped.'),
     h('p', { class: 'muted' }, 'The community is only for adults. You can still read the Library on our website.'),
     h('p', { class: 'mt16' }, h('a', { class: 'btn block', href: 'https://miraclehealth.us/library/' }, 'Go to the Library')));
 }

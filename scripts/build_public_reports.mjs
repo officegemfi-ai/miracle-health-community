@@ -67,7 +67,7 @@ function shell({ title, description, url, body, noindex = false }) {
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="canonical" href="${COMMUNITY}${url}">
 <meta property="og:type" content="article">
-<meta property="og:site_name" content="Miracle Health">
+<meta property="og:site_name" content="Unhyped">
 <meta property="og:url" content="${COMMUNITY}${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
@@ -82,7 +82,7 @@ function shell({ title, description, url, body, noindex = false }) {
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <div class="wrap top-in">
-    <a class="logo" href="${SITE}/"><img src="/logo.webp" alt="Miracle Health" width="80" height="28"></a>
+    <a class="logo" href="${SITE}/"><img src="/logo.svg" alt="Unhyped" width="109" height="20"></a>
     ${barHtml('community', { cls: 'top-nav', label: 'Main' })}
     <a class="btn lime sm" href="${COMMUNITY}/">Join</a>
   </div>
@@ -126,7 +126,7 @@ ${paras(r.body)}
   </div>
 </article>`;
   return shell({
-    title: `${clip(r.title, 70)} · ${r.compound_name} · Miracle Health`,
+    title: `${clip(r.title, 70)} · ${r.compound_name} · Unhyped`,
     description: clip(`${r.compound_name}: ${r.body}`, 155),
     url: `/r/${r.id}/`, body,
   });
@@ -145,10 +145,10 @@ function listPage() {
   </li>`).join('\n')}</ul>`;
   }
   return shell({
-    title: 'Public reports · Miracle Health community',
-    description: 'Reports Miracle Health members chose to let anyone read: what they took, for what, for how long, and how it went, in their own words.',
+    title: 'Public reports · Unhyped community',
+    description: 'Reports Unhyped members chose to let anyone read: what they took, for what, for how long, and how it went, in their own words.',
     url: '/r/', noindex: reports === null || !reports?.length,
-    body: `<div class="report"><p class="kick">Miracle Health community</p><h1>Public reports</h1>${intro}${inner}
+    body: `<div class="report"><p class="kick">Unhyped community</p><h1>Public reports</h1>${intro}${inner}
   <div class="acts"><a class="btn bone" href="${COMMUNITY}/#/new">Share how it went</a><a class="btn ghost" href="${SITE}/library/">Look up a compound</a></div></div>`,
   });
 }

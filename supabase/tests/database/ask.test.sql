@@ -1,4 +1,4 @@
--- Miracle Health community: the counts behind Sig's chat on the website (pgTAP)
+-- Unhyped community: the counts behind Sig's chat on the website (pgTAP)
 -- Everything rolls back at the end.
 
 begin;

@@ -25,7 +25,7 @@ export async function auditSet(
   const code = nonce();
   const prompt = [
     markers(code),
-    `Compounds to check together (from Miracle Health's Library):\n${auditNotes(ids, ctx.byId, ctx.sheets)}`,
+    `Compounds to check together (from Unhyped's Library):\n${auditNotes(ids, ctx.byId, ctx.sheets)}`,
     wrap(code, 'the member\'s medicines, in their words', meds.join('; ') || 'none mentioned'),
     wrap(code, 'the member\'s conditions, in their words', `${conditions.join('; ') || 'none mentioned'}${pregnant ? '; pregnant, trying to conceive or breastfeeding' : ''}`),
   ].join('\n\n');

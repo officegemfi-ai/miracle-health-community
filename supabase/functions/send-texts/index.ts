@@ -29,7 +29,7 @@ export function localHour(tz: string, at: Date): number {
   }
 }
 export const textFor = (postId: string, community = 'https://community.miraclehealth.us') =>
-  `Miracle Health: one of your reports is due for a check-in. How's it going? ${community}/#/post/${postId} Reply STOP to stop these texts.`;
+  `Unhyped: one of your reports is due for a check-in. How's it going? ${community}/#/post/${postId} Reply STOP to stop these texts.`;
 
 export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);

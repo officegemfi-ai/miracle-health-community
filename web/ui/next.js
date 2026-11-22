@@ -1,5 +1,5 @@
 // Where someone was going when they had to sign in first (a space from the Library, a draft from
-// their Miracle Plan): they land there once they're in, not on Home
+// their plan): they land there once they're in, not on Home
 import { worthReturningTo, validReturn } from '../core/routes.js';
 import { saveNext, takeNext as takeSaved } from '../data/storage.js';
 

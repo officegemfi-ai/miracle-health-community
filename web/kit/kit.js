@@ -1,4 +1,4 @@
-// Miracle Health's design kit: the pieces every Miracle Health page shares, so the website
+// Unhyped's design kit: the pieces every Unhyped page shares, so the website
 // (miraclehealth.us) and the community app (community.miraclehealth.us) look like one product
 // and can't drift apart: the bar of the four places, the evidence meter, the Community Signal
 // number, compound tiles and chips, Sig, and the links one place opens in another.
@@ -17,7 +17,7 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 // ---------------------------------------------------------------------------
 // The four places, in this order on every page
 // ---------------------------------------------------------------------------
-export const PLACES = [['library', 'Library'], ['ai', 'Ask Sig'], ['community', 'Community'], ['my', 'My Miracle']];
+export const PLACES = [['library', 'Library'], ['ai', 'Ask Sig'], ['community', 'Community'], ['my', 'My stack']];
 // On the website pass site: '' (its own links stay on the page's origin); in the community pass
 // community: '' (its own home is #/home)
 export function placeHref(key, { site = SITE, community = COMMUNITY } = {}) {
@@ -26,7 +26,7 @@ export function placeHref(key, { site = SITE, community = COMMUNITY } = {}) {
   if (key === 'my') return `${site}/my/`;
   return community ? `${community}/` : '#/home';
 }
-export function barHtml(current = '', { cls = '', label = 'Miracle Health', ...where } = {}) {
+export function barHtml(current = '', { cls = '', label = 'Unhyped', ...where } = {}) {
   return `<nav class="mh-bar${cls ? ` ${esc(cls)}` : ''}" aria-label="${esc(label)}">${PLACES.map(([k, name]) =>
     `<a href="${esc(placeHref(k, where))}" data-place="${k}"${k === current ? ' aria-current="page"' : ''}>${esc(name)}</a>`).join('')}</nav>`;
 }

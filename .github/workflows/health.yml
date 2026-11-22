@@ -36,11 +36,12 @@ jobs:
             body="$(curl -fsSL --max-time 30 "$1")" || { bad "$1 didn't answer"; return; }
             grep -q "$2" <<<"$body" || bad "$1 answered, but without \"$2\""
           }
-          page "$SITE/" "Miracle Health"
+          # either name while the website and the app change over to Unhyped (November 2026)
+          page "$SITE/" "Unhyped\|Miracle Health"
           page "$SITE/library/" "Library"
           page "$SITE/library/bpc157/" "BPC-157"
           page "$SITE/ai/" "Ask Sig"
-          page "$COMMUNITY/" "Miracle Health"
+          page "$COMMUNITY/" "Unhyped\|Miracle Health"
 
           snap="$(curl -fsS --max-time 30 "$COMMUNITY/snapshot.json")" || bad "snapshot.json didn't answer"
           if [ -n "${snap:-}" ]; then

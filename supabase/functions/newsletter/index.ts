@@ -1,4 +1,4 @@
-// newsletter: The Signal, Miracle Health's weekly email.
+// newsletter: The Signal, Unhyped's weekly email.
 //   POST {email, source} from miraclehealth.us: keeps the address, unconfirmed, and emails a link
 //     to confirm it (double opt-in). Nothing else is ever sent to an address until it's confirmed.
 //     From a script it's JSON both ways; from the site's form it's a form post, answered by going
@@ -44,10 +44,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function confirmMail(to: string, confirmUrl: string, unsubUrl: string): Mail {
   return {
     to,
-    subject: 'Confirm your Miracle Health weekly email',
-    text: `Tap to confirm you want The Signal, Miracle Health's weekly email:\n${confirmUrl}\n\nIf this wasn't you, ignore this email and nothing more will come.\nNever want these? ${unsubUrl}`,
+    subject: 'Confirm your Unhyped weekly email',
+    text: `Tap to confirm you want The Signal, Unhyped's weekly email:\n${confirmUrl}\n\nIf this wasn't you, ignore this email and nothing more will come.\nNever want these? ${unsubUrl}`,
     html: `<!doctype html><html><body style="margin:0;padding:24px;background:#FCFCFC;font-family:Arial,Helvetica,sans-serif;color:#121E1D">
-<p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6A6F6E;margin:0 0 12px">Miracle Health</p>
+<p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6A6F6E;margin:0 0 12px">Unhyped</p>
 <h1 style="font-size:24px;line-height:1.2;margin:0 0 12px">Confirm your email</h1>
 <p style="font-size:16px;line-height:1.55;margin:0 0 20px">Tap to confirm you want The Signal: once a week, what moved, new studies and FDA news. No ads, nothing for sale.</p>
 <p style="margin:0 0 24px"><a href="${confirmUrl}" style="display:inline-block;padding:14px 24px;border-radius:40px;background:#D8FF3D;color:#121E1D;text-decoration:none;font-size:13px;letter-spacing:.1em;text-transform:uppercase">Confirm my email</a></p>

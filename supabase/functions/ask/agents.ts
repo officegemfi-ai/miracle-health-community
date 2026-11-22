@@ -38,7 +38,7 @@ export { benefitsOf, type CardItem, cautionFor, PILLAR_STATES, PILLARS, studiesO
 const MAX_ROUNDS = 6;
 // A reply with cards but fewer characters of words than this gets written again, once
 const FEW_WORDS = 240;
-const MORE_WORDS = '(A note from Miracle Health, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the bottom line of what they asked (one short sentence, on its own), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, and the one safety line, in calm words. No questions. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
+const MORE_WORDS = '(A note from Unhyped, not the member.) That reply isn\'t shown: it was almost only cards. Write the reply now, in words: the bottom line of what they asked (one short sentence, on its own), what to do now about anything they described happening, the benefits and how it works if they asked about compounds, and the one safety line, in calm words. No questions. The cards are already on their screen: don\'t call the same tools again or restate the cards.';
 const MAX_TOOLS_PER_ROUND = 6;
 
 // The last message gets the cache mark (so each round of the loop reuses the one before)
@@ -225,7 +225,7 @@ async function closingWords(turn: Turn, named: string[], wrote: string) {
       ? 'Part of this answer couldn’t be checked by the Safety agent just now, so it isn’t shown. Ask again in a moment to see the rest.'
       : 'The Safety agent couldn’t check this answer just now, so it isn’t shown. Please try again in a moment.');
   } else if (!gate.released.trim() && !gate.cards) {
-    gate.trusted('The Safety agent held this answer back because it broke Miracle Health’s rules. Try asking in a different way, for example about the evidence, the risks or what to ask a clinician.');
+    gate.trusted('The Safety agent held this answer back because it broke Unhyped’s rules. Try asking in a different way, for example about the evidence, the risks or what to ask a clinician.');
   } else if (!held && named.length && !screen.asks_dose && !screen.asks_source
     && gate.released.trim().length >= FULL_ANSWER && !CAUTIONED.test(gate.released)) {
     // A full answer about compounds that never got to their risks or status: the Library's own

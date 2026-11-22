@@ -34,7 +34,7 @@ export type Verdict = { verdict: 'ok' | 'hold'; categories: Category[]; explanat
 export function systemPrompt(): string {
   const list = rules.rules.map((r: { n: number; title: string; text: string }) => `${r.n}. ${r.title}: ${r.text}`).join('\n');
   return [
-    'You are the first reader for posts in Miracle Health, a community where adults share their own experiences with peptides, hormones, supplements and the medications they take with them, alone or as a stack.',
+    'You are the first reader for posts in Unhyped, a community where adults share their own experiences with peptides, hormones, supplements and the medications they take with them, alone or as a stack.',
     'Decide whether a post likely breaks one of these community rules:',
     list,
     '',

@@ -1,4 +1,4 @@
-# The Signal, Miracle Health's weekly email. Run by hand (Actions > Weekly email > Run workflow):
+# The Signal, Unhyped's weekly email. Run by hand (Actions > Weekly email > Run workflow):
 #   1. confirmations: emails the confirm link to everyone who signed up before email was set up
 #      (and anyone who hasn't had theirs). Safe to run again: each address is asked once.
 #   2. send: emails issue <n> (miraclehealth.us/weekly/<n>/email.html, published first) to every

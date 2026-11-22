@@ -10,7 +10,7 @@ export const URGENCY_LEVELS: Record<UrgencyLevel, string> = {
   today: 'Same day: ER or urgent care',
   week: 'Book a visit this week',
 };
-export const URGENCY_NOTE = 'Levels from Miracle Health’s table, drafted from public medical guidance and not yet reviewed by a clinician. If you’re unsure, get help sooner.';
+export const URGENCY_NOTE = 'Levels from Unhyped’s table, drafted from public medical guidance and not yet reviewed by a clinician. If you’re unsure, get help sooner.';
 
 export const URGENCY: UrgencySign[] = [
   // Call 911 or go to the ER now
@@ -90,5 +90,5 @@ export const INJECT_CARD = {
     'Tell any clinician who treats you what you inject.',
   ],
   groups: warningCard(INJECT_SIGNS)!.groups,
-  note: 'Safety information only: Miracle Health doesn’t give doses or say how to inject.',
+  note: 'Safety information only: Unhyped doesn’t give doses or say how to inject.',
 };
