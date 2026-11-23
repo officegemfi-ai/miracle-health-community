@@ -16,7 +16,8 @@ export function sig(size = 56, mood = 'idle', cls = '') {
   return svg(sigSvg(size, mood, { cls, dark: true }));
 }
 
-// Sig's ring: the mark in the browser tab and on Ask Sig (core/ring.js draws it)
+// Sig's ring: Sig's own mark, here and on Ask Sig (core/ring.js draws it). The browser tab's icon is
+// Unhyped's: the logo's u (web/favicon.svg, a copy of the website's)
 export const ring = (size = 56, cls = '') => svg(ringMarkup(size, cls));
 
 export const STICKERS = [
