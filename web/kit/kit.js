@@ -1,5 +1,5 @@
 // Unhyped's design kit: the pieces every Unhyped page shares, so the website
-// (miraclehealth.us) and the community app (community.miraclehealth.us) look like one product
+// (theunhyped.com) and the community app (community.theunhyped.com) look like one product
 // and can't drift apart: the bar of the four places, the evidence meter, the Community Signal
 // number, compound tiles and chips, Sig, and the links one place opens in another.
 //
@@ -9,8 +9,8 @@
 // website's build prints it into static pages, and the apps turn it into elements with node().
 // No imports, and nothing that needs a browser except node().
 
-export const SITE = 'https://miraclehealth.us';
-export const COMMUNITY = 'https://community.miraclehealth.us';
+export const SITE = 'https://theunhyped.com';
+export const COMMUNITY = 'https://community.theunhyped.com';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

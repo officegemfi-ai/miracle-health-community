@@ -1,4 +1,4 @@
-// The Library at miraclehealth.us: each compound's evidence grade, its index, and asking for
+// The Library at theunhyped.com: each compound's evidence grade, its index, and asking for
 // something it's missing.
 import { sb } from './client.js';
 import { SITE } from '../kit/kit.js';

@@ -1,5 +1,5 @@
 // The welcome beside every signed-out screen: Sig's ring and rings around it, the line and the three
-// steps, the same words and steps as the "Took something?" band on miraclehealth.us, so joining from
+// steps, the same words and steps as the "Took something?" band on theunhyped.com, so joining from
 // there lands where it left off. It's markup made from the constants below (never anyone's text), so
 // the build also draws it into the page itself (scripts/write_config.mjs): a phone shows it before the
 // app's code has arrived, and the app's first screen draws the very same thing in its place.

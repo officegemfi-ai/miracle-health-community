@@ -8,7 +8,7 @@
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
-const BASE = process.env.BASE_URL || 'https://community.miraclehealth.us/test/';
+const BASE = process.env.BASE_URL || 'https://community.theunhyped.com/test/';
 const PASSWORD = process.env.GATE_PASSWORD || '';
 const EXPECT = process.env.EXPECT_SUPABASE_URL || '';
 const OUT = new URL('./out/', import.meta.url).pathname;

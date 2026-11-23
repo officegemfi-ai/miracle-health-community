@@ -168,10 +168,10 @@ class CarriedOverList(unittest.TestCase):
         self.assertEqual(whole.count('- [ ]'), 700)
 
     def test_ticks_are_read_from_the_issue_under_their_compound(self):
-        body = ('**[Cagrilintide](https://miraclehealth.us/library/cagrilintide/)**\r\n'
+        body = ('**[Cagrilintide](https://theunhyped.com/library/cagrilintide/)**\r\n'
                 '- [x] **Blood sugar ↓** · A title (J, 2025) · [PubMed 123](https://pubmed.ncbi.nlm.nih.gov/123/)\r\n'
                 '- [ ] **Lipids ↓** · Another (J, 2025) · [PubMed 456](https://pubmed.ncbi.nlm.nih.gov/456/)\r\n'
-                '**[BPC-157](https://miraclehealth.us/library/bpc157/)**\r\n'
+                '**[BPC-157](https://theunhyped.com/library/bpc157/)**\r\n'
                 '- [X] **Liver ↑** · A case (J, 2020) · [PubMed 789](https://pubmed.ncbi.nlm.nih.gov/789/)\r\n')
         self.assertEqual(W.ticked_in(body), {'cagrilintide:123', 'bpc157:789'})
 

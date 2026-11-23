@@ -40,7 +40,7 @@ test('each line: its mark hidden, its word for screen readers, its sources, its 
   assert.match(html, /<li class="mh-bm-ln op-up" data-mk="igf1">/);
   assert.match(html, /<span class="mh-bm-mk d-up" data-mk="igf1" title="The growth factor[^"]*">IGF-1<span class="mh-bm-dir" aria-hidden="true">▲<\/span><span class="mh-sr">, may rise<\/span><\/span>/);
   // By default a source leads to the compound's fact sheet
-  assert.match(one(), /href="https:\/\/miraclehealth\.us\/library\/somatropin\/#src-1"/);
+  assert.match(one(), /href="https:\/\/theunhyped\.com\/library\/somatropin\/#src-1"/);
 });
 
 test('everything said is escaped', () => {

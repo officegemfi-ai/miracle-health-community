@@ -4,7 +4,7 @@
 // agents.ts) from the same hourly snapshot. The library's fact sheets read these files, so a fact
 // sheet and Sig say the same thing about the same question.
 //
-// Usage: deno run --allow-read --allow-write --allow-net=miraclehealth.us \
+// Usage: deno run --allow-read --allow-write --allow-net=theunhyped.com \
 //          scripts/build_evidence.ts <snapshot.json> <out_dir> [library_data_url]
 // Writes <out_dir>/evidence/index.json and <out_dir>/evidence/<id>.json. Aggregate numbers only,
 // as in the snapshot: no posts, no names.
@@ -12,7 +12,7 @@ import { communityOf, leadOf, USES, useById, type Use } from '../supabase/functi
 import { studiesOf } from '../supabase/functions/ask/agents.ts';
 import { BLOCKED, type Item, type Sheet, type Signal, type Snapshot } from '../supabase/functions/ask/library.ts';
 
-const [snapPath, outDir, base = 'https://miraclehealth.us/library/data'] = Deno.args;
+const [snapPath, outDir, base = 'https://theunhyped.com/library/data'] = Deno.args;
 if (!snapPath || !outDir) {
   console.error('Usage: build_evidence.ts <snapshot.json> <out_dir> [library_data_url]');
   Deno.exit(2);

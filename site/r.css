@@ -1,4 +1,4 @@
-/* The public report pages (scripts/build_public_reports.mjs): Graphite, the look of miraclehealth.us
+/* The public report pages (scripts/build_public_reports.mjs): Graphite, the look of theunhyped.com
    and the community app, for pages anyone can read without the app. They stand on their own: every
    build puts this file, the design kit it was written against (kit.css) and its fonts side by side
    in /r/, so these pages never depend on which version of the app is live. Loaded after kit.css. */

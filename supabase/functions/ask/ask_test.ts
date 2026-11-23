@@ -154,17 +154,17 @@ const NONE = { red_flag: 'none', compounds: [], goals: [], medications: [], cond
 function deps(f: typeof fetch, over: Partial<HttpDeps> = {}): HttpDeps {
   clearCache();
   return {
-    origins: ['https://miraclehealth.us'],
+    origins: ['https://theunhyped.com'],
     apiKey: 'k',
     models: { guide: 'claude-sonnet-5-5', fast: 'claude-haiku-5-5', fallback: 'claude-haiku-5-5' },
-    library: createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: f }),
+    library: createLibrary({ base: 'https://theunhyped.com/library/data', snapshotUrl: 'https://community.theunhyped.com/snapshot.json', fetchImpl: f }),
     salt: 'salt',
     quota: async () => ({ ok: true, left: 39 }),
     fetchImpl: f,
     ...over,
   };
 }
-const ask = (messages: unknown, origin = 'https://miraclehealth.us') =>
+const ask = (messages: unknown, origin = 'https://theunhyped.com') =>
   new Request('https://x.supabase.co/functions/v1/ask', { method: 'POST', headers: { Origin: origin, 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.9' }, body: JSON.stringify({ messages }) });
 
 async function events(res: Response): Promise<{ event: string; data: Record<string, any> }[]> {
@@ -285,7 +285,7 @@ Deno.test('the plain checks catch amounts, schedules, outside links and sales ta
   const hits = scan('Take 250 mcg twice a day, or 5 g. Buy it from https://shop.example.com with discount code X.').map((h) => h.kind);
   for (const k of ['dose', 'schedule', 'link', 'sales']) assert(hits.includes(k as never), k);
   assertEquals(scan('Vitamin B12, omega-3, GLP-1, CoQ10 and 5-HTP; a trial of 53 people lost 15% of body weight.'), []);
-  assertEquals(scan('See [BPC-157](lib:bpc157) and https://miraclehealth.us/library/'), []);
+  assertEquals(scan('See [BPC-157](lib:bpc157) and https://theunhyped.com/library/'), []);
   // Both of our addresses, while Unhyped moves to theunhyped.com, and nobody else's
   assertEquals(scan('See https://theunhyped.com/library/bpc157/, https://www.theunhyped.com/ and https://community.theunhyped.com/#/new'), []);
   assertEquals(scan('Or https://community.miraclehealth.us/ and https://www.miraclehealth.us/sig/'), []);
@@ -430,10 +430,10 @@ Deno.test('only our own site may call it; preflight answers', async () => {
   const { f } = fakeWorld({ screen: NONE, rounds: [{ text: 'x' }] });
   const d = deps(f);
   assertEquals((await handle(ask([{ role: 'user', content: 'hi' }], 'https://evil.example'), d)).status, 403);
-  const pre = await handle(new Request('https://x', { method: 'OPTIONS', headers: { Origin: 'https://miraclehealth.us' } }), d);
+  const pre = await handle(new Request('https://x', { method: 'OPTIONS', headers: { Origin: 'https://theunhyped.com' } }), d);
   assertEquals(pre.status, 204);
-  assertEquals(pre.headers.get('Access-Control-Allow-Origin'), 'https://miraclehealth.us');
-  assertEquals(corsHeaders(new Request('https://x', { headers: { Origin: 'https://evil.example' } }), ['https://miraclehealth.us'])['Access-Control-Allow-Origin'], 'https://miraclehealth.us');
+  assertEquals(pre.headers.get('Access-Control-Allow-Origin'), 'https://theunhyped.com');
+  assertEquals(corsHeaders(new Request('https://x', { headers: { Origin: 'https://evil.example' } }), ['https://theunhyped.com'])['Access-Control-Allow-Origin'], 'https://theunhyped.com');
 });
 
 Deno.test('over the limit: a clear 429, and Claude is never called', async () => {
@@ -1351,7 +1351,7 @@ Deno.test('a snapshot that can\'t be read: the last good one stands, and with no
   const flaky = (async (url: string | URL, init?: RequestInit) => (String(url).endsWith('snapshot.json') && !up ? new Response('down', { status: 503 }) : lib(url, init))) as unknown as typeof fetch;
   clearCache();
   let t = 0;
-  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: flaky, now: () => t });
+  const library = createLibrary({ base: 'https://theunhyped.com/library/data', snapshotUrl: 'https://community.theunhyped.com/snapshot.json', fetchImpl: flaky, now: () => t });
   assertEquals((await library.snapshot()).ok, true);
   up = false; t += 11 * 60_000;
   assertEquals((await library.snapshot()).signals.bpc157 !== undefined, true);      // stale beats nothing
@@ -1363,7 +1363,7 @@ Deno.test('a snapshot that can\'t be read: the last good one stands, and with no
   let tries = 0;
   const counting = (async (url: string | URL, init?: RequestInit) => { if (String(url).endsWith('snapshot.json')) { tries++; return new Response('down', { status: 503 }); } return lib(url, init); }) as unknown as typeof fetch;
   clearCache();
-  const lib2 = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: counting, now: () => t });
+  const lib2 = createLibrary({ base: 'https://theunhyped.com/library/data', snapshotUrl: 'https://community.theunhyped.com/snapshot.json', fetchImpl: counting, now: () => t });
   for (let i = 0; i < 3; i++) await lib2.snapshot().catch(() => null);
   assertEquals(tries, 1);
   t += 61_000;
@@ -1389,7 +1389,7 @@ Deno.test('turns that need the same file at once fetch it once; each Library kee
     return lib(url, init);
   }) as unknown as typeof fetch;
   clearCache();
-  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: slow, now: () => 0 });
+  const library = createLibrary({ base: 'https://theunhyped.com/library/data', snapshotUrl: 'https://community.theunhyped.com/snapshot.json', fetchImpl: slow, now: () => 0 });
   const three = Promise.all([library.sheet('bpc157'), library.sheet('bpc157'), library.sheet('bpc157')]);
   release();
   assert((await three).every((s) => s?.id === 'bpc157'));
@@ -1420,7 +1420,7 @@ Deno.test('a fact sheet that fails once is fetched again at once; until it loads
   const lib = libFetch();
   const flaky = (async (url: string | URL, init?: RequestInit) => (String(url).endsWith('/entries/creatine.json') && fails-- > 0 ? new Response('oops', { status: 500 }) : lib(url, init))) as unknown as typeof fetch;
   clearCache();
-  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', fetchImpl: flaky, now: () => 0 });
+  const library = createLibrary({ base: 'https://theunhyped.com/library/data', snapshotUrl: 'https://community.theunhyped.com/snapshot.json', fetchImpl: flaky, now: () => 0 });
   await library.sheet('creatine').catch(() => null);
   assertEquals((await library.sheet('creatine'))?.id, 'creatine');
   // In a turn: the guide hears it couldn't be loaded, never "no fact sheet yet"
@@ -2037,7 +2037,7 @@ Deno.test('the community\'s numbers come from the database\'s newest version, ch
     if (!latest) return Promise.resolve(null);
     return Promise.resolve({ ...latest, payload: known === latest.version ? null : latest.payload });
   };
-  const library = createLibrary({ base: 'https://miraclehealth.us/library/data', snapshotUrl: 'https://community.miraclehealth.us/snapshot.json', signal, fetchImpl: counting, now: () => t });
+  const library = createLibrary({ base: 'https://theunhyped.com/library/data', snapshotUrl: 'https://community.theunhyped.com/snapshot.json', signal, fetchImpl: counting, now: () => t });
   const first = await library.snapshot();
   assertEquals(first.version, 7);
   assertEquals(first.generated_at, '2026-11-07T12:00:00.000123+00:00');   // which numbers answered, for the sources line
@@ -2186,7 +2186,7 @@ Deno.test('no efficacy read under an answer the Safety agent held back', async (
 // Who answers: the agents a member chooses for a chat (the Safety agent always answers)
 // ---------------------------------------------------------------------------
 const askWith = (messages: unknown, agents: unknown) =>
-  new Request('https://x.supabase.co/functions/v1/ask', { method: 'POST', headers: { Origin: 'https://miraclehealth.us', 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.9' }, body: JSON.stringify({ messages, agents }) });
+  new Request('https://x.supabase.co/functions/v1/ask', { method: 'POST', headers: { Origin: 'https://theunhyped.com', 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.9' }, body: JSON.stringify({ messages, agents }) });
 type Call = { kind: string; body: Record<string, unknown> };
 const notesOf = (calls: Call[]) => String((calls.find((c) => c.kind === 'guide')!.body.system as { text: string }[])[1].text);
 const toolsOf = (calls: Call[]) => ((calls.find((c) => c.kind === 'guide')!.body.tools ?? []) as { name: string }[]).map((t) => t.name).sort();

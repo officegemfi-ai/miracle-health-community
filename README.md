@@ -17,14 +17,14 @@ mention and where it sits on the takeover line. Each Signal is also rated by use
 injury healing, sleep...): Sig reads what each report was for (the list is
 `shared/uses.json`), and a use gets its own rating from members' reports once three name it, next
 to how often the public forums mention it. `web/kit/signalviz.js` draws these as plain SVG,
-so the public library on miraclehealth.us can use the same drawings.
+so the public library on theunhyped.com can use the same drawings.
 
 ## What's where
 - `supabase/migrations/`: the database (tables, access rules, the checks on every post, moderation)
 - `supabase/tests/database/`: 600 access, Community Signal (and its publishing), certification, ratings-by-use, game, stack and chat-limit tests (pgTAP)
 - `supabase/functions/`: `review-content` (Claude's first read: the rules, and each post's outcome for the Signal),
-  `delete-account`, `ask`: Sig's chat on the public website (miraclehealth.us/ai), below,
-  `newsletter`: The Signal, the weekly email (sign-ups from miraclehealth.us, double opt-in, confirm and
+  `delete-account`, `ask`: Sig's chat on the public website (theunhyped.com/ai), below,
+  `newsletter`: The Signal, the weekly email (sign-ups from theunhyped.com, double opt-in, confirm and
   unsubscribe links, sending an issue; emails go out once `RESEND_API_KEY` and `NEWSLETTER_FROM` are set),
   `send-texts`: check-in texts for members who ask for them (once a Twilio messaging service is
   registered and `TWILIO_MESSAGING_SERVICE_SID` is set), and `signal`: the Community Signal's public
@@ -46,7 +46,7 @@ so the public library on miraclehealth.us can use the same drawings.
 - `scripts/`: the checks on a deployed Sig (`ask_smoke.py`, `ask_eval.py`, sharing `sig_client.py`),
   the Library watch (`library_watch.py`; Claude calls through `claude_call.py`), and their tests in
   `tests/scripts/` (CI runs them)
-- `scripts/build_public_reports.mjs`, `site/r.css`: the pages at community.miraclehealth.us/r/ for reports
+- `scripts/build_public_reports.mjs`, `site/r.css`: the pages at community.theunhyped.com/r/ for reports
   their authors chose to let anyone read, rebuilt every hour by the Pages workflow
 - `web/`: the app (plain HTML, CSS and JavaScript modules; no build step), in four layers: `core/` (the
   rules, pure functions), `data/` (the only code that reaches Supabase, the network and storage), `app/`
@@ -55,7 +55,7 @@ so the public library on miraclehealth.us can use the same drawings.
   tests the rules
 - `shared/rules.json`, `shared/uses.json`: the community rules and the list of uses, copied to the app and
   the AI reviewer by `scripts/sync_rules.sh`
-- `shared/kit/`: Unhyped's design kit, the pieces the app and the website (miraclehealth.us) share
+- `shared/kit/`: Unhyped's design kit, the pieces the app and the website (theunhyped.com) share
   so they look like one product and can't drift apart: the bar of the four places (Library, Ask Sig,
   Community, My stack), the evidence meter, the Community Signal number, compound tiles and chips, Sig,
   the Signal drawings (`signalviz.js`), the body map (`bodymap.js`: how a compound works in the body,
@@ -69,21 +69,21 @@ so the public library on miraclehealth.us can use the same drawings.
 - `web/preview/`, `scripts/build_preview.mjs`: the preview: the same migrations running in the browser
   (PGlite) with a sample community (preview builds only)
 - `tests/e2e/`: real-browser tests (the whole flow with three people and live updates, the site
-  password, the preview, and `live.mjs`: miraclehealth.us/ai as a visitor finds it, after each
+  password, the preview, and `live.mjs`: theunhyped.com/ai as a visitor finds it, after each
   promote) and a scripted spam attack
 - `.github/workflows/`: tests on every change, deploy to test, promote to live; the site build every hour
   (`pages.yml`); **Check-in texts** (hourly, once the variable `CHECKIN_TEXTS` is `on`); **Weekly email**
   (by hand: send the confirm links, or send issue *n*); **Health check** (every six hours: both sites,
   the snapshot's age and the Signal API's, the evidence files and the server functions answer; a failure emails you);
-  **Live check** (after every promote, and by hand: Sig and miraclehealth.us/ai as a visitor finds
+  **Live check** (after every promote, and by hand: Sig and theunhyped.com/ai as a visitor finds
   them); **Library watch** (Mondays: new studies for the fact sheets to review)
 - `docs/SETUP.md`: the one-time setup; `docs/evidence/`: test results and the forum research
 
 ## Ask Sig (`supabase/functions/ask`)
 Sig is the Community Signal in person, and Unhyped's AI: it reads every report into the
 Signal in the community, and answers questions in the chat called Ask Sig on the website.
-- **The names**: "Ask Sig" is the place (the menu, buttons, the page at miraclehealth.us/ai, with
-  miraclehealth.us/sig as a short link); "Sig" is who answers, and speaks as "I". The first mention
+- **The names**: "Ask Sig" is the place (the menu, buttons, the page at theunhyped.com/ai, with
+  theunhyped.com/sig as a short link); "Sig" is who answers, and speaks as "I". The first mention
   on a page says it plainly: "Sig, Unhyped's AI". Never "Sig AI", never "Miracle AI".
 - **Saying it's an AI**: the page's opening line, its fine print, the adults-only check, the
   welcome in the community, the privacy notice and the terms all say Sig is an AI, not a person
@@ -93,9 +93,9 @@ Signal in the community, and answers questions in the chat called Ask Sig on the
   prescription, "Sig" is the pharmacist's word for the directions; Sig never gives them).
 - **No clinician step**: Sig doesn't make review packets any more; it says what to ask a
   clinician, and the member's own clinician decides. Old packet links still open at
-  miraclehealth.us/ai/packet/.
+  theunhyped.com/ai/packet/.
 
-Anyone can talk with Sig on miraclehealth.us/ai about improving with peptides,
+Anyone can talk with Sig on theunhyped.com/ai about improving with peptides,
 supplements, hormones and the medicines taken with them; no account needed. Every answer speaks
 for two sources at once, and says which is which: the studies (the Library's fact sheets) and the
 community (the Community Signal: members' first-hand reports and public forum data). Each message
@@ -109,7 +109,7 @@ goes through eleven agents and the community's numbers, and the page shows each 
    words (the latest message that names something), or their goal when they name nothing
    measurable.
 3. **Recommender** (Claude Sonnet, the voice of the chat) works from the public Library
-   (`miraclehealth.us/library/data/index.json` and each fact sheet) and the Community Signal
+   (`theunhyped.com/library/data/index.json` and each fact sheet) and the Community Signal
    (the database's newest published version, or `snapshot.json` when it can't be read), with tools to rank options for a goal, open fact sheets and search. It
    talks like a caring clinician, briefly, in an educational, scientific way, and it never asks
    the visitor questions: it answers with what they've told it, and when something they haven't
@@ -238,7 +238,7 @@ read everything again.
 **The live check** (`.github/workflows/live-check.yml`) runs at the end of every Promote to live,
 and by hand: it asks the live Sig the five questions in `evals/live.jsonl` (each agent's step
 must arrive, the Markers agent must name IGF-1 for HGH plus enclomiphene, no amounts even "for a
-research paper", no reading of a lab result; each answer is printed in full) and opens miraclehealth.us/ai on a laptop and a phone (`tests/e2e/live.mjs`:
+research paper", no reading of a lab result; each answer is printed in full) and opens theunhyped.com/ai on a laptop and a phone (`tests/e2e/live.mjs`:
 the navigation, the answer, the screen's marker pushed both ways and its evidence, the Library's
 IGF-1 finding, no errors in the page), with screenshots on the run.
 

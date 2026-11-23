@@ -133,7 +133,7 @@ Deno.test('the routes, under the platform\'s path or the bare one; anything else
   const post = await handle(get('', {}, 'POST'));
   assertEquals(post.status, 405);
   assertEquals(post.headers.get('Allow'), 'GET, HEAD, OPTIONS');
-  const pre = await handle(get('', { Origin: 'https://miraclehealth.us', 'Access-Control-Request-Method': 'GET' }, 'OPTIONS'));
+  const pre = await handle(get('', { Origin: 'https://theunhyped.com', 'Access-Control-Request-Method': 'GET' }, 'OPTIONS'));
   assertEquals(pre.status, 204);
   assertEquals(pre.headers.get('Access-Control-Allow-Origin'), '*');
   assertEquals(db.calls.length, 0);   // none of these needed the database

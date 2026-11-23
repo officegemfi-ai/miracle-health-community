@@ -42,7 +42,7 @@ export function partChips(sp, label) {
 }
 
 // The public library, with a fact sheet for every compound and blend in the community's
-export const LIBRARY = 'https://miraclehealth.us/library/';
+export const LIBRARY = 'https://theunhyped.com/library/';
 
 // The question a space starts Sig with (typed in for them, never sent)
 export const askAbout = (sp) => (sp.kind === 'stack'

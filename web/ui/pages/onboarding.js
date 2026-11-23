@@ -37,7 +37,7 @@ export function onboarding() {
       box.replaceChildren(
         h('div', { class: 'row nw' }, sig(88, 'happy'), h('div', {}, h('div', { class: 'kick' }, 'Welcome'), h('h2', {}, 'Hi, I’m Sig.'))),
         h('p', {}, 'I’m the Community Signal in person: one number per compound, built from what people report happened to them. Every report, every “same for me” and every vote here makes me sharper.'),
-        h('p', { class: 'small' }, 'I’m also Unhyped’s AI. I read each report into the Signal (you check my read with a tap), and at Ask Sig on miraclehealth.us I answer questions from the studies and from what people report.'),
+        h('p', { class: 'small' }, 'I’m also Unhyped’s AI. I read each report into the Signal (you check my read with a tap), and at Ask Sig on theunhyped.com I answer questions from the studies and from what people report.'),
         h('p', { class: 'small muted' }, 'Experiences, not medical advice. Nobody here tells anyone what to take.'),
         h('div', { class: 'row end mt16' }, h('button', { class: 'btn lime', type: 'button', onclick: () => { step = 1; draw(); } }, 'Show me around')), dots());
     } else if (step === 1) {

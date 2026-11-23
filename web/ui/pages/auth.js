@@ -73,11 +73,11 @@ function renderTooYoung() {
   authLayout(
     h('h2', {}, 'Sorry, you can’t join Unhyped.'),
     h('p', { class: 'muted' }, 'The community is only for adults. You can still read the Library on our website.'),
-    h('p', { class: 'mt16' }, h('a', { class: 'btn block', href: 'https://miraclehealth.us/library/' }, 'Go to the Library')));
+    h('p', { class: 'mt16' }, h('a', { class: 'btn block', href: 'https://theunhyped.com/library/' }, 'Go to the Library')));
 }
 
 // Signed out: the welcome (pages/welcome.js, the same words and three steps as the "Took something?"
-// band on miraclehealth.us) beside the form. The build draws the same welcome into the page, so it's
+// band on theunhyped.com) beside the form. The build draws the same welcome into the page, so it's
 // on screen before this code arrives, and this replaces it with no visible change.
 function authLayout(...formKids) {
   document.body.classList.add('auth');

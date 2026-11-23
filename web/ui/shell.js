@@ -1,4 +1,4 @@
-// The frame around every page, as on every page of miraclehealth.us: the side panel with Unhyped's
+// The frame around every page, as on every page of theunhyped.com: the side panel with Unhyped's
 // places and the menu (never removed: open beside the page from 1280px wide, a drawer
 // below that), the plain top bar with search and your things, the phone tab bar, the footer, and
 // Sig in the corner. Pages draw into it with render() and setRail(); the rail's cards are chosen

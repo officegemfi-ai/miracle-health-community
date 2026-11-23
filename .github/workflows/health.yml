@@ -1,6 +1,6 @@
 # Health check: every six hours, checks what visitors and members rely on is up, and fails (so
 # GitHub emails you) when something isn't. The only thing it may change: it starts the site build.
-#   - miraclehealth.us and its Library, and community.miraclehealth.us, answer
+#   - theunhyped.com and its Library, and community.theunhyped.com, answer
 #   - the community's public numbers (snapshot.json) are current. GitHub runs scheduled jobs late
 #     at busy times (the hourly site build has come every four to eight hours), so when they're
 #     over three hours old it starts the build (Pages) itself, with a note; it fails only when
@@ -8,7 +8,7 @@
 #   - the Signal API (the signal function) answers, and the database's minute job checked its numbers
 #     in the last five minutes (when the job stops, the API publishes in its place and says so)
 #   - the evidence files the Library reads are there
-#   - Sig's chat and the weekly email sign-up answer from miraclehealth.us
+#   - Sig's chat and the weekly email sign-up answer from theunhyped.com
 name: Health check
 on:
   schedule:
@@ -22,8 +22,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      SITE: https://miraclehealth.us
-      COMMUNITY: https://community.miraclehealth.us
+      SITE: https://theunhyped.com
+      COMMUNITY: https://community.theunhyped.com
       FUNCTIONS: https://nerfymdslkhopsomwriv.supabase.co/functions/v1
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -87,6 +87,6 @@ jobs:
             code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 -X OPTIONS "$FUNCTIONS/$fn" \
               -H "Origin: $SITE" -H 'Access-Control-Request-Method: POST')" || code=000
             echo "$fn: $code"
-            case "$code" in 2*) ;; *) bad "The $fn function answered $code from miraclehealth.us" ;; esac
+            case "$code" in 2*) ;; *) bad "The $fn function answered $code from theunhyped.com" ;; esac
           done
           exit "$fail"

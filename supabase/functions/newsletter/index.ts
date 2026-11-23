@@ -1,12 +1,12 @@
 // newsletter: The Signal, Unhyped's weekly email.
-//   POST {email, source} from miraclehealth.us: keeps the address, unconfirmed, and emails a link
+//   POST {email, source} from theunhyped.com: keeps the address, unconfirmed, and emails a link
 //     to confirm it (double opt-in). Nothing else is ever sent to an address until it's confirmed.
 //     From a script it's JSON both ways; from the site's form it's a form post, answered by going
-//     back to miraclehealth.us/weekly/#signup-<what happened>. A form
+//     back to theunhyped.com/weekly/#signup-<what happened>. A form
 //     field humans never see ("website") filled in means a bot: it's thanked and nothing is kept.
 //   GET ?c=<token>: confirms. GET ?u=<token> (or a one-click POST to it): unsubscribes. Both go
-//     back to miraclehealth.us/weekly/#confirmed (or #unsubscribed, #unknown) to say so.
-//   POST {send: n} with x-admin-key: sends issue n (miraclehealth.us/weekly/<n>/email.html) to
+//     back to theunhyped.com/weekly/#confirmed (or #unsubscribed, #unknown) to say so.
+//   POST {send: n} with x-admin-key: sends issue n (theunhyped.com/weekly/<n>/email.html) to
 //     every confirmed address that hasn't had it, 100 at a time (the "Weekly email" workflow).
 // Emails go through Resend when RESEND_API_KEY and NEWSLETTER_FROM are set; until then sign-ups
 // are kept and the confirmation emails go out once it's set up (see the sign-up's "later").
@@ -20,7 +20,7 @@ export type Deps = {
   db: Db;
   origins: string[];
   self: string;                         // this function's own URL, for the links in the emails
-  site: string;                         // https://miraclehealth.us
+  site: string;                         // https://theunhyped.com
   adminKey?: string;
   send?: (mails: Mail[]) => Promise<boolean>;   // undefined until an email provider is set up
   fetchIssue?: (n: number) => Promise<{ subject: string; html: string } | null>;
@@ -35,7 +35,7 @@ function cors(req: Request, origins: string[]): Record<string, string> {
     Vary: 'Origin',
   };
 }
-// Back to miraclehealth.us/weekly/, to the line that says what happened (the page shows the one
+// Back to theunhyped.com/weekly/, to the line that says what happened (the page shows the one
 // its address ends with, with no script needed)
 const back = (site: string, what: string) => new Response(null, { status: 303, headers: { Location: `${site}/weekly/#${what}` } });
 const signedUp = (site: string, what: string) => back(site, `signup-${what}`);
@@ -134,7 +134,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return json({ sent });
   }
 
-  // A sign-up from miraclehealth.us
+  // A sign-up from theunhyped.com
   const answer = (state: string, status = 200, error?: string) =>
     isForm ? signedUp(deps.site, state) : json(error ? { ok: false, error } : { ok: true, state }, status, c);
   if (!deps.origins.includes(req.headers.get('Origin') ?? '')) {
@@ -188,8 +188,8 @@ export function resend(apiKey: string, from: string, fetchImpl: typeof fetch = f
 if (import.meta.main) {
   const { url, service } = env();
   const db = createClient(url, service, { auth: { persistSession: false } });
-  const site = 'https://miraclehealth.us';
-  const origins = (Deno.env.get('NEWSLETTER_ORIGINS') ?? `${site},https://www.miraclehealth.us,https://theunhyped.com,https://www.theunhyped.com`).split(',').map((s) => s.trim()).filter(Boolean);
+  const site = 'https://theunhyped.com';
+  const origins = (Deno.env.get('NEWSLETTER_ORIGINS') ?? `${site},https://www.theunhyped.com,https://miraclehealth.us,https://www.miraclehealth.us`).split(',').map((s) => s.trim()).filter(Boolean);
   const apiKey = Deno.env.get('RESEND_API_KEY') ?? '';
   const from = Deno.env.get('NEWSLETTER_FROM') ?? '';
   const send = apiKey && from ? resend(apiKey, from) : undefined;

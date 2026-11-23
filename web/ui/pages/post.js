@@ -223,7 +223,7 @@ export async function renderPost(id, opts = {}) {
 }
 
 // For the author of a report: who can read it. Members only, or anyone, on a public page that
-// the community's site build makes every hour (community.miraclehealth.us/r/<id>/).
+// the community's site build makes every hour (community.theunhyped.com/r/<id>/).
 function publicLine(p) {
   const box = h('div', { class: 'pub-line', 'aria-live': 'polite' });
   const url = `${location.origin}/r/${encodeURIComponent(p.id)}/`;

@@ -1,13 +1,13 @@
 /* Unhyped Community
-   The look of miraclehealth.us: black pages, near-white words, one electric blue main action.
+   The look of theunhyped.com: black pages, near-white words, one electric blue main action.
    Mona Sans for every word (headlines wide, heavy and in capitals), Monaspace Neon for numbers
    only: a score, a count, a move. Clean, not costume (the brand book): no label in the code
    face, no command or file name as a caption, no note beside a place's name, no bits strung on
-   dots. One app with miraclehealth.us: the same side panel (the Signal and the four places, then
+   dots. One app with theunhyped.com: the same side panel (the Signal and the four places, then
    the menu, never removed). In the window, after Reddit: the feed in the middle, context on the
    right. */
 
-/* Quiet type, as on miraclehealth.us. Words: Mona Sans. Headlines: the same file, wider and heavier
+/* Quiet type, as on theunhyped.com. Words: Mona Sans. Headlines: the same file, wider and heavier
    ("Mona Sans Display" starts at weight 640 and width 112.5%, so whatever is set in it lands there).
    Data: Monaspace Neon, regular up to weight 549 and bold from 550. */
 @font-face{font-family:'Mona Sans';src:url('fonts/mona-sans.woff2') format('woff2');font-weight:200 900;font-stretch:75% 125%;font-style:normal;font-display:swap}
@@ -15,7 +15,7 @@
 @font-face{font-family:'Monaspace Neon';src:url('fonts/monaspace-neon-400.woff2') format('woff2');font-weight:100 549;font-style:normal;font-display:swap;size-adjust:96.5%}
 @font-face{font-family:'Monaspace Neon';src:url('fonts/monaspace-neon-700.woff2') format('woff2');font-weight:550 900;font-style:normal;font-display:swap;size-adjust:96.5%}
 
-/* The colours of miraclehealth.us: black pages, near-white type with two quiet greys, hairline
+/* The colours of theunhyped.com: black pages, near-white type with two quiet greys, hairline
    frames, the one main action in electric blue. Colour is a signature: Signal blue ("lime" in
    code) is the community's and its Signal's (scores, moves, points, the live dot), mint the
    studies'. One set of colours, whatever the member's device is set to. */
@@ -81,7 +81,7 @@ img,svg{flex:none}
 @keyframes live{0%{box-shadow:0 0 0 0 rgba(61,139,255,.55)}70%{box-shadow:0 0 0 7px rgba(61,139,255,0)}100%{box-shadow:0 0 0 0 rgba(61,139,255,0)}}
 
 /* ---------------------------------------------------------------- top bar
-   As on every page of miraclehealth.us: a plain bar that stays at the top while the page scrolls
+   As on every page of theunhyped.com: a plain bar that stays at the top while the page scrolls
    under it. The menu button and the logo show while the side panel is a drawer (under 1280px
    wide); then search, then your things. */
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;flex:none;height:var(--top-h);margin:0;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.84);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--on-ink)}
@@ -138,7 +138,7 @@ img,svg{flex:none}
 /* the side panel: the logo, Unhyped's places (the Signal first, then the design kit's bar,
    standing up, each with its mark), then the community's menu, then the rules and the legal. It is
    never taken away: open beside the page from 1280px wide, and below that a drawer the menu
-   button slides in, with its own button to close it, as on miraclehealth.us. */
+   button slides in, with its own button to close it, as on theunhyped.com. */
 .side{position:sticky;top:0;z-index:31;display:flex;flex-direction:column;height:100dvh;padding:10px 10px 12px 12px;border-right:1px solid rgba(255,255,255,.09);background:var(--os-side);color:var(--text);overflow:hidden}
 .side-head{display:flex;align-items:center;flex:none;height:44px;padding:0 0 0 6px}
 @media (min-width:1280px){
@@ -165,7 +165,7 @@ img,svg{flex:none}
 }
 .side .logo img{height:20px}
 .side .family{display:grid;gap:1px;flex:none;margin:6px 0 0;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,.09)}
-/* the Signal leads the places, as on miraclehealth.us; it sits just above the kit's bar of the four */
+/* the Signal leads the places, as on theunhyped.com; it sits just above the kit's bar of the four */
 .side .side-signal{flex:none;margin:6px 0 1px;position:relative;text-decoration:none;white-space:nowrap}
 .side .side-signal+.family{margin-top:0}
 .side .family a,.side .side-signal{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;column-gap:10px;height:36px;padding:0 10px;border-radius:0;color:var(--text-2);font:500 13.5px/1 var(--body)}
@@ -249,7 +249,7 @@ a.chip:hover{border-color:var(--text)}
 .chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 
 /* ---------------------------------------------------------------- feed chrome */
-/* The home feed opens like miraclehealth.us: words on a plate, corner ticks, no photograph */
+/* The home feed opens like theunhyped.com: words on a plate, corner ticks, no photograph */
 .feed-hero{margin:2px 0 14px;padding:26px 30px 28px;border-radius:var(--r);border:1px solid var(--line)}
 .feed-hero h1{margin-top:12px}
 .feed-hero-cap{max-width:46ch;margin:10px 0 0;font-size:15px;line-height:1.5;color:var(--text-2)}
@@ -546,7 +546,7 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .rules-note{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line);font-size:13.5px;color:var(--text-2)}
 
 /* ---------------------------------------------------------------- sign in */
-/* The words side, as on miraclehealth.us's "Took something?" band. No photograph: Sig's ring in
+/* The words side, as on theunhyped.com's "Took something?" band. No photograph: Sig's ring in
    the corner with fainter rings going out from it, and the three steps as plates */
 .auth-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);min-height:calc(100dvh - 2 * var(--os-g) - var(--top-h) - 34px)}
 .auth-art{position:relative;isolation:isolate;overflow:hidden;background:var(--ink-3);color:var(--on-ink);padding:56px 48px 48px;display:flex;flex-direction:column;justify-content:flex-end;gap:16px;border-right:1px solid var(--line)}
@@ -630,7 +630,7 @@ table.metrics td.v{text-align:right;font:600 15px var(--mono);white-space:nowrap
 .mod-card{margin-bottom:10px}
 
 /* ---------------------------------------------------------------- footer, preview */
-/* The footer, as on miraclehealth.us: green-black, the places and pages in mono, then the
+/* The footer, as on theunhyped.com: green-black, the places and pages in mono, then the
    rules' own words */
 .foot{flex:none;background:var(--ink-3);border-top:1px solid var(--line);color:var(--on-ink-2);font-size:14px}
 .foot-in{margin:0;padding:34px 24px 30px}
@@ -1037,7 +1037,7 @@ h1 em,h2 em{font-style:normal;font-weight:inherit}
 .top-actions .create[aria-current=page]{background:transparent;border-color:var(--line-2);box-shadow:none}
 .top-actions .create[aria-current=page]:hover{background:transparent;border-color:var(--text)}
 /* ================================================================ the marks of the four places
-   As on miraclehealth.us: the Library is the Evidence agent's mark (blue), Ask Sig is Sig's ring of
+   As on theunhyped.com: the Library is the Evidence agent's mark (blue), Ask Sig is Sig's ring of
    the twelve, the Community the Community agent's (lime), My stack the Builder's (pink) */
 .side .side-signal::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M3%2013.5v-4M6.5%2013.5v-9M10%2013.5v-6.5M13.5%2013.5v-3%22%20fill%3D%22none%22%20stroke%3D%22%233D8BFF%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E")}
 .side .family a[data-place="library"]::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236FA8FE%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20color%3D%22%236FA8FE%22%3E%3Cpath%20d%3D%22M6.8%202.8v18.4M17.2%202.8v18.4M6.8%207.2h10.4M6.8%2012h10.4M6.8%2016.8h10.4%22%2F%3E%3C%2Fsvg%3E")}

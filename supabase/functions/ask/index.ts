@@ -1,4 +1,4 @@
-// ask: Sig's chat on miraclehealth.us/ai. Anyone can talk with it, no account needed.
+// ask: Sig's chat on theunhyped.com/ai. Anyone can talk with it, no account needed.
 // The page sends the conversation it keeps in the visitor's own browser; this function runs
 // the agents (see agents.ts) and streams their steps and the answer back as server-sent
 // events. Nothing the visitor writes is stored or logged here. The only thing kept is a
@@ -237,7 +237,7 @@ if (import.meta.main) {
     effort: Deno.env.get('ASK_EFFORT') || 'low',
     reasonEffort: Deno.env.get('ASK_REASON_EFFORT') || 'high',
     library: createLibrary({
-      base: Deno.env.get('LIBRARY_URL') || 'https://miraclehealth.us/library/data',
+      base: Deno.env.get('LIBRARY_URL') || 'https://theunhyped.com/library/data',
       // The community's numbers: the version the signal function serves, read straight from the
       // database (migration 20261107000100); the static copy when it can't be read
       signal: async (known) => {
@@ -245,7 +245,7 @@ if (import.meta.main) {
         if (error) throw new Error(`signal_latest: ${error.message}`);
         return data as SignalRow | null;
       },
-      snapshotUrl: Deno.env.get('SNAPSHOT_URL') || 'https://community.miraclehealth.us/snapshot.json',
+      snapshotUrl: Deno.env.get('SNAPSHOT_URL') || 'https://community.theunhyped.com/snapshot.json',
     }),
     salt: service,
     evalKey: Deno.env.get('ASK_EVAL_KEY') || undefined,
