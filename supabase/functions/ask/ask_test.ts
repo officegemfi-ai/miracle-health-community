@@ -2297,6 +2297,8 @@ Deno.test('Sig speaks an answer: a headline, a paragraph per compound, the studi
   assert(prompt.includes('don\'t write the Signal\'s score'));
   assert(prompt.includes('as a paragraph that starts "The studies:"') && prompt.includes('as a paragraph that starts "**Good to know:**"'));
   assert(prompt.includes('Call present_plan only when they ask for a plan') && prompt.includes('6. Their plan (present_plan) only when they ask for one'));
+  // Answers about how they eat, sleep or train, once the plan is on their screen, bring it back marked from them
+  assert(prompt.includes('once you\'ve shown their plan counts: show it again') && prompt.includes('call present_plan again: the same plan'));
   assert(!prompt.includes('In a full answer about a goal or their stack, call present_plan') && !prompt.includes('A full answer about a goal or their own stack builds their plan'));
   assert(prompt.includes('In the reports I\'ve read, people most often') && prompt.includes('never as one person\'s story'));
 });
