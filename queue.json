@@ -1,6 +1,6 @@
 {
  "note": "The Library watch's open review list (scripts/library_watch.py in miracle-health-community), kept from run to run. items: studies still to review. done: reviewed and left out (ticked in the review issue), never listed again. not_relevant: read and found not to report a marker for that compound, so not read again (a full pass reads everything again).",
- "updated": "2026-11-16",
+ "updated": "2026-11-23",
  "items": [
   {
    "id": "afamelanotide",
@@ -211,6 +211,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "anastrozole",
+   "name": "Anastrozole",
+   "via": "",
+   "pmid": "43065297",
+   "title": "Clinical and Hormonal Factors Associated With Sperm Retrieval and the Role of Preoperative Medical Treatment in Non-Mosaic Klinefelter Syndrome Patients Undergoing Microdissection Testicular Sperm Extraction.",
+   "journal": "Andrology",
+   "year": "2027",
+   "doi": "10.1111/andr.70437",
+   "pmc": "PMC13788410",
+   "effects": [
+    {
+     "marker": "testosterone",
+     "direction": "no change",
+     "who": "227 non-mosaic Klinefelter patients undergoing TESE, basal TT <2.5 ng/mL subgroup treated vs untreated",
+     "design": "retrospective single-center study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "armodafinil",
@@ -721,6 +743,28 @@
    "first_seen": "2026-11-09"
   },
   {
+   "id": "b12",
+   "name": "Vitamin B12",
+   "via": "",
+   "pmid": "43053207",
+   "title": "Cobalamin E deficiency complicated with thrombotic microangiopathy: a case report.",
+   "journal": "J Med Case Rep",
+   "year": "2026",
+   "doi": "10.1186/s13256-026-06551-5",
+   "pmc": "PMC13779635",
+   "effects": [
+    {
+     "marker": "hematocrit",
+     "direction": "up",
+     "who": "8-year-old Thai boy with cblE defect and megaloblastic anemia",
+     "design": "case report",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
    "id": "berberine",
    "name": "Berberine",
    "via": "",
@@ -1095,6 +1139,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "berberine",
+   "name": "Berberine",
+   "via": "",
+   "pmid": "43068098",
+   "title": "Berberine dosing for lowering blood glucose: a model-based meta-analysis.",
+   "journal": "Am J Transl Res",
+   "year": "2026",
+   "doi": "10.62347/fpvs6129",
+   "pmc": "PMC13788514",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "pooled trial subjects (28 trials, 2,669 people) given berberine, modeled for typical patients",
+     "design": "model-based meta-analysis, Emax modeling",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "bpc157",
@@ -1485,35 +1551,6 @@
      "who": "189 adults with type 2 diabetes on diet and exercise, given cagrilintide-semaglutide",
      "design": "randomised double-blind placebo-controlled trial",
      "gap": false
-    }
-   ],
-   "by": "Claude",
-   "first_seen": "2026-11-07"
-  },
-  {
-   "id": "cagrilintide",
-   "name": "Cagrilintide",
-   "via": "",
-   "pmid": "42763732",
-   "title": "Efficacy and Safety of CagriSema for Metabolic Outcomes: Systematic Review and Pairwise Meta-Analysis of Randomized Controlled Trials.",
-   "journal": "Diabetes Metab Syndr Obes",
-   "year": "2026",
-   "doi": "10.2147/dmso.s616418",
-   "pmc": "PMC13589532",
-   "effects": [
-    {
-     "marker": "glucose",
-     "direction": "down",
-     "who": "adults with overweight/obesity and type 2 diabetes receiving CagriSema vs cagrilintide monotherapy",
-     "design": "systematic review and meta-analysis of RCTs",
-     "gap": false
-    },
-    {
-     "marker": "lipids",
-     "direction": "down",
-     "who": "adults with overweight/obesity and type 2 diabetes receiving CagriSema vs cagrilintide and placebo",
-     "design": "systematic review and meta-analysis of RCTs",
-     "gap": true
     }
    ],
    "by": "Claude",
@@ -3136,6 +3173,50 @@
    "first_seen": "2026-11-16"
   },
   {
+   "id": "curcumin",
+   "name": "Curcumin",
+   "via": "",
+   "pmid": "43048154",
+   "title": "Evaluation of a Single Daily Dose of a Plant-Based Nutraceutical for Subclinical Changes in Liver Function in Healthy Adults: An Exploratory, Randomized, Double-Blind, Placebo-Controlled Clinical Trial.",
+   "journal": "Glob Adv Integr Med Health",
+   "year": "2026",
+   "doi": "10.1177/27536130261497316",
+   "pmc": "PMC13775492",
+   "effects": [
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "108 healthy adults (18-60) given liquid nutraceutical with turmeric, 90 days",
+     "design": "randomized double-blind placebo-controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "curcumin",
+   "name": "Curcumin",
+   "via": "",
+   "pmid": "43069227",
+   "title": "Comparative efficacy of nutraceutical interventions for arthritis management: A network meta-analysis of randomized controlled trials.",
+   "journal": "J Transl Med",
+   "year": "2026",
+   "doi": "10.1186/s12967-026-08880-x",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "adults with arthritis in RCTs of curcumin (network meta-analysis)",
+     "design": "network meta-analysis of RCTs",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
    "id": "dapagliflozin",
    "name": "Dapagliflozin",
    "via": "",
@@ -3779,6 +3860,28 @@
    "id": "dapagliflozin",
    "name": "Dapagliflozin",
    "via": "",
+   "pmid": "42954923",
+   "title": "Impact of Altitude on Hemoglobin Response to Sodium-Glucose Cotransporter 2 Inhibitors in CKD: The SGaLTItude Study.",
+   "journal": "Kidney360",
+   "year": "2026",
+   "doi": "10.34067/kid.0000001305",
+   "pmc": "PMC13777198",
+   "effects": [
+    {
+     "marker": "hematocrit",
+     "direction": "up",
+     "who": "206 CKD patients on SGLT2 inhibitors (85% dapagliflozin) across altitudes",
+     "design": "retrospective study with mixed-effects model",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
    "pmid": "42967591",
    "title": "Comparative Efficacy and Safety of Saroglitazar and Dapagliflozin on Hepatic Steatosis and Glycemic Control in Patients With Metabolic Dysfunction-Associated Steatotic Liver Disease: A 25-Week Prospective Multicenter Comparative Cohort Study.",
    "journal": "Endocrinol Diabetes Metab",
@@ -3815,6 +3918,28 @@
    "id": "dapagliflozin",
    "name": "Dapagliflozin",
    "via": "",
+   "pmid": "42970163",
+   "title": "Efficacy and Safety of Dapagliflozin, Glimepiride, and Metformin Fixed-Dose Combination Tablet in Type 2 Diabetes: A Phase III Trial.",
+   "journal": "Adv Ther",
+   "year": "2026",
+   "doi": "10.1007/s12325-026-03791-1",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "536 Indian patients with type 2 diabetes receiving dapagliflozin+glimepiride+metformin FDC",
+     "design": "randomized open-label phase 3 trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
    "pmid": "42977550",
    "title": "β-Cell Recovery Patterns With Initial Combination Versus Stepwise Therapy in Newly Diagnosed Type 2 Diabetes: TRIPLE-AXEL Post Hoc Analysis.",
    "journal": "Diabetes Obes Metab",
@@ -3832,6 +3957,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "dapagliflozin",
+   "name": "Dapagliflozin",
+   "via": "",
+   "pmid": "42999953",
+   "title": "Dapagliflozin for Renal Protection in Heart Transplant Recipients: A Randomized Clinical Trial.",
+   "journal": "Circulation",
+   "year": "2026",
+   "doi": "10.1161/circulationaha.126.083760",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "heart transplant recipients given dapagliflozin vs placebo, eGFR slope",
+     "design": "randomized placebo-controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "dsip",
@@ -4226,6 +4373,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "dulaglutide",
+   "name": "Dulaglutide",
+   "via": "",
+   "pmid": "43069672",
+   "title": "Assessing predictive performance of four semi-mechanistic models for long-term HbA1c with dulaglutide in people with Type 2 diabetes.",
+   "journal": "Br J Clin Pharmacol",
+   "year": "2026",
+   "doi": "10.1002/bcp.70929",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "people with type 2 diabetes in dulaglutide Phase 1b, 2, and 3 studies",
+     "design": "model-based analysis of phase 1b, 2 and 3 trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "dutasteride",
@@ -5319,6 +5488,35 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "estradiol",
+   "name": "Estradiol",
+   "via": "",
+   "pmid": "43034807",
+   "title": "Prolonged Estradiol Persistence and Possible Symptom-Biomarker Dissociation During Sequential Estradiol Implant Therapy in a Postmenopausal Woman: A Case Report.",
+   "journal": "Cureus",
+   "year": "2026",
+   "doi": "10.7759/cureus.117982",
+   "pmc": "PMC13769415",
+   "effects": [
+    {
+     "marker": "estradiol",
+     "direction": "up",
+     "who": "one 52-year-old postmenopausal woman receiving sequential estradiol implants",
+     "design": "case report",
+     "gap": false
+    },
+    {
+     "marker": "gonadotropins",
+     "direction": "mixed",
+     "who": "one 52-year-old postmenopausal woman receiving sequential estradiol implants",
+     "design": "case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
    "id": "exemestane",
    "name": "Exemestane",
    "via": "",
@@ -5761,6 +5959,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-09"
+  },
+  {
+   "id": "fsh",
+   "name": "FSH",
+   "via": "",
+   "pmid": "43065508",
+   "title": "Response-equivalent dosing of follitropin alfa and follitropin delta in Japanese women: a cross-fitted retrospective cohort study.",
+   "journal": "Front Reprod Health",
+   "year": "2026",
+   "doi": "10.3389/frph.2026.1988836",
+   "pmc": "PMC13785308",
+   "effects": [
+    {
+     "marker": "gonadotropins",
+     "direction": "no change",
+     "who": "231 Japanese women given follitropin alfa, 154 given follitropin delta",
+     "design": "retrospective cohort study",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "ghrp2",
@@ -6330,6 +6550,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "hcg",
+   "name": "hCG",
+   "via": "",
+   "pmid": "43047953",
+   "title": "Differences of sex development associated with asymmetric overgrowth in a patient with 69,XXY/46,XX mosaicism.",
+   "journal": "JCEM Case Rep",
+   "year": "2027",
+   "doi": "10.1210/jcemcr/luag346",
+   "pmc": "PMC13774874",
+   "effects": [
+    {
+     "marker": "testosterone",
+     "direction": "up",
+     "who": "one 11-month-old infant with DSD and mosaicism",
+     "design": "case report",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "hexarelin",
@@ -8167,6 +8409,78 @@
    "first_seen": "2026-11-16"
   },
   {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "43041042",
+   "title": "Liraglutide Therapy and Weight Control in Adolescents with Severe Obesity: A Real-World Experience.",
+   "journal": "Turk Arch Pediatr",
+   "year": "2026",
+   "doi": "10.65717/turkarchpediatr.2026.26191",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "29 adolescents with severe obesity on liraglutide",
+     "design": "retrospective longitudinal cohort study",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "29 adolescents with severe obesity on liraglutide",
+     "design": "retrospective longitudinal cohort study",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "29 adolescents with severe obesity on liraglutide",
+     "design": "retrospective longitudinal cohort study",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "liraglutide",
+   "name": "Liraglutide",
+   "via": "",
+   "pmid": "43068353",
+   "title": "Effects of Liraglutide as Add-on to Metformin on Hepatic Steatosis and Fibrosis in Patients with Prediabetes and MASLD: A Retrospective Cohort Study.",
+   "journal": "J Gastrointestin Liver Dis",
+   "year": "2026",
+   "doi": "10.15403/jgld-6926",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "patients with prediabetes and MASLD receiving liraglutide plus metformin",
+     "design": "retrospective cohort study, 12 months",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "patients with prediabetes and MASLD receiving liraglutide plus metformin",
+     "design": "retrospective cohort study, 12 months",
+     "gap": true
+    },
+    {
+     "marker": "liver",
+     "direction": "down",
+     "who": "patients with prediabetes and MASLD receiving liraglutide plus metformin",
+     "design": "retrospective cohort study, 12 months",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
    "id": "ltheanine",
    "name": "L-theanine",
    "via": "",
@@ -8927,6 +9241,28 @@
    "id": "melatonin",
    "name": "Melatonin",
    "via": "",
+   "pmid": "42964503",
+   "title": "Effect of Melatonin on 24-Hour Urinary Protein Excretion and Sleep Quality in Patients With Stage 3-4 Chronic Kidney Disease: A Randomized, Double-Blind, Placebo-Controlled Clinical Trial.",
+   "journal": "Health Sci Rep",
+   "year": "2026",
+   "doi": "10.1002/hsr2.73458",
+   "pmc": "PMC13720239",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "73 adults with stage 3-4 CKD and proteinuria, melatonin vs placebo",
+     "design": "randomized double-blind placebo-controlled trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "melatonin",
+   "name": "Melatonin",
+   "via": "",
    "pmid": "42997745",
    "title": "Intervention with Exogenous Melatonin Has No Adverse Effects on Cardiometabolic Parameters of Overweight Night Workers without Cardiometabolic Abnormalities.",
    "journal": "Sleep Sci",
@@ -9231,6 +9567,64 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "metformin",
+   "name": "Metformin",
+   "via": "",
+   "pmid": "42875601",
+   "title": "Metabolic and oncological effects of metformin added to ADT in prostate cancer: systematic review and meta-analysis including STAMPEDE.",
+   "journal": "Prostate Cancer Prostatic Dis",
+   "year": "2026",
+   "doi": "10.1038/s41391-026-01165-w",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "men with prostate cancer on ADT, pooled RCTs (metformin plus ADT vs ADT)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    },
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "men with prostate cancer on ADT, pooled RCTs (HbA1c reduced)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "men with prostate cancer on ADT, pooled RCTs (LDL cholesterol, non-significant)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "metformin",
+   "name": "Metformin",
+   "via": "",
+   "pmid": "42944764",
+   "title": "Metformin Preserves Regional Brain Glucose Uptake, Structure, and Functional Connectivity in Adults with Insulin Resistance.",
+   "journal": "J Clin Invest",
+   "year": "2026",
+   "doi": "10.1172/jci207388",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "mixed",
+     "who": "40 older adults with insulin resistance randomized to metformin or placebo",
+     "design": "randomized placebo-controlled trial",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "metformin",
@@ -10126,6 +10520,35 @@
    "first_seen": "2026-11-07"
   },
   {
+   "id": "nad",
+   "name": "NAD+",
+   "via": "",
+   "pmid": "43040090",
+   "title": "Impact of exogenous nicotinamide adenine dinucleotide and its precursors supplementation in adults with heart failure: a systematic review and meta-analysis of randomized controlled trials.",
+   "journal": "Eur J Clin Pharmacol",
+   "year": "2026",
+   "doi": "10.1007/s00228-026-04202-8",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "adults with symptomatic heart failure receiving NAD+ or NR vs placebo (meta-analysis of 4 RCTs, 387 patients)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": false
+    },
+    {
+     "marker": "liver",
+     "direction": "no change",
+     "who": "adults with symptomatic heart failure receiving NAD+ or NR vs placebo (meta-analysis of 4 RCTs, 387 patients)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
    "id": "nmn",
    "name": "NMN",
    "via": "",
@@ -10378,6 +10801,42 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-07"
+  },
+  {
+   "id": "nr",
+   "name": "NR (nicotinamide riboside)",
+   "via": "",
+   "pmid": "43040090",
+   "title": "Impact of exogenous nicotinamide adenine dinucleotide and its precursors supplementation in adults with heart failure: a systematic review and meta-analysis of randomized controlled trials.",
+   "journal": "Eur J Clin Pharmacol",
+   "year": "2026",
+   "doi": "10.1007/s00228-026-04202-8",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "kidney",
+     "direction": "up",
+     "who": "adults with symptomatic heart failure receiving NAD+ or NR vs placebo (pooled RCTs)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": true
+    },
+    {
+     "marker": "liver",
+     "direction": "no change",
+     "who": "adults with symptomatic heart failure receiving NAD+ or NR vs placebo (pooled RCTs)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": true
+    },
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "adults with symptomatic heart failure receiving NAD+ or NR vs placebo (pooled RCTs)",
+     "design": "meta-analysis of randomized controlled trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "omega3",
@@ -10704,6 +11163,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "omega3",
+   "name": "Omega-3 fish oil",
+   "via": "",
+   "pmid": "43069227",
+   "title": "Comparative efficacy of nutraceutical interventions for arthritis management: A network meta-analysis of randomized controlled trials.",
+   "journal": "J Transl Med",
+   "year": "2026",
+   "doi": "10.1186/s12967-026-08880-x",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "up",
+     "who": "adults with arthritis in omega-3 RCTs (network meta-analysis)",
+     "design": "network meta-analysis of randomized trials",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "orforglipron",
@@ -12082,6 +12563,64 @@
    "id": "probiotic",
    "name": "Probiotics",
    "via": "",
+   "pmid": "42942425",
+   "title": "Lactobacillus rhamnosus Lysate for Metabolic Dysfunction-Associated Steatotic Liver Disease: A Randomized Controlled Trial.",
+   "journal": "Medicina (Kaunas)",
+   "year": "2026",
+   "doi": "10.3390/medicina62101893",
+   "pmc": "PMC13706883",
+   "effects": [
+    {
+     "marker": "liver",
+     "direction": "mixed",
+     "who": "52 adults with MASLD given postbiotic or placebo for 3 months",
+     "design": "randomized double-blind placebo-controlled trial",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "52 adults with MASLD given postbiotic or placebo for 3 months",
+     "design": "randomized double-blind placebo-controlled trial",
+     "gap": true
+    },
+    {
+     "marker": "glucose",
+     "direction": "no change",
+     "who": "52 adults with MASLD given postbiotic or placebo for 3 months",
+     "design": "randomized double-blind placebo-controlled trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "probiotic",
+   "name": "Probiotics",
+   "via": "",
+   "pmid": "42943359",
+   "title": "Effect of Probiotics on Stress Scores, Cortisol Levels, and Immune Functions in Moderately Stressed Adolescents and Young Adults: Results of a Feasibility Clinical Study.",
+   "journal": "Pharmaceuticals (Basel)",
+   "year": "2026",
+   "doi": "10.3390/ph19101662",
+   "pmc": "PMC13708308",
+   "effects": [
+    {
+     "marker": "cortisol",
+     "direction": "mixed",
+     "who": "87 moderately stressed adolescents and young adults randomized to probiotic or placebo",
+     "design": "randomized single-blind feasibility trial",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "probiotic",
+   "name": "Probiotics",
+   "via": "",
    "pmid": "42955661",
    "title": "Effects of Prebiotics, Probiotics, or Synbiotics on Health Outcomes, Sex Hormones, Oxidative Stress, and Inflammatory Biomarkers in Women with Polycystic Ovary Syndrome: A GRADE Systematic Review, Meta-Analysis of Randomized Controlled Trials, and Umbrella Review.",
    "journal": "Reprod Sci",
@@ -12192,6 +12731,64 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "probiotic",
+   "name": "Probiotics",
+   "via": "",
+   "pmid": "42997375",
+   "title": "Effects of probiotic or synbiotic supplementation on glycolipid metabolism in patients with coronary heart disease: a systematic review and meta-analysis.",
+   "journal": "Front Microbiol",
+   "year": "2026",
+   "doi": "10.3389/fmicb.2026.1877366",
+   "pmc": "PMC13741933",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "patients with coronary heart disease in pooled RCTs (six trials, 296 participants)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "patients with coronary heart disease in pooled RCTs (six trials, 296 participants)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "up",
+     "who": "patients with coronary heart disease in pooled RCTs (HDL-C, four studies, 192 participants)",
+     "design": "systematic review and meta-analysis of RCTs",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "probiotic",
+   "name": "Probiotics",
+   "via": "",
+   "pmid": "43069227",
+   "title": "Comparative efficacy of nutraceutical interventions for arthritis management: A network meta-analysis of randomized controlled trials.",
+   "journal": "J Transl Med",
+   "year": "2026",
+   "doi": "10.1186/s12967-026-08880-x",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "adults with arthritis in RCTs (network meta-analysis, 44 trials)",
+     "design": "network meta-analysis of randomized trials",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "raloxifene",
@@ -13420,6 +14017,42 @@
    "id": "semaglutide",
    "name": "Semaglutide",
    "via": "",
+   "pmid": "42880879",
+   "title": "A Retrospective Chart Review of Tirzepatide and Semaglutide Use in Prediabetes Management and Cardiometabolic Outcomes in a Rural Primary Care Setting.",
+   "journal": "J Dr Nurs Pract",
+   "year": "2026",
+   "doi": "10.1891/jdnp-2025-0064",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "40 rural adults with prediabetes and overweight or obesity, treated with semaglutide or tirzepatide",
+     "design": "retrospective chart review",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "down",
+     "who": "40 rural adults with prediabetes and overweight or obesity, treated with semaglutide or tirzepatide",
+     "design": "retrospective chart review",
+     "gap": true
+    },
+    {
+     "marker": "lipids",
+     "direction": "no change",
+     "who": "40 rural adults with prediabetes and overweight or obesity, treated with semaglutide or tirzepatide (HDL only)",
+     "design": "retrospective chart review",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
    "pmid": "42890523",
    "title": "CagriSema versus Semaglutide 2.4 mg monotherapy for weight management in adults with overweight or obesity, with or without type 2 diabetes: a systematic review, meta-analysis, and trial sequential analysis.",
    "journal": "Front Endocrinol (Lausanne)",
@@ -13510,6 +14143,28 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "semaglutide",
+   "name": "Semaglutide",
+   "via": "",
+   "pmid": "42921178",
+   "title": "Durability of Semaglutide Effects After Treatment Discontinuation in HIV-Associated Lipohypertrophy: A Randomized, Double-Blind, Placebo-Controlled Phase 2b Clinical Trial.",
+   "journal": "Open Forum Infect Dis",
+   "year": "2026",
+   "doi": "10.1093/ofid/ofag631",
+   "pmc": "PMC13693481",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "up",
+     "who": "PWH with HIV-associated lipohypertrophy previously on semaglutide, weeks 32-56 after discontinuation",
+     "design": "randomized placebo-controlled trial, posttreatment phase",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "semaglutide",
@@ -16090,6 +16745,35 @@
    "id": "tirzepatide",
    "name": "Tirzepatide",
    "via": "",
+   "pmid": "43012507",
+   "title": "Durable and Additive Disease Control at 52 Weeks With Ixekizumab Plus Tirzepatide Versus Ixekizumab Alone in Adults With Psoriatic Arthritis and Obesity or Overweight: Additional Results From a Randomized Clinical Trial.",
+   "journal": "Arthritis Rheumatol",
+   "year": "2026",
+   "doi": "10.1002/art.70375",
+   "pmc": "",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "mixed",
+     "who": "adults with psoriatic arthritis and obesity or overweight receiving ixekizumab plus tirzepatide",
+     "design": "randomized open-label trial, 52 weeks",
+     "gap": false
+    },
+    {
+     "marker": "lipids",
+     "direction": "mixed",
+     "who": "adults with psoriatic arthritis and obesity or overweight receiving ixekizumab plus tirzepatide",
+     "design": "randomized open-label trial, 52 weeks",
+     "gap": true
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
    "pmid": "43025465",
    "title": "Kidney effects of tirzepatide across albuminuria, filtration markers, and clinical outcomes: a parent-trial-level systematic review and meta-analysis.",
    "journal": "Diabetes Res Clin Pract",
@@ -16143,6 +16827,35 @@
    ],
    "by": "Claude",
    "first_seen": "2026-11-16"
+  },
+  {
+   "id": "tirzepatide",
+   "name": "Tirzepatide",
+   "via": "",
+   "pmid": "43048463",
+   "title": "Cardiovascular and Kidney Outcomes of Tirzepatide versus Semaglutide in Stage 2 Cardiovascular-Kidney-Metabolic Syndrome: A Propensity Score-matched Cohort Study.",
+   "journal": "Clin Med Insights Cardiol",
+   "year": "2026",
+   "doi": "10.1177/11795468261496357",
+   "pmc": "PMC13775584",
+   "effects": [
+    {
+     "marker": "glucose",
+     "direction": "down",
+     "who": "adults with Stage 2 CKM syndrome receiving tirzepatide vs semaglutide",
+     "design": "retrospective propensity score matched cohort",
+     "gap": false
+    },
+    {
+     "marker": "kidney",
+     "direction": "no change",
+     "who": "adults with Stage 2 CKM syndrome receiving tirzepatide vs semaglutide",
+     "design": "retrospective propensity score matched cohort",
+     "gap": false
+    }
+   ],
+   "by": "Claude",
+   "first_seen": "2026-11-23"
   },
   {
    "id": "tongkatali",
@@ -17044,7 +17757,12 @@
    "first_seen": "2026-11-07"
   }
  ],
- "done": {},
+ "done": {
+  "cagrilintide:42763732": {
+   "date": "2026-11-23",
+   "how": "ticked in the review issue"
+  }
+ },
  "not_relevant": [
   "afamelanotide:23121206",
   "afamelanotide:30859308",
@@ -17113,6 +17831,7 @@
   "b12:42859488",
   "b12:42867041",
   "b12:42882033",
+  "b12:42884633",
   "b12:42890991",
   "b12:42900397",
   "b12:42901726",
@@ -17125,12 +17844,16 @@
   "b12:42958026",
   "b12:42968241",
   "b12:42978426",
+  "b12:42985237",
   "b12:42998864",
   "b12:43009946",
   "b12:43014225",
+  "b12:43016785",
   "b12:43021438",
   "b12:43022065",
   "b12:43030445",
+  "b12:43063022",
+  "b12:43068741",
   "berberine:28317482",
   "berberine:30637820",
   "berberine:30644763",
@@ -17158,6 +17881,8 @@
   "berberine:42983185",
   "berberine:43033962",
   "berberine:43035730",
+  "berberine:43051090",
+  "berberine:43056766",
   "bpc157:28641541",
   "bpc157:39909207",
   "bpc157:41471311",
@@ -17167,6 +17892,7 @@
   "bpc157:42356491",
   "bpc157:42578445",
   "bpc157:42943255",
+  "bpc157:43056390",
   "cabergoline:10338264",
   "cabergoline:25248589",
   "cabergoline:25450859",
@@ -17191,6 +17917,7 @@
   "cabergoline:42973552",
   "cabergoline:42978565",
   "cabergoline:42992517",
+  "cabergoline:43054074",
   "cagrilintide:38184193",
   "cagrilintide:38286487",
   "cagrilintide:39868309",
@@ -17201,6 +17928,7 @@
   "cagrilintide:42228334",
   "cagrilintide:42260119",
   "cagrilintide:42838477",
+  "cagrilintide:43068476",
   "canagliflozin:26513131",
   "canagliflozin:28093996",
   "canagliflozin:28742644",
@@ -17219,6 +17947,7 @@
   "canagliflozin:42872647",
   "canagliflozin:42953914",
   "canagliflozin:43035629",
+  "canagliflozin:43065872",
   "cerebrolysin:10523962",
   "cerebrolysin:24777546",
   "cerebrolysin:29782737",
@@ -17249,6 +17978,7 @@
   "clomiphene:42933627",
   "clomiphene:42962534",
   "clomiphene:43032714",
+  "clomiphene:43046285",
   "collagen:18385903",
   "collagen:19386527",
   "collagen:28740282",
@@ -17290,6 +18020,7 @@
   "coq10:42943255",
   "coq10:42943601",
   "coq10:43022134",
+  "coq10:43064259",
   "creatine:17430086",
   "creatine:22141211",
   "creatine:29396939",
@@ -17328,6 +18059,10 @@
   "creatine:42929050",
   "creatine:43017653",
   "creatine:43019238",
+  "creatine:43066463",
+  "creatine:43066769",
+  "creatine:43067990",
+  "creatine:43068014",
   "curcumin:28485496",
   "curcumin:28884496",
   "curcumin:31398884",
@@ -17356,8 +18091,11 @@
   "curcumin:42944098",
   "curcumin:42947920",
   "curcumin:43005205",
+  "curcumin:43016586",
   "curcumin:43020166",
+  "curcumin:43024231",
   "curcumin:43036267",
+  "curcumin:43056766",
   "dapagliflozin:32403420",
   "dapagliflozin:32862232",
   "dapagliflozin:34139987",
@@ -17365,10 +18103,12 @@
   "dapagliflozin:42791398",
   "dapagliflozin:42798693",
   "dapagliflozin:42801001",
+  "dapagliflozin:42868053",
   "dapagliflozin:42872647",
   "dapagliflozin:42882031",
   "dapagliflozin:42899606",
   "dapagliflozin:42927625",
+  "dapagliflozin:42927657",
   "dapagliflozin:42928725",
   "dapagliflozin:42935495",
   "dapagliflozin:42951286",
@@ -17380,6 +18120,7 @@
   "dapagliflozin:43005596",
   "dapagliflozin:43021143",
   "dapagliflozin:43035269",
+  "dapagliflozin:43041701",
   "dhea:12007895",
   "dhea:12088188",
   "dhea:133709",
@@ -17418,14 +18159,17 @@
   "dhea:42939384",
   "dhea:42939962",
   "dhea:42941220",
+  "dhea:42941281",
   "dhea:42946068",
   "dhea:42954111",
   "dhea:42958542",
+  "dhea:42967810",
   "dhea:42985898",
   "dhea:42994671",
   "dhea:42999718",
   "dhea:43010994",
   "dhea:43022449",
+  "dhea:43048055",
   "dihexa:41490200",
   "dsip:1285360",
   "dsip:1336202",
@@ -17460,6 +18204,7 @@
   "dulaglutide:43005518",
   "dulaglutide:43008789",
   "dulaglutide:43025465",
+  "dulaglutide:43054382",
   "dutasteride:19341939",
   "dutasteride:20383346",
   "dutasteride:26714360",
@@ -17487,6 +18232,7 @@
   "empagliflozin:39916475",
   "empagliflozin:42791398",
   "empagliflozin:42832816",
+  "empagliflozin:42856399",
   "empagliflozin:42860337",
   "empagliflozin:42882031",
   "empagliflozin:42899606",
@@ -17498,6 +18244,8 @@
   "empagliflozin:42986123",
   "empagliflozin:43032907",
   "empagliflozin:43036268",
+  "empagliflozin:43056174",
+  "empagliflozin:43057441",
   "enclomiphene:133709",
   "enclomiphene:14596653",
   "enclomiphene:15672123",
@@ -17521,6 +18269,7 @@
   "enclomiphene:42933627",
   "enclomiphene:42962534",
   "enclomiphene:43032714",
+  "enclomiphene:43046285",
   "enclomiphene:6439216",
   "epithalon:12374906",
   "epithalon:38430634",
@@ -17558,14 +18307,18 @@
   "estradiol:42926021",
   "estradiol:42926397",
   "estradiol:42929847",
+  "estradiol:42939561",
   "estradiol:42942573",
   "estradiol:42946859",
   "estradiol:42949673",
+  "estradiol:42951080",
   "estradiol:42954750",
   "estradiol:42954951",
   "estradiol:42958239",
+  "estradiol:42963529",
   "estradiol:43022755",
   "estradiol:43027328",
+  "estradiol:43059065",
   "exemestane:10514021",
   "exemestane:10572233",
   "exemestane:10731118",
@@ -17648,6 +18401,7 @@
   "follistatin:41476993",
   "follistatin:42925003",
   "follistatin:42942139",
+  "follistatin:43042771",
   "fsh:12534318",
   "fsh:18627209",
   "fsh:19627705",
@@ -17667,6 +18421,7 @@
   "fsh:42804686",
   "fsh:42877143",
   "fsh:42904410",
+  "fsh:43039287",
   "ghkcu:25745767",
   "ghkcu:32983753",
   "ghkcu:41490200",
@@ -17730,12 +18485,15 @@
   "glutathione:42868851",
   "glutathione:42874826",
   "glutathione:42880641",
+  "glutathione:42882970",
   "glutathione:42883106",
   "glutathione:42887309",
   "glutathione:42887900",
   "glutathione:42901442",
   "glutathione:42906865",
   "glutathione:42908454",
+  "glutathione:42909587",
+  "glutathione:42920164",
   "glutathione:42922960",
   "glutathione:42924122",
   "glutathione:42924413",
@@ -17749,6 +18507,7 @@
   "glutathione:42973343",
   "glutathione:42995927",
   "glutathione:43008930",
+  "glutathione:43011381",
   "glutathione:43032715",
   "glycine:17713414",
   "glycine:19936667",
@@ -17789,6 +18548,8 @@
   "glycine:43001726",
   "glycine:43016883",
   "glycine:43020204",
+  "glycine:43049037",
+  "glycine:43056393",
   "gonadorelin:1709853",
   "gonadorelin:1724398",
   "gonadorelin:19013720",
@@ -17838,6 +18599,10 @@
   "hcg:43018074",
   "hcg:43020468",
   "hcg:43037462",
+  "hcg:43044836",
+  "hcg:43044861",
+  "hcg:43053039",
+  "hcg:43066478",
   "hcg:492636",
   "hexarelin:10193871",
   "hexarelin:10226781",
@@ -17885,6 +18650,8 @@
   "hmg:43020531",
   "hmg:43026119",
   "hmg:43032714",
+  "hmg:43045819",
+  "hmg:43067990",
   "humanin:12391601",
   "humanin:25738459",
   "humanin:27082450",
@@ -17964,17 +18731,22 @@
   "iron:42885127",
   "iron:42891064",
   "iron:42904183",
+  "iron:42910004",
   "iron:42911878",
   "iron:42914655",
   "iron:42920799",
   "iron:42923651",
   "iron:42927732",
   "iron:42933380",
+  "iron:42939754",
   "iron:42964912",
+  "iron:42972090",
   "iron:43001333",
   "iron:43011492",
   "iron:43016621",
   "iron:43024568",
+  "iron:43042771",
+  "iron:43063022",
   "kisspeptin:18193176",
   "kisspeptin:24782009",
   "kisspeptin:28531286",
@@ -18008,6 +18780,7 @@
   "kisspeptin:43014218",
   "kisspeptin:43030186",
   "kisspeptin:43033100",
+  "kisspeptin:43037851",
   "kpv:15102092",
   "kpv:22178636",
   "kpv:35496263",
@@ -18035,6 +18808,7 @@
   "ldn:42838712",
   "ldn:42871841",
   "ldn:42986262",
+  "ldn:43058044",
   "letrozole:33466886",
   "letrozole:34171379",
   "letrozole:35072927",
@@ -18068,6 +18842,8 @@
   "letrozole:43022534",
   "letrozole:43032714",
   "letrozole:43035117",
+  "letrozole:43039301",
+  "letrozole:43041288",
   "leuprolide:15783246",
   "leuprolide:15801868",
   "leuprolide:15966561",
@@ -18081,6 +18857,7 @@
   "leuprolide:42920467",
   "leuprolide:42937421",
   "leuprolide:42962532",
+  "leuprolide:43055871",
   "leuprolide:9951575",
   "lions:24959591",
   "lions:25960751",
@@ -18110,6 +18887,9 @@
   "liraglutide:42953685",
   "liraglutide:42986362",
   "liraglutide:43008789",
+  "liraglutide:43039332",
+  "liraglutide:43041828",
+  "liraglutide:43045092",
   "ll37:18389157",
   "ll37:24441102",
   "ll37:26291576",
@@ -18190,6 +18970,9 @@
   "mag:43031745",
   "mag:43033316",
   "mag:43036598",
+  "mag:43037885",
+  "mag:43042771",
+  "mag:43046452",
   "mazdutide:40081498",
   "mazdutide:40479843",
   "mazdutide:41025406",
@@ -18226,6 +19009,7 @@
   "melatonin:42891900",
   "melatonin:42895006",
   "melatonin:42899059",
+  "melatonin:42914892",
   "melatonin:42933736",
   "melatonin:42934231",
   "melatonin:42943255",
@@ -18233,8 +19017,11 @@
   "melatonin:42955299",
   "melatonin:42958239",
   "melatonin:42965931",
+  "melatonin:42966073",
   "melatonin:42966345",
+  "melatonin:42978213",
   "melatonin:43035068",
+  "melatonin:43042762",
   "metformin:10400405",
   "metformin:23628280",
   "metformin:27923166",
@@ -18260,12 +19047,15 @@
   "metformin:42835662",
   "metformin:42836929",
   "metformin:42856833",
+  "metformin:42868762",
   "metformin:42872583",
+  "metformin:42875600",
   "metformin:42880161",
   "metformin:42885740",
   "metformin:42893679",
   "metformin:42899606",
   "metformin:42920943",
+  "metformin:42928303",
   "metformin:42935801",
   "metformin:42939624",
   "metformin:42941621",
@@ -18273,7 +19063,14 @@
   "metformin:42952084",
   "metformin:42953685",
   "metformin:42961875",
+  "metformin:42964126",
   "metformin:42978981",
+  "metformin:43035953",
+  "metformin:43048285",
+  "metformin:43055874",
+  "metformin:43056129",
+  "metformin:43058053",
+  "metformin:43063022",
   "methyleneblue:12845393",
   "methyleneblue:2658373",
   "methyleneblue:30956100",
@@ -18301,6 +19098,7 @@
   "methyleneblue:42964912",
   "methyleneblue:42998624",
   "methyleneblue:43036329",
+  "methyleneblue:43061699",
   "mgf:12023866",
   "mgf:17354613",
   "mgf:17822355",
@@ -18341,6 +19139,7 @@
   "minoxidil:42953162",
   "minoxidil:42989303",
   "minoxidil:42993878",
+  "minoxidil:43037909",
   "minoxidil:6985752",
   "mk677:10427162",
   "mk677:10790589",
@@ -18427,6 +19226,10 @@
   "nac:42985323",
   "nac:42995927",
   "nac:43019658",
+  "nac:43057452",
+  "nac:43061263",
+  "nac:43064716",
+  "nac:43067421",
   "nad:17554232",
   "nad:26215259",
   "nad:27651178",
@@ -18466,6 +19269,10 @@
   "nad:43015852",
   "nad:43025214",
   "nad:43032985",
+  "nad:43041088",
+  "nad:43041458",
+  "nad:43044985",
+  "nad:43058751",
   "nmn:34326206",
   "nmn:35173682",
   "nmn:35276741",
@@ -18481,6 +19288,7 @@
   "nmn:42232307",
   "nmn:42892420",
   "nmn:42959468",
+  "nmn:43041458",
   "nr:30990964",
   "nr:31240235",
   "nr:34056649",
@@ -18518,10 +19326,13 @@
   "omega3:42850276",
   "omega3:42863608",
   "omega3:42883551",
+  "omega3:42884670",
   "omega3:42887303",
   "omega3:42889744",
   "omega3:42894748",
+  "omega3:42931020",
   "omega3:42964645",
+  "omega3:42984758",
   "omega3:42994692",
   "omega3:42997117",
   "omega3:43000462",
@@ -18571,6 +19382,10 @@
   "oxytocin:42996146",
   "oxytocin:43014713",
   "oxytocin:43030260",
+  "oxytocin:43039372",
+  "oxytocin:43042185",
+  "oxytocin:43053581",
+  "oxytocin:43054321",
   "oxytocin:9551709",
   "pegmgf:42395176",
   "pemvidutide:20383346",
@@ -18614,6 +19429,7 @@
   "pramlintide:39481742",
   "pramlintide:39998445",
   "pramlintide:42983241",
+  "pramlintide:43068476",
   "pregnenolone:10418987",
   "pregnenolone:135817",
   "pregnenolone:17142999",
@@ -18633,6 +19449,7 @@
   "pregnenolone:42318209",
   "pregnenolone:42985898",
   "pregnenolone:42997272",
+  "pregnenolone:43047293",
   "pregnenolone:6213544",
   "probiotic:26869611",
   "probiotic:31465625",
@@ -18649,13 +19466,17 @@
   "probiotic:42856976",
   "probiotic:42884751",
   "probiotic:42889019",
+  "probiotic:42889247",
+  "probiotic:42890194",
   "probiotic:42915814",
   "probiotic:42927909",
   "probiotic:42943599",
   "probiotic:42947886",
   "probiotic:42953211",
   "probiotic:42961005",
+  "probiotic:42964032",
   "probiotic:42994296",
+  "probiotic:42997460",
   "probiotic:43030130",
   "probiotic:43030299",
   "progesterone:10768143",
@@ -18696,12 +19517,17 @@
   "progesterone:42918571",
   "progesterone:42926021",
   "progesterone:42926936",
+  "progesterone:42930789",
   "progesterone:42942027",
   "progesterone:42942573",
   "progesterone:42952955",
   "progesterone:42956973",
   "progesterone:42957463",
+  "progesterone:42968260",
   "progesterone:42969678",
+  "progesterone:43012217",
+  "progesterone:43045003",
+  "progesterone:43060629",
   "pt141:15349141",
   "pt141:15672123",
   "pt141:16179960",
@@ -18772,6 +19598,7 @@
   "rapamycin:42902025",
   "rapamycin:42914890",
   "rapamycin:42942953",
+  "rapamycin:42946691",
   "rapamycin:42950248",
   "rapamycin:42964130",
   "rapamycin:42982232",
@@ -18779,8 +19606,13 @@
   "rapamycin:42996599",
   "rapamycin:43006783",
   "rapamycin:43010989",
+  "rapamycin:43014439",
   "rapamycin:43023172",
   "rapamycin:43027040",
+  "rapamycin:43038164",
+  "rapamycin:43044985",
+  "rapamycin:43057066",
+  "rapamycin:43070675",
   "retatrutide:38471571",
   "retatrutide:38687506",
   "retatrutide:39335551",
@@ -18808,6 +19640,7 @@
   "rhodiola:41003973",
   "rhodiola:41909050",
   "rhodiola:43012273",
+  "rhodiola:43050115",
   "selank:41490200",
   "semaglutide:29363040",
   "semaglutide:30615985",
@@ -18833,6 +19666,9 @@
   "semaglutide:42962966",
   "semaglutide:42969445",
   "semaglutide:43028516",
+  "semaglutide:43039120",
+  "semaglutide:43041828",
+  "semaglutide:43067507",
   "semax:10741256",
   "semax:11517472",
   "semax:16996699",
@@ -18922,6 +19758,8 @@
   "spironolactone:42958624",
   "spironolactone:43003893",
   "spironolactone:43018899",
+  "spironolactone:43047293",
+  "spironolactone:43068227",
   "ss31:15341391",
   "ss31:24860647",
   "ss31:26633327",
@@ -19020,6 +19858,9 @@
   "tamoxifen:43017183",
   "tamoxifen:43018070",
   "tamoxifen:43022534",
+  "tamoxifen:43056432",
+  "tamoxifen:43057523",
+  "tamoxifen:43064171",
   "tamoxifen:8283927",
   "taurine:26695545",
   "taurine:26918249",
@@ -19045,6 +19886,11 @@
   "taurine:42995410",
   "taurine:43023055",
   "taurine:43032715",
+  "taurine:43038987",
+  "taurine:43044324",
+  "taurine:43049037",
+  "taurine:43051097",
+  "taurine:43064258",
   "tb4:10202264",
   "tb4:1591344",
   "tb4:16186340",
@@ -19068,6 +19914,7 @@
   "tb500:25382550",
   "tb500:41490200",
   "tb500:42578445",
+  "tb500:43056390",
   "telmisartan:16563943",
   "telmisartan:16637783",
   "telmisartan:19286752",
@@ -19124,16 +19971,25 @@
   "testosterone:42864396",
   "testosterone:42867946",
   "testosterone:42875728",
+  "testosterone:42877884",
+  "testosterone:42881560",
   "testosterone:42897091",
   "testosterone:42899007",
   "testosterone:42900350",
   "testosterone:42907385",
   "testosterone:42910284",
   "testosterone:42918571",
+  "testosterone:42924843",
   "testosterone:42928909",
   "testosterone:42942573",
   "testosterone:42948131",
+  "testosterone:42953300",
+  "testosterone:42963529",
+  "testosterone:42966082",
   "testosterone:42967023",
+  "testosterone:42971511",
+  "testosterone:43041828",
+  "testosterone:43057734",
   "tirzepatide:35807558",
   "tirzepatide:36498958",
   "tirzepatide:36751934",
@@ -19152,7 +20008,10 @@
   "tirzepatide:42946946",
   "tirzepatide:42958899",
   "tirzepatide:42959190",
+  "tirzepatide:43000189",
   "tirzepatide:43033301",
+  "tirzepatide:43058082",
+  "tirzepatide:43063617",
   "tongkatali:22924057",
   "tongkatali:22966245",
   "tongkatali:24386995",
@@ -19195,6 +20054,7 @@
   "tretinoin:42942106",
   "tretinoin:42961127",
   "tretinoin:42979074",
+  "tretinoin:43044324",
   "tretinoin:8972247",
   "triptorelin:19747011",
   "triptorelin:20964453",
@@ -19234,18 +20094,24 @@
   "vitd3:42847618",
   "vitd3:42854971",
   "vitd3:42867271",
+  "vitd3:42883015",
   "vitd3:42904183",
   "vitd3:42909752",
   "vitd3:42910315",
   "vitd3:42923651",
+  "vitd3:42935168",
   "vitd3:42939530",
   "vitd3:42939650",
   "vitd3:42942352",
   "vitd3:42958239",
+  "vitd3:42965199",
   "vitd3:42968241",
   "vitd3:42979150",
   "vitd3:43015685",
   "vitd3:43027899",
+  "vitd3:43039282",
+  "vitd3:43047534",
+  "vitd3:43069227",
   "zinc:2407097",
   "zinc:25729686",
   "zinc:28618722",
@@ -19278,13 +20144,17 @@
   "zinc:42948535",
   "zinc:42953602",
   "zinc:42989177",
+  "zinc:42991479",
   "zinc:42993160",
   "zinc:42998631",
   "zinc:43003332",
+  "zinc:43009946",
   "zinc:43011492",
   "zinc:43015351",
   "zinc:43030139",
   "zinc:43030313",
+  "zinc:43042771",
+  "zinc:43062995",
   "zinc:8829089"
  ]
 }
