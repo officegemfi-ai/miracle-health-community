@@ -18,12 +18,10 @@ export async function renderHome(sort = 'hot') {
   drawDue();
   render(
     S.me.status === 'suspended' ? h('div', { class: 'msg note' }, `Your account is paused until ${new Date(S.me.suspended_until).toLocaleString()}. You can read, but not post or comment.`) : null,
-    // The feed opens the way miraclehealth.us does: words on a plate, no photograph
+    // The feed is a working screen: a compact title and one short line, so the posts start high
     h('section', { class: 'feed-hero' },
-      h('div', {},
-        h('div', { class: 'kick' }, 'Community'),
-        h('h1', {}, 'Your feed.'),
-        h('p', { class: 'feed-hero-cap' }, 'What members took and how it went. Sig reads each report into the Community Signal.'))),
+      h('h1', {}, 'Your feed.'),
+      h('p', { class: 'feed-hero-cap' }, 'What members took and how it went.')),
     due, composerBar(), sortbar('#/home', sort),
     newPostsPill(list, (row) => !joined.length || partsOf(row).some((id) => joined.some((s) => s.compound_id === id)), reload),
     list);
