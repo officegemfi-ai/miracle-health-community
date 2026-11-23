@@ -187,7 +187,7 @@ check('and the emblem card beside the feed shows the same total', Number((await 
   const A2 = await A.context().newPage();
   await A2.route('**/rules.json*', async (r) => { await new Promise((ok) => setTimeout(ok, 1500)); await r.continue(); });
   await A2.goto(BASE, { waitUntil: 'domcontentloaded' });
-  check('A member opening the app sees “Loading…”, never the welcome for visitors',
+  check('A member opening the app sees Sig’s ring loading, never the welcome for visitors',
     await A2.evaluate(() => { const f = document.querySelector('#app > .first-screen'); return document.documentElement.classList.contains('member') && (!f || getComputedStyle(f).display === 'none'); }));
   await A2.close();
 }

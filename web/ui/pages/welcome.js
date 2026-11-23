@@ -20,7 +20,7 @@ const STEPS = [
 export function welcomeMarkup(free = FREE) {
   return `<div class="auth-art"><div class="sig-hero">${ringMarkup(132)}</div>`
     + '<div class="kick">The Unhyped community</div>'
-    + '<h1>Took something? <em>Say how it went.</em></h1>'
+    + '<h1>Took something? <em class="punch">Say how it went.</em></h1>'
     + `<p class="lede">${esc(`${LEDE} ${free}`)}</p>`
     + `<ol class="auth-steps">${STEPS.map(([n, b, s]) => `<li><span class="n">${n}</span><b>${esc(b)}</b><span>${esc(s)}</span></li>`).join('')}</ol></div>`;
 }

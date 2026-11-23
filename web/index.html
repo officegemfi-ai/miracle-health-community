@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#000000">
 <meta http-equiv="Content-Security-Policy" content="__CSP__">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<!-- Before the first paint: does this device keep a sign-in? (members see "Loading…", others the welcome) -->
+<!-- Before the first paint: does this device keep a sign-in? (members see Sig's ring loading, others the welcome) -->
 <script src="boot.js"></script>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -65,17 +65,20 @@
   <div class="top-actions" id="top-actions"></div>
 </header>
 <div class="layout">
-  <main id="app" tabindex="-1"><!--first-screen--><div class="boot"><p>Loading…</p></div></main>
+  <main id="app" tabindex="-1"><!--first-screen--><div class="boot"><p class="mh-wait" role="status"><svg class="mh-wait-ring" width="24" height="24" viewBox="-12 -12 24 24" aria-hidden="true" focusable="false"><circle class="rg" r="9.46" fill="none" stroke="#FF6B5B" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(-85.5)"/><circle class="rg" r="9.46" fill="none" stroke="#FF9F4A" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(-52.77)"/><circle class="rg" r="9.46" fill="none" stroke="#F2C94C" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(-20.05)"/><circle class="rg" r="9.46" fill="none" stroke="#3D8BFF" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(12.68)"/><circle class="rg" r="9.46" fill="none" stroke="#5FE08A" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(45.41)"/><circle class="rg" r="9.46" fill="none" stroke="#3FE0C5" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(78.14)"/><circle class="rg" r="9.46" fill="none" stroke="#55D3FF" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(110.86)"/><circle class="rg" r="9.46" fill="none" stroke="#6FA8FE" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(143.59)"/><circle class="rg" r="9.46" fill="none" stroke="#8F95FF" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(176.32)"/><circle class="rg" r="9.46" fill="none" stroke="#B98CFF" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(209.05)"/><circle class="rg" r="9.46" fill="none" stroke="#FF7FC8" stroke-width="4.08" stroke-dasharray="3.92 59.44" transform="rotate(241.77)"/></svg><span>Loading the community</span></p></div></main>
   <aside class="rail" id="rail" aria-label="Community"></aside>
 </div>
 <footer class="foot">
   <div class="foot-in">
     <div class="foot-row">
-      <img src="logo.svg" alt="Unhyped" width="109" height="20" loading="lazy">
+      <div class="foot-brand">
+        <img src="logo.svg" alt="Unhyped" width="142" height="26" loading="lazy">
+        <p class="foot-say"><b>Peptides, without the sales pitch.</b> <span id="foot-text">Experiences, not medical advice. In a crisis, call or text 988 (US).</span></p>
+      </div>
       <nav class="foot-links" aria-label="Site"><a href="https://miraclehealth.us/library/">Library</a><a href="https://miraclehealth.us/ai/">Ask Sig</a><a href="#/home">Community</a><a href="https://miraclehealth.us/my/">My stack</a><a href="#/signal">The Signal</a><a href="#/how">How it works</a><a href="https://miraclehealth.us/method/">How the numbers are made</a><a href="#/rules">Community rules</a><a href="https://miraclehealth.us/privacy">Privacy</a><a href="https://miraclehealth.us/terms">Terms</a></nav>
     </div>
-    <div class="foot-row">
-      <p id="foot-text">Experiences, not medical advice. In a crisis, call or text 988 (US).</p>
+    <div class="foot-row foot-base">
+      <p class="foot-line">No miracles. <em class="punch">Just what happened.</em></p>
       <p class="copy">© 2026 Unhyped</p>
     </div>
   </div>

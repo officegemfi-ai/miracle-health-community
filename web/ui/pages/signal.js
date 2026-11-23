@@ -1,7 +1,7 @@
 // The Signal: every number with where its data came from, the takeover line (with a slider to try
 // it), the certification ladder, what's rising and falling, and the board.
 import { h, icon, tick, bar, reduceMotion } from '../dom.js';
-import { spaceTile, sig } from '../art.js';
+import { spaceTile, sig, wait } from '../art.js';
 import { fmt1, fmtN } from '../../core/format.js';
 import { delta, sourceFamilies } from '../../core/signal.js';
 import { spaceOf } from '../../app/store.js';
@@ -12,10 +12,10 @@ import { movement, seal, both } from '../components/signal.js';
 import { LEVELS, levelOf, levelAfter, shareAfter, flowSvg, takeoverSvg } from '../../kit/signalviz.js';
 
 export async function renderSignalPage() {
-  const list = h('div', { class: 'board' }, [1, 2, 3, 4].map(() => h('div', { class: 'skel' })));
+  const list = h('div', { class: 'board' }, wait('Loading the live Signal'));
   const movers = h('div', { class: 'movers' });
   const stats = h('div', { class: 'hero-stats' });
-  const flow = h('div', { class: 'flow-box' }, h('div', { class: 'skel dark' }));
+  const flow = h('div', { class: 'flow-box' }, wait('Loading where the reports come from'));
   const takeover = h('section', { class: 'card dark takeover-card' });
   const ladder = h('section', { class: 'ladder' });
   let sort = 'score';
@@ -32,7 +32,7 @@ export async function renderSignalPage() {
     takeover,
     ladder,
     movers,
-    h('div', { class: 'top-head' }, h('h2', {}, 'Every Signal, ranked'), h('p', { class: 'top-sub' }, 'Sort by any column.')),
+    h('div', { class: 'top-head' }, h('h2', {}, 'Every Signal, ranked')),
     sortbar, list, tail,
     h('section', { class: 'card mt16' },
       h('h3', {}, 'How the number moves'),
@@ -59,14 +59,14 @@ export async function renderSignalPage() {
   const chart = h('div');
   const out = h('output', { class: 'sim-out', for: 'sim-n', 'aria-live': 'polite' });
   const simulate = (n, still) => {
-    chart.replaceChildren(both((compact) => takeoverSvg({ w, points, max: w * 6, you: { n, label: `${n} REPORT${n === 1 ? '' : 'S'}` } }, { compact, still })));
+    chart.replaceChildren(both((compact) => takeoverSvg({ w, points, max: w * 6, you: { n, label: `${n} report${n === 1 ? '' : 's'}` } }, { compact, still })));
     const lvl = levelAfter(n, w);
     out.replaceChildren(seal(lvl, 26), h('span', {},
       h('b', {}, `${Math.round(shareAfter(n, w))}% from members`), ` after ${fmtN(n)} first-hand report${n === 1 ? '' : 's'}: `,
       h('b', {}, levelOf(lvl).name), lvl === 'forum' ? '' : ', if each comes from a different person'));
   };
   takeover.replaceChildren(
-    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'The takeover line'), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'Live')),
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'The takeover line')),
     h('h2', {}, 'From forum chatter to certified human data.'),
     h('p', { class: 'small' }, `Forums count as ${w} reports for each compound. After ${w} first-hand reports here, half of the number is members’ own experience; after ${w * 3}, three quarters. Each dot is a Signal today.`),
     chart,
@@ -78,7 +78,7 @@ export async function renderSignalPage() {
 
   // The certification ladder
   ladder.replaceChildren(
-    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Certification'), h('span', { class: 'xs muted' }, 'Each Signal earns its level from the database, live')),
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Certification')),
     h('div', { class: 'ladder-steps' }, LEVELS.map((l, i) => h('div', { class: `step-l card ${levels[l.key] ? 'has' : ''}` },
       h('div', { class: 'row nw' }, seal(l.key, 34, true), h('span', { class: 'n mono' }, `${i + 1}`)),
       h('b', {}, l.name), h('p', { class: 'xs muted' }, l.rule),

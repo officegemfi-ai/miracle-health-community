@@ -92,8 +92,8 @@ jobs:
         if: steps.live.outputs.open != 'true'
         run: |
           cp site/soon.html _site/index.html
-          cp site/soon.css web/favicon.svg _site/
-          mkdir -p _site/fonts && cp web/fonts/unbounded.woff2 _site/fonts/
+          cp site/soon.css web/favicon.svg web/logo.svg _site/
+          mkdir -p _site/fonts && cp web/fonts/mona-sans.woff2 _site/fonts/
       - name: Live app at the root (the commit tagged "live")
         if: steps.live.outputs.open == 'true'
         env:

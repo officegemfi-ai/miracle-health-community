@@ -19,7 +19,7 @@ test('the welcome before the age question says nothing about age; the one after 
   assert.ok(welcomeMarkup().includes(`${LEDE} ${FREE}`));
   assert.ok(!/\b18\b|adult/i.test(welcomeMarkup(FREE)));
   assert.ok(welcomeMarkup(FREE_ADULTS).includes('adults 18 and over'));
-  assert.match(welcomeMarkup(), /<h1>Took something\? <em>Say how it went\.<\/em><\/h1>/);
+  assert.match(welcomeMarkup(), /<h1>Took something\? <em class="punch">Say how it went\.<\/em><\/h1>/);
   assert.equal((welcomeMarkup().match(/<li>/g) || []).length, 3);
 });
 

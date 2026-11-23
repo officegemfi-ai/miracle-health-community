@@ -1,5 +1,6 @@
 // Quests: the season, your quests, the community's goals, and how points work.
 import { h } from '../dom.js';
+import { wait } from '../art.js';
 import * as Members from '../../data/members.js';
 import { S } from '../../app/store.js';
 import { render, setRail } from '../shell.js';
@@ -15,7 +16,7 @@ export async function renderQuests() {
     h('h2', {}, 'Your quests'), h('section', { class: 'card' }, weekly),
     h('h2', {}, 'Community goals'),
     h('p', { class: 'small muted' }, 'Shared goals: unlock a compound’s first Signal, or bring a Signal past half from this community’s own reports.'),
-    h('section', { class: 'card', id: 'goals' }, h('p', { class: 'muted' }, 'Loading…')),
+    h('section', { class: 'card', id: 'goals' }, wait('Loading the goals')),
     h('h2', {}, 'How points work'),
     h('section', { class: 'card ledger' }, Object.values(S.pointRules).filter((r) => r.points > 0).sort((a, b) => b.points - a.points)
       .map((r) => h('div', {}, h('span', {}, r.label), h('b', {}, `+${r.points}`)))));

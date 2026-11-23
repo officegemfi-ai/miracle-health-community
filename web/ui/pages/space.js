@@ -40,7 +40,7 @@ export async function renderSpace(cid, sort = 'hot', only = 'all') {
     h('a', { class: 'btn lime sm', href: `#/new?c=${encodeURIComponent(cid)}` }, 'Share how it went')));
   const x = signalOf(cid);
   const inStacks = single ? containing(S.spaces, [cid]) : [];
-  const kick = stack ? `Stack · ${plural((sp.part_ids || []).length, 'compound')}` : `${familyLabel(sp)} · ${sp.category}`;
+  const kick = stack ? `Stack of ${plural((sp.part_ids || []).length, 'compound')}` : `${familyLabel(sp)}, ${String(sp.category || '').charAt(0).toLowerCase()}${String(sp.category || '').slice(1)}`;
   render(
     h('section', { class: 'hero' },
       h('div', { class: 'space-hero' },

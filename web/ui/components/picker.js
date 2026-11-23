@@ -62,7 +62,7 @@ export function compoundPicker({ selected = [], onChange = () => {}, placeholder
         onmousedown: (e) => e.preventDefault(), onclick: () => add(r.sp.compound_id),
       }, spaceTile(r.sp, 28),
       h('span', { class: 'grow' }, h('b', {}, r.sp.name),
-        h('span', { class: 'xs muted' }, [familyLabel(r.sp), r.sp.category, r.via ? `“${r.via}”` : null].filter(Boolean).join(' · '))),
+        h('span', { class: 'xs muted' }, [familyLabel(r.sp), r.sp.category, r.via ? `“${r.via}”` : null].filter(Boolean).join(', '))),
       r.sp.score != null ? h('span', { class: 'xs mono' }, fmt1(r.sp.score)) : null)),
       q && !options.length ? h('div', { class: 'cpick-none' }, h('p', {}, `Nothing called “${q}” in the library yet.`),
         h('button', { class: 'btn sm', type: 'button', onmousedown: (e) => e.preventDefault(), onclick: () => { close(); suggestCompound(q); } }, icon('plus', 15), 'Suggest it')) : null,

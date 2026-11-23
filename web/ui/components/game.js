@@ -2,8 +2,8 @@
 // monthly Signal Builders, community goals, the season, and the celebration at a new emblem. Every
 // number comes from the database; this only shows it and celebrates it.
 import { h, icon, bar, toast, modal, tick } from '../dom.js';
-import { sig, emblem, emblemRing, spaceTile } from '../art.js';
-import { fmtN } from '../../core/format.js';
+import { sig, emblem, emblemRing, spaceTile, wait } from '../art.js';
+import { fmtN, plural } from '../../core/format.js';
 import { friendly } from '../../core/errors.js';
 import { nextLevel, progressPct, questOrder, seasonPct, daysLeft, monthName } from '../../core/game.js';
 import * as Members from '../../data/members.js';
@@ -89,7 +89,7 @@ export function questBox(n) {
 function questRow(q) {
   const done = q.have >= q.need;
   const claim = done && !q.claimed
-    ? h('button', { class: 'btn lime xs', type: 'button', onclick: (e) => claimQuest(q, e.currentTarget) }, `Claim +${q.reward}`)
+    ? h('button', { class: 'btn sm', type: 'button', onclick: (e) => claimQuest(q, e.currentTarget) }, `Claim +${q.reward}`)
     : h('span', { class: 'rw' }, q.claimed ? '✓ Done' : `+${q.reward}`);
   return h('div', { class: `quest ${q.claimed ? 'done' : ''}` },
     h('div', {}, h('div', { class: 't' }, q.title), h('div', { class: 'd' }, `${q.have} of ${q.need} · ${q.cadence === 'weekly' ? 'this week' : 'once'}`)),
@@ -98,7 +98,7 @@ function questRow(q) {
 
 function fillQuests(box, n) {
   const order = questOrder(S.quests);
-  box.replaceChildren(...(order.length ? order.slice(0, n || 99).map(questRow) : [h('p', { class: 'xs muted' }, 'Loading…')]));
+  box.replaceChildren(...(order.length ? order.slice(0, n || 99).map(questRow) : [wait('Loading your quests')]));
 }
 
 export function questsCard(n = 3) {
@@ -117,11 +117,11 @@ async function claimQuest(q, btn) {
 }
 
 export function buildersCard(n = 5) {
-  const box = h('div', { class: 'lb' }, h('p', { class: 'xs muted' }, 'Loading…'));
+  const box = h('div', { class: 'lb' }, wait('Loading the builders'));
   Members.builders(n).then(({ data }) => {
     box.replaceChildren(...((data || []).length ? data.map(lbRow) : [h('p', { class: 'xs muted' }, 'Nobody yet this month. Be first.')]));
   });
-  return h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('span', { class: 'kick' }, `Signal Builders · ${monthName()}`), h('a', { href: '#/builders' }, 'All')), box);
+  return h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('span', { class: 'kick' }, `Signal Builders, ${monthName()}`), h('a', { href: '#/builders' }, 'All')), box);
 }
 
 export function lbRow(r) {
@@ -156,10 +156,10 @@ export function seasonCard(big = false) {
   const left = daysLeft(p.season_ends);
   const pct = seasonPct(p);
   return h('section', { class: 'card dark', 'data-season': big ? 'big' : 'card' },
-    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, p.season_name), h('span', { class: 'kick' }, `${left} days left`)),
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, p.season_name)),
     h('div', { class: 'sig-big' }, h('b', { class: 'num' }, fmtN(p.season_reports)), h('span', {}, `/ ${fmtN(p.season_goal)} reports`)),
     bar(pct, 'scale-fill'),
-    h('p', { class: 'small muted mt12' }, `${fmtN(p.members)} ${p.members === 1 ? 'member is' : 'members are'} building this together. Three first-hand reports this season earns the Season 1 badge.`),
+    h('p', { class: 'small muted mt12' }, `${fmtN(p.members)} ${p.members === 1 ? 'member is' : 'members are'} building this together. Three first-hand reports this season earns the Season 1 badge.${left > 0 ? ` The season ends in ${plural(left, 'day')}.` : ''}`),
     big ? h('div', { class: 'hero-stats' },
       h('div', {}, h('b', {}, fmtN(p.reports_week)), h('span', {}, 'Reports this week')),
       h('div', {}, h('b', {}, fmtN(p.same_total)), h('span', {}, '“Same for me”')),
@@ -200,7 +200,7 @@ function confetti() {
 export function levelUp(d) {
   const lv = levelOf(d.level);
   modal((close) => h('div', { class: 'celebrate' }, confetti(),
-    h('div', { class: 'kick' }, `Level ${d.level} of 15 · ${lv.tier} tier`),
+    h('div', { class: 'kick' }, `Level ${d.level} of 15, ${lv.tier} tier`),
     h('div', { class: 'mt16' }, emblem(d.level, 120, false, `${lv.name} emblem`)),
     h('h2', {}, `You reached ${lv.name}.`),
     h('p', {}, 'Your reports, replies and “same for me” taps make the Signal sharper for everyone. Keep going.'),

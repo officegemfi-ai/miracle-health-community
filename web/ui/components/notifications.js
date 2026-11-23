@@ -1,7 +1,7 @@
 // Notifications: what each one says and where it leads, the bell with its count, and the bell's
 // pop-up list.
 import { h, icon } from '../dom.js';
-import { sig, emblem } from '../art.js';
+import { sig, emblem, wait } from '../art.js';
 import { fmt1, ago } from '../../core/format.js';
 import { OUTCOME } from '../../core/signal.js';
 import { MOD_TEXT } from '../../core/notifications.js';
@@ -61,7 +61,7 @@ export function bellButton() {
   btn.addEventListener('click', async () => {
     if (pop) return close();
     if (window.innerWidth < 760) { location.hash = '#/notifications'; return; }
-    pop = h('div', { class: 'notif-pop', role: 'dialog', 'aria-label': 'Notifications' }, h('p', { class: 'xs muted pad' }, 'Loading…'));
+    pop = h('div', { class: 'notif-pop', role: 'dialog', 'aria-label': 'Notifications' }, h('div', { class: 'pad' }, wait('Loading your notifications')));
     wrap.append(pop);
     document.addEventListener('click', outside, true);
     const { data } = await Notifications.latest(12);

@@ -1,6 +1,6 @@
 // Signal Builders: this month's board, ranked by Signal points.
 import { h } from '../dom.js';
-import { sig, emblem } from '../art.js';
+import { sig, emblem, wait } from '../art.js';
 import { fmtN } from '../../core/format.js';
 import { monthName } from '../../core/game.js';
 import * as Members from '../../data/members.js';
@@ -9,7 +9,7 @@ import { railCards } from '../rail.js';
 import { lbRow } from '../components/game.js';
 
 export async function renderBuilders() {
-  const box = h('div', {}, h('div', { class: 'skel' }));
+  const box = h('div', {}, wait('Loading the builders'));
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `${monthName()} ${new Date().getFullYear()}`), h('h1', {}, 'Signal Builders.')),
       h('p', { class: 'cap' }, 'Ranked by Signal points this month. Points go to taking part, never to results.')),

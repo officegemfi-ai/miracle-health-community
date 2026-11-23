@@ -202,7 +202,7 @@ export function checkinBox(item, onDone, opts = {}) {
     }
     box.replaceChildren(
       h('div', { class: 'row nw' }, sig(40, 'curious'),
-        h('div', { class: 'grow' }, h('div', { class: 'kick' }, `How is it now? · ${item.week} weeks on`),
+        h('div', { class: 'grow' }, h('div', { class: 'kick' }, `${item.week} weeks on: how is it now?`),
           h('b', {}, item.compound_name), item.title ? h('div', { class: 'xs muted' }, item.title) : null)),
       ...steps);
   };
@@ -260,7 +260,7 @@ export async function focusCard() {
   const open = (data || []).filter((f) => f.reports < f.goal);
   if (!open.length) return null;
   return h('section', { class: 'card focus' },
-    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Filling these first'), h('span', { class: 'xs muted' }, `${fmtN(open.length)} to go`)),
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Filling these first')),
     h('p', { class: 'xs muted' }, 'Ten members’ reports unlock the community’s own rating for each. Taken one of these? Yours counts most here.'),
     h('div', { class: 'focus-list' }, open.map((f) => h('a', { class: 'focus-i', href: `#/new?c=${encodeURIComponent(f.compound_id)}` },
       h('span', { class: 'focus-n' }, h('b', {}, f.compound_name), ` for ${lower(f.use_label)}`),
