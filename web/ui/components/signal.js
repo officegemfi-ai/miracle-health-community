@@ -81,7 +81,7 @@ export function signalCard(cid, opts = {}) {
   const fams = (x.source_families || []).join(', ');
   const hist = S.history.get(cid);
   const card = h('section', { class: 'card dark sigcard', 'aria-label': `${name} Community Signal` },
-    h('div', { class: 'lbl' }, h('span', { class: 'kick' }, opts.title || `${name} · Community Signal`), h('span', { class: 'live' }, h('span', { class: 'live-dot' }), 'Live')),
+    h('div', { class: 'lbl' }, h('span', { class: 'kick' }, opts.title || `${name}, Community Signal`)),
     h('div', { class: 'sig-big' }, h('b', { 'data-sig-of': cid }, fmt1(x.score)), h('span', {}, '/100'), h('span', { class: 'grow' }), h('span', { 'data-mv-of': cid }, movement(x))),
     scale(x.score),
     h('div', { class: 'cap2' }, `${x.summary_label}, ${String(x.confidence_label).toLowerCase()} confidence`),
@@ -106,8 +106,8 @@ function byUse(x, max = 6, compact = false) {
   if (compact && !rated.length) return null;
   const shown = (compact ? rated : list).slice(0, max);
   return h('div', { class: `uses ${compact ? 'compact' : ''}`.trim(), 'aria-label': 'Rated by use' },
-    h('div', { class: 'row between' }, h('span', { class: 'kick' }, 'Rated by use'),
-      h('span', { class: 'xs dim' }, rated.length ? 'From first-hand reports' : 'Each use is rated after 3 reports')),
+    h('span', { class: 'kick' }, 'Rated by use'),
+    rated.length ? null : h('p', { class: 'xs muted' }, 'Each use is rated once 3 members report on it.'),
     shown.map((u) => {
       const base = u.rating != null && u.better_pct != null ? baselineOf(u.use) : null;
       return h('div', { class: `use ${u.rating != null ? 'rated' : 'waiting'}`, 'data-use': u.use },
@@ -147,7 +147,7 @@ function watchTool(x) {
   return h('div', { class: 'tool watch' },
     h('span', { class: 'kick' }, 'Side-effect watch'),
     watch.length ? h('div', { class: 'post-chips' }, watch.map((w) => h('span', { class: 'chip fx warn', title: `Reported ${w.ratio}× as often as for other compounds` },
-      `${w.effect} · ${w.n} of ${w.of} reports (${w.pct}%) · ${w.others_pct}% for others`))) : null,
+      `${w.effect}: ${w.n} of ${w.of} reports (${w.pct}%), against ${w.others_pct}% for others`))) : null,
     h('p', { class: 'xs' }, [
       watch.length ? 'Reported unusually often with this compound compared with every other one here. ' : '',
       serious ? `${fmtN(serious)} report${serious === 1 ? '' : 's'} describe${serious === 1 ? 's' : ''} a reaction that sounded serious. ` : '',
@@ -187,7 +187,7 @@ function measuringTools(x, name) {
     watchTool(x),
     checkinTool(x),
     h('div', { class: 'tool' }, h('span', { class: 'kick' }, 'On the takeover line'),
-      both((compact) => takeoverSvg({ w, max: w * 6, you: { share: x.internal_share, label: name.toUpperCase().slice(0, 18) } }, { compact }))),
+      both((compact) => takeoverSvg({ w, max: w * 6, you: { share: x.internal_share, label: name.slice(0, 18) } }, { compact }))),
     h('details', { class: 'tool built' },
       h('summary', { class: 'kick' }, 'How the overall number is built'),
       h('div', { class: 'comp' }, parts.map(([label, key, wt]) => [

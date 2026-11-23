@@ -18,6 +18,15 @@ const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x);
 const okId = (id) => typeof id === 'string' && /^[a-z0-9]{1,40}$/.test(id);
 const okKey = (k) => typeof k === 'string' && /^[a-z0-9]{1,20}$/.test(k);
 const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+// Loading: Sig's ring with one plain line, as kit.js waitHtml draws it (the kit's files import nothing,
+// so the body map keeps its own copy; kit.css lights the pieces one by one)
+const WAIT_WHEEL = ['#FF6B5B', '#FF9F4A', '#F2C94C', '#3D8BFF', '#5FE08A', '#3FE0C5', '#55D3FF', '#6FA8FE', '#8F95FF', '#B98CFF', '#FF7FC8'];
+function waitHtml(words, { size = 20, cls = '' } = {}) {
+  const sw = Math.max(2.4, size * 0.17), r = size / 2 - sw / 2 - 0.5, c = 2 * Math.PI * r, g = (9 / 360) * c;
+  const n = (x) => Number(x.toFixed(2));
+  const arcs = WAIT_WHEEL.map((col, i) => `<circle class="rg" r="${n(r)}" fill="none" stroke="${col}" stroke-width="${n(sw)}" stroke-dasharray="${n(c / 11 - g)} ${n(c)}" transform="rotate(${n(-90 + (i * 360) / 11 + 4.5)})"/>`).join('');
+  return `<p class="mh-wait${cls ? ` ${cls}` : ''}" role="status"><svg class="mh-wait-ring" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true" focusable="false">${arcs}</svg><span>${esc(words)}</span></p>`;
+}
 const listOf = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 // A name inside a sentence: "Enclomiphene" becomes "enclomiphene"; HGH, IGF-1 and NAD+ stay as they are
 const mid = (s) => (/^[A-Z][a-z]+(?:[\s,]|$)/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
@@ -166,7 +175,7 @@ export function bodyMapHtml({ items, places = [], markers = {}, state = 'ready',
   let inner;
   if (!list.length) inner = '<p class="mh-bm-msg">Nothing to draw.</p>';
   else if (st === 'loading') {
-    inner = `<div class="mh-bm-skel" aria-hidden="true">${'<span><i></i><i></i></span>'.repeat(4)}</div><p class="mh-sr">Loading how ${esc(names)} work${list.length === 1 ? 's' : ''} in the body…</p>`;
+    inner = waitHtml(`Loading how ${names} work${list.length === 1 ? 's' : ''} in the body`, { cls: 'mh-bm-wait' });
   } else if (st === 'error') {
     inner = `<p class="mh-bm-msg" role="alert">${esc(message || 'How it works in the body couldn’t be loaded just now.')}</p>${retry ? AGAIN : ''}`;
   } else {

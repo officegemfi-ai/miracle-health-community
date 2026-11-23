@@ -12,7 +12,7 @@ export function renderRules(standalone = false) {
   const R = S.rules;
   if (!R) { render(h('p', { class: 'pad' }, 'The rules couldn’t load. Refresh to try again.')); return; }
   render(
-    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, `Version ${R.version}`), h('h1', {}, 'Community rules.'))),
+    h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, /^\d{4}-\d{2}-\d{2}$/.test(String(R.version)) ? `Updated ${new Date(`${R.version}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : `Version ${R.version}`), h('h1', {}, 'Community rules.'))),
     h('section', { class: 'card' },
       h('p', {}, R.intro),
       ...R.rules.map((r) => h('div', { class: 'rule' },

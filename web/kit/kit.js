@@ -205,6 +205,28 @@ export function sigSvg(size = 56, mood = 'idle', { cls = '', dark = false } = {}
 }
 
 // ---------------------------------------------------------------------------
+// Loading, in both apps: Sig's ring is the spinner (BRAND, Motion). The eleven who gather what's
+// known round the ring, each in its own colour, light one by one (kit.css .mh-wait), beside one plain
+// line saying what's loading. No grey skeleton boxes, no bare "Loading…". The ring is drawn as the
+// website's lib/ring.js and the community's core/ring.js draw it.
+// ---------------------------------------------------------------------------
+const WAIT_WHEEL = ['#FF6B5B', '#FF9F4A', '#F2C94C', '#3D8BFF', '#5FE08A', '#3FE0C5', '#55D3FF', '#6FA8FE', '#8F95FF', '#B98CFF', '#FF7FC8'];
+export function waitRingSvg(size = 20) {
+  const sw = Math.max(2.4, size * 0.17);
+  const gap = size > 60 ? 4.5 : 9;
+  const r = size / 2 - sw / 2 - 0.5;
+  const c = 2 * Math.PI * r;
+  const g = (gap / 360) * c;
+  const n = (x) => Number(x.toFixed(2));
+  const arcs = WAIT_WHEEL.map((col, i) => `<circle class="rg" r="${n(r)}" fill="none" stroke="${col}" stroke-width="${n(sw)}" stroke-dasharray="${n(c / 11 - g)} ${n(c)}" transform="rotate(${n(-90 + (i * 360) / 11 + gap / 2)})"/>`).join('');
+  return `<svg class="mh-wait-ring" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true" focusable="false">${arcs}</svg>`;
+}
+// The line, said plainly ("Loading the live Signal"), announced to screen readers as it appears
+export function waitHtml(words = 'Loading', { size = 20, cls = '' } = {}) {
+  return `<p class="mh-wait${cls ? ` ${cls}` : ''}" role="status">${waitRingSvg(size)}<span>${esc(words)}</span></p>`;
+}
+
+// ---------------------------------------------------------------------------
 // In the browser: the kit's own markup as an element (never for anything a member wrote)
 // ---------------------------------------------------------------------------
 let parser = null;

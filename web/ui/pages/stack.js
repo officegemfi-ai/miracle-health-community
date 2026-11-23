@@ -18,7 +18,7 @@ function entryRow(sp, extra) {
   return h('a', { class: 'card lib-row', href: `#/s/${encodeURIComponent(sp.compound_id)}` },
     spaceTile(sp, 34),
     h('span', { class: 'grow' }, h('b', {}, sp.name),
-      h('span', { class: 'xs muted' }, [familyLabel(sp), plural(sp.reports || 0, 'report'), plural(sp.members_count || 0, 'member')].join(' · '))),
+      h('span', { class: 'xs muted' }, [familyLabel(sp), plural(sp.reports || 0, 'report'), plural(sp.members_count || 0, 'member')].join(', '))),
     extra || null,
     x && x.score != null ? h('span', { class: 'sc num', 'data-sig-of': sp.compound_id }, fmt1(x.score)) : h('span', { class: 'kick' }, 'No Signal yet'),
     x && x.score != null ? movement(x) : null);

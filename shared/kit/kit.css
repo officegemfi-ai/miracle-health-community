@@ -15,6 +15,12 @@
   --mh-mono:'Monaspace Neon',ui-monospace,SFMono-Regular,Menlo,monospace;
   --mh-chip-bg:rgba(255,255,255,.06);
 }
+/* The punchline, in both apps: the second sentence of a two-sentence headline (the line "No miracles.
+   Just what happened.", a page's own headline, a share card's), in the Signal's light: its blue running
+   into the violets of its bars, each line drawn with the whole run (decision, November 18). Signal blue
+   underneath, for a browser that can't clip a gradient to words and for high-contrast modes */
+.punch{font-style:normal;color:var(--lime);background:linear-gradient(90deg,#3D8BFF 0%,#6B48F1 52%,#9AA0F4 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+@media (forced-colors:active){.punch{background:none;-webkit-text-fill-color:currentColor}}
 .mh-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 /* The four places, on the dark top bar of every page */
@@ -120,15 +126,30 @@ button.mh-bm-mk[aria-pressed="true"]{border-color:currentColor;background:var(--
 .mh-bm-msg{margin:0;color:var(--mh-bm-soft)}
 .mh-bm-retry{margin-top:12px;min-height:44px;padding:0 18px;border:1px solid currentColor;border-radius:0;background:none;color:inherit;font:600 14px/1 var(--mh-body);cursor:pointer}
 .mh-bm-foot{margin:12px 0 0;font-size:12px;color:var(--mh-bm-soft)}
-.mh-bm-skel{display:grid;gap:14px}
-.mh-bm-skel span{display:grid;grid-template-columns:7rem 1fr;gap:16px}
-.mh-bm-skel i{display:block;height:12px;border-radius:0;background:var(--mh-bm-rule)}
-.mh-bm-skel span:nth-child(2n) i:last-child{width:72%}
 .mh-bm :focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .mh-bm-scroll:focus-visible{outline-offset:4px}
 @media (prefers-reduced-motion:no-preference){
-  .mh-bm-skel i{animation:mh-bm-pulse 1.4s ease-in-out .4s infinite}
   .mh-bm-ln{transition:background-color .15s}
 }
-@keyframes mh-bm-pulse{50%{opacity:.4}}
 @media (forced-colors:active){.mh-bm-ln.lit{outline:2px solid CanvasText}button.mh-bm-mk[aria-pressed="true"]{outline:2px solid CanvasText}}
+
+/* Loading, in both apps (kit.js waitHtml): Sig's ring is the spinner, its pieces lit one by one round
+   the ring from the Safety agent's coral, beside one plain line saying what's loading */
+.mh-wait{display:flex;align-items:center;gap:10px;margin:0;color:var(--mh-muted);font:400 14px/1.5 var(--mh-body)}
+.mh-wait-ring{display:block;flex:none}
+.mh-wait-ring .rg{opacity:.18}
+@media (prefers-reduced-motion:no-preference){
+  .mh-wait-ring .rg{animation:mh-wait 1.32s linear infinite}
+  .mh-wait-ring .rg:nth-child(2){animation-delay:.12s}.mh-wait-ring .rg:nth-child(3){animation-delay:.24s}
+  .mh-wait-ring .rg:nth-child(4){animation-delay:.36s}.mh-wait-ring .rg:nth-child(5){animation-delay:.48s}
+  .mh-wait-ring .rg:nth-child(6){animation-delay:.6s}.mh-wait-ring .rg:nth-child(7){animation-delay:.72s}
+  .mh-wait-ring .rg:nth-child(8){animation-delay:.84s}.mh-wait-ring .rg:nth-child(9){animation-delay:.96s}
+  .mh-wait-ring .rg:nth-child(10){animation-delay:1.08s}.mh-wait-ring .rg:nth-child(11){animation-delay:1.2s}
+}
+@media (prefers-reduced-motion:reduce){.mh-wait-ring .rg{opacity:1}}
+@keyframes mh-wait{0%,10%{opacity:1}35%,100%{opacity:.18}}
+@media (forced-colors:active){.mh-wait-ring .rg{opacity:1;stroke:CanvasText}}
+
+/* The Signal's drawings (signalviz.js), in both apps: words in the body face, as written (never tracked
+   capitals in the code face); numbers stay in the code face (t-mono, each app's) */
+.t-label{font-family:var(--mh-body);font-weight:500;letter-spacing:0}

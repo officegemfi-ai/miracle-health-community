@@ -1,7 +1,7 @@
 // One post: what Sig read (and the author's check on it, components/checks.js), how it is now,
 // the reply thread, reporting and editing.
 import { h, icon, toast, msgBox, say, confirmBox } from '../dom.js';
-import { sig, emblem } from '../art.js';
+import { sig, emblem, wait } from '../art.js';
 import { ago } from '../../core/format.js';
 import { friendly } from '../../core/errors.js';
 import { buildTree, countAll } from '../../core/posts.js';
@@ -105,7 +105,7 @@ function commentNode(c, p, reload) {
 
 // The page
 export async function renderPost(id, opts = {}) {
-  render(h('div', { class: 'skel' }), h('div', { class: 'skel' }));
+  render(wait('Loading the post'));
   const [{ data: posts, error }] = await Promise.all([Posts.byId(id)]);
   const p = posts && posts[0];
   if (error || !p) {

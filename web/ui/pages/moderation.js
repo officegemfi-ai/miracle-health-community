@@ -1,6 +1,7 @@
 // Moderation: the queue, Signal alerts, what's held from the Signal and reactions that sound serious,
 // the library's suggestions, beta numbers, the watch list, and invites.
 import { h, toast, msgBox, say } from '../dom.js';
+import { wait } from '../art.js';
 import { ago } from '../../core/format.js';
 import { friendly } from '../../core/errors.js';
 import { REASONS } from '../../core/posts.js';
@@ -20,7 +21,7 @@ const MOD_REASONS = [
 
 export async function renderMod(tab = 'queue') {
   const tabs = [['queue', 'Queue'], ['alerts', 'Signal alerts'], ['held', 'Held and serious'], ['library', 'Library'], ['numbers', 'Beta numbers'], ['terms', 'Watch list'], ['invites', 'Invites']];
-  const body = h('div', {}, h('div', { class: 'skel' }));
+  const body = h('div', {}, wait('Loading'));
   render(
     h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'Keeping it safe'), h('h1', {}, 'Moderation.'))),
     h('nav', { class: 'tabs', 'aria-label': 'Moderation' }, tabs.map(([k, l]) => h('a', { href: `#/mod/${k}`, 'aria-current': k === tab ? 'page' : null }, l))),
@@ -101,7 +102,7 @@ async function modHeld(body) {
     h('p', { class: 'small muted' }, 'Each one shows its writer a note to get medical help and FDA MedWatch. They stay up unless they break a rule.'),
     ...serious.map((r) => h('div', { class: 'card mod-card' },
       h('h3', {}, r.title),
-      h('div', { class: 'small' }, `${KIND[r.kind] || r.kind} · ${r.compound_name} · u/${r.author_handle}`),
+      h('div', { class: 'small' }, `${KIND[r.kind] || r.kind}, ${r.compound_name}, u/${r.author_handle}`),
       h('div', { class: 'row mt8' }, h('a', { class: 'btn sm', href: `#/post/${encodeURIComponent(r.post_id)}${r.comment_id ? `?c=${encodeURIComponent(r.comment_id)}` : ''}` }, 'See it')))),
     h('h2', { class: 'h3 mt8' }, 'Held from the Signal'),
   ] : [];
@@ -111,7 +112,7 @@ async function modHeld(body) {
     h('p', { class: 'small muted' }, 'Reports are weighted, never people. Look at the post, then remove it, or clear it to count in full.'),
     ...data.map((r) => h('div', { class: 'card mod-card' },
       h('h3', {}, r.title),
-      h('div', { class: 'small' }, `${r.compound_name} · u/${r.author_handle} · ${WHY[r.held] || r.held}`),
+      h('div', { class: 'small' }, `${r.compound_name}, u/${r.author_handle}: ${WHY[r.held] || r.held}`),
       h('div', { class: 'row mt8' },
         h('a', { class: 'btn sm', href: `#/post/${encodeURIComponent(r.post_id)}` }, 'See the post'),
         h('button', { class: 'btn sm', type: 'button', onclick: async () => { const { error: e } = await Moderation.clearHold(r.post_id); if (e) toast(friendly(e)); else modHeld(body); } }, 'Clear: count it in full')))));
@@ -214,7 +215,7 @@ async function modLibrary(body) {
     h('p', { class: 'small muted' }, `${lib} entries in the library. Members suggest what’s missing; add it here (check the name and pick a family and category), or turn it down. Whoever suggested it gets a note when it’s added.`),
     h('div', { class: 'kick cat-h' }, data.length ? `${data.length} waiting` : 'No suggestions waiting'),
     ...data.map((r) => h('article', { class: 'card mod-card' },
-      h('div', { class: 'row' }, h('b', { class: 'grow' }, r.name), h('span', { class: 'kick' }, `u/${r.requested_by_handle || 'deleted'} · ${ago(r.created_at)}`)),
+      h('div', { class: 'row' }, h('b', { class: 'grow' }, r.name), h('span', { class: 'kick' }, `u/${r.requested_by_handle || 'deleted'}, ${ago(r.created_at)}`)),
       r.note ? h('p', { class: 'small muted' }, r.note) : null,
       addForm(r, () => modLibrary(body)))),
     h('div', { class: 'mt16' }, addForm(null, () => modLibrary(body))));

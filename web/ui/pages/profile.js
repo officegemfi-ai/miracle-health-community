@@ -1,7 +1,7 @@
 // A member's profile: their emblem and points, badges, the path of fifteen emblems, and their posts,
 // comments or (your own) points ledger.
 import { h, icon } from '../dom.js';
-import { sig, emblem, emblemRing } from '../art.js';
+import { sig, emblem, emblemRing, wait } from '../art.js';
 import { fmtN, ago } from '../../core/format.js';
 import { nextLevel, progressPct, monthName } from '../../core/game.js';
 import * as Members from '../../data/members.js';
@@ -13,7 +13,7 @@ import { railCards } from '../rail.js';
 import { postCard } from '../components/post.js';
 
 export async function renderProfile(handle, tab = 'posts') {
-  render(h('div', { class: 'skel' }), h('div', { class: 'skel' }));
+  render(wait('Loading the profile'));
   const { data } = await Members.cardByHandle(handle);
   const m = data && data[0];
   if (!m) { render(h('div', { class: 'empty card' }, sig(72, 'curious'), h('p', {}, `There’s nobody called u/${handle} here.`))); return; }
@@ -22,13 +22,13 @@ export async function renderProfile(handle, tab = 'posts') {
   const pct = progressPct(lv, next, m.points);
   const earned = new Set(m.badges || []);
   const tabs = [['posts', 'Posts'], ['comments', 'Comments'], ...(m.is_me ? [['points', 'Your points']] : [])];
-  const body = h('div', {}, h('div', { class: 'skel' }));
+  const body = h('div', {}, wait('Loading'));
   render(
     h('section', { class: 'hero' },
       h('div', { class: 'profile-h' },
         h('div', { class: 'ringwrap' }, emblemRing(m.level, pct, 132), emblem(m.level, 82, false, `${lv.name} emblem`)),
         h('div', {},
-          h('div', { class: 'kick' }, `Member #${fmtN(m.member_no)} · since ${new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}${m.role !== 'member' ? ` · ${m.role}` : ''}`),
+          h('div', { class: 'kick' }, `Member since ${new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}${m.role !== 'member' ? `, ${m.role}` : ''}`),
           h('h1', {}, `u/${m.handle}`),
           h('p', { class: 'lede' }, h('b', {}, lv.name), `, level ${m.level} of 15, ${lv.tier} tier.${next ? ` ${fmtN(next.min_points - m.points)} points to ${next.name}.` : ''}`),
           m.streak_days > 1 ? h('div', { class: 'streak mt8' }, icon('flame', 16), `${m.streak_days}-day streak`) : null)),
@@ -55,7 +55,7 @@ export async function renderProfile(handle, tab = 'posts') {
   } else if (tab === 'points' && m.is_me) {
     const { data: pts } = await Members.pointsLedger();
     body.replaceChildren(h('section', { class: 'card ledger' }, ...((pts || []).map((p) => h('div', { class: p.void ? 'void' : '' },
-      h('span', {}, p.label, h('span', { class: 'xs muted' }, ` · ${ago(p.created_at)}${p.void ? ' · its post isn’t up' : ''}`)), h('b', {}, `+${p.amount}`))))));
+      h('span', {}, p.label, h('span', { class: 'xs muted' }, ` · ${ago(p.created_at)}${p.void ? ' (its post isn’t up)' : ''}`)), h('b', {}, `+${p.amount}`))))));
   } else {
     const { data: ps } = await Posts.byAuthor(m.id);
     const rows = (ps || []).filter((p) => p.status === 'visible' || p.is_mine);

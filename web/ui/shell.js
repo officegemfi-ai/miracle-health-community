@@ -46,7 +46,7 @@ export function renderNav(current = '', cid = '') {
   const joined = S.spaces.filter((s) => s.joined);
   const q = claimable();
   const items = MAIN.map(([k, label, ic, href]) => h('a', { class: 'nav-i', href, 'data-nav': k, 'aria-current': current === k ? 'page' : null },
-    icon(ic, 20), label, k === 'signal' ? h('span', { class: 'badge-n' }, h('span', { class: 'live-dot' })) : null,
+    icon(ic, 20), label,
     k === 'quests' && q ? h('span', { class: 'badge-n' }, `${q} ready`) : null));
   const toggle = h('button', { type: 'button', 'aria-expanded': String(spacesOpen), 'aria-label': 'Show or hide your spaces', onclick: () => { spacesOpen = !spacesOpen; renderNav(current, cid); } }, icon(spacesOpen ? 'down' : 'chevron', 16));
   nav.replaceChildren(
@@ -80,6 +80,8 @@ export function renderTop() {
   if (!S.me) { actions.replaceChildren(); searchBox.replaceChildren(); tabbar.replaceChildren(); return; }
   const lv = levelOf(S.card?.level || 1);
   actions.replaceChildren(
+    // on a phone the bar keeps the search as an icon, as the website's does: it opens the same search under the bar
+    h('button', { class: 'icon-btn search-btn', type: 'button', 'aria-label': 'Search', 'aria-controls': 'search', 'aria-expanded': 'false', onclick: openSearch }, icon('search', 20)),
     h('a', { class: 'btn lime sm create', href: '#/new', 'aria-current': /^#\/new\b/.test(location.hash) ? 'page' : 'false' }, icon('plus', 16), h('span', { class: 'lbl' }, 'Create')),
     bellButton(),
     h('a', { class: 'me-chip', href: `#/u/${encodeURIComponent(S.me.handle)}`, title: `${lv.name} · your profile`, id: 'me-chip' },
@@ -98,11 +100,23 @@ export function renderTabbar(current = '') {
     t('me', 'You', 'user', `#/u/${encodeURIComponent(S.me.handle)}`));
 }
 
+function openSearch(e) {
+  const open = !document.body.classList.contains('search-open');
+  document.body.classList.toggle('search-open', open);
+  e?.currentTarget?.setAttribute('aria-expanded', String(open));
+  if (open) searchBox.querySelector('input')?.focus();
+}
+function closeSearch() {
+  if (!document.body.classList.contains('search-open')) return;
+  document.body.classList.remove('search-open');
+  document.querySelector('.search-btn')?.setAttribute('aria-expanded', 'false');
+}
+
 function renderSearch() {
   const input = h('input', { type: 'search', placeholder: 'Search compounds, stacks, posts, members', 'aria-label': 'Search', autocomplete: 'off' });
   const pop = h('div', { class: 'search-pop hide', role: 'listbox' });
   let timer = null;
-  const go = (href) => { pop.classList.add('hide'); input.value = ''; location.hash = href; };
+  const go = (href) => { pop.classList.add('hide'); input.value = ''; closeSearch(); location.hash = href; };
   const run = async () => {
     const q = input.value.trim();
     if (q.length < 2) { pop.classList.add('hide'); return; }
@@ -119,8 +133,8 @@ function renderSearch() {
     pop.classList.remove('hide');
   };
   input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 180); });
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const a = pop.querySelector('a'); if (a) a.click(); } if (e.key === 'Escape') pop.classList.add('hide'); });
-  input.addEventListener('blur', () => setTimeout(() => pop.classList.add('hide'), 200));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const a = pop.querySelector('a'); if (a) a.click(); } if (e.key === 'Escape') { pop.classList.add('hide'); closeSearch(); } });
+  input.addEventListener('blur', () => setTimeout(() => { pop.classList.add('hide'); if (!searchBox.contains(document.activeElement)) closeSearch(); }, 200));
   searchBox.replaceChildren(icon('search', 18), input, pop);
 }
 

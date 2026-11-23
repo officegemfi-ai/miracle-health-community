@@ -1,7 +1,7 @@
-// A feed's parts: the sort tabs, the posts (skeletons while they load), the "share how it went"
+// A feed's parts: the sort tabs, the posts (Sig's ring while they load), the "share how it went"
 // bar, the pill that offers posts that just came in, and what an empty feed says.
 import { h, icon } from '../dom.js';
-import { sig, emblem } from '../art.js';
+import { sig, emblem, wait } from '../art.js';
 import { friendly } from '../../core/errors.js';
 import { isStack } from '../../core/library.js';
 import { on } from '../../app/events.js';
@@ -15,7 +15,7 @@ export function sortbar(base, sort) {
 }
 
 export async function fillFeed(list, q, empty) {
-  list.replaceChildren(h('div', { class: 'skel' }), h('div', { class: 'skel' }), h('div', { class: 'skel' }));
+  list.replaceChildren(wait('Loading the posts'));
   const { data, error } = await q;
   if (error) { list.replaceChildren(h('div', { class: 'msg err' }, friendly(error))); return []; }
   const rows = (data || []).filter((p) => p.status === 'visible' || p.is_mine);
@@ -40,7 +40,7 @@ export function newPostsPill(list, matcher, reload) {
   stopNewPosts = on('post', (row) => {
     if (!row || row.author_id === S.me?.id || row.status !== 'visible' || !matcher(row)) return;
     n += 1;
-    box.replaceChildren(h('button', { class: 'btn lime sm', type: 'button', onclick: () => { n = 0; box.classList.add('hide'); reload(); } }, icon('up', 16), `${n} new post${n === 1 ? '' : 's'}`));
+    box.replaceChildren(h('button', { class: 'btn sm', type: 'button', onclick: () => { n = 0; box.classList.add('hide'); reload(); } }, icon('up', 16), `${n} new post${n === 1 ? '' : 's'}`));
     box.classList.remove('hide');
   });
   return box;

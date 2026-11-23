@@ -1,7 +1,7 @@
 // The live moves card: what changed, by how much, and why. A move that happens while it's on
 // screen arrives at the top (ui/live.js).
 import { h } from '../dom.js';
-import { spaceTile } from '../art.js';
+import { spaceTile, wait } from '../art.js';
 import { fmt1, ago } from '../../core/format.js';
 import { CAUSE } from '../../core/signal.js';
 import * as Signal from '../../data/signal.js';
@@ -24,10 +24,10 @@ function prependMove(box, m) {
 }
 
 export async function movesCard(dark = true) {
-  const box = h('div', { class: 'moves' }, h('p', { class: 'xs muted' }, 'Loading…'));
+  const box = h('div', { class: 'moves' }, wait('Loading what moved'));
   movesBox = box;
   const card = h('section', { class: `card ${dark ? 'dark' : ''}` },
-    h('div', { class: 'card-h' }, h('span', { class: 'kick row nw' }, h('span', { class: 'live-dot' }), ' Live moves'), h('a', { href: '#/signal' }, 'The Signal')), box);
+    h('div', { class: 'card-h' }, h('span', { class: 'kick' }, 'Live moves'), h('a', { href: '#/signal' }, 'The Signal')), box);
   Signal.moves(8).then(({ data }) => {
     box.replaceChildren(...((data || []).length ? data.map((m) => moveRow(m)) : [h('p', { class: 'xs muted' }, 'No moves yet. The first report moves it.')]));
   });

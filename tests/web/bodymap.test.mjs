@@ -79,11 +79,13 @@ test('not drawn yet, and couldn’t be loaded', () => {
   assert.match(html, /<span class="mh-bm-note">couldn’t be loaded<\/span>/);
 });
 
-test('loading says so and is busy; an error is announced and offers Try again only when asked', () => {
+test('loading shows Sig\'s ring with one plain line and is busy; an error is announced and offers Try again only when asked', () => {
   const loading = one(hgh, { state: 'loading' });
   assert.match(loading, /data-state="loading" aria-busy="true"/);
-  assert.match(loading, /<div class="mh-bm-skel" aria-hidden="true">/);
-  assert.match(loading, /<p class="mh-sr">Loading how Somatropin \(HGH\) works in the body…<\/p>/);
+  // Sig's ring is the spinner, with one plain line saying what's loading (no grey skeleton boxes)
+  assert.match(loading, /<p class="mh-wait mh-bm-wait" role="status"><svg class="mh-wait-ring"/);
+  assert.match(loading, /<span>Loading how Somatropin \(HGH\) works in the body<\/span><\/p>/);
+  assert.doesNotMatch(loading, /mh-bm-skel/);
   assert.doesNotMatch(loading, /mh-bm-ln/);
   const error = one(hgh, { state: 'error' });
   assert.match(error, /<p class="mh-bm-msg" role="alert">How it works in the body couldn’t be loaded just now\.<\/p>/);

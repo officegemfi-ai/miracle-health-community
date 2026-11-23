@@ -3,7 +3,7 @@
 // tiles and sparklines. Sig and the tiles come from Unhyped's design kit
 // (web/kit, copied from shared/kit), so the website draws the same ones.
 import { svg } from './dom.js';
-import { sigSvg, tileSvg, catColor, initials } from '../kit/kit.js';
+import { sigSvg, tileSvg, catColor, initials, waitHtml, node } from '../kit/kit.js';
 import { ringMarkup } from '../core/ring.js';
 
 let uid = 0;
@@ -19,6 +19,10 @@ export function sig(size = 56, mood = 'idle', cls = '') {
 // Sig's ring: Sig's own mark, here and on Ask Sig (core/ring.js draws it). The browser tab's icon is
 // Unhyped's: the logo's u (web/favicon.svg, a copy of the website's)
 export const ring = (size = 56, cls = '') => svg(ringMarkup(size, cls));
+
+// Loading: Sig's ring as the spinner, its pieces lit one by one, with one plain line saying what's
+// loading (Unhyped's design kit draws it, as on the website). No grey skeleton boxes
+export const wait = (words = 'Loading') => node(waitHtml(words));
 
 export const STICKERS = [
   ['cheer', 'Cheer', 'This is great to hear'],
@@ -107,12 +111,12 @@ export function sparkline(values, w = 96, h = 28, cls = '') {
     <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.6" fill="currentColor"/></svg>`);
 }
 
-// The Signal's scale, red to amber to lime, with a marker at the score
+// The Signal's scale, in Signal blue, as the website draws it (--scale), with a marker at the score
 export function scale(score) {
   const s = Math.max(0, Math.min(100, Number(score) || 0));
   const g = nextId('sc');
   return svg(`<svg class="scale" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#B0453D"/><stop offset=".55" stop-color="#D4A72C"/><stop offset="1" stop-color="#3D8BFF"/></linearGradient></defs>
+    <defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#3D8BFF" stop-opacity=".28"/><stop offset="1" stop-color="#3D8BFF"/></linearGradient></defs>
     <rect x="0" y="5" width="200" height="4" rx="0" fill="currentColor" fill-opacity=".14"/>
     <rect x="0" y="5" width="${(2 * s).toFixed(1)}" height="4" rx="0" fill="url(#${g})"/>
     <rect x="${Math.max(0, 2 * s - 1.5).toFixed(1)}" y="1" width="3" height="12" rx="0" fill="currentColor"/></svg>`);

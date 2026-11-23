@@ -1,6 +1,6 @@
 // Your notifications, all of them; opening the page marks them read.
 import { h } from '../dom.js';
-import { sig } from '../art.js';
+import { sig, wait } from '../art.js';
 import * as Notifications from '../../data/notifications.js';
 import { S } from '../../app/store.js';
 import { render } from '../shell.js';
@@ -8,7 +8,7 @@ import { fillRail } from '../rail.js';
 import { notifRow, setUnread } from '../components/notifications.js';
 
 export async function renderNotifications() {
-  const list = h('div', { class: 'card' }, h('p', { class: 'muted' }, 'Loading…'));
+  const list = h('div', { class: 'card' }, wait('Loading your notifications'));
   render(h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'kick' }, 'Your updates'), h('h1', {}, 'Notifications.'))), list);
   const rail = fillRail('default');
   const { data } = await Notifications.latest(60);

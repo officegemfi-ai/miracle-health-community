@@ -41,17 +41,37 @@ const back = (site: string, what: string) => new Response(null, { status: 303, h
 const signedUp = (site: string, what: string) => back(site, `signup-${what}`);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function confirmMail(to: string, confirmUrl: string, unsubUrl: string): Mail {
+// The sign-up email, in the brand like the weekly email itself (the website's scripts/build_pages.mjs):
+// the black ground, the logo as a PNG from the site, the headline face where the email app has Mona
+// Sans, the main action in electric blue with square corners, and the brand's line at the foot (the
+// owner, November 23: "add that unhyped brand identity to it. So it feels all one")
+const FONT = "'Mona Sans','Helvetica Neue',Helvetica,Arial,sans-serif";
+const HEAD = `font-family:${FONT};font-weight:800;font-stretch:125%;text-transform:uppercase;letter-spacing:-0.028em;color:#F7F8FA`;
+
+export function confirmMail(to: string, confirmUrl: string, unsubUrl: string, site = 'https://miraclehealth.us'): Mail {
   return {
     to,
     subject: 'Confirm your Unhyped weekly email',
-    text: `Tap to confirm you want The Signal, Unhyped's weekly email:\n${confirmUrl}\n\nIf this wasn't you, ignore this email and nothing more will come.\nNever want these? ${unsubUrl}`,
-    html: `<!doctype html><html><body style="margin:0;padding:24px;background:#FCFCFC;font-family:Arial,Helvetica,sans-serif;color:#121E1D">
-<p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6A6F6E;margin:0 0 12px">Unhyped</p>
-<h1 style="font-size:24px;line-height:1.2;margin:0 0 12px">Confirm your email</h1>
-<p style="font-size:16px;line-height:1.55;margin:0 0 20px">Tap to confirm you want The Signal: once a week, what moved, new studies and FDA news. No ads, nothing for sale.</p>
-<p style="margin:0 0 24px"><a href="${confirmUrl}" style="display:inline-block;padding:14px 24px;border-radius:40px;background:#D8FF3D;color:#121E1D;text-decoration:none;font-size:13px;letter-spacing:.1em;text-transform:uppercase">Confirm my email</a></p>
-<p style="font-size:13px;line-height:1.5;color:#6A6F6E;margin:0">If this wasn't you, ignore this email and nothing more will come. <a href="${unsubUrl}" style="color:#6A6F6E">Never email this address</a>.</p>
+    text: `Tap to confirm you want The Signal, Unhyped's weekly email:\n${confirmUrl}\n\nIf this wasn't you, ignore this email and nothing more will come.\nNever want these? ${unsubUrl}\n\nNo miracles. Just what happened.`,
+    html: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><title>Confirm your Unhyped weekly email</title>
+<style>@font-face{font-family:'Mona Sans';src:url('${site}/fonts/mona-sans.woff2') format('woff2');font-weight:200 900;font-stretch:75% 125%}</style></head>
+<body style="margin:0;padding:0;background:#000000">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#000000"><tr><td align="center" style="padding:32px 16px 40px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#000000;font-family:${FONT}">
+<tr><td style="padding:0 0 28px"><a href="${site}/"><img src="${site}/img/email/logo.png" width="132" height="26" alt="Unhyped" style="display:block;border:0;outline:none"></a></td></tr>
+<tr><td style="padding:28px 0 0;border-top:1px solid #1A1A1A">
+<p style="margin:0 0 12px;font-size:14px;line-height:1.3;font-weight:600;color:#3D8BFF">The Signal, weekly</p>
+<h1 style="margin:0 0 16px;font-size:28px;line-height:1.04;${HEAD}">Confirm your email.</h1>
+<p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#D9DCE2">Tap to confirm you want The Signal: once a week, what moved, new studies and FDA news. No ads, nothing for sale.</p>
+<p style="margin:0 0 32px"><a href="${confirmUrl}" style="display:inline-block;padding:16px 22px;background:#1A04FF;border:1px solid #3A2BFF;color:#FFFFFF;text-decoration:none;font-family:${FONT};font-size:15px;line-height:1;font-weight:600">Confirm my email</a></p>
+</td></tr>
+<tr><td style="padding:28px 0 0;border-top:1px solid #1A1A1A">
+<p style="margin:0 0 16px;font-size:18px;line-height:1.1;${HEAD}">No miracles. <span style="color:#3D8BFF">Just what happened.</span></p>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#7F8796">If this wasn't you, ignore this email and nothing more will come. <a href="${unsubUrl}" style="color:#A1A7B2">Never email this address</a>.</p>
+</td></tr>
+</table>
+</td></tr></table>
 </body></html>`,
     headers: { 'List-Unsubscribe': `<${unsubUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
   };
@@ -89,7 +109,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       if (error) return json({ error: 'Database', asked }, 500);
       const rows = (data as { id: number; email: string; confirm_token: string; unsub_token: string }[]) || [];
       if (!rows.length) break;
-      if (!(await deps.send(rows.map((r) => confirmMail(r.email, `${deps.self}?c=${r.confirm_token}`, `${deps.self}?u=${r.unsub_token}`))))) {
+      if (!(await deps.send(rows.map((r) => confirmMail(r.email, `${deps.self}?c=${r.confirm_token}`, `${deps.self}?u=${r.unsub_token}`, deps.site))))) {
         return json({ error: 'The email provider refused a batch', asked }, 502);
       }
       await deps.db.rpc('newsletter_asked', { ids: rows.map((r) => r.id) });
@@ -158,7 +178,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (r.state === 'confirmed') return answer('confirmed');
   // New or not yet confirmed: send the link (or say it will come once email is set up)
   if (r.token && deps.send) {
-    const ok = await deps.send([confirmMail(email, `${deps.self}?c=${r.token}`, `${deps.self}?u=${r.unsub}`)]);
+    const ok = await deps.send([confirmMail(email, `${deps.self}?c=${r.token}`, `${deps.self}?u=${r.unsub}`, deps.site)]);
     if (ok && r.id) await deps.db.rpc('newsletter_asked', { ids: [r.id] });
     return answer(ok ? 'check' : 'later');
   }

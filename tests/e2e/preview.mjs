@@ -81,7 +81,7 @@ await page.waitForSelector('dialog h2:text("Earn your emblems.")');
 check('It shows the fifteen emblems', (await page.locator('dialog .emb').count()) === 15);
 await page.click('dialog button:text("Let’s go")');
 await page.waitForSelector('h1:text("Your feed.")');
-await page.waitForSelector('.kick:has-text("3 spaces you follow")');
+await page.waitForFunction(() => document.querySelectorAll('#nav .nav-space').length === 3);
 await page.waitForSelector('article.post');
 const homeSpaces = await page.locator('article.post .post-head .space').allTextContents();
 check('Home shows only the spaces you joined', homeSpaces.length > 0 && homeSpaces.every((s) => /BPC-157|Tirzepatide|Semaglutide/.test(s)), homeSpaces.slice(0, 4).join(', '));
