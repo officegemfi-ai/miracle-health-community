@@ -174,7 +174,8 @@ await signIn(A, '5555550102');
 await signUp(A, 'betatest01', 'kneeguy');
 check('A new member joins through an invite link, and Sig welcomes them', await A.isVisible('dialog .sig'));
 const aSpaces = await onboard(A, async (p) => (await p.locator('dialog .pick b').allTextContents()).slice(0, 3));
-await A.waitForSelector('.kick:has-text("3 spaces you follow")');
+// the three spaces onboarding joined, listed in the side panel
+await A.waitForFunction(() => document.querySelectorAll('#nav .nav-space').length === 3);
 check('Onboarding joins three spaces, and the left menu lists them', (await A.locator('#nav .nav-space').count()) === 3, aSpaces.join(', '));
 check('The live Signal ticker runs across the top', (await A.locator('#tick-track .tick-i').count()) >= 20);
 await A.waitForSelector('.quest button:has-text("Claim +20")');
@@ -467,15 +468,15 @@ check('The Signal page ranks the compounds, in one table', (await B.locator('.to
 check('and lists the live moves with their causes', (await B.locator('.move-i').count()) >= 1);
 await B.waitForSelector('.viz-compact .flowviz.compact');
 check('It draws how the number is made: public forums and members’ reports in, one number out',
-  /FROM MEMBERS/.test(await B.textContent('.viz-compact .flowviz')) && /[\d,]+ first-hand reports?\b/.test(await B.textContent('.viz-compact .flowviz'))
-  && /THE FORMULA/.test(await B.textContent('.viz-compact .flowviz')));
+  /From members/.test(await B.textContent('.viz-compact .flowviz')) && /[\d,]+ first-hand reports?\b/.test(await B.textContent('.viz-compact .flowviz'))
+  && /65\s*how well it worked/.test(await B.textContent('.viz-compact .flowviz')));
 const ladderCounts = await B.locator('.ladder-steps .step-l .cnt b').allTextContents();
 check('with the certification ladder, which counts every Signal once',
   ladderCounts.length === 5 && ladderCounts.reduce((a, t) => a + Number(t.replace(/\D/g, '')), 0) === await B.locator('.top-table tbody tr[data-signal]').count(), ladderCounts.join(' '));
 await B.$eval('#sim-n', (el) => { el.value = '150'; el.dispatchEvent(new Event('input', { bubbles: true })); });
 check('The takeover slider shows what 150 first-hand reports would do: 75% from members, Signal Certified',
   /75% from members/.test(await B.textContent('.sim-out')) && /Signal Certified/.test(await B.textContent('.sim-out'))
-  && /150 REPORTS · 75%/.test(await B.textContent('.takeover-card .viz-compact .tk-you')));
+  && /150 reports, 75%/.test(await B.textContent('.takeover-card .viz-compact .tk-you')));
 
 const M = await person();
 await signIn(M, '5555550101');
