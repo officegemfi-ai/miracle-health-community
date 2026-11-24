@@ -136,8 +136,8 @@ img,svg{flex:none}
 /* ---------------------------------------------------------------- layout */
 .os{display:grid;grid-template-columns:minmax(0,1fr);min-height:100dvh}
 /* The community's ground is the website's matte grey suede (the owner, November 23: "can the community page
-   background be a cosy texture?", then the Noise card's suede): a fine grain (img/suede.svg, the website's
-   own file) laid on in soft light over `suede`, lit softly from the top left. It runs under the docked side
+   background be a cosy texture?", then the Noise card's suede): a fine grain (img/suede.svg: the website's
+   own file, slightly smoother at the owner's ask) laid on in soft light over `suede`, lit softly from the top left. It runs under the docked side
    panel and the foot too, so the page is one surface. On the suede the quiet grey is #969CA9 (the book's
    #7F8796 would fall under 4.5:1 there) */
 .win{position:relative;display:flex;flex-direction:column;min-width:0;min-height:100dvh;margin:0;background:radial-gradient(1400px 1000px at 0% 0%,rgba(255,255,255,.06),rgba(255,255,255,0) 60%),url(img/suede.svg) 0 0/200px 200px,var(--suede);background-blend-mode:normal,soft-light}
