@@ -253,9 +253,10 @@ a.chip:hover{border-color:var(--text)}
 
 /* ---------------------------------------------------------------- feed chrome */
 /* The home feed opens like miraclehealth.us: words on a plate, corner ticks, no photograph */
-.feed-hero{margin:2px 0 14px;padding:0;border:0}
-.feed-hero h1{margin-top:16px}
-.feed-hero-cap{max-width:46ch;margin:10px 0 0;font-size:15px;line-height:1.5;color:var(--text-2)}
+/* the feed is a working screen: a compact title and one short line, no kicker, so the posts start high */
+.feed-hero{margin:4px 0 14px;padding:0;border:0}
+.feed-hero h1{margin:0;font-size:clamp(20px,.5vw + 15px,24px)}
+.feed-hero-cap{margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
 .composer-bar{display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:12px}
 .composer-bar .fake{flex:1;min-width:0;display:block;height:42px;line-height:40px;border-radius:var(--pill);border:1px solid var(--line-2);background:var(--surface-2);color:var(--muted);text-align:left;padding:0 16px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .composer-bar .fake:hover{border-color:var(--text)}
@@ -821,7 +822,6 @@ label.f.nm{margin:0}
   .me-chip .kick,.me-chip b{display:none}
   .me-chip{min-width:40px;min-height:40px;justify-content:center;padding:3px;border:0}
   .hero{padding:0 0 4px}
-  .feed-hero-cap{font-size:14px}
   .post{grid-template-columns:minmax(0,1fr)}
   .post .vrail{display:none}
   .post .vote.h{display:inline-flex}
@@ -950,7 +950,7 @@ h1.post-title,.profile-h h1{text-transform:none;font-stretch:100%}
 .btn.join.ghost{color:var(--muted)}
 /* A name and the label after it (moderator, on the account card) keep a gap; on the name, so a label that wraps isn't indented */
 .grow>b:has(+.chip){margin-right:8px}
-.page-h .kick,.auth-art .kick,.auth-form .kick,.feed-hero .kick,.hero .kick,.gate .kick{font:600 14px/1.4 var(--body)}
+.page-h .kick,.auth-art .kick,.auth-form .kick,.hero .kick,.gate .kick{font:600 14px/1.4 var(--body)}
 .hero::after{display:none}
 .search-pop,.notif-pop,.pop,.cpick-pop{border-color:var(--line-2);background:var(--surface-2)}
 .search input,.composer-bar .fake,.input{border-radius:0}
